@@ -1,1 +1,3 @@
-# cats
+# The CATS Computer
+
+*Always land on your feet...*
