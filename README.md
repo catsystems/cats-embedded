@@ -1,3 +1,3 @@
 # The CATS Computer
 
-*Always land on your feet...*
+*Always land on your ~~feet~~ paws...*
