@@ -1,5 +1,5 @@
 # The C.A.T.S. Computer
 
-![C.A.T.S. Logo](logo/CATS_Smile.png?raw=true =400x400)
+<img src="logo/CATS_Smile.png" width="400" height="400">
 
 *Always land on your ~~feet~~ paws...*
