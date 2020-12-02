@@ -1,0 +1,39 @@
+Package Report
+
+-----------------------------------------------------------------------------
+Document:
+Name: LOGO_CAT.ai
+Color Mode: RGB color
+Color Profile: sRGB IEC61966-2.1
+Ruler Units: pixels
+Artboard Dimensions: 8000 px x 8000 px
+Show Images in Outline Mode: OFF
+Highlight Substituted Fonts: OFF
+Highlight Substituted Glyphs: OFF
+Preserve Text Editability
+Simulate Colored Paper: OFF
+
+-----------------------------------------------------------------------------
+Spot Color Objects:
+
+-----------------------------------------------------------------------------
+Missing Fonts:NONE
+
+-----------------------------------------------------------------------------
+Protected Fonts that were not packaged:NONE
+
+-----------------------------------------------------------------------------
+Fonts:
+NONE
+
+-----------------------------------------------------------------------------
+Embedded Fonts:
+NONE
+
+-----------------------------------------------------------------------------
+Missing Links:
+NONE
+
+-----------------------------------------------------------------------------
+Linked Images:
+NONE
