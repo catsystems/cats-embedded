@@ -3,7 +3,7 @@
   <FileVersion>3.0</FileVersion>
   <Workspace>
     <WorkspaceType>Single-project</WorkspaceType>
-    <WorkspacePath>D:\ARIS\CATS\board\rev1\cats_board_rev1\</WorkspacePath>
+    <WorkspacePath>D:\ARIS\CATS\boards\cats_rev1\</WorkspacePath>
     <underRoot>true</underRoot>
     <TrustZone>0</TrustZone>
     <HAL_Driver>C:\Users\stoja\STM32Cube\Repository\STM32Cube_FW_L4_V1.16.0\</HAL_Driver>
@@ -20,7 +20,7 @@
       </sourceEntriesToRemove>
       <configs>
         <config>
-          <name>cats_board_rev1</name>
+          <name>cats_rev1</name>
           <mainSourceRepo>Core</mainSourceRepo>
           <sourceStructure>Advanced</sourceStructure>
           <device>STM32L433CBTx</device>
