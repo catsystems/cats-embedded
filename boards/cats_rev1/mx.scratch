@@ -9,9 +9,9 @@
     <HAL_Driver>C:\Users\stoja\STM32Cube\Repository\STM32Cube_FW_L4_V1.16.0\</HAL_Driver>
     <CMSIS>Drivers/CMSIS</CMSIS>
     <Toolchain>STM32CubeIDE</Toolchain>
-    <IocFile>cats_board_rev1.ioc</IocFile>
+    <IocFile>cats_rev1.ioc</IocFile>
     <Project>
-      <ProjectName>cats_board_rev1</ProjectName>
+      <ProjectName>cats_rev1</ProjectName>
       <ProjectNature>C</ProjectNature>
       <Secure />
       <filestoremove />
@@ -23,12 +23,12 @@
           <name>cats_rev1</name>
           <mainSourceRepo>Core</mainSourceRepo>
           <sourceStructure>Advanced</sourceStructure>
-          <device>STM32L433CBTx</device>
+          <device>STM32L433CCTx</device>
           <cpucore>Arm Cortex-M4</cpucore>
           <fpu>SP</fpu>
           <memories>
             <memory access="xrw" name="RAM" size="64" start="0x20000000" />
-            <memory access="rx" name="FLASH" size="128" start="0x8000000" />
+            <memory access="rx" name="FLASH" size="256" start="0x8000000" />
           </memories>
           <startup>C:\Users\stoja\STM32Cube\Repository\STM32Cube_FW_L4_V1.16.0\Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\gcc\startup_stm32l433xx.s</startup>
           <LinkSettings>
