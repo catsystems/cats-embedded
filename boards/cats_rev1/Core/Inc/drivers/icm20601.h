@@ -10,10 +10,32 @@
 
 // *** Macros *** //
 
-#define ICM20601_INIT() \
+#define ICM20601_INIT1() \
   { \
-    .cs_port = GPIOA, \
-    .cs_pin = GPIO_PIN_4, \
+    .cs_port = GPIOB, \
+    .cs_pin = GPIO_PIN_0, \
+    .spi_bus = &hspi1, \
+    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ, \
+	.accel_g = ICM20601_ACCEL_RANGE_32G, \
+	.gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ, \
+    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS, \
+  }
+
+#define ICM20601_INIT2() \
+  { \
+    .cs_port = GPIOB, \
+    .cs_pin = GPIO_PIN_1, \
+    .spi_bus = &hspi1, \
+    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ, \
+	.accel_g = ICM20601_ACCEL_RANGE_32G, \
+	.gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ, \
+    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS, \
+  }
+
+#define ICM20601_INIT3() \
+  { \
+    .cs_port = GPIOB, \
+    .cs_pin = GPIO_PIN_2, \
     .spi_bus = &hspi1, \
     .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ, \
 	.accel_g = ICM20601_ACCEL_RANGE_32G, \

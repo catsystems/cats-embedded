@@ -10,10 +10,24 @@
 
 // *** Macros *** //
 
-#define MS5607_INIT() \
+#define MS5607_INIT1() \
   { \
     .i2c_address = 0xEE, \
     .i2c_bus = &hi2c1, \
+    .osr = MS5607_OSR_256, \
+  }
+
+#define MS5607_INIT2() \
+  { \
+    .i2c_address = 0xEC, \
+    .i2c_bus = &hi2c1, \
+    .osr = MS5607_OSR_256, \
+  }
+
+#define MS5607_INIT3() \
+  { \
+    .i2c_address = 0xEE, \
+    .i2c_bus = &hi2c2, \
     .osr = MS5607_OSR_256, \
   }
 
@@ -69,6 +83,7 @@ extern void ms5607_read_raw_pres_temp(struct ms5607_dev * dev, int32_t *pressure
 extern void ms5607_read_pres_temp(struct ms5607_dev * dev, int32_t *temperature, int32_t *pressure);
 
 extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
 
 
 #endif

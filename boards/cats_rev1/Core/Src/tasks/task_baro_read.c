@@ -11,9 +11,11 @@
 #include "usbd_cdc_if.h"
 
 void vInitBaro();
-void vReadBaro(int32_t *temperature, int32_t *pressure);
+void vReadBaro(int32_t *temperature, int32_t *pressure, int32_t id);
 
-MS5607 MS = MS5607_INIT();
+MS5607 MS1 = MS5607_INIT1();
+MS5607 MS2 = MS5607_INIT2();
+MS5607 MS3 = MS5607_INIT3();
 /**
  * @brief Function implementing the task_baro_read thread.
  * @param argument: Not used
@@ -27,15 +29,16 @@ void vTaskBaroRead(void *argument) {
 	int32_t pressure;
 
 	vInitBaro();
+	int32_t baro_idx = 0;
 
 	/* Infinite loop */
 	tick_count = osKernelGetTickCount();
 	tick_update = osKernelGetTickFreq() / BARO_SAMPLING_FREQ;
 	while (1) {
 		tick_count += tick_update;
-		vReadBaro(&temperature, &pressure);
+		vReadBaro(&temperature, &pressure, baro_idx);
 
-		UsbPrint("P: %ld; T: %ld; t: %ld\n", pressure,
+		UsbPrint("BARO %ld: %ld; T: %ld; t: %ld\n", baro_idx, pressure,
 				temperature, tick_count);
 
 		//TODO HIE AUE STUFF WO MUES GMACHT WERDE MIT DENE DATE
@@ -47,16 +50,31 @@ void vTaskBaroRead(void *argument) {
 //			baro_data_to_mb.ts = tick_count;
 //			osMutexRelease(baro_mutex);
 //		}
-
+		baro_idx = (baro_idx + 1) % 3;
 		osDelayUntil(tick_count);
 	}
 }
 
 void vInitBaro() {
-	ms5607_init(&MS);
+	ms5607_init(&MS1);
+	ms5607_init(&MS2);
+	ms5607_init(&MS3);
 }
 
-void vReadBaro(int32_t *temperature, int32_t *pressure) {
-	ms5607_read_pres_temp(&MS, temperature, pressure);
+void vReadBaro(int32_t *temperature, int32_t *pressure, int32_t id) {
+	switch(id){
+		case 0:
+			ms5607_read_pres_temp(&MS1, temperature, pressure);
+		break;
+		case 1:
+			ms5607_read_pres_temp(&MS2, temperature, pressure);
+		break;
+		case 2:
+			ms5607_read_pres_temp(&MS3, temperature, pressure);
+		break;
+		default:
+		break;
+	}
+
 }
 

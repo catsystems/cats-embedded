@@ -19,7 +19,7 @@
 uint32_t _get_conversion_ticks(struct ms5607_dev * dev){
 	uint32_t time;
 	time = (BARO_CONVERSION_TIME_OSR_BASE * (dev->osr+1) * osKernelGetTickFreq()) / 1000;
-	if (time < 1) time = 1;
+	if (time < 2) time = 2;
 	return time;
 }
 
