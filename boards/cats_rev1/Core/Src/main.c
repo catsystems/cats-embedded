@@ -63,6 +63,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4
 };
 /* USER CODE BEGIN PV */
+
 /* Definitions for task_baro_read */
 osThreadId_t task_baro_readHandle;
 uint32_t task_baro_readBuffer[ 2048 ];
@@ -75,6 +76,7 @@ const osThreadAttr_t task_baro_read_attributes = {
   .cb_size = sizeof(task_baro_readControlBlock),
   .priority = (osPriority_t) osPriorityNormal,
 };
+
 /* Definitions for task_imu_read */
 osThreadId_t task_imu_readHandle;
 uint32_t task_imu_readBuffer[ 4096 ];
@@ -87,6 +89,20 @@ const osThreadAttr_t task_imu_read_attributes = {
   .cb_size = sizeof(task_imu_readControlBlock),
   .priority = (osPriority_t) osPriorityNormal,
 };
+
+/* Definitions for task_state_est */
+osThreadId_t task_state_estHandle;
+uint32_t task_state_estBuffer[ 4096 ];
+osStaticThreadDef_t task_state_estControlBlock;
+const osThreadAttr_t task_state_est_attributes = {
+  .name = "task_state_est",
+  .stack_mem = &task_state_estBuffer[0],
+  .stack_size = sizeof(task_state_estBuffer),
+  .cb_mem = &task_state_estControlBlock,
+  .cb_size = sizeof(task_state_estControlBlock),
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -104,6 +120,7 @@ void StartDefaultTask(void *argument);
 /* USER CODE BEGIN PFP */
 extern void vTaskBaroRead(void *argument);
 extern void vTaskImuRead(void *argument);
+extern void vTaskStateEst(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -179,6 +196,9 @@ int main(void)
 
   /* creation of task_imu_read */
   task_imu_readHandle = osThreadNew(vTaskImuRead, NULL, &task_imu_read_attributes);
+
+  /* creation of task_state_est */
+  task_state_estHandle = osThreadNew(vTaskStateEst, NULL, &task_state_est_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

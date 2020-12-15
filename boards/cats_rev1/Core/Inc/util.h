@@ -36,6 +36,40 @@ typedef struct {
 	int32_t temperature;
 } baro_data_t;
 
+typedef struct {
+	float pressure[3];
+	float temperature[3];
+	float acceleration[3];
+	float calculated_AGL[3];
+	float height;
+	float velocity;
+	float acc_bias;
+	timestamp_t ts;
+} state_estimation_data_t;
+
+typedef struct {
+	float Ad[3][3];
+	float Ad_T[3][3];
+	float Gd[3];
+	float Bd[3];
+	float Q;
+	float GdQGd_T[3][3];
+	float H_full[3][3];
+	float H_full_T[3][3];
+	float H_eliminated[2][3];
+	float H_eliminated_T[3][2];
+	float R_full[3][3];
+	float R_eliminated[2][2];
+	float K_full[3][3];
+	float K_eliminated[2][2];
+	float x_bar[3];
+	float P_bar[3][3];
+	float x_hat[3];
+	float P_hat[3][3];
+	uint32_t t_sampl;
+} kalman_filter_t;
+
+
 static const imu_data_t EMPTY_IMU = { 0 };
 
 /** DEBUGGING **/
