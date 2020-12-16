@@ -49,22 +49,18 @@ void vTaskImuRead(void *argument) {
 
 		/* Debugging */
 
-		UsbPrint("IMU %ld: RAW Gx: %ld, Gy:%ld, Gz:%ld; Ax: %ld, Ay:%ld, Az:%ld, T:%ld; \n",
-				imu_idx, gyroscope_data[0], gyroscope_data[1], gyroscope_data[2],
-				acceleration[0], acceleration[1], acceleration[2], temperature);
+//		UsbPrint("IMU %ld: RAW Gx: %ld, Gy:%ld, Gz:%ld; Ax: %ld, Ay:%ld, Az:%ld, T:%ld; \n",
+//				imu_idx, gyroscope_data[0], gyroscope_data[1], gyroscope_data[2],
+//				acceleration[0], acceleration[1], acceleration[2], temperature);
 
-		//TODO HIE AUE STUFF WO MUES GMACHT WERDE MIT DENE DATE
+		global_imu[imu_idx].acc_x = acceleration[0];
+		global_imu[imu_idx].acc_y = acceleration[1];
+		global_imu[imu_idx].acc_z = acceleration[2];
+		global_imu[imu_idx].gyro_x = gyroscope_data[0];
+		global_imu[imu_idx].gyro_x = gyroscope_data[1];
+		global_imu[imu_idx].gyro_x = gyroscope_data[2];
+		global_imu[imu_idx].ts = tick_count;
 
-//		queue_data.gyro_x = gyroscope_data[0];
-//		queue_data.gyro_y = gyroscope_data[1];
-//		queue_data.gyro_z = gyroscope_data[2];
-//		queue_data.acc_x = acceleration[0];
-//		queue_data.acc_y = acceleration[1];
-//		queue_data.acc_z = acceleration[2];
-//		queue_data.ts = osKernelGetTickCount();
-
-		/* Send Data to Queue */
-		//osMessageQueuePut(preprocess_queue, &queue_data, 0U, 0U);
 
 		imu_idx = (imu_idx + 1) % 3;
 		osDelayUntil(tick_count);

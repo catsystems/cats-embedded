@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
+#include "util.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -102,6 +103,10 @@ const osThreadAttr_t task_state_est_attributes = {
   .cb_size = sizeof(task_state_estControlBlock),
   .priority = (osPriority_t) osPriorityNormal,
 };
+
+baro_data_t global_baro[3];
+imu_data_t global_imu[3];
+
 
 /* USER CODE END PV */
 

@@ -14,3 +14,5 @@
 #endif /* INC_CONTROL_KALMAN_FILTER_H_ */
 
 void initialize_matrices(kalman_filter_t *filter);
+
+void kalman_step(kalman_filter_t *filter, state_estimation_data_t *data);

@@ -27,7 +27,7 @@
 <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.enable_shared_stlink" value="false"/>
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.external_loader" value=""/>
 <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.external_loader_init" value="false"/>
-<stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.frequency" value="24000"/>
+<stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.frequency" value="0"/>
 <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.halt_all_on_reset" value="false"/>
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.log_file" value="C:\Users\Luca\Google Drive\Projects\ARIS\CATS\Software\cats\boards\cats_rev1\Debug\st-link_gdbserver_log.txt"/>
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.low_power_debug" value="disable"/>

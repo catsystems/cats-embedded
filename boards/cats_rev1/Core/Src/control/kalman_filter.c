@@ -15,7 +15,8 @@ void initialize_matrices(kalman_filter_t *filter){
 	transpose(3, 3, A_dash, A_dash_T);
 	float G_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
 	float B_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
-	float Q_dash = 1;
+	float Q_dash = 0.01;
+	float P_dash[3][3] = {{0.00001, 0, 0},{0, 0.00001, 0},{0, 0, 0.00001}};
 	float H_full_dash[3][3] = {{1, 0, 0},{1, 0, 0},{1, 0, 0}};
 	float H_full_dash_T[3][3] = { 0 };
 	transpose(3, 3, H_full_dash, H_full_dash_T);
@@ -24,6 +25,7 @@ void initialize_matrices(kalman_filter_t *filter){
 	transpose(2, 3, H_eliminated_dash, H_eliminated_dash_T);
 	float R_full_dash[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	float R_eliminated_dash[2][2] = {{1, 0}, {0, 1}};
+	float x_dash[3] = {0, 0, 0};
 
 	float GdQGd_T_dash[3][3] = { 0 };
 	GdQGd_T_dash[0][0] = Q_dash*G_dash[0]*G_dash[0];
@@ -40,6 +42,10 @@ void initialize_matrices(kalman_filter_t *filter){
 	memcpy(filter->Ad_T, A_dash_T, 9*sizeof(A_dash_T[0][0]));
 	memcpy(filter->Gd, G_dash, 3*sizeof(G_dash[0]));
 	memcpy(filter->Bd, B_dash, 9*sizeof(B_dash[0]));
+	memcpy(filter->P_hat, P_dash, 9*sizeof(P_dash[0]));
+	memcpy(filter->P_bar, P_dash, 9*sizeof(P_dash[0]));
+	memcpy(filter->x_hat, x_dash, 3*sizeof(x_dash[0]));
+	memcpy(filter->x_bar, x_dash, 3*sizeof(x_dash[0]));
 	filter->Q = Q_dash;
 	memcpy(filter->H_full, H_full_dash, 9*sizeof(H_full_dash[0][0]));
 	memcpy(filter->H_full_T, H_full_dash_T, 9*sizeof(H_full_dash_T[0][0]));
@@ -80,37 +86,37 @@ void kalman_step(kalman_filter_t *filter, state_estimation_data_t *data){
 	/* Update Step */
 
 	/* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
-	memset(placeholder_mat1, 0, 9*sizeof(placeholder_mat1));
-	memset(placeholder_mat2, 0, 9*sizeof(placeholder_mat2));
+	memset(placeholder_mat1, 0, sizeof(placeholder_mat1));
+	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
 
 	matmul(3, 3, 3, filter->P_hat, filter->H_full_T, placeholder_mat1);
 
 	matmul(3, 3, 3, filter->H_full, filter->P_hat, placeholder_mat2);
 	matmul(3, 3, 3, placeholder_mat2, filter->H_full_T, placeholder_mat3);
 
-	memset(placeholder_mat2, 0, 9*sizeof(placeholder_mat2));
+	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
 
 	matadd(3, 3, placeholder_mat3, filter->R_full, placeholder_mat2);
 
-	memset(placeholder_mat3, 0, 9*sizeof(placeholder_mat3));
+	memset(placeholder_mat3, 0, sizeof(placeholder_mat3));
 
 	inverse(3, placeholder_mat2, placeholder_mat3, 0);
 
 	matmul(3, 3, 3, placeholder_mat1, placeholder_mat3, filter->K_full);
 
 	/* Finished Calculating K */
-	memset(placeholder_mat1, 0, 9*sizeof(placeholder_mat1));
-	memset(placeholder_mat2, 0, 9*sizeof(placeholder_mat2));
-	memset(placeholder_mat3, 0, 9*sizeof(placeholder_mat3));
-	memset(placeholder1, 0, 3*sizeof(placeholder1));
-	memset(placeholder2, 0, 3*sizeof(placeholder2));
+	memset(placeholder_mat1, 0, sizeof(placeholder_mat1));
+	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
+	memset(placeholder_mat3, 0, sizeof(placeholder_mat3));
+	memset(placeholder1, 0, sizeof(placeholder1));
+	memset(placeholder2, 0, sizeof(placeholder2));
 
 
 	/* Calculate x_bar = x_hat+K*(y-Hx_hat); */
 	matvecprod(3, 3, filter->H_full, filter->x_hat, placeholder1);
 	vecsub(3, data->calculated_AGL, placeholder1, placeholder2);
 
-	memset(placeholder2, 0, 3*sizeof(placeholder1));
+	memset(placeholder2, 0, sizeof(placeholder1));
 
 	matvecprod(3, 3, filter->K_full, placeholder2, placeholder1);
 
