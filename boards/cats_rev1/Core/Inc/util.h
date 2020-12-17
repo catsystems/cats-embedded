@@ -66,6 +66,7 @@ typedef struct {
 	float P_bar[3][3];
 	float x_hat[3];
 	float P_hat[3][3];
+	float pressure_0;
 	float t_sampl;
 } kalman_filter_t;
 
