@@ -21,11 +21,10 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
-#include "util.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "util.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -626,17 +625,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin|LED_1_Pin|LED_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin|LED_STATUS_Pin|LED_FAULT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|PYRO_1_Pin
+  HAL_GPIO_WritePin(GPIOB, IMU0_CS_Pin|IMU1_CS_Pin|IMU2_CS_Pin|PYRO_1_Pin
                           |PYRO_2_Pin|GPIO_1_Pin|GPIO_2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PYRO_3_Pin LED_1_Pin LED_2_Pin */
-  GPIO_InitStruct.Pin = PYRO_3_Pin|LED_1_Pin|LED_2_Pin;
+  /*Configure GPIO pins : PYRO_3_Pin LED_STATUS_Pin LED_FAULT_Pin */
+  GPIO_InitStruct.Pin = PYRO_3_Pin|LED_STATUS_Pin|LED_FAULT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -649,9 +648,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BUZZER_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB0 PB1 PB2 PYRO_1_Pin
+  /*Configure GPIO pins : IMU0_CS_Pin IMU1_CS_Pin IMU2_CS_Pin PYRO_1_Pin
                            PYRO_2_Pin GPIO_1_Pin GPIO_2_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|PYRO_1_Pin
+  GPIO_InitStruct.Pin = IMU0_CS_Pin|IMU1_CS_Pin|IMU2_CS_Pin|PYRO_1_Pin
                           |PYRO_2_Pin|GPIO_1_Pin|GPIO_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -680,11 +679,12 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
-//  MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
   osDelay(3000);
 #if (configUSE_TRACE_FACILITY == 1)
   vTraceEnable(TRC_START_AWAIT_HOST);
+  HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
 #endif
   /* Infinite loop */
   for(;;)

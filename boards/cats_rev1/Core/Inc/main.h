@@ -62,12 +62,18 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define PYRO_3_Pin GPIO_PIN_13
 #define PYRO_3_GPIO_Port GPIOC
-#define LED_1_Pin GPIO_PIN_14
-#define LED_1_GPIO_Port GPIOC
-#define LED_2_Pin GPIO_PIN_15
-#define LED_2_GPIO_Port GPIOC
+#define LED_STATUS_Pin GPIO_PIN_14
+#define LED_STATUS_GPIO_Port GPIOC
+#define LED_FAULT_Pin GPIO_PIN_15
+#define LED_FAULT_GPIO_Port GPIOC
 #define BUZZER_Pin GPIO_PIN_3
 #define BUZZER_GPIO_Port GPIOA
+#define IMU0_CS_Pin GPIO_PIN_0
+#define IMU0_CS_GPIO_Port GPIOB
+#define IMU1_CS_Pin GPIO_PIN_1
+#define IMU1_CS_GPIO_Port GPIOB
+#define IMU2_CS_Pin GPIO_PIN_2
+#define IMU2_CS_GPIO_Port GPIOB
 #define BUTTON_Pin GPIO_PIN_8
 #define BUTTON_GPIO_Port GPIOA
 #define PYRO_1_Pin GPIO_PIN_4

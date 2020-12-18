@@ -297,6 +297,11 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
 #if ( configUSE_TRACE_FACILITY == 1 )
+  static uint8_t led_counter = 0;
+  if (led_counter++ % 64 == 0){
+	HAL_GPIO_TogglePin(GPIOC, LED_FAULT_Pin);
+	HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+  }
 	osDelay(2);
 #endif
   /* USER CODE END 7 */
