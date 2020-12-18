@@ -169,7 +169,9 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+#if (configUSE_TRACE_FACILITY == 1)
+  vTraceEnable(TRC_INIT);
+#endif
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -678,8 +680,12 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+  osDelay(3000);
+#if (configUSE_TRACE_FACILITY == 1)
+  vTraceEnable(TRC_START_AWAIT_HOST);
+#endif
   /* Infinite loop */
   for(;;)
   {

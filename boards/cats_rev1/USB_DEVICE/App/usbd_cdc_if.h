@@ -51,9 +51,11 @@
 /* USER CODE BEGIN EXPORTED_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  1000
-#define APP_TX_DATA_SIZE  1000
+#define APP_RX_DATA_SIZE  2048
+#define APP_TX_DATA_SIZE  2048
 
+ //command buffer size
+ #define BUFSIZE 64
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
@@ -66,7 +68,10 @@
   */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
-
+ typedef struct {
+ 	uint32_t idx;
+ 	uint8_t data[BUFSIZE];
+ } recBuf;
 /* USER CODE END EXPORTED_TYPES */
 
 /**
@@ -95,7 +100,7 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-
+recBuf commandBuffer;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
