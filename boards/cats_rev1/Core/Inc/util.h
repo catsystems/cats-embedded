@@ -82,7 +82,11 @@ static const imu_data_t EMPTY_IMU = { 0 };
 #undef DEBUG
 #endif
 /* Comment the next line in order to disable debug mode */
-// #define DEBUG
+#define DEBUG
+
+#if (configUSE_TRACE_FACILITY == 1) && defined(DEBUG)
+  #undef DEBUG
+#endif
 
 #ifdef DEBUG
 osMutexId_t print_mutex;
