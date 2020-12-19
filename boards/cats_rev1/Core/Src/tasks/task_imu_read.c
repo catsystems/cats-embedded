@@ -73,18 +73,18 @@ void vInitImu20601() {
 	do {
 		r = icm20601_init(&ICM1);
 		HAL_Delay(10);
-		UsbPrint("Init1 failed!");
+		//UsbPrint("Init1 failed!");
 	} while(!r);
 	do {
 		r = icm20601_init(&ICM2);
 		HAL_Delay(10);
-		UsbPrint("Init2 failed!");
+		//UsbPrint("Init2 failed!");
 		} while(!r);
 
 	do {
 		r = icm20601_init(&ICM3);
 		HAL_Delay(10);
-		UsbPrint("Init3 failed!");
+		//UsbPrint("Init3 failed!");
 		} while(!r);
 
 }

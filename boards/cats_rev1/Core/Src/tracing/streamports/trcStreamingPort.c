@@ -53,10 +53,7 @@
 
 /* Include files as needed, in this case it is files from STM32Cube FW_F7 V1.4.1 */
 #include "usb_device.h"
-#include "usbd_cdc.h"
 #include "usbd_cdc_if.h"
-
-extern recBuf commandBuffer;
 
 /* The READ function, used in trcStreamingPort.h */
 int32_t trcCDCReceive(void *data, uint32_t size, int32_t* NumBytes)

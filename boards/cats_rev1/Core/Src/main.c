@@ -25,6 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "util.h"
+//#include "drivers/w25qxx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,41 +67,41 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Definitions for task_baro_read */
 osThreadId_t task_baro_readHandle;
-uint32_t task_baro_readBuffer[ 2048 ];
+uint32_t task_baro_readBuffer[2048];
 osStaticThreadDef_t task_baro_readControlBlock;
 const osThreadAttr_t task_baro_read_attributes = {
-  .name = "task_baro_read",
-  .stack_mem = &task_baro_readBuffer[0],
-  .stack_size = sizeof(task_baro_readBuffer),
-  .cb_mem = &task_baro_readControlBlock,
-  .cb_size = sizeof(task_baro_readControlBlock),
-  .priority = (osPriority_t) osPriorityNormal,
+        .name = "task_baro_read",
+        .stack_mem = &task_baro_readBuffer[0],
+        .stack_size = sizeof(task_baro_readBuffer),
+        .cb_mem = &task_baro_readControlBlock,
+        .cb_size = sizeof(task_baro_readControlBlock),
+        .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Definitions for task_imu_read */
 osThreadId_t task_imu_readHandle;
-uint32_t task_imu_readBuffer[ 2048 ];
+uint32_t task_imu_readBuffer[1024];
 osStaticThreadDef_t task_imu_readControlBlock;
 const osThreadAttr_t task_imu_read_attributes = {
-  .name = "task_imu_read",
-  .stack_mem = &task_imu_readBuffer[0],
-  .stack_size = sizeof(task_imu_readBuffer),
-  .cb_mem = &task_imu_readControlBlock,
-  .cb_size = sizeof(task_imu_readControlBlock),
-  .priority = (osPriority_t) osPriorityNormal,
+        .name = "task_imu_read",
+        .stack_mem = &task_imu_readBuffer[0],
+        .stack_size = sizeof(task_imu_readBuffer),
+        .cb_mem = &task_imu_readControlBlock,
+        .cb_size = sizeof(task_imu_readControlBlock),
+        .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Definitions for task_state_est */
 osThreadId_t task_state_estHandle;
-uint32_t task_state_estBuffer[ 4096 ];
+uint32_t task_state_estBuffer[1024];
 osStaticThreadDef_t task_state_estControlBlock;
 const osThreadAttr_t task_state_est_attributes = {
-  .name = "task_state_est",
-  .stack_mem = &task_state_estBuffer[0],
-  .stack_size = sizeof(task_state_estBuffer),
-  .cb_mem = &task_state_estControlBlock,
-  .cb_size = sizeof(task_state_estControlBlock),
-  .priority = (osPriority_t) osPriorityNormal,
+        .name = "task_state_est",
+        .stack_mem = &task_state_estBuffer[0],
+        .stack_size = sizeof(task_state_estBuffer),
+        .cb_mem = &task_state_estControlBlock,
+        .cb_size = sizeof(task_state_estControlBlock),
+        .priority = (osPriority_t) osPriorityNormal,
 };
 
 baro_data_t global_baro[3];
@@ -123,7 +124,9 @@ void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 extern void vTaskBaroRead(void *argument);
+
 extern void vTaskImuRead(void *argument);
+
 extern void vTaskStateEst(void *argument);
 /* USER CODE END PFP */
 
@@ -169,7 +172,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 #if (configUSE_TRACE_FACILITY == 1)
-  vTraceEnable(TRC_INIT);
+    vTraceEnable(TRC_INIT);
 #endif
   /* USER CODE END 2 */
 
@@ -177,19 +180,19 @@ int main(void)
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+    /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+    /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+    /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+    /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -197,19 +200,19 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* creation of task_baro_read */
-  task_baro_readHandle = osThreadNew(vTaskBaroRead, NULL, &task_baro_read_attributes);
+    /* creation of task_baro_read */
+    task_baro_readHandle = osThreadNew(vTaskBaroRead, NULL, &task_baro_read_attributes);
 
-  /* creation of task_imu_read */
-  task_imu_readHandle = osThreadNew(vTaskImuRead, NULL, &task_imu_read_attributes);
+    /* creation of task_imu_read */
+    task_imu_readHandle = osThreadNew(vTaskImuRead, NULL, &task_imu_read_attributes);
 
-  /* creation of task_state_est */
-  task_state_estHandle = osThreadNew(vTaskStateEst, NULL, &task_state_est_attributes);
+    /* creation of task_state_est */
+    task_state_estHandle = osThreadNew(vTaskStateEst, NULL, &task_state_est_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
+    /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -218,12 +221,11 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -500,11 +502,11 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -631,8 +633,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, IMU0_CS_Pin|IMU1_CS_Pin|IMU2_CS_Pin|PYRO_1_Pin
-                          |PYRO_2_Pin|GPIO_1_Pin|GPIO_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, IMU0_CS_Pin|IMU1_CS_Pin|IMU2_CS_Pin|SPI2_CS_Pin
+                          |PYRO_1_Pin|PYRO_2_Pin|GPIO_1_Pin|GPIO_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PYRO_3_Pin LED_STATUS_Pin LED_FAULT_Pin */
   GPIO_InitStruct.Pin = PYRO_3_Pin|LED_STATUS_Pin|LED_FAULT_Pin;
@@ -656,6 +658,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI2_CS_Pin */
+  GPIO_InitStruct.Pin = SPI2_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(SPI2_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BUTTON_Pin */
   GPIO_InitStruct.Pin = BUTTON_Pin;
@@ -681,16 +690,36 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
-  osDelay(3000);
+    osDelay(3000);
+    //UsbPrint("Starting default task..\n");
 #if (configUSE_TRACE_FACILITY == 1)
-  vTraceEnable(TRC_START_AWAIT_HOST);
-  HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+    vTraceEnable(TRC_START_AWAIT_HOST);
+    HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
 #endif
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1000);
-  }
+//    osDelay(5000);
+//    W25qxx_Init();
+//    UsbPrint("Deleting everything from sector 1...");
+//    W25qxx_EraseSector(1);
+//    /* Infinite loop */
+//    UsbPrint("Deleting done\n");
+//    uint8_t* write_buf = calloc(256, sizeof(uint8_t));//{ 0 };
+//    uint8_t* read_buf = calloc(256, sizeof(uint8_t));//{ 0 };
+//    uint32_t i = 16;
+//    for (uint16_t j = 0; j < 256; j++){
+//        write_buf[j] = 255 - j;
+//    }
+    for (;;) {
+//        W25qxx_WritePage(write_buf, i, 0, 256);
+//        W25qxx_ReadPage(read_buf, i, 0, 256);
+//        UsbPrint("Read Buffer, page = %d\n", i);
+//        for (uint16_t j = 0; j < 256; j++){
+//            UsbPrint("%d, ", read_buf[j]);
+//            read_buf[j] = 0;
+//        }
+//        UsbPrint("\n");
+//        ++i;
+        osDelay(100);
+    }
   /* USER CODE END 5 */
 }
 
@@ -722,11 +751,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1) {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 

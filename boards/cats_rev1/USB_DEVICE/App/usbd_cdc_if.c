@@ -264,10 +264,10 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
 #if ( configUSE_TRACE_FACILITY == 1 )
-	for (uint32_t i = 0; i < *Len; i++) {
-      commandBuffer.data[commandBuffer.idx] = Buf[i];
-      commandBuffer.idx++;
-	}
+    for (uint32_t i = 0; i < *Len; i++) {
+        commandBuffer.data[commandBuffer.idx] = Buf[i];
+        commandBuffer.idx++;
+    }
 #endif
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);

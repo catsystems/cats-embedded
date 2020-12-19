@@ -31,6 +31,7 @@ uint8_t UsbPrint(const char *format, ...) {
 		va_end(argptr);
 		ret = CDC_Transmit_FS((uint8_t*) print_buffer, strlen(print_buffer));
 		osMutexRelease(print_mutex);
+		osDelay(2);
 	//}
 #endif
 	return ret;
