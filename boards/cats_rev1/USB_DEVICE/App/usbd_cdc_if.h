@@ -100,7 +100,7 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-recBuf commandBuffer;
+extern recBuf commandBuffer;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**

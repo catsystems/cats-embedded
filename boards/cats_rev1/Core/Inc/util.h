@@ -89,9 +89,9 @@ static const imu_data_t EMPTY_IMU = { 0 };
 #endif
 
 #ifdef DEBUG
-osMutexId_t print_mutex;
 #define PRINT_BUFFER_LEN 200
-char print_buffer[PRINT_BUFFER_LEN];
+extern osMutexId_t print_mutex;
+extern char print_buffer[PRINT_BUFFER_LEN];
 #endif
 
 uint8_t UsbPrint(const char *format, ...);

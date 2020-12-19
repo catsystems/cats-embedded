@@ -79,7 +79,7 @@ const osThreadAttr_t task_baro_read_attributes = {
 
 /* Definitions for task_imu_read */
 osThreadId_t task_imu_readHandle;
-uint32_t task_imu_readBuffer[ 4096 ];
+uint32_t task_imu_readBuffer[ 2048 ];
 osStaticThreadDef_t task_imu_readControlBlock;
 const osThreadAttr_t task_imu_read_attributes = {
   .name = "task_imu_read",

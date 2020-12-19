@@ -42,8 +42,8 @@ void initialize_matrices(kalman_filter_t *filter){
 	memcpy(filter->Ad_T, A_dash_T, 9*sizeof(A_dash_T[0][0]));
 	memcpy(filter->Gd, G_dash, 3*sizeof(G_dash[0]));
 	memcpy(filter->Bd, B_dash, 3*sizeof(B_dash[0]));
-	memcpy(filter->P_hat, P_dash, 9*sizeof(P_dash[0]));
-	memcpy(filter->P_bar, P_dash, 9*sizeof(P_dash[0]));
+	memcpy(filter->P_hat, P_dash, 9*sizeof(float));
+	memcpy(filter->P_bar, P_dash, 9*sizeof(float));
 	memcpy(filter->x_hat, x_dash, 3*sizeof(x_dash[0]));
 	memcpy(filter->x_bar, x_dash, 3*sizeof(x_dash[0]));
 	filter->Q = Q_dash;

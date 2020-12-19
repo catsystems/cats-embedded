@@ -15,6 +15,11 @@
 
 /** USB DEBUGGING SECTION **/
 
+#ifdef DEBUG
+osMutexId_t print_mutex;
+char print_buffer[PRINT_BUFFER_LEN];
+#endif
+
 uint8_t UsbPrint(const char *format, ...) {
 	uint8_t ret = 1;
 #ifdef DEBUG
