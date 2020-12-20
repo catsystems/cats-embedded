@@ -6,6 +6,7 @@
  */
 
 #include "tasks/task_state_est.h"
+#include "control/kalman_filter.h"
 
 #include <math.h>
 #include <stdlib.h>

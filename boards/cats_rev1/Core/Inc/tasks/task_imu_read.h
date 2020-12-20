@@ -9,9 +9,6 @@
 #define INC_TASK_IMU_READ_H_
 
 /* Includes */
-#include "stm32l4xx_hal.h"
-#include "cmsis_os.h"
-#include "main.h"
 #include "util.h"
 
 /* Constants */
