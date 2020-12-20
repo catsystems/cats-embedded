@@ -7,8 +7,6 @@
 
 #include "tasks/task_imu_read.h"
 #include "drivers/icm20601.h"
-#include "usb_device.h"
-#include "usbd_cdc_if.h"
 
 
 void vInitImu20601();
@@ -69,7 +67,7 @@ void vTaskImuRead(void *argument) {
 
 void vInitImu20601() {
 	osDelayUntil(1000);
-	uint8_t r = 0;
+	uint8_t r;
 	do {
 		r = icm20601_init(&ICM1);
 		HAL_Delay(10);

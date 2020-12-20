@@ -25,12 +25,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "util.h"
-//#include "drivers/w25qxx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
 typedef StaticTask_t osStaticThreadDef_t;
+/* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
 
@@ -56,51 +55,56 @@ TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
 
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
+/* Definitions for task_init */
+osThreadId_t task_initHandle;
+uint32_t task_init_buffer[ 256 ];
+osStaticThreadDef_t task_init_control_block;
+const osThreadAttr_t task_init_attributes = {
+  .name = "task_init",
+  .stack_mem = &task_init_buffer[0],
+  .stack_size = sizeof(task_init_buffer),
+  .cb_mem = &task_init_control_block,
+  .cb_size = sizeof(task_init_control_block),
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
 };
 /* USER CODE BEGIN PV */
 
 /* Definitions for task_baro_read */
 osThreadId_t task_baro_readHandle;
-uint32_t task_baro_readBuffer[2048];
-osStaticThreadDef_t task_baro_readControlBlock;
+uint32_t task_baro_read_buffer[2048];
+osStaticThreadDef_t task_baro_read_control_block;
 const osThreadAttr_t task_baro_read_attributes = {
         .name = "task_baro_read",
-        .stack_mem = &task_baro_readBuffer[0],
-        .stack_size = sizeof(task_baro_readBuffer),
-        .cb_mem = &task_baro_readControlBlock,
-        .cb_size = sizeof(task_baro_readControlBlock),
+        .stack_mem = &task_baro_read_buffer[0],
+        .stack_size = sizeof(task_baro_read_buffer),
+        .cb_mem = &task_baro_read_control_block,
+        .cb_size = sizeof(task_baro_read_control_block),
         .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Definitions for task_imu_read */
 osThreadId_t task_imu_readHandle;
-uint32_t task_imu_readBuffer[1024];
-osStaticThreadDef_t task_imu_readControlBlock;
+uint32_t task_imu_read_buffer[1024];
+osStaticThreadDef_t task_imu_read_control_block;
 const osThreadAttr_t task_imu_read_attributes = {
         .name = "task_imu_read",
-        .stack_mem = &task_imu_readBuffer[0],
-        .stack_size = sizeof(task_imu_readBuffer),
-        .cb_mem = &task_imu_readControlBlock,
-        .cb_size = sizeof(task_imu_readControlBlock),
+        .stack_mem = &task_imu_read_buffer[0],
+        .stack_size = sizeof(task_imu_read_buffer),
+        .cb_mem = &task_imu_read_control_block,
+        .cb_size = sizeof(task_imu_read_control_block),
         .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Definitions for task_state_est */
 osThreadId_t task_state_estHandle;
-uint32_t task_state_estBuffer[1024];
-osStaticThreadDef_t task_state_estControlBlock;
+uint32_t task_state_est_buffer[1024];
+osStaticThreadDef_t task_state_est_control_block;
 const osThreadAttr_t task_state_est_attributes = {
         .name = "task_state_est",
-        .stack_mem = &task_state_estBuffer[0],
-        .stack_size = sizeof(task_state_estBuffer),
-        .cb_mem = &task_state_estControlBlock,
-        .cb_size = sizeof(task_state_estControlBlock),
+        .stack_mem = &task_state_est_buffer[0],
+        .stack_size = sizeof(task_state_est_buffer),
+        .cb_mem = &task_state_est_control_block,
+        .cb_size = sizeof(task_state_est_control_block),
         .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -120,7 +124,7 @@ static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
-void StartDefaultTask(void *argument);
+void vTaskInit(void *argument);
 
 /* USER CODE BEGIN PFP */
 extern void vTaskBaroRead(void *argument);
@@ -171,6 +175,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  MX_USB_DEVICE_Init();
 #if (configUSE_TRACE_FACILITY == 1)
     vTraceEnable(TRC_INIT);
 #endif
@@ -196,8 +201,8 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of task_init */
+  task_initHandle = osThreadNew(vTaskInit, NULL, &task_init_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* creation of task_baro_read */
@@ -678,46 +683,19 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_vTaskInit */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the task_init thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_vTaskInit */
+__weak void vTaskInit(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
-    osDelay(3000);
-    //UsbPrint("Starting default task..\n");
-#if (configUSE_TRACE_FACILITY == 1)
-    vTraceEnable(TRC_START_AWAIT_HOST);
-    HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-#endif
-//    osDelay(5000);
-//    W25qxx_Init();
-//    UsbPrint("Deleting everything from sector 1...");
-//    W25qxx_EraseSector(1);
-//    /* Infinite loop */
-//    UsbPrint("Deleting done\n");
-//    uint8_t* write_buf = calloc(256, sizeof(uint8_t));//{ 0 };
-//    uint8_t* read_buf = calloc(256, sizeof(uint8_t));//{ 0 };
-//    uint32_t i = 16;
-//    for (uint16_t j = 0; j < 256; j++){
-//        write_buf[j] = 255 - j;
-//    }
     for (;;) {
-//        W25qxx_WritePage(write_buf, i, 0, 256);
-//        W25qxx_ReadPage(read_buf, i, 0, 256);
-//        UsbPrint("Read Buffer, page = %d\n", i);
-//        for (uint16_t j = 0; j < 256; j++){
-//            UsbPrint("%d, ", read_buf[j]);
-//            read_buf[j] = 0;
-//        }
-//        UsbPrint("\n");
-//        ++i;
         osDelay(100);
     }
   /* USER CODE END 5 */

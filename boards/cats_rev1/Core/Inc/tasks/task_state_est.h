@@ -9,12 +9,9 @@
 #define INC_TASK_STATE_EST_H_
 
 /* Includes */
-#include "stm32l4xx_hal.h"
-#include "cmsis_os.h"
-#include "main.h"
 #include "util.h"
-#include "control/kalman_filter.h"
-#include "control/sensor_elemination.h"
+
+
 
 /* Constants */
 #define STATE_EST_SAMPLING_FREQ 100

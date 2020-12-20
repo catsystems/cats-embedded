@@ -9,16 +9,12 @@
 #define INC_TASK_BARO_READ_H_
 
 /* Includes */
-#include "stm32l4xx_hal.h"
-#include "cmsis_os.h"
-#include "main.h"
 #include "util.h"
 
 /* Constants */
 #define BARO_SAMPLING_FREQ 300
 
 /* Extern */
-extern I2C_HandleTypeDef hi2c1;
 extern baro_data_t global_baro[3];
 
 /* Tasks */

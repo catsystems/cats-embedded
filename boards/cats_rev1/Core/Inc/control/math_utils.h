@@ -16,6 +16,7 @@
 #endif /* INC_CONTROL_MATH_UTILS_H_ */
 
 
+
 /* Calculates the transpose of a Matrix */
 void transpose(int m, int n, float A[m][n], float A_T[n][m]);
 
