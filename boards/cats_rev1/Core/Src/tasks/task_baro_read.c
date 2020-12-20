@@ -9,7 +9,11 @@
 #include "tasks/task_baro_read.h"
 
 void vInitBaro();
-void vReadBaro(int32_t *temperature, int32_t *pressure, int32_t id);
+void vPrepareTemp();
+void vPreparePres();
+void vReadPres(int32_t *pressure);
+void vReadTemp(int32_t *temperature);
+
 
 MS5607 MS1 = MS5607_INIT1();
 MS5607 MS2 = MS5607_INIT2();
@@ -23,27 +27,32 @@ void vTaskBaroRead(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
   /* actual measurements from sensor */
-  int32_t temperature;
-  int32_t pressure;
+  int32_t temperature[3];
+  int32_t pressure[3];
 
   vInitBaro();
-  int32_t baro_idx = 0;
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / BARO_SAMPLING_FREQ;
   while (1) {
     tick_count += tick_update;
-    vReadBaro(&temperature, &pressure, baro_idx);
+    vPrepareTemp();
+    osDelay(2);
+    vReadTemp(temperature);
+    vPreparePres();
+    osDelay(2);
+    vReadPres(pressure);
+
 
     //		UsbPrint("BARO %ld: %ld; T: %ld; t: %ld\n", baro_idx, pressure,
     //				temperature, tick_count);
+    for(int i = 0; i < 3; i++){
+    	global_baro[i].pressure = pressure[i];
+		global_baro[i].temperature = temperature[i];
+		global_baro[i].ts = tick_count;
+    }
 
-    global_baro[baro_idx].pressure = pressure;
-    global_baro[baro_idx].temperature = temperature;
-    global_baro[baro_idx].ts = tick_count;
-
-    baro_idx = (baro_idx + 1) % 3;
     osDelayUntil(tick_count);
   }
 }
@@ -54,18 +63,28 @@ void vInitBaro() {
   ms5607_init(&MS3);
 }
 
-void vReadBaro(int32_t *temperature, int32_t *pressure, int32_t id) {
-  switch (id) {
-    case 0:
-      ms5607_read_pres_temp(&MS1, temperature, pressure);
-      break;
-    case 1:
-      ms5607_read_pres_temp(&MS2, temperature, pressure);
-      break;
-    case 2:
-      ms5607_read_pres_temp(&MS3, temperature, pressure);
-      break;
-    default:
-      break;
-  }
+void vPrepareTemp() {
+	ms5607_prepare_temp(&MS1);
+	ms5607_prepare_temp(&MS2);
+	ms5607_prepare_temp(&MS3);
 }
+
+void vPreparePres() {
+	ms5607_prepare_pres(&MS1);
+	ms5607_prepare_pres(&MS2);
+	ms5607_prepare_pres(&MS3);
+}
+
+void vReadPres(int32_t *pressure){
+	ms5607_read_pres(&MS1, &pressure[0]);
+	ms5607_read_pres(&MS2, &pressure[1]);
+	ms5607_read_pres(&MS3, &pressure[2]);
+}
+
+void vReadTemp(int32_t *temperature){
+	ms5607_read_temp(&MS1, &temperature[0]);
+	ms5607_read_temp(&MS2, &temperature[1]);
+	ms5607_read_temp(&MS3, &temperature[2]);
+}
+
+

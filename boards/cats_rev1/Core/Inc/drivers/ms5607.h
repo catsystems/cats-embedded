@@ -55,18 +55,25 @@ typedef struct ms5607_dev {
 
   // Calibration coefficients
   uint16_t coefficients[6];
+
+  int64_t dT;
 } MS5607;
 
 // *** Extern *** //
 
 extern void ms5607_init(struct ms5607_dev *dev);
 
-extern void ms5607_read_raw_pres_temp(struct ms5607_dev *dev,
-                                      int32_t *pressure_raw,
-                                      int32_t *temperature_raw);
+//extern void ms5607_read_raw_pres_temp(struct ms5607_dev *dev,
+//                                      int32_t *pressure_raw,
+//                                      int32_t *temperature_raw);
 
-extern void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t *temperature,
-                                  int32_t *pressure);
+//extern void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t *temperature,
+//                                  int32_t *pressure);
+
+extern void ms5607_prepare_temp(struct ms5607_dev *dev);
+extern void ms5607_prepare_pres(struct ms5607_dev *dev);
+extern void ms5607_read_pres(struct ms5607_dev *dev, int32_t *pressure);
+extern void ms5607_read_temp(struct ms5607_dev *dev, int32_t *temperature);
 
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;

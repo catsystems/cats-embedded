@@ -12,7 +12,7 @@
 #include "util.h"
 
 /* Constants */
-#define BARO_SAMPLING_FREQ 300
+#define BARO_SAMPLING_FREQ 100
 
 /* Extern */
 extern baro_data_t global_baro[3];

@@ -20,7 +20,7 @@ uint32_t _get_conversion_ticks(struct ms5607_dev *dev) {
   time =
       (BARO_CONVERSION_TIME_OSR_BASE * (dev->osr + 1) * osKernelGetTickFreq()) /
       1000;
-  if (time < 2) time = 2;
+  if (time < 1) time = 1;
   return time;
 }
 
@@ -117,3 +117,59 @@ void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t *temperature,
   /* Pressure in 110002 = 1100.02 mbar */
   *pressure = (int32_t)((((pressure_raw * SENS) >> 21) - OFF) >> 15);
 }
+
+void _ms5607_read_pres_raw(struct ms5607_dev *dev, int32_t *pressure) {
+	uint8_t rec[3] = {0};
+	_ms_read_bytes(dev, COMMAND_ADC_READ, rec, 3);
+	*pressure = (rec[0] << 16) | (rec[1] << 8) | rec[2];
+}
+
+void _ms5607_read_temp_raw(struct ms5607_dev *dev, int32_t *temperature) {
+	uint8_t rec[3] = {0};
+	_ms_read_bytes(dev, COMMAND_ADC_READ, rec, 3);
+	*temperature = (rec[0] << 16) | (rec[1] << 8) | rec[2];
+}
+
+void ms5607_prepare_temp(struct ms5607_dev *dev){
+	uint8_t command;
+	command = COMMAND_CONVERT_D2_BASE + (dev->osr * 2);
+	_ms_write_command(dev, command);
+}
+
+void ms5607_prepare_pres(struct ms5607_dev *dev){
+	uint8_t command;
+	command = COMMAND_CONVERT_D1_BASE + (dev->osr * 2);
+	_ms_write_command(dev, command);
+}
+
+void ms5607_read_pres(struct ms5607_dev *dev, int32_t *pressure) {
+  int32_t pressure_raw;
+  int64_t OFF, SENS;
+
+  _ms5607_read_pres_raw(dev, &pressure_raw);
+
+  // Calculate real values with coefficients
+
+  OFF = ((int64_t)dev->coefficients[1] << 17) +
+        ((dev->coefficients[3] * dev->dT) >> 6);
+  SENS = ((int64_t)dev->coefficients[0] << 16) +
+         ((dev->coefficients[2] * dev->dT) >> 7);
+  /* Pressure in 110002 = 1100.02 mbar */
+  *pressure = (int32_t)((((pressure_raw * SENS) >> 21) - OFF) >> 15);
+}
+
+void ms5607_read_temp(struct ms5607_dev *dev, int32_t *temperature) {
+  int32_t temperature_raw;
+
+  _ms5607_read_temp_raw(dev, &temperature_raw);
+
+  // Calculate real values with coefficients
+
+
+
+  dev->dT = temperature_raw - ((int32_t)dev->coefficients[4] << 8);
+  /* Temperature in 2000  = 20.00° C */
+  *temperature = (int32_t)2000 + (dev->dT * dev->coefficients[5] >> 23);
+}
+
+
