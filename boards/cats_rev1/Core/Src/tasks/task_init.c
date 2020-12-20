@@ -9,10 +9,10 @@
 
 void vTaskInit(void* argument) {
   osDelay(3000);
-  #if (configUSE_TRACE_FACILITY == 1)
-    vTraceEnable(TRC_START_AWAIT_HOST);
-    HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-  #endif
+#if (configUSE_TRACE_FACILITY == 1)
+  vTraceEnable(TRC_START_AWAIT_HOST);
+  HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+#endif
   //  osDelay(5000);
   //  W25qxx_Init();
   //  UsbPrint("Deleting everything from sector 1...");

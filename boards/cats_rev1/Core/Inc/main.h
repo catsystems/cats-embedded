@@ -1,22 +1,22 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under Ultimate Liberty license
+ * SLA0044, the "License"; You may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at:
+ *                             www.st.com/SLA0044
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -60,32 +60,32 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define PYRO_3_Pin GPIO_PIN_13
-#define PYRO_3_GPIO_Port GPIOC
-#define LED_STATUS_Pin GPIO_PIN_14
+#define PYRO_3_Pin           GPIO_PIN_13
+#define PYRO_3_GPIO_Port     GPIOC
+#define LED_STATUS_Pin       GPIO_PIN_14
 #define LED_STATUS_GPIO_Port GPIOC
-#define LED_FAULT_Pin GPIO_PIN_15
-#define LED_FAULT_GPIO_Port GPIOC
-#define BUZZER_Pin GPIO_PIN_3
-#define BUZZER_GPIO_Port GPIOA
-#define IMU0_CS_Pin GPIO_PIN_0
-#define IMU0_CS_GPIO_Port GPIOB
-#define IMU1_CS_Pin GPIO_PIN_1
-#define IMU1_CS_GPIO_Port GPIOB
-#define IMU2_CS_Pin GPIO_PIN_2
-#define IMU2_CS_GPIO_Port GPIOB
-#define SPI2_CS_Pin GPIO_PIN_12
-#define SPI2_CS_GPIO_Port GPIOB
-#define BUTTON_Pin GPIO_PIN_8
-#define BUTTON_GPIO_Port GPIOA
-#define PYRO_1_Pin GPIO_PIN_4
-#define PYRO_1_GPIO_Port GPIOB
-#define PYRO_2_Pin GPIO_PIN_5
-#define PYRO_2_GPIO_Port GPIOB
-#define GPIO_1_Pin GPIO_PIN_8
-#define GPIO_1_GPIO_Port GPIOB
-#define GPIO_2_Pin GPIO_PIN_9
-#define GPIO_2_GPIO_Port GPIOB
+#define LED_FAULT_Pin        GPIO_PIN_15
+#define LED_FAULT_GPIO_Port  GPIOC
+#define BUZZER_Pin           GPIO_PIN_3
+#define BUZZER_GPIO_Port     GPIOA
+#define IMU0_CS_Pin          GPIO_PIN_0
+#define IMU0_CS_GPIO_Port    GPIOB
+#define IMU1_CS_Pin          GPIO_PIN_1
+#define IMU1_CS_GPIO_Port    GPIOB
+#define IMU2_CS_Pin          GPIO_PIN_2
+#define IMU2_CS_GPIO_Port    GPIOB
+#define SPI2_CS_Pin          GPIO_PIN_12
+#define SPI2_CS_GPIO_Port    GPIOB
+#define BUTTON_Pin           GPIO_PIN_8
+#define BUTTON_GPIO_Port     GPIOA
+#define PYRO_1_Pin           GPIO_PIN_4
+#define PYRO_1_GPIO_Port     GPIOB
+#define PYRO_2_Pin           GPIO_PIN_5
+#define PYRO_2_GPIO_Port     GPIOB
+#define GPIO_1_Pin           GPIO_PIN_8
+#define GPIO_1_GPIO_Port     GPIOB
+#define GPIO_2_Pin           GPIO_PIN_9
+#define GPIO_2_GPIO_Port     GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
