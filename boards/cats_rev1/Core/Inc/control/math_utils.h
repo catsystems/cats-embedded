@@ -15,7 +15,7 @@
 
 #endif /* INC_CONTROL_MATH_UTILS_H_ */
 
-/* Creates Identitiy Matrix of size dim */
+/* Creates the Identity Matrix of size dim */
 void eye(int dim, float A[dim][dim]);
 
 /* Calculates the transpose of a Matrix */
@@ -24,13 +24,13 @@ void transpose(int m, int n, float A[m][n], float A_T[n][m]);
 /* Calculates the addition of two vectors */
 void vecadd(int n, float a[n], float b[n], float c[n]);
 
-/* Calculates the substraction of two vectors */
+/* Calculates the subtraction of two vectors */
 void vecsub(int n, float a[n], float b[n], float c[n]);
 
 /* Calculates the addition of two matrices */
 void matadd(int m, int n, float A[m][n], float B[m][n], float C[m][n]);
 
-/* Calculates the substraction of two matrices */
+/* Calculates the subtraction of two matrices */
 void matsub(int m, int n, float A[m][n], float B[m][n], float C[m][n]);
 
 /* Calculates the matrix multiplication of two matrices */

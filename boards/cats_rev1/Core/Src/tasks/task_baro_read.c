@@ -7,8 +7,6 @@
 
 #include "drivers/ms5607.h"
 #include "tasks/task_baro_read.h"
-#include "usb_device.h"
-#include "usbd_cdc_if.h"
 
 void vInitBaro();
 void vReadBaro(int32_t *temperature, int32_t *pressure, int32_t id);

@@ -15,16 +15,16 @@ void initialize_matrices(kalman_filter_t *filter){
 	transpose(3, 3, A_dash, A_dash_T);
 	float G_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
 	float B_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
-	float Q_dash = 0.01;
-	float P_dash[3][3] = {{0.00001, 0, 0},{0, 0.00001, 0},{0, 0, 0.00001}};
+	float Q_dash = 0.01f;
+	float P_dash[3][3] = {{0.00001f, 0, 0},{0, 0.00001f, 0},{0, 0, 0.00001f}};
 	float H_full_dash[3][3] = {{1, 0, 0},{1, 0, 0},{1, 0, 0}};
 	float H_full_dash_T[3][3] = { 0 };
 	transpose(3, 3, H_full_dash, H_full_dash_T);
 	float H_eliminated_dash[2][3] = {{1, 0, 0}, {1, 0, 0}};
 	float H_eliminated_dash_T[3][2] = { 0 };
 	transpose(2, 3, H_eliminated_dash, H_eliminated_dash_T);
-	float R_full_dash[3][3] = {{0.00001, 0, 0}, {0, 0.00001, 0}, {0, 0, 0.00001}};
-	float R_eliminated_dash[2][2] = {{0.00001, 0}, {0, 0.00001}};
+	float R_full_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
+	float R_eliminated_dash[2][2] = {{0.00001f, 0}, {0, 0.00001f}};
 	float x_dash[3] = {0, 0, 0};
 
 	float GdQGd_T_dash[3][3] = { 0 };
@@ -38,22 +38,26 @@ void initialize_matrices(kalman_filter_t *filter){
 	GdQGd_T_dash[2][1] = Q_dash*G_dash[2]*G_dash[1];
 	GdQGd_T_dash[2][2] = Q_dash*G_dash[2]*G_dash[2];
 
-	memcpy(filter->Ad, A_dash, 9*sizeof(A_dash[0][0]));
-	memcpy(filter->Ad_T, A_dash_T, 9*sizeof(A_dash_T[0][0]));
-	memcpy(filter->Gd, G_dash, 3*sizeof(G_dash[0]));
-	memcpy(filter->Bd, B_dash, 3*sizeof(B_dash[0]));
-	memcpy(filter->P_hat, P_dash, 9*sizeof(float));
-	memcpy(filter->P_bar, P_dash, 9*sizeof(float));
-	memcpy(filter->x_hat, x_dash, 3*sizeof(x_dash[0]));
-	memcpy(filter->x_bar, x_dash, 3*sizeof(x_dash[0]));
+	const size_t flt_3x3_size = 9*sizeof(float);
+	const size_t flt_3_size = 3*sizeof(float);
+	const size_t flt_2x3_size = 6*sizeof(float);
+	const size_t flt_2x2_size = 4*sizeof(float);
+	memcpy(filter->Ad, A_dash, flt_3x3_size);
+	memcpy(filter->Ad_T, A_dash_T, flt_3x3_size);
+	memcpy(filter->Gd, G_dash, flt_3_size);
+	memcpy(filter->Bd, B_dash, flt_3_size);
+	memcpy(filter->P_hat, P_dash, flt_3x3_size);
+	memcpy(filter->P_bar, P_dash, flt_3x3_size);
+	memcpy(filter->x_hat, x_dash, flt_3_size);
+	memcpy(filter->x_bar, x_dash, flt_3_size);
 	filter->Q = Q_dash;
-	memcpy(filter->H_full, H_full_dash, 9*sizeof(H_full_dash[0][0]));
-	memcpy(filter->H_full_T, H_full_dash_T, 9*sizeof(H_full_dash_T[0][0]));
-	memcpy(filter->H_eliminated, H_eliminated_dash, 6*sizeof(H_eliminated_dash[0][0]));
-	memcpy(filter->H_eliminated_T, H_eliminated_dash_T, 6*sizeof(H_eliminated_dash_T[0][0]));
-	memcpy(filter->R_full, R_full_dash, 9*sizeof(R_full_dash[0][0]));
-	memcpy(filter->R_eliminated, R_eliminated_dash, 4*sizeof(R_eliminated_dash[0][0]));
-	memcpy(filter->GdQGd_T, GdQGd_T_dash, 9*sizeof(GdQGd_T_dash[0][0]));
+	memcpy(filter->H_full, H_full_dash, flt_3x3_size);
+	memcpy(filter->H_full_T, H_full_dash_T, flt_3x3_size);
+	memcpy(filter->H_eliminated, H_eliminated_dash, flt_2x3_size);
+	memcpy(filter->H_eliminated_T, H_eliminated_dash_T, flt_2x3_size);
+	memcpy(filter->R_full, R_full_dash, flt_3x3_size);
+	memcpy(filter->R_eliminated, R_eliminated_dash, flt_2x2_size);
+	memcpy(filter->GdQGd_T, GdQGd_T_dash, flt_3x3_size);
 }
 
 void kalman_step(kalman_filter_t *filter, state_estimation_data_t *data){
