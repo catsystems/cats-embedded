@@ -7,35 +7,7 @@
 
 #include "control/math_utils.h"
 
-void matmul(int m, int n, int o, float A[m][n], float B[n][o], float C[m][o]) {
-	for(int i = 0; i < m; i++){
-		for(int j = 0; j < o; j++){
-			for(int k = 0; k < n; k++){
-				C[i][j] +=  A[i][k] * B[k][j];
-			}
-		}
-	}
-}
 
-void matvecprod(int m, int n, float A[m][n], float b[n], float c[m]) {
-	for(int i = 0; i < m; i++){
-		for(int j = 0; j < n; j++){
-			c[i] += A[i][j] * b[j];
-		}
-	}
-
-}
-void eye(int dim, float A[dim][dim]) {
-	for(int i = 0; i < dim; i++){
-		for(int j = 0; j < dim; j++){
-			if (i == j){
-				A[i][j] = 1;
-			} else {
-				A[i][j] = 0;
-			}
-		}
-	}
-}
 
 void transpose(int m, int n, float A[m][n], float A_T[n][m]) {
 	for(int i = 0; i < m; i++){
@@ -45,33 +17,6 @@ void transpose(int m, int n, float A[m][n], float A_T[n][m]) {
 	}
 }
 
-void vecadd(int n, float a[n], float b[n], float c[n]) {
-	for(int i = 0; i < n; i++){
-		c[i] = a[i] + b[i];
-	}
-}
-
-void vecsub(int n, float a[n], float b[n], float c[n]) {
-	for(int i = 0; i < n; i++){
-		c[i] = a[i] - b[i];
-	}
-}
-
-void matadd(int m, int n, float A[m][n], float B[m][n], float C[m][n]) {
-	for(int i = 0; i < m; i++){
-		for(int j = 0; j < n; j++){
-			C[i][j] =  A[i][j] + B[i][j];
-		}
-	}
-}
-
-void matsub(int m, int n, float A[m][n], float B[m][n], float C[m][n]) {
-	for(int i = 0; i < m; i++){
-		for(int j = 0; j < n; j++){
-			C[i][j] =  A[i][j] - B[i][j];
-		}
-	}
-}
 
 /* Function to get cofactor of A[p][q] in temp[][]. n is current dimension of A[][] */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */

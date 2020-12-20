@@ -15,7 +15,7 @@ void initialize_matrices(kalman_filter_t *filter){
 	transpose(3, 3, A_dash, A_dash_T);
 	float G_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
 	float B_dash[3] = {filter->t_sampl*filter->t_sampl/2, filter->t_sampl, 0};
-	float Q_dash = 0.01;
+	float Q_dash = 1;
 	float P_dash[3][3] = {{0.00001, 0, 0},{0, 0.00001, 0},{0, 0, 0.00001}};
 	float H_full_dash[3][3] = {{1, 0, 0},{1, 0, 0},{1, 0, 0}};
 	float H_full_dash_T[3][3] = { 0 };
@@ -23,7 +23,7 @@ void initialize_matrices(kalman_filter_t *filter){
 	float H_eliminated_dash[2][3] = {{1, 0, 0}, {1, 0, 0}};
 	float H_eliminated_dash_T[3][2] = { 0 };
 	transpose(2, 3, H_eliminated_dash, H_eliminated_dash_T);
-	float R_full_dash[3][3] = {{0.00001, 0, 0}, {0, 0.00001, 0}, {0, 0, 0.00001}};
+	float R_full_dash[3][3] = {{0.1, 0, 0}, {0, 0.1, 0}, {0, 0, 0.1}};
 	float R_eliminated_dash[2][2] = {{0.00001, 0}, {0, 0.00001}};
 	float x_dash[3] = {0, 0, 0};
 
@@ -38,102 +38,169 @@ void initialize_matrices(kalman_filter_t *filter){
 	GdQGd_T_dash[2][1] = Q_dash*G_dash[2]*G_dash[1];
 	GdQGd_T_dash[2][2] = Q_dash*G_dash[2]*G_dash[2];
 
-	memcpy(filter->Ad, A_dash, 9*sizeof(A_dash[0][0]));
-	memcpy(filter->Ad_T, A_dash_T, 9*sizeof(A_dash_T[0][0]));
-	memcpy(filter->Gd, G_dash, 3*sizeof(G_dash[0]));
-	memcpy(filter->Bd, B_dash, 3*sizeof(B_dash[0]));
+	memcpy(filter->Ad, A_dash, 9*sizeof(float));
+	memcpy(filter->Ad_T, A_dash_T, 9*sizeof(float));
+	memcpy(filter->Gd, G_dash, 3*sizeof(float));
+	memcpy(filter->Bd, B_dash, 3*sizeof(float));
 	memcpy(filter->P_hat, P_dash, 9*sizeof(float));
 	memcpy(filter->P_bar, P_dash, 9*sizeof(float));
-	memcpy(filter->x_hat, x_dash, 3*sizeof(x_dash[0]));
-	memcpy(filter->x_bar, x_dash, 3*sizeof(x_dash[0]));
+	memcpy(filter->x_hat, x_dash, 3*sizeof(float));
+	memcpy(filter->x_bar, x_dash, 3*sizeof(float));
 	filter->Q = Q_dash;
-	memcpy(filter->H_full, H_full_dash, 9*sizeof(H_full_dash[0][0]));
-	memcpy(filter->H_full_T, H_full_dash_T, 9*sizeof(H_full_dash_T[0][0]));
-	memcpy(filter->H_eliminated, H_eliminated_dash, 6*sizeof(H_eliminated_dash[0][0]));
-	memcpy(filter->H_eliminated_T, H_eliminated_dash_T, 6*sizeof(H_eliminated_dash_T[0][0]));
-	memcpy(filter->R_full, R_full_dash, 9*sizeof(R_full_dash[0][0]));
-	memcpy(filter->R_eliminated, R_eliminated_dash, 4*sizeof(R_eliminated_dash[0][0]));
-	memcpy(filter->GdQGd_T, GdQGd_T_dash, 9*sizeof(GdQGd_T_dash[0][0]));
+	memcpy(filter->H_full, H_full_dash, 9*sizeof(float));
+	memcpy(filter->H_full_T, H_full_dash_T, 9*sizeof(float));
+	memcpy(filter->H_eliminated, H_eliminated_dash, 6*sizeof(float));
+	memcpy(filter->H_eliminated_T, H_eliminated_dash_T, 6*sizeof(float));
+	memcpy(filter->R_full, R_full_dash, 9*sizeof(float));
+	memcpy(filter->R_eliminated, R_eliminated_dash, 4*sizeof(float));
+	memcpy(filter->GdQGd_T, GdQGd_T_dash, 9*sizeof(float));
 }
 
-void kalman_step(kalman_filter_t *filter, state_estimation_data_t *data){
+osStatus_t kalman_step(kalman_filter_t *filter, state_estimation_data_t *data){
 	float u = 0;
-	float placeholder1[3] = { 0 };
-	float placeholder2[3] = { 0 };
-
-	/* Prediction Step */
-	for(int i = 0; i < 3; i++){
-		u = u + data->acceleration[i];
-	}
-	for(int i = 0; i < 3; i++){
-		placeholder1[i] = ((float)(1)/3)*u*filter->Bd[i];
-	}
-
-	matvecprod(3, 3, filter->Ad, filter->x_bar, placeholder2);
-	memset(filter->x_hat, 0, 3*sizeof(filter->x_hat[0]));
-	vecadd(3, placeholder1, placeholder2, filter->x_hat);
-
-	float placeholder_mat1[3][3] = { 0 };
+	float placeholder_vec[3] = { 0 };
+	float placeholder_mat[3][3] = { 0 };
 	float placeholder_mat2[3][3] = { 0 };
 	float placeholder_mat3[3][3] = { 0 };
-	matmul(3, 3, 3, filter->Ad, filter->P_bar, placeholder_mat1);
-	matmul(3, 3, 3, placeholder_mat1, filter->Ad_T, placeholder_mat2);
+	osStatus_t status = osOK;
 
+	/* Prediction Step */
+
+	memset(filter->x_hat, 0, sizeof(filter->x_hat));
 	memset(filter->P_hat, 0, sizeof(filter->P_hat));
-	matadd(3, 3, placeholder_mat2, filter->GdQGd_T, filter->P_hat);
+
+	/* Average Acceleration */
+	for(int i = 0; i < 3; i++){
+		u += ((float)(1)/3)*data->acceleration[i];
+	}
+
+	/* Calculate Prediction of the state: x_hat = A*x_bar + B*u */
+	for(int i = 0; i < 3; i++){
+		filter->x_hat[i] = u*filter->Bd[i];
+
+		for(int j = 0; j < 3; j++){
+			filter->x_hat[i] += filter->Ad[i][j] * filter->x_bar[j];
+		}
+	}
+
+	/* Update the Variance of the state P_hat = A*P_bar*A' + GQG' */
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				placeholder_mat[i][j] +=  filter->Ad[i][k] * filter->P_bar[k][j];
+			}
+		}
+	}
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				filter->P_hat[i][j] +=  placeholder_mat[i][k] * filter->Ad_T[k][j];
+			}
+			filter->P_hat[i][j] += filter->GdQGd_T[i][j];
+		}
+	}
+
 
 	/* Prediction Step finished */
+
+
 	/* Update Step */
+	memset(placeholder_mat, 0, sizeof(placeholder_mat));
+	float old_K[3][3] = { 0 };
 
-	/* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
-	memset(placeholder_mat1, 0, sizeof(placeholder_mat1));
-	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
-
-	matmul(3, 3, 3, filter->P_hat, filter->H_full_T, placeholder_mat1);
-
-	matmul(3, 3, 3, filter->H_full, filter->P_hat, placeholder_mat2);
-	matmul(3, 3, 3, placeholder_mat2, filter->H_full_T, placeholder_mat3);
-
-	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
-
-	matadd(3, 3, placeholder_mat3, filter->R_full, placeholder_mat2);
-
-	memset(placeholder_mat3, 0, sizeof(placeholder_mat3));
-
-	inverse(3, placeholder_mat2, placeholder_mat3, 0);
+	memcpy(old_K, filter->K_full, sizeof(old_K));
 
 	memset(filter->K_full, 0, sizeof(filter->K_full));
-	matmul(3, 3, 3, placeholder_mat1, placeholder_mat3, filter->K_full);
+
+	/* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				placeholder_mat[i][j] +=  filter->H_full[i][k] * filter->P_hat[k][j];
+				placeholder_mat3[i][j] += filter->P_hat[i][k] * filter->H_full_T[k][j];
+			}
+		}
+	}
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				placeholder_mat2[i][j] +=  placeholder_mat[i][k] * filter->H_full_T[k][j];
+			}
+			placeholder_mat2[i][j] += filter->R_full[i][j];
+		}
+	}
+
+	memset(placeholder_mat, 0, sizeof(placeholder_mat));
+
+	status = inverse(3, placeholder_mat2, placeholder_mat, 0);
+
+	/* if the matrix is singular, return an error and ignore this step */
+	if(status != osOK){
+		memcpy(filter->K_full, old_K, sizeof(old_K));
+		return osError;
+	}
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				filter->K_full[i][j] +=  placeholder_mat3[i][k] * placeholder_mat[k][j];
+			}
+		}
+	}
 
 	/* Finished Calculating K */
-	memset(placeholder_mat1, 0, sizeof(placeholder_mat1));
-	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
-	memset(placeholder_mat3, 0, sizeof(placeholder_mat3));
-	memset(placeholder1, 0, sizeof(placeholder1));
-	memset(placeholder2, 0, sizeof(placeholder2));
-
 
 	/* Calculate x_bar = x_hat+K*(y-Hx_hat); */
-	matvecprod(3, 3, filter->H_full, filter->x_hat, placeholder1);
-	vecsub(3, data->calculated_AGL, placeholder1, placeholder2);
-
-	memset(placeholder1, 0, sizeof(placeholder1));
-
-	matvecprod(3, 3, filter->K_full, placeholder2, placeholder1);
 
 	memset(filter->x_bar, 0, sizeof(filter->x_bar));
-	vecadd(3, filter->x_hat, placeholder1, filter->x_bar);
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			placeholder_vec[i] += filter->H_full[i][j] * filter->x_hat[j];
+		}
+		placeholder_vec[i] = data->calculated_AGL[i] - placeholder_vec[i];
+	}
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			filter->x_bar[i] += filter->K_full[i][j] * placeholder_vec[j];
+		}
+		filter->x_bar[i] += filter->x_hat[i];
+	}
 
 	/* Finished Calculating x_bar */
+
 	/* Calculate P_bar = (eye-K*H)*P_hat */
 
-	eye(3, placeholder_mat1);
-	matmul(3, 3, 3, filter->K_full, filter->H_full, placeholder_mat2);
-
-	matsub(3, 3, placeholder_mat1, placeholder_mat2, placeholder_mat3);
-
 	memset(filter->P_bar, 0, sizeof(filter->P_bar));
-	matmul(3, 3, 3, placeholder_mat3, filter->P_hat, filter->P_bar);
+	memset(placeholder_mat, 0, sizeof(placeholder_mat));
+	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
+
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				placeholder_mat2[i][j] +=  filter->K_full[i][k] * filter->H_full[k][j];
+			}
+			if (i == j){
+				placeholder_mat[i][j] = 1 - placeholder_mat2[i][j];
+			} else {
+				placeholder_mat[i][j] = -placeholder_mat2[i][j];
+			}
+		}
+	}
+
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			for(int k = 0; k < 3; k++){
+				filter->P_bar[i][j] +=  placeholder_mat[i][k] * filter->P_hat[k][j];
+			}
+		}
+	}
 	/* Finished Calculating P_bar */
+
+	return status;
 
 }

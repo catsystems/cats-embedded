@@ -41,11 +41,16 @@ typedef struct {
 	float temperature[3];
 	float acceleration[3];
 	float calculated_AGL[3];
-	float height;
-	float velocity;
-	float acc_bias;
 	timestamp_t ts;
 } state_estimation_data_t;
+
+typedef struct {
+	int32_t num_freeze[9];
+	int32_t num_maj_vote[9];
+	float last_value[9];
+	uint8_t faulty_imu[3];
+	uint8_t faulty_baro[3];
+} sensor_elemination_t;
 
 typedef struct {
 	float Ad[3][3];

@@ -14,10 +14,12 @@
 #include "main.h"
 #include "util.h"
 #include "control/kalman_filter.h"
+#include "control/sensor_elemination.h"
 
 /* Constants */
 #define STATE_EST_SAMPLING_FREQ 100
 #define P_INITIAL 101250
+#define GRATIVY 9.81
 
 extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];

@@ -14,7 +14,7 @@
 
 float calculate_height(float pressure_initial, float pressure, float temperature);
 /**
- * @brief Function implementing the task_baro_read thread.
+ * @brief Function implementing the task_state_est thread.
  * @param argument: Not used
  * @retval None
  */
@@ -29,7 +29,8 @@ void vTaskStateEst(void *argument) {
 	int32_t milimeters_per_s = 0;
 
 	state_estimation_data_t state_data = { 0 };
-	kalman_filter_t filter;
+	sensor_elemination_t elemination = { 0 };
+	kalman_filter_t filter = { 0 };
 	filter.pressure_0 = P_INITIAL;
 	filter.t_sampl = 1/(float)(STATE_EST_SAMPLING_FREQ);
 
@@ -46,13 +47,15 @@ void vTaskStateEst(void *argument) {
 	while (1) {
 		tick_count += tick_update;
 
+		/* Really basic "Calibration" just for testing purposes */
 		if((tick_count>10000) && (tick_count < 10100)){
 			filter.pressure_0 = state_data.pressure[0];
 		}
 
-		state_data.acceleration[0] = (float)(global_imu[0].acc_z)/(1024)*9.81 - 9.81;
-		state_data.acceleration[1] = (float)(global_imu[1].acc_z)/(1024)*9.81 - 9.81;
-		state_data.acceleration[2] = (float)(global_imu[2].acc_z)/(1024)*9.81 - 9.81;
+		/* Get Data from the Sensors */
+		state_data.acceleration[0] = (float)(global_imu[0].acc_z)/(1024)*GRATIVY - GRATIVY;
+		state_data.acceleration[1] = (float)(global_imu[1].acc_z)/(1024)*GRATIVY - GRATIVY;
+		state_data.acceleration[2] = (float)(global_imu[2].acc_z)/(1024)*GRATIVY - GRATIVY;
 
 		state_data.pressure[0] = (float)(global_baro[0].pressure);
 		state_data.pressure[1] = (float)(global_baro[1].pressure);
@@ -66,6 +69,12 @@ void vTaskStateEst(void *argument) {
 		state_data.calculated_AGL[1] = calculate_height(filter.pressure_0, state_data.pressure[1], state_data.temperature[1]);
 		state_data.calculated_AGL[2] = calculate_height(filter.pressure_0, state_data.pressure[2], state_data.temperature[2]);
 
+		/* Check Sensor Readings */
+		/* TODO: When a Sensor has been ruled out, change execution of that function */
+		check_sensors(&state_data, &elemination);
+
+		/* Do a Kalman Step */
+		/* TODO: Include the sensor Checking into the Kalman Step */
 		kalman_step(&filter, &state_data);
 
 		/* DEBUGGING: Making it Ready for Printing */
@@ -93,6 +102,8 @@ void vTaskStateEst(void *argument) {
 		UsbPrint("Height %ld.%ld: Velocity: %ld.%ld \n",
 				meters, milimeters, meters_per_s, milimeters_per_s);
 		/* END DEBUGGING */
+
+		/* TODO: Stuff with this Information */
 
 
 		osDelayUntil(tick_count);
