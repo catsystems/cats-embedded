@@ -157,3 +157,5 @@ RemoteSystemsTempFiles/
 Debug/
 Release/
 
+# CLion
+cmake-build-*
