@@ -38,10 +38,10 @@ void vTaskBaroRead(void *argument) {
   while (1) {
     tick_count += tick_update;
     vPrepareTemp();
-    osDelay(2);
+    osDelay(1);
     vReadTemp(temperature);
     vPreparePres();
-    osDelay(2);
+    osDelay(1);
     vReadPres(pressure);
 
 
