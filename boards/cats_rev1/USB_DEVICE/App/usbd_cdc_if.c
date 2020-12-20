@@ -220,15 +220,14 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
 
       break;
 
-    case CDC_GET_LINE_CODING:
+    case CDC_GET_LINE_CODING: {
       uint32_t speed = 115200;
-      uint8_t databits = 8;
       length = 7;
       memcpy(pbuf, &speed, 4);
       pbuf[4] = 0;
       pbuf[5] = 0;
       pbuf[6] = 8;
-      break;
+    } break;
 
     case CDC_SET_CONTROL_LINE_STATE:
 
