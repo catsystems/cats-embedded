@@ -30,7 +30,7 @@ void vTaskStateEst(void *argument) {
   int32_t millimeters_per_s = 0;
 
   state_estimation_data_t state_data = {0};
-  sensor_elemination_t elemination = {0};
+  sensor_elimination_t elimination = {0};
   kalman_filter_t filter = {0};
   filter.pressure_0 = P_INITIAL;
   filter.t_sampl = 1 / (float)(STATE_EST_SAMPLING_FREQ);
@@ -77,11 +77,11 @@ void vTaskStateEst(void *argument) {
     /* Check Sensor Readings */
     /* TODO: When a Sensor has been ruled out, change execution of that function
      */
-    check_sensors(&state_data, &elemination);
+    check_sensors(&state_data, &elimination);
 
     /* Do a Kalman Step */
     /* TODO: Include the sensor Checking into the Kalman Step */
-    kalman_step(&filter, &state_data);
+    kalman_step(&filter, &state_data, &elimination);
 
     /* DEBUGGING: Making it Ready for Printing */
     if (filter.x_bar[0] > 0) {

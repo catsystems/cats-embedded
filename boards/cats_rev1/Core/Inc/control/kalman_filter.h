@@ -15,4 +15,10 @@
 
 void initialize_matrices(kalman_filter_t *filter);
 
-osStatus_t kalman_step(kalman_filter_t *filter, state_estimation_data_t *data);
+void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination);
+
+osStatus_t kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *data);
+
+osStatus_t kalman_update_eliminated(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination);
+
+osStatus_t kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination);

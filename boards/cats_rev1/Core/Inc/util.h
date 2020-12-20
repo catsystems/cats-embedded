@@ -50,7 +50,9 @@ typedef struct {
   float last_value[9];
   uint8_t faulty_imu[3];
   uint8_t faulty_baro[3];
-} sensor_elemination_t;
+  uint8_t num_faulty_imus;
+  uint8_t num_faulty_baros;
+} sensor_elimination_t;
 
 typedef struct {
   float Ad[3][3];
@@ -66,7 +68,7 @@ typedef struct {
   float R_full[3][3];
   float R_eliminated[2][2];
   float K_full[3][3];
-  float K_eliminated[2][2];
+  float K_eliminated[3][2];
   float x_bar[3];
   float P_bar[3][3];
   float x_hat[3];

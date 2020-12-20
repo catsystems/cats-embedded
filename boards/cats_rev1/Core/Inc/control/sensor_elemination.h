@@ -24,7 +24,13 @@
 #define LOWER_BOUND_TEMPERATURE -50
 /* maximum times a value is allowed to be the same value before we assume that
  * it is faulty */
-#define MAX_NUM_SAME_VALUE 100
+#define MAX_NUM_SAME_VALUE_PRESSURE 1000
+/* maximum times a value is allowed to be the same value before we assume that
+ * it is faulty */
+#define MAX_NUM_SAME_VALUE_TEMPERATURE 5000
+/* maximum times a value is allowed to be the same value before we assume that
+ * it is faulty */
+#define MAX_NUM_SAME_VALUE_IMU 100
 /* The number of times a value has to be outvoted to count as faulty sensor */
 #define MAJ_VOTE_NUM_VALUES 100
 /* The error in m/s^2 that has to be between 2 imu's and the third to count as
@@ -38,6 +44,10 @@
 #define MAJ_VOTE_TEMPERATURE_ERROR 10
 
 void check_sensors(state_estimation_data_t *data,
-                   sensor_elemination_t *elemination);
+		sensor_elimination_t *elimination);
+void check_imus_no_faults(state_estimation_data_t *data,
+		sensor_elimination_t *elimination);
+void check_baros_no_faults(state_estimation_data_t *data,
+		sensor_elimination_t *elimination);
 
 #endif /* INC_CONTROL_SENSOR_ELEMINATION_H_ */
