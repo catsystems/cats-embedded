@@ -193,6 +193,8 @@ extern void icm20601_read_gyro_raw(struct icm20601_dev * dev, int16_t *gyro);
 
 extern void icm20601_read_temp_raw(struct icm20601_dev * dev, int16_t *temp);
 
+extern void icm20601_accel_calib(struct icm20601_dev * dev, uint8_t axis);
+
 
 extern SPI_HandleTypeDef hspi1;
 

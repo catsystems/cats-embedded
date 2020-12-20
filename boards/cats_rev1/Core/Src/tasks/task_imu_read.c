@@ -16,6 +16,8 @@ ICM20601 ICM1 = ICM20601_INIT1();
 ICM20601 ICM2 = ICM20601_INIT2();
 ICM20601 ICM3 = ICM20601_INIT3();
 
+#define CALIBRATE_ACCEL
+
 /**
  * @brief Function implementing the task_baro_read thread.
  * @param argument: Not used
@@ -84,7 +86,11 @@ void vInitImu20601() {
 		HAL_Delay(10);
 		//UsbPrint("Init3 failed!");
 		} while(!r);
-
+#ifdef CALIBRATE_ACCEL
+	icm20601_accel_calib(&ICM1, 2); // Axis 0 = x, 1 = y, 2 = z
+	icm20601_accel_calib(&ICM2, 2);
+	icm20601_accel_calib(&ICM3, 2);
+#endif
 }
 
 void vReadImu20601(int16_t gyroscope_data[], int16_t acceleration[], int16_t *temperature, int32_t id) {

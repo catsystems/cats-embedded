@@ -245,6 +245,68 @@ void icm20601_read_temp(struct icm20601_dev * dev, float *temp){
 	*temp = ((float)temperature_raw) / temperature_sensitivity + 25.0; // TEMP_degC = ((TEMP_OUT – RoomTemp_Offset)/Temp_Sensitivity) + 25degC
 }
 
+void icm20601_accel_z_calib(struct icm20601_dev * dev){
+	uint8_t accel_offset_8bit [2] = {0};
+	int16_t accel_offset = 0;
+	int16_t accel_real [3] = {0};
+
+	// Read current offset
+	_icm_read_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
+	UINT8_TO_INT16(accel_offset, accel_offset_8bit[0], accel_offset_8bit[1]);
+
+	// Remove first bit as it is reserved and not used
+	accel_offset = accel_offset >> 1;
+
+	// Read acceleration from device
+	icm20601_read_accel_raw(dev, accel_real);
+
+	// Do some calculations, the offset register is +- 16g
+	float diff = _get_accel_sensitivity(dev->accel_g) - accel_real[2];
+	float scale = _get_accel_sensitivity(dev->accel_g) / 2048.0;
+	accel_offset += (int16_t)(diff*scale);
+
+	// Add the reserved bit back before setting the register
+	accel_offset = accel_offset << 1;
+
+	accel_offset_8bit[0] = ((accel_offset&0xFF00) >> 8);
+	accel_offset_8bit[1] = (accel_offset&0xFF);
+
+	// Write to offset register
+	_icm_write_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
+}
+
+void icm20601_accel_calib(struct icm20601_dev * dev, uint8_t axis){
+
+	if (axis > 2) return;
+	HAL_Delay(100);
+	uint8_t accel_offset_8bit [2] = {0};
+	int16_t accel_offset = 0;
+	int16_t accel_real [3] = {0};
+
+	// Read current offset
+	_icm_read_bytes(dev, REG_XA_OFFSET_H+(3*axis), accel_offset_8bit, 2);
+	UINT8_TO_INT16(accel_offset, accel_offset_8bit[0], accel_offset_8bit[1]);
+
+	// Remove first bit as it is reserved and not used
+	accel_offset = accel_offset >> 1;
+
+	// Read acceleration from device
+	icm20601_read_accel_raw(dev, accel_real);
+
+	// Do some calculations, the offset register is +- 16g
+	float diff = _get_accel_sensitivity(dev->accel_g) - accel_real[axis];
+	float scale = _get_accel_sensitivity(dev->accel_g) / 2048.0;
+	accel_offset += (int16_t)(diff*scale);
+
+	// Add the reserved bit back before setting the register
+	accel_offset = accel_offset << 1;
+
+	accel_offset_8bit[0] = ((accel_offset&0xFF00) >> 8);
+	accel_offset_8bit[1] = (accel_offset&0xFF);
+
+	// Write to offset register
+	_icm_write_bytes(dev, REG_XA_OFFSET_H+(3*axis), accel_offset_8bit, 2);
+}
 
 
 
