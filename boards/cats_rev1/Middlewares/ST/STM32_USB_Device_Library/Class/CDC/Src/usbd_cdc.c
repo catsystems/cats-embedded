@@ -466,8 +466,6 @@ static uint8_t USBD_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
     return (uint8_t)USBD_EMEM;
   }
 
-  memset(hcdc, 0, sizeof(USBD_CDC_HandleTypeDef));
-
   pdev->pClassData = (void *)hcdc;
 
   if (pdev->dev_speed == USBD_SPEED_HIGH)
