@@ -14,7 +14,7 @@
 #define PREPROCESS_QUEUE_SIZE 32
 #define BARO_MUTEX_TIMEOUT    0
 #define IMU_MUTEX_TIMEOUT     0
-#define GRAVITY                 9.81f
+#define GRAVITY               9.81f
 
 /** BASIC TYPES **/
 
@@ -56,12 +56,22 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
-	float angle;
-	uint8_t axis;
+  float angle;
+  uint8_t axis;
 } calibration_data_t;
 
 typedef enum {
-	MOVING = 0, IDLE, THRUSTING_1, THRUSTING_2, COASTING, TRANSSONIC_1, SUPERSONIC, TRANSSONIC_2, APOGEE, PARACHUTE, TOUCHDOWN
+  MOVING = 0,
+  IDLE,
+  THRUSTING_1,
+  THRUSTING_2,
+  COASTING,
+  TRANSSONIC_1,
+  SUPERSONIC,
+  TRANSSONIC_2,
+  APOGEE,
+  PARACHUTE,
+  TOUCHDOWN
 } flight_fsm_e;
 
 typedef struct {
@@ -88,27 +98,32 @@ typedef struct {
 } kalman_filter_t;
 
 typedef enum {
-	CATS_OK = 0, CATS_BARO_ERROR, CATS_IMU_ERROR, CATS_FILTER_ERROR, CATS_HARD_FAULT
+  CATS_OK = 0,
+  CATS_BARO_ERROR,
+  CATS_IMU_ERROR,
+  CATS_FILTER_ERROR,
+  CATS_HARD_FAULT
 } cats_status_e;
 
 static const imu_data_t EMPTY_IMU = {0};
 
 /** DEBUGGING **/
+
 /* Read In Fake Sensor Data */
 #define USB_DATA_ENABLE 0
 
 /* Debug flag */
-#ifdef DEBUG
-#undef DEBUG
+#ifdef CATS_DEBUG
+#undef CATS_DEBUG
 #endif
 /* Comment the next line in order to disable debug mode */
-#define DEBUG
+#define CATS_DEBUG
 
-#if (configUSE_TRACE_FACILITY == 1) && defined(DEBUG)
-#undef DEBUG
+#if (configUSE_TRACE_FACILITY == 1) && defined(CATS_DEBUG)
+#undef CATS_DEBUG
 #endif
 
-#ifdef DEBUG
+#ifdef CATS_DEBUG
 #define PRINT_BUFFER_LEN 200
 extern osMutexId_t print_mutex;
 extern char print_buffer[PRINT_BUFFER_LEN];
