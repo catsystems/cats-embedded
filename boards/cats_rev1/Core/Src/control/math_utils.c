@@ -98,7 +98,7 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-osStatus_t inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
+cats_status_e inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
                    float lambda) {
   /* add damping factor to avoid singularities. */
   /* if no damping is required set lambda to 0.0 */
@@ -112,7 +112,7 @@ osStatus_t inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
   float det = determinant(dim, A_dash, dim);
 
   if (det == 0) {
-    return osError;
+    return CATS_FILTER_ERROR;
   }
 
   // Find adjoint
@@ -126,5 +126,5 @@ osStatus_t inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
     }
   }
 
-  return osOK;
+  return CATS_OK;
 }

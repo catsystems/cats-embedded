@@ -8,8 +8,8 @@
 #ifndef INC_CONTROL_MATH_UTILS_H_
 #define INC_CONTROL_MATH_UTILS_H_
 
-#include "cmsis_os.h"
 #include "string.h"
+#include "util.h"
 
 #endif /* INC_CONTROL_MATH_UTILS_H_ */
 
@@ -30,5 +30,5 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]);
 
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
-osStatus_t inverse(int dim, float A[dim][dim], float inverse[dim][dim],
+cats_status_e inverse(int dim, float A[dim][dim], float inverse[dim][dim],
                    float lambda);

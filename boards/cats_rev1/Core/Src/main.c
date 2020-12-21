@@ -108,6 +108,19 @@ const osThreadAttr_t task_state_est_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+/* Definitions for task_state_est */
+osThreadId_t task_flight_fsmHandle;
+uint32_t task_flight_fsm_buffer[1024];
+osStaticThreadDef_t task_flight_fsm_control_block;
+const osThreadAttr_t task_flight_fsm_attributes = {
+    .name = "task_flight_fsm",
+    .stack_mem = &task_flight_fsm_buffer[0],
+    .stack_size = sizeof(task_flight_fsm_buffer),
+    .cb_mem = &task_flight_fsm_control_block,
+    .cb_size = sizeof(task_flight_fsm_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
 baro_data_t global_baro[3];
 imu_data_t global_imu[3];
 
@@ -131,6 +144,8 @@ extern void vTaskBaroRead(void *argument);
 extern void vTaskImuRead(void *argument);
 
 extern void vTaskStateEst(void *argument);
+
+extern void vTaskFlightFSM(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -215,6 +230,10 @@ int main(void)
   /* creation of task_state_est */
   task_state_estHandle =
       osThreadNew(vTaskStateEst, NULL, &task_state_est_attributes);
+
+  /* creation of task_state_est */
+    task_flight_fsmHandle =
+        osThreadNew(vTaskFlightFSM, NULL, &task_flight_fsm_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

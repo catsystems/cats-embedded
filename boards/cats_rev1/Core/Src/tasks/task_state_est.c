@@ -48,6 +48,7 @@ void vTaskStateEst(void *argument) {
 
     /* Really basic "Calibration" just for testing purposes */
     if ((tick_count > 10000) && (tick_count < 10100)) {
+      reset_kalman(&filter);
       filter.pressure_0 = state_data.pressure[0];
     }
 

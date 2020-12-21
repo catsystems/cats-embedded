@@ -43,11 +43,15 @@
  * faulty baro */
 #define MAJ_VOTE_TEMPERATURE_ERROR 10
 
-void check_sensors(state_estimation_data_t *data,
+cats_status_e check_sensors(state_estimation_data_t *data,
 		sensor_elimination_t *elimination);
-void check_imus_no_faults(state_estimation_data_t *data,
+cats_status_e check_imus_no_faults(state_estimation_data_t *data,
 		sensor_elimination_t *elimination);
-void check_baros_no_faults(state_estimation_data_t *data,
+cats_status_e check_baros_no_faults(state_estimation_data_t *data,
+		sensor_elimination_t *elimination);
+cats_status_e check_imus_1_fault(state_estimation_data_t *data,
+		sensor_elimination_t *elimination);
+cats_status_e check_baros_1_fault(state_estimation_data_t *data,
 		sensor_elimination_t *elimination);
 
 #endif /* INC_CONTROL_SENSOR_ELEMINATION_H_ */

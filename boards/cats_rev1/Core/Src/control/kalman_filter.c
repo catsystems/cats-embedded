@@ -63,6 +63,20 @@ void initialize_matrices(kalman_filter_t *filter) {
 	memcpy(filter->GdQGd_T, GdQGd_T_dash, flt_3x3_size);
 }
 
+void reset_kalman(kalman_filter_t *filter){
+	float x_dash[3] = {0, 0, 0};
+	float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
+
+
+	const size_t flt_3x3_size = 9 * sizeof(float);
+	const size_t flt_3_size = 3 * sizeof(float);
+	memcpy(filter->P_hat, P_dash, flt_3x3_size);
+	memcpy(filter->P_bar, P_dash, flt_3x3_size);
+	memcpy(filter->x_hat, x_dash, flt_3_size);
+	memcpy(filter->x_bar, x_dash, flt_3_size);
+
+}
+
 /* This Function Implements the kalman Prediction as long as more than 0 IMU work */
 void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination){
 	float u = 0;
@@ -115,12 +129,12 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
 }
 
 /* This function implements the Kalman update when no Barometer is faulty */
-osStatus_t kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *data){
+cats_status_e kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *data){
 	float placeholder_vec[3] = {0};
 	float placeholder_mat[3][3] = {0};
 	float placeholder_mat2[3][3] = {0};
 	float placeholder_mat3[3][3] = {0};
-	osStatus_t status = osOK;
+	cats_status_e status = CATS_OK;
 
 	/* Update Step */
 	float old_K[3][3] = {0};
@@ -154,9 +168,9 @@ osStatus_t kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *
 	status = inverse(3, placeholder_mat2, placeholder_mat, 0);
 
 	/* if the matrix is singular, return an error and ignore this step */
-	if (status != osOK) {
+	if (status != CATS_OK) {
 		memcpy(filter->K_full, old_K, sizeof(old_K));
-		return osError;
+		return CATS_FILTER_ERROR;
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -222,7 +236,7 @@ osStatus_t kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *
 }
 
 /* This function implements the Kalman update when one Barometer is faulty */
-osStatus_t kalman_update_eliminated(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination){
+cats_status_e kalman_update_eliminated(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination){
 	float placeholder_vec[2] = {0};
 	float placeholder_mat[2][3] = {0};
 	float placeholder_mat2[2][2] = {0};
@@ -230,7 +244,7 @@ osStatus_t kalman_update_eliminated(kalman_filter_t *filter, state_estimation_da
 	float placeholder_mat4[2][2] = {0};
 	float placeholder_mat5[3][3] = {0};
 	float placeholder_mat6[3][3] = {0};
-	osStatus_t status = osOK;
+	cats_status_e status = CATS_OK;
 
 	/* Update Step */
 	float old_K[3][2] = {0};
@@ -271,9 +285,9 @@ osStatus_t kalman_update_eliminated(kalman_filter_t *filter, state_estimation_da
 	status = inverse(2, placeholder_mat2, placeholder_mat4, 0);
 
 	/* if the matrix is singular, return an error and ignore this step */
-	if (status != osOK) {
+	if (status != CATS_OK) {
 		memcpy(filter->K_eliminated, old_K, sizeof(old_K));
-		return osError;
+		return CATS_FILTER_ERROR;
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -348,8 +362,8 @@ osStatus_t kalman_update_eliminated(kalman_filter_t *filter, state_estimation_da
 
 }
 
-osStatus_t kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination) {
-	osStatus_t status = osOK;
+cats_status_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination) {
+	cats_status_e status = osOK;
 
 	kalman_prediction(filter, data, elimination);
 
@@ -359,11 +373,11 @@ osStatus_t kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, s
 	case 1:
 		status = kalman_update_eliminated(filter, data, elimination);
 	case 2:
-		status = osError;
+		status = CATS_FILTER_ERROR;
 	case 3:
-		status = osError;
+		status = CATS_FILTER_ERROR;
 	default:
-		status = osError;
+		status = CATS_FILTER_ERROR;
 	}
 
 	return status;

@@ -14,6 +14,7 @@
 #define PREPROCESS_QUEUE_SIZE 32
 #define BARO_MUTEX_TIMEOUT    0
 #define IMU_MUTEX_TIMEOUT     0
+#define GRAVITY                 9.81f
 
 /** BASIC TYPES **/
 
@@ -55,6 +56,15 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
+	float angle;
+	uint8_t axis;
+} calibration_data_t;
+
+typedef enum {
+	MOVING = 0, IDLE, THRUSTING_1, THRUSTING_2, COASTING, TRANSSONIC_1, SUPERSONIC, TRANSSONIC_2, APOGEE, PARACHUTE, TOUCHDOWN
+} flight_fsm_e;
+
+typedef struct {
   float Ad[3][3];
   float Ad_T[3][3];
   float Gd[3];
@@ -76,6 +86,10 @@ typedef struct {
   float pressure_0;
   float t_sampl;
 } kalman_filter_t;
+
+typedef enum {
+	CATS_OK = 0, CATS_BARO_ERROR, CATS_IMU_ERROR, CATS_FILTER_ERROR, CATS_HARD_FAULT
+} cats_status_e;
 
 static const imu_data_t EMPTY_IMU = {0};
 
