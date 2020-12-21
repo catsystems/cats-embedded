@@ -5,9 +5,8 @@
  *      Author: Jonas
  */
 
-
 #include "tasks/task_flight_fsm.h"
-
+#include "util.h"
 
 /**
  * @brief Function implementing the task_state_est thread.
@@ -28,7 +27,6 @@ void vTaskFlightFSM(void *argument) {
 
   while (1) {
     tick_count += tick_update;
-
 
     osDelayUntil(tick_count);
   }
