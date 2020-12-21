@@ -71,7 +71,7 @@ const osThreadAttr_t task_init_attributes = {
 
 /* Definitions for task_baro_read */
 osThreadId_t task_baro_readHandle;
-uint32_t task_baro_read_buffer[2048];
+uint32_t task_baro_read_buffer[512];
 osStaticThreadDef_t task_baro_read_control_block;
 const osThreadAttr_t task_baro_read_attributes = {
     .name = "task_baro_read",

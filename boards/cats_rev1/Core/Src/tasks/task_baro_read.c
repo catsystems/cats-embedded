@@ -37,7 +37,7 @@ void vTaskBaroRead(void *argument) {
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / BARO_SAMPLING_FREQ;
   while (1) {
-    tick_count = osKernelGetTickCount();
+    tick_count += tick_update;
 
     // Phase 1, get the temperature
     vPrepareTemp();
