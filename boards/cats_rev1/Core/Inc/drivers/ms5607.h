@@ -43,6 +43,11 @@ enum ms5607_osr {
   MS5607_OSR_4096 = 4,
 };
 
+enum ms5607_data {
+  MS5607_PRESSURE = 1,
+  MS5607_TEMPERATURE = 2,
+};
+
 // *** Structs *** //
 
 typedef struct ms5607_dev {
@@ -52,28 +57,32 @@ typedef struct ms5607_dev {
 
   // Sensor Configuration
   enum ms5607_osr osr;
-
+  enum ms5607_data data;
   // Calibration coefficients
   uint16_t coefficients[6];
 
-  int64_t dT;
+  uint8_t raw_pres[3];
+  uint8_t raw_temp[3];
 } MS5607;
 
 // *** Extern *** //
 
 extern void ms5607_init(struct ms5607_dev *dev);
 
-//extern void ms5607_read_raw_pres_temp(struct ms5607_dev *dev,
+// extern void ms5607_read_raw_pres_temp(struct ms5607_dev *dev,
 //                                      int32_t *pressure_raw,
 //                                      int32_t *temperature_raw);
 
-//extern void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t *temperature,
+// extern void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t
+// *temperature,
 //                                  int32_t *pressure);
 
 extern void ms5607_prepare_temp(struct ms5607_dev *dev);
 extern void ms5607_prepare_pres(struct ms5607_dev *dev);
-extern void ms5607_read_pres(struct ms5607_dev *dev, int32_t *pressure);
-extern void ms5607_read_temp(struct ms5607_dev *dev, int32_t *temperature);
+extern uint8_t ms5607_busy();
+extern uint8_t ms5607_try_readout(struct ms5607_dev *dev);
+extern uint8_t ms5607_get_temp_pres(struct ms5607_dev *dev,
+                                    int32_t *temperature, int32_t *pressure);
 
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;

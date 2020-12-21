@@ -16,7 +16,7 @@ ICM20601 ICM1 = ICM20601_INIT1();
 ICM20601 ICM2 = ICM20601_INIT2();
 ICM20601 ICM3 = ICM20601_INIT3();
 
-#define CALIBRATE_ACCEL
+//#define CALIBRATE_ACCEL
 
 /**
  * @brief Function implementing the task_baro_read thread.
@@ -49,9 +49,9 @@ void vTaskImuRead(void *argument) {
     /* Debugging */
 
     //		UsbPrint("IMU %ld: RAW Gx: %ld, Gy:%ld, Gz:%ld; Ax: %ld, Ay:%ld,
-    // Az:%ld, T:%ld; \n", 				imu_idx, gyroscope_data[0],
-    // gyroscope_data[1], gyroscope_data[2],
-    // acceleration[0], acceleration[1], acceleration[2], temperature);
+    // Az:%ld, T:%ld; \n", 				imu_idx,
+    // gyroscope_data[0], gyroscope_data[1], gyroscope_data[2], acceleration[0],
+    // acceleration[1], acceleration[2], temperature);
 
     global_imu[imu_idx].acc_x = acceleration[0];
     global_imu[imu_idx].acc_y = acceleration[1];
