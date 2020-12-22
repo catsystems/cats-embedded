@@ -6,7 +6,7 @@
  */
 
 #include "tasks/task_flight_fsm.h"
-#include "util.h"
+#include "control/flight_phases.h"
 
 /**
  * @brief Function implementing the task_state_est thread.
@@ -17,7 +17,9 @@ void vTaskFlightFSM(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  flight_fsm_e fsm_state = MOVING;
+  flight_fsm_t fsm_state = {0};
+  fsm_state.flight_state = MOVING;
+  imu_data_t local_imu = {0};
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -27,6 +29,15 @@ void vTaskFlightFSM(void *argument) {
 
   while (1) {
     tick_count += tick_update;
+
+    local_imu = global_imu[0];
+
+    check_flight_phase(&fsm_state, &local_imu);
+
+    global_flight_state = fsm_state;
+
+    //    UsbPrint("Phase: %ld Memory: %ld\n", fsm_state.flight_state,
+    //    fsm_state.memory);
 
     osDelayUntil(tick_count);
   }

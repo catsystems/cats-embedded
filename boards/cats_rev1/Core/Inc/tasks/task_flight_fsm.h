@@ -8,7 +8,12 @@
 #ifndef INC_TASKS_TASK_FLIGHT_FSM_H_
 #define INC_TASKS_TASK_FLIGHT_FSM_H_
 
+#include "util.h"
+
 #define FLIGHT_FSM_SAMPLING_FREQ 100
+
+extern imu_data_t global_imu[3];
+extern flight_fsm_t global_flight_state;
 
 void vTaskFlightFSM(void *argument);
 

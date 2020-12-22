@@ -75,6 +75,14 @@ typedef enum {
 } flight_fsm_e;
 
 typedef struct {
+  flight_fsm_e flight_state;
+  imu_data_t old_imu_data;
+  uint32_t clock_memory;
+  uint32_t memory;
+  uint8_t state_changed;
+} flight_fsm_t;
+
+typedef struct {
   float Ad[3][3];
   float Ad_T[3][3];
   float Gd[3];

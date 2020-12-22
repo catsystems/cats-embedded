@@ -15,9 +15,9 @@
 #define STATE_EST_SAMPLING_FREQ 100
 #define P_INITIAL               101250
 
-
 extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];
+extern flight_fsm_t global_flight_state;
 
 /* Tasks */
 void vTaskStateEst(void *argument);

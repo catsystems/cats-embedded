@@ -10,4 +10,6 @@
 
 #include "util.h"
 
+void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration);
+
 #endif /* INC_CONTROL_CALIBRATION_H_ */

@@ -123,6 +123,7 @@ const osThreadAttr_t task_flight_fsm_attributes = {
 
 baro_data_t global_baro[3];
 imu_data_t global_imu[3];
+flight_fsm_t global_flight_state;
 
 /* USER CODE END PV */
 
