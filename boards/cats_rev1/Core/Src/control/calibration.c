@@ -6,17 +6,18 @@
  */
 
 #include "control/calibration.h"
+#include "stdlib.h"
 
 void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration) {
   /* first get the largest vector */
-  if (imu_data->acc_x >= imu_data->acc_y) {
-    if (imu_data->acc_x >= imu_data->acc_z) {
+  if (abs(imu_data->acc_x) >= abs(imu_data->acc_y)) {
+    if (abs(imu_data->acc_x) >= abs(imu_data->acc_z)) {
       calibration->axis = 0;
     } else {
       calibration->axis = 2;
     }
   } else {
-    if (imu_data->acc_y >= imu_data->acc_z) {
+    if (abs(imu_data->acc_y) >= abs(imu_data->acc_z)) {
       calibration->axis = 1;
     } else {
       calibration->axis = 2;
