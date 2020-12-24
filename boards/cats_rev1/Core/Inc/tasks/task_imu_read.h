@@ -9,7 +9,7 @@
 #define INC_TASK_IMU_READ_H_
 
 /* Includes */
-#include "util.h"
+#include "util/types.h"
 
 /* Constants */
 #define IMU20601_SAMPLING_FREQ 300

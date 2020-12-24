@@ -5,6 +5,7 @@
  *      Author: Jonas
  */
 
+#include "cmsis_os.h"
 #include "tasks/task_imu_read.h"
 #include "drivers/icm20601.h"
 

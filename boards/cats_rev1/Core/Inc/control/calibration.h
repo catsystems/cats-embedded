@@ -8,7 +8,7 @@
 #ifndef INC_CONTROL_CALIBRATION_H_
 #define INC_CONTROL_CALIBRATION_H_
 
-#include "util.h"
+#include "util/types.h"
 
 void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration);
 

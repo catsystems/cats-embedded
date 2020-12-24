@@ -9,7 +9,7 @@
 #define INC_CONTROL_MATH_UTILS_H_
 
 #include "string.h"
-#include "util.h"
+#include "util/types.h"
 
 #endif /* INC_CONTROL_MATH_UTILS_H_ */
 
@@ -31,4 +31,4 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]);
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
 cats_status_e inverse(int dim, float A[dim][dim], float inverse[dim][dim],
-                   float lambda);
+                      float lambda);

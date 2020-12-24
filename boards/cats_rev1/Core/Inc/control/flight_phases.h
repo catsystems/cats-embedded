@@ -8,7 +8,7 @@
 #ifndef INC_CONTROL_FLIGHT_PHASES_H_
 #define INC_CONTROL_FLIGHT_PHASES_H_
 
-#include "util.h"
+#include "util/types.h"
 
 /* MOVING */
 #define TIME_THRESHOLD_MOV_TO_IDLE 1000

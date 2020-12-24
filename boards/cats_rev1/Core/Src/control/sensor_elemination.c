@@ -5,8 +5,9 @@
  *      Author: Jonas
  */
 
-#include "control/sensor_elemination.h"
 #include <stdlib.h>
+#include "control/sensor_elemination.h"
+#include "util/log.h"
 
 cats_status_e check_imus_no_faults(state_estimation_data_t *data,
                                    sensor_elimination_t *elimination);
@@ -114,6 +115,7 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
       elimination->num_faulty_imus += 1;
     }
   }
+
   switch (elimination->num_faulty_imus) {
     case 0:
       return CATS_OK;

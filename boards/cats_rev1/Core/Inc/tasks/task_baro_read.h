@@ -9,7 +9,7 @@
 #define INC_TASK_BARO_READ_H_
 
 /* Includes */
-#include "util.h"
+#include "util/types.h"
 
 /* Constants */
 #define BARO_SAMPLING_FREQ 100

@@ -4,7 +4,7 @@
 
 #include "config/cats_config.h"
 #include "drivers/w25qxx.h"
-#include "util.h"
+#include "util/log.h"
 #include <string.h>
 
 typedef struct {
@@ -62,7 +62,7 @@ void cc_save() {
 }
 
 void cc_print() {
-  UsbPrint("Config: f1: %f, f2: %f, i1: %d, msg: %s\n", global_cats_config.f1,
-           global_cats_config.f2, global_cats_config.i1,
-           global_cats_config.msg);
+  log_info("Config: f1: %f, f2: %f, i1: %d, msg: %s",
+           (double)global_cats_config.f1, (double)global_cats_config.f2,
+           global_cats_config.i1, global_cats_config.msg);
 }

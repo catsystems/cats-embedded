@@ -340,6 +340,7 @@ bool W25qxx_IsEmptyPage(uint32_t Page_Address, uint32_t OffsetInByte,
   for (i = OffsetInByte; i < w25qxx.PageSize; i += sizeof(pBuffer)) {
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
     WorkAddress = (i + Page_Address * w25qxx.PageSize);
+    /* TODO: This probably won't work properly in 4-byte addressing version */
     W25qxx_Spi(0x0B);
     if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
     W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);

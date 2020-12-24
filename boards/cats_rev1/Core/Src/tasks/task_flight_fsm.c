@@ -5,6 +5,7 @@
  *      Author: Jonas
  */
 
+#include "cmsis_os.h"
 #include "tasks/task_flight_fsm.h"
 #include "control/flight_phases.h"
 
@@ -36,7 +37,7 @@ void vTaskFlightFSM(void *argument) {
 
     global_flight_state = fsm_state;
 
-    //    UsbPrint("Phase: %ld Memory: %ld\n", fsm_state.flight_state,
+    //    usb_print("Phase: %ld Memory: %ld\n", fsm_state.flight_state,
     //    fsm_state.memory);
 
     osDelayUntil(tick_count);

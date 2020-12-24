@@ -5,7 +5,7 @@
 #include "cmsis_os.h"
 #include "drivers/w25qxx.h"
 #include "config/cats_config.h"
-#include "util.h"
+#include "util/log.h"
 
 void vTaskInit(void* argument) {
   osDelay(3000);
@@ -13,9 +13,11 @@ void vTaskInit(void* argument) {
   vTraceEnable(TRC_START_AWAIT_HOST);
   HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
 #endif
-  osDelay(5000);
+  log_set_level(LOG_TRACE);
+  log_enable();
+  // osDelay(5000);
   //  W25qxx_Init();
-  //  uint32_t i = 0;
+  uint32_t i = 0;
   /* Infinite loop */
   for (;;) {
     //    /* fill the config with some values */
@@ -29,8 +31,14 @@ void vTaskInit(void* argument) {
     //    /* print out the config */
     //    cc_print();
     //    ++i;
-
+    //    log_trace("hello trace");
+    //    log_debug("hello debug");
+    //    log_info("hello info");
+    //    log_warn("hello warn");
+    //    log_error("hello error");
+    //    log_fatal("hello fatal");
     osDelay(100);
+    ++i;
   }
   /* USER CODE END 5 */
 }

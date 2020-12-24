@@ -6,6 +6,7 @@
  */
 
 #include "control\kalman_filter.h"
+#include "cmsis_os.h"
 #include <string.h>
 
 void initialize_matrices(kalman_filter_t *filter) {

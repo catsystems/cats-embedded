@@ -9,6 +9,7 @@
 #include "control/kalman_filter.h"
 #include "control/sensor_elemination.h"
 #include "control/calibration.h"
+#include "util/log.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -111,7 +112,7 @@ void vTaskStateEst(void *argument) {
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
 
-    UsbPrint("Height %ld.%ld: Velocity: %ld.%ld \n", meters, millimeters,
+    log_info("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
              meters_per_s, millimeters_per_s);
     /* END DEBUGGING */
 

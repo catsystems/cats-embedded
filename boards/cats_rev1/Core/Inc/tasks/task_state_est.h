@@ -9,7 +9,7 @@
 #define INC_TASK_STATE_EST_H_
 
 /* Includes */
-#include "util.h"
+#include "util/types.h"
 
 /* Constants */
 #define STATE_EST_SAMPLING_FREQ 100

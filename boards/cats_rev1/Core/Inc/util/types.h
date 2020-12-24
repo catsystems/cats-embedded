@@ -1,14 +1,11 @@
-/*
- * util.h
- *
- *  Created on: Feb 24, 2020
- *      Author: stoja
- */
+//
+// Created by stoja on 23.12.20.
+//
 
-#ifndef INC_UTIL_H_
-#define INC_UTIL_H_
+#ifndef CATS_REV1_TYPES_H
+#define CATS_REV1_TYPES_H
 
-#include "cmsis_os.h"
+#include <stdint.h>
 
 /* Constants */
 #define PREPROCESS_QUEUE_SIZE 32
@@ -113,30 +110,4 @@ typedef enum {
   CATS_HARD_FAULT
 } cats_status_e;
 
-static const imu_data_t EMPTY_IMU = {0};
-
-/** DEBUGGING **/
-
-/* Read In Fake Sensor Data */
-#define USB_DATA_ENABLE 0
-
-/* Debug flag */
-#ifdef CATS_DEBUG
-#undef CATS_DEBUG
-#endif
-/* Comment the next line in order to disable debug mode */
-#define CATS_DEBUG
-
-#if (configUSE_TRACE_FACILITY == 1) && defined(CATS_DEBUG)
-#undef CATS_DEBUG
-#endif
-
-#ifdef CATS_DEBUG
-#define PRINT_BUFFER_LEN 200
-extern osMutexId_t print_mutex;
-extern char print_buffer[PRINT_BUFFER_LEN];
-#endif
-
-uint8_t UsbPrint(const char *format, ...) __attribute__((format(printf, 1, 2)));
-
-#endif /* INC_UTIL_H_ */
+#endif  // CATS_REV1_TYPES_H
