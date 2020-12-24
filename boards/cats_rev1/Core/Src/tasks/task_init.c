@@ -6,6 +6,9 @@
 #include "drivers/w25qxx.h"
 #include "config/cats_config.h"
 #include "util.h"
+#include "drivers/buzzer.h"
+
+BUZ BUZZER = BUZZER_INIT();
 
 void vTaskInit(void* argument) {
   osDelay(3000);
@@ -13,9 +16,11 @@ void vTaskInit(void* argument) {
   vTraceEnable(TRC_START_AWAIT_HOST);
   HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
 #endif
-  osDelay(5000);
+  // osDelay(5000);
   //  W25qxx_Init();
-  //  uint32_t i = 0;
+  uint32_t i = 0;
+  buzzer_set_freq(&BUZZER, 1000);
+  buzzer_set_volume(&BUZZER, 1);
   /* Infinite loop */
   for (;;) {
     //    /* fill the config with some values */
@@ -30,7 +35,15 @@ void vTaskInit(void* argument) {
     //    cc_print();
     //    ++i;
 
-    osDelay(100);
+    if (i == 100) {
+      buzzer_beep(&BUZZER, 500);
+      i = 0;
+    } else
+      i++;
+
+    buzzer_update(&BUZZER);
+
+    osDelay(10);
   }
   /* USER CODE END 5 */
 }
