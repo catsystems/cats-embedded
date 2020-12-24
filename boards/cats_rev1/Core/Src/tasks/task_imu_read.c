@@ -9,9 +9,9 @@
 #include "tasks/task_imu_read.h"
 #include "drivers/icm20601.h"
 
-void vInitImu20601();
-void vReadImu20601(int16_t gyroscope_data[], int16_t acceleration[],
-                   int16_t *temperature, int32_t id);
+static void init_imu();
+static void read_imu(int16_t gyroscope_data[], int16_t acceleration[],
+                     int16_t *temperature, int32_t id);
 
 ICM20601 ICM1 = ICM20601_INIT1();
 ICM20601 ICM2 = ICM20601_INIT2();
@@ -37,7 +37,7 @@ void vTaskImuRead(void *argument) {
   /* initialize queue message */
   // imu_data_t queue_data = { 0 };
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
-  vInitImu20601();
+  init_imu();
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -45,7 +45,7 @@ void vTaskImuRead(void *argument) {
 
   for (;;) {
     tick_count += tick_update;
-    vReadImu20601(gyroscope_data, acceleration, &temperature, imu_idx);
+    read_imu(gyroscope_data, acceleration, &temperature, imu_idx);
 
     /* Debugging */
 
@@ -67,7 +67,7 @@ void vTaskImuRead(void *argument) {
   }
 }
 
-void vInitImu20601() {
+void init_imu() {
   osDelayUntil(1000);
   uint8_t r;
   do {
@@ -93,8 +93,8 @@ void vInitImu20601() {
 #endif
 }
 
-void vReadImu20601(int16_t gyroscope_data[], int16_t acceleration[],
-                   int16_t *temperature, int32_t id) {
+void read_imu(int16_t gyroscope_data[], int16_t acceleration[],
+              int16_t *temperature, int32_t id) {
   switch (id) {
     case 0:
       icm20601_read_accel_raw(&ICM1, acceleration);

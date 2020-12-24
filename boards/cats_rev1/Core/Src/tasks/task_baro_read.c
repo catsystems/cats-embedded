@@ -8,11 +8,11 @@
 #include "drivers/ms5607.h"
 #include "tasks/task_baro_read.h"
 
-void vInitBaro();
-void vPrepareTemp();
-void vPreparePres();
-void vGetTempPres(int32_t *temperature, int32_t *pressure);
-void vRead();
+static void init_baro();
+static void prepare_temp();
+static void prepare_pres();
+static void get_temp_pres(int32_t *temperature, int32_t *pressure);
+static void read_baro();
 
 #define MS_TIMEOUT 5
 
@@ -31,7 +31,7 @@ void vTaskBaroRead(void *argument) {
   int32_t temperature[3];
   int32_t pressure[3];
 
-  vInitBaro();
+  init_baro();
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -40,21 +40,21 @@ void vTaskBaroRead(void *argument) {
     tick_count += tick_update;
 
     // Phase 1, get the temperature
-    vPrepareTemp();
+    prepare_temp();
     osDelay(1);
-    vRead();
+    read_baro();
     while (ms5607_busy()) {
       osDelay(1);
     }
 
     // Phase 2, get the pressure
-    vPreparePres();
+    prepare_pres();
     osDelay(1);
-    vRead();
+    read_baro();
     while (ms5607_busy()) {
       osDelay(1);
     }
-    vGetTempPres(temperature, pressure);
+    get_temp_pres(temperature, pressure);
 
     //		UsbPrint("BARO %ld: %ld; T: %ld; t: %ld\n", baro_idx, pressure,
     //				temperature, tick_count);
@@ -68,25 +68,25 @@ void vTaskBaroRead(void *argument) {
   }
 }
 
-void vInitBaro() {
+void init_baro() {
   ms5607_init(&MS1);
   ms5607_init(&MS2);
   ms5607_init(&MS3);
 }
 
-void vPrepareTemp() {
+void prepare_temp() {
   ms5607_prepare_temp(&MS1);
   ms5607_prepare_temp(&MS2);
   ms5607_prepare_temp(&MS3);
 }
 
-void vPreparePres() {
+void prepare_pres() {
   ms5607_prepare_pres(&MS1);
   ms5607_prepare_pres(&MS2);
   ms5607_prepare_pres(&MS3);
 }
 
-void vRead() {
+void read_baro() {
   int counter = 0;
   while ((ms5607_try_readout(&MS1) == 0) && (MS_TIMEOUT >= counter)) {
     counter++;
@@ -104,7 +104,7 @@ void vRead() {
   }
 }
 
-void vGetTempPres(int32_t *temperature, int32_t *pressure) {
+void get_temp_pres(int32_t *temperature, int32_t *pressure) {
   ms5607_get_temp_pres(&MS1, &temperature[0], &pressure[0]);
   ms5607_get_temp_pres(&MS2, &temperature[1], &pressure[1]);
   ms5607_get_temp_pres(&MS3, &temperature[2], &pressure[2]);

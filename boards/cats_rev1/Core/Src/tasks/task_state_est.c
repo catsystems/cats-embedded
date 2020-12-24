@@ -7,7 +7,7 @@
 
 #include "tasks/task_state_est.h"
 #include "control/kalman_filter.h"
-#include "control/sensor_elemination.h"
+#include "control/sensor_elimination.h"
 #include "control/calibration.h"
 #include "util/log.h"
 
@@ -17,8 +17,9 @@
 inline static float calculate_height(float pressure_initial, float pressure,
                                      float temperature);
 
-void get_data_float(state_estimation_data_t *state_data,
-                    kalman_filter_t *filter, calibration_data_t *calibration);
+static void get_data_float(state_estimation_data_t *state_data,
+                           kalman_filter_t *filter,
+                           calibration_data_t *calibration);
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Not used
@@ -124,8 +125,8 @@ void vTaskStateEst(void *argument) {
 
 inline static float calculate_height(float pressure_initial, float pressure,
                                      float temperature) {
-  return ((pow(pressure_initial / pressure, (1 / 5.257)) - 1) *
-          (temperature + 273.15) / 0.0065);
+  return ((powf(pressure_initial / pressure, (1 / 5.257f)) - 1) *
+          (temperature + 273.15f) / 0.0065f);
 }
 
 void get_data_float(state_estimation_data_t *state_data,

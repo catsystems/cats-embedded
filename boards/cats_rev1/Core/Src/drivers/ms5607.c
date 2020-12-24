@@ -11,14 +11,14 @@
     dst = (src_high);                           \
     dst <<= 8;                                  \
     dst |= (src_low);                           \
-  } while (0);
+  } while (0)
 
 static uint8_t status1 = 0;
 static uint8_t status2 = 0;
 
 // *** Local functions *** //
 
-uint32_t _get_conversion_ticks(struct ms5607_dev *dev) {
+static uint32_t get_conversion_ticks(struct ms5607_dev *dev) {
   uint32_t time;
   time =
       (BARO_CONVERSION_TIME_OSR_BASE * (dev->osr + 1) * osKernelGetTickFreq()) /
@@ -28,33 +28,44 @@ uint32_t _get_conversion_ticks(struct ms5607_dev *dev) {
 }
 
 // Read bytes
-void _ms_read_bytes(struct ms5607_dev *dev, uint8_t command, uint8_t *pData,
-                    uint16_t size) {
+static void ms_read_bytes(struct ms5607_dev *dev, uint8_t command,
+                          uint8_t *pData, uint16_t size) {
   HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
                           BARO_I2C_TIMEOUT);
   HAL_I2C_Master_Receive(dev->i2c_bus, dev->i2c_address, pData, size,
                          BARO_I2C_TIMEOUT);
 }
 
-void _ms_read_bytes_it(struct ms5607_dev *dev, uint8_t command, uint8_t *pData,
-                       uint16_t size) {
+static void ms_read_bytes_it(struct ms5607_dev *dev, uint8_t command,
+                             uint8_t *pData, uint16_t size) {
   HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
                           BARO_I2C_TIMEOUT);
   HAL_I2C_Master_Receive_IT(dev->i2c_bus, dev->i2c_address, pData, size);
 }
 
 // Write command
-void _ms_write_command(struct ms5607_dev *dev, uint8_t command) {
+static void ms_write_command(struct ms5607_dev *dev, uint8_t command) {
   HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
                           BARO_I2C_TIMEOUT);
 }
 
-void _read_calibration(struct ms5607_dev *dev) {
+static void read_calibration(struct ms5607_dev *dev) {
   for (int i = 0; i < 6; i++) {
     uint8_t rec[2] = {0};
-    _ms_read_bytes(dev, COMMAND_PROM_READ_BASE + (2 * (i + 1)), rec, 2);
+    ms_read_bytes(dev, COMMAND_PROM_READ_BASE + (2 * (i + 1)), rec, 2);
     UINT8_TO_UINT16(dev->coefficients[i], rec[0], rec[1]);
   }
+}
+
+static void ms5607_read_raw(struct ms5607_dev *dev) {
+  if (dev->i2c_bus == &hi2c1)
+    status1 = 1;
+  else if (dev->i2c_bus == &hi2c2)
+    status2 = 1;
+  if (dev->data == MS5607_PRESSURE)
+    ms_read_bytes_it(dev, COMMAND_ADC_READ, dev->raw_pres, 3);
+  else if (dev->data == MS5607_TEMPERATURE)
+    ms_read_bytes_it(dev, COMMAND_ADC_READ, dev->raw_temp, 3);
 }
 
 // *** Global functions *** //
@@ -67,11 +78,11 @@ void ms5607_init(struct ms5607_dev *dev) {
   //  2. Read out calibration
 
   // Reset chip
-  _ms_write_command(dev, COMMAND_RESET);
+  ms_write_command(dev, COMMAND_RESET);
   osDelay(reset_time);
 
   // Read calibration
-  _read_calibration(dev);
+  read_calibration(dev);
 }
 
 // void ms5607_read_raw_pres_temp(struct ms5607_dev *dev, int32_t *pressure_raw,
@@ -128,29 +139,18 @@ void ms5607_init(struct ms5607_dev *dev) {
 //  *pressure = (int32_t)((((pressure_raw * SENS) >> 21) - OFF) >> 15);
 //}
 
-void _ms5607_read_raw(struct ms5607_dev *dev) {
-  if (dev->i2c_bus == &hi2c1)
-    status1 = 1;
-  else if (dev->i2c_bus == &hi2c2)
-    status2 = 1;
-  if (dev->data == MS5607_PRESSURE)
-    _ms_read_bytes_it(dev, COMMAND_ADC_READ, dev->raw_pres, 3);
-  else if (dev->data == MS5607_TEMPERATURE)
-    _ms_read_bytes_it(dev, COMMAND_ADC_READ, dev->raw_temp, 3);
-}
-
 void ms5607_prepare_temp(struct ms5607_dev *dev) {
   uint8_t command;
   dev->data = MS5607_TEMPERATURE;
   command = COMMAND_CONVERT_D2_BASE + (dev->osr * 2);
-  _ms_write_command(dev, command);
+  ms_write_command(dev, command);
 }
 
 void ms5607_prepare_pres(struct ms5607_dev *dev) {
   uint8_t command;
   dev->data = MS5607_PRESSURE;
   command = COMMAND_CONVERT_D1_BASE + (dev->osr * 2);
-  _ms_write_command(dev, command);
+  ms_write_command(dev, command);
 }
 
 // void ms5607_read_pres(struct ms5607_dev *dev, int32_t *pressure) {
@@ -206,14 +206,14 @@ uint8_t ms5607_try_readout(struct ms5607_dev *dev) {
     if (status1)
       return 0;
     else {
-      _ms5607_read_raw(dev);
+      ms5607_read_raw(dev);
       return 1;
     }
   } else if (dev->i2c_bus == &hi2c2) {
     if (status2)
       return 0;
     else {
-      _ms5607_read_raw(dev);
+      ms5607_read_raw(dev);
       return 1;
     }
   }

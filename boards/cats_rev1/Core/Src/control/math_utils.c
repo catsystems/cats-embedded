@@ -58,7 +58,7 @@ float determinant(int dim, float A[dim][dim], int n) {
   for (int f = 0; f < n; f++) {
     // Getting Cofactor of A[0][f]
     cofactor(dim, A, temp, 0, f, n);
-    D += sign * A[0][f] * determinant(dim, temp, n - 1);
+    D += (float)sign * A[0][f] * determinant(dim, temp, n - 1);
 
     // terms are to be added with alternate sign
     sign = -sign;
@@ -76,7 +76,7 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
   }
 
   // temp is used to store cofactors of A[][]
-  int sign = 1;
+  int sign;
   float temp[dim][dim];
 
   for (int i = 0; i < dim; i++) {
@@ -90,7 +90,7 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
 
       // Interchanging rows and columns to get the
       // transpose of the cofactor matrix
-      adj[j][i] = (sign) * (determinant(dim, temp, dim - 1));
+      adj[j][i] = (float)sign * (determinant(dim, temp, dim - 1));
     }
   }
 }
@@ -99,7 +99,7 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
  */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
 cats_status_e inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
-                   float lambda) {
+                      float lambda) {
   /* add damping factor to avoid singularities. */
   /* if no damping is required set lambda to 0.0 */
   float A_dash[dim][dim];

@@ -5,18 +5,10 @@
  *      Author: Jonas
  */
 
-#include <stdlib.h>
-#include "control/sensor_elemination.h"
+#include "control/sensor_elimination.h"
 #include "util/log.h"
-
-cats_status_e check_imus_no_faults(state_estimation_data_t *data,
-                                   sensor_elimination_t *elimination);
-cats_status_e check_baros_no_faults(state_estimation_data_t *data,
-                                    sensor_elimination_t *elimination);
-cats_status_e check_imus_1_fault(state_estimation_data_t *data,
-                                 sensor_elimination_t *elimination);
-cats_status_e check_baros_1_fault(state_estimation_data_t *data,
-                                  sensor_elimination_t *elimination);
+#include <stdlib.h>
+#include <math.h>
 
 cats_status_e check_sensors(state_estimation_data_t *data,
                             sensor_elimination_t *elimination) {
@@ -78,9 +70,9 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
   float error[3] = {0};
 
   /* Acceleration */
-  error[0] = abs(data->acceleration[0] - data->acceleration[1]);
-  error[1] = abs(data->acceleration[1] - data->acceleration[2]);
-  error[2] = abs(data->acceleration[0] - data->acceleration[2]);
+  error[0] = fabsf(data->acceleration[0] - data->acceleration[1]);
+  error[1] = fabsf(data->acceleration[1] - data->acceleration[2]);
+  error[2] = fabsf(data->acceleration[0] - data->acceleration[2]);
   if ((error[0] > MAJ_VOTE_IMU_ERROR) && (error[2] > MAJ_VOTE_IMU_ERROR)) {
     /* IMU 0 probably faulty */
     elimination->num_maj_vote[0] += 1;
@@ -119,16 +111,12 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
   switch (elimination->num_faulty_imus) {
     case 0:
       return CATS_OK;
-      break;
     case 1:
       return CATS_IMU_ERROR;
-      break;
     case 2:
       return CATS_FILTER_ERROR;
-      break;
     default:
       return CATS_FILTER_ERROR;
-      break;
   }
 }
 
@@ -172,9 +160,9 @@ cats_status_e check_baros_no_faults(state_estimation_data_t *data,
   float error[3] = {0};
 
   /* Barometer */
-  error[0] = abs(data->pressure[0] - data->pressure[1]);
-  error[1] = abs(data->pressure[1] - data->pressure[2]);
-  error[2] = abs(data->pressure[0] - data->pressure[2]);
+  error[0] = fabsf(data->pressure[0] - data->pressure[1]);
+  error[1] = fabsf(data->pressure[1] - data->pressure[2]);
+  error[2] = fabsf(data->pressure[0] - data->pressure[2]);
   if ((error[0] > MAJ_VOTE_PRESSURE_ERROR) &&
       (error[2] > MAJ_VOTE_PRESSURE_ERROR)) {
     /* Baro 0 probably faulty */
@@ -207,9 +195,9 @@ cats_status_e check_baros_no_faults(state_estimation_data_t *data,
   }
 
   /* Temperature */
-  error[0] = abs(data->temperature[0] - data->temperature[1]);
-  error[1] = abs(data->temperature[1] - data->temperature[2]);
-  error[2] = abs(data->temperature[0] - data->temperature[2]);
+  error[0] = fabsf(data->temperature[0] - data->temperature[1]);
+  error[1] = fabsf(data->temperature[1] - data->temperature[2]);
+  error[2] = fabsf(data->temperature[0] - data->temperature[2]);
   if ((error[0] > MAJ_VOTE_TEMPERATURE_ERROR) &&
       (error[2] > MAJ_VOTE_TEMPERATURE_ERROR)) {
     /* Baro 0 probably faulty */
@@ -251,16 +239,12 @@ cats_status_e check_baros_no_faults(state_estimation_data_t *data,
   switch (elimination->num_faulty_baros) {
     case 0:
       return CATS_OK;
-      break;
     case 1:
       return CATS_BARO_ERROR;
-      break;
     case 2:
       return CATS_FILTER_ERROR;
-      break;
     default:
       return CATS_FILTER_ERROR;
-      break;
   }
 }
 
@@ -300,16 +284,12 @@ cats_status_e check_imus_1_fault(state_estimation_data_t *data,
   switch (elimination->num_faulty_imus) {
     case 0:
       return CATS_OK;
-      break;
     case 1:
       return CATS_IMU_ERROR;
-      break;
     case 2:
       return CATS_FILTER_ERROR;
-      break;
     default:
       return CATS_FILTER_ERROR;
-      break;
   }
 }
 
@@ -361,15 +341,11 @@ cats_status_e check_baros_1_fault(state_estimation_data_t *data,
   switch (elimination->num_faulty_baros) {
     case 0:
       return CATS_OK;
-      break;
     case 1:
       return CATS_BARO_ERROR;
-      break;
     case 2:
       return CATS_FILTER_ERROR;
-      break;
     default:
       return CATS_FILTER_ERROR;
-      break;
   }
 }

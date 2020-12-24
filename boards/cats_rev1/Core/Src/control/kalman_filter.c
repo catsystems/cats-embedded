@@ -370,7 +370,7 @@ cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
 cats_status_e kalman_step(kalman_filter_t *filter,
                           state_estimation_data_t *data,
                           sensor_elimination_t *elimination) {
-  cats_status_e status = osOK;
+  cats_status_e status = CATS_OK;
 
   kalman_prediction(filter, data, elimination);
 

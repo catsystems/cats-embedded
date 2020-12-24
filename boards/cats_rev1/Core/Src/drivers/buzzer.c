@@ -12,13 +12,6 @@
 
 uint32_t get_pulse;
 
-void buzzer_set_volume(struct buzzer_dev *dev, uint16_t volume);
-void buzzer_beep(struct buzzer_dev *dev, uint32_t duration);
-void buzzer_set_freq(struct buzzer_dev *dev, float frequency);
-void buzzer_start(struct buzzer_dev *dev);
-void buzzer_stop(struct buzzer_dev *dev);
-uint8_t buzzer_update(struct buzzer_dev *dev);
-
 void buzzer_beep(struct buzzer_dev *dev, uint32_t duration) {
   dev->end_time = osKernelGetTickCount() + duration;
   buzzer_start(dev);
