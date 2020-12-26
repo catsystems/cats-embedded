@@ -22,10 +22,6 @@
   First release.
 */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -41,22 +37,22 @@ typedef enum {
   W25Q256,
   W25Q512,
 
-} W25QXX_ID_t;
+} w25qxx_id_t;
 
 typedef struct {
-  W25QXX_ID_t ID;
-  uint8_t UniqID[8];
-  uint16_t PageSize;
-  uint32_t PageCount;
-  uint32_t SectorSize;
-  uint32_t SectorCount;
-  uint32_t BlockSize;
-  uint32_t BlockCount;
-  uint32_t CapacityInKiloByte;
-  uint8_t StatusRegister1;
-  uint8_t StatusRegister2;
-  uint8_t StatusRegister3;
-  uint8_t Lock;
+  w25qxx_id_t id;
+  uint8_t uniq_id[8];
+  uint16_t page_size;
+  uint32_t page_count;
+  uint32_t sector_size;
+  uint32_t sector_count;
+  uint32_t block_size;
+  uint32_t block_count;
+  uint32_t capacity_in_kilobytes;
+  uint8_t status_reg_1;
+  uint8_t status_reg_2;
+  uint8_t status_reg_3;
+  uint8_t lock;
 
 } w25qxx_t;
 
@@ -65,51 +61,47 @@ extern w25qxx_t w25qxx;
 // in Page,Sector and block read/write functions, can put 0 to read maximum
 // bytes
 //############################################################################
-bool W25qxx_Init(void);
+bool w25qxx_init(void);
 
-void W25qxx_EraseChip(void);
-void W25qxx_EraseSector(uint32_t SectorAddr);
-void W25qxx_EraseBlock(uint32_t BlockAddr);
+void w25qxx_erase_chip(void);
+void w25qxx_erase_sector(uint32_t sector_num);
+void w25qxx_erase_block(uint32_t block_num);
 
-uint32_t W25qxx_PageToSector(uint32_t PageAddress);
-uint32_t W25qxx_PageToBlock(uint32_t PageAddress);
-uint32_t W25qxx_SectorToBlock(uint32_t SectorAddress);
-uint32_t W25qxx_SectorToPage(uint32_t SectorAddress);
-uint32_t W25qxx_BlockToPage(uint32_t BlockAddress);
+uint32_t w25qxx_page_to_sector(uint32_t page_num);
+uint32_t w25qxx_page_to_block(uint32_t page_num);
+uint32_t w25qxx_sector_to_block(uint32_t sector_num);
+uint32_t w25qxx_sector_to_page(uint32_t sector_num);
+uint32_t w25qxx_block_to_page(uint32_t block_num);
 
-bool W25qxx_IsEmptyPage(uint32_t Page_Address, uint32_t OffsetInByte,
-                        uint32_t NumByteToCheck_up_to_PageSize);
-bool W25qxx_IsEmptySector(uint32_t Sector_Address, uint32_t OffsetInByte,
-                          uint32_t NumByteToCheck_up_to_SectorSize);
-bool W25qxx_IsEmptyBlock(uint32_t Block_Address, uint32_t OffsetInByte,
-                         uint32_t NumByteToCheck_up_to_BlockSize);
+bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
+                          uint32_t bytes_to_check_up_to_page_size);
+bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
+                            uint32_t bytes_to_check_up_to_sector_size);
+bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
+                           uint32_t bytes_to_check_up_to_block_size);
 
-void W25qxx_WriteByte(uint8_t pBuffer, uint32_t Bytes_Address);
-void W25qxx_WritePage(uint8_t *pBuffer, uint32_t Page_Address,
-                      uint32_t OffsetInByte,
-                      uint32_t NumByteToWrite_up_to_PageSize);
-void W25qxx_WriteSector(uint8_t *pBuffer, uint32_t Sector_Address,
-                        uint32_t OffsetInByte,
-                        uint32_t NumByteToWrite_up_to_SectorSize);
-void W25qxx_WriteBlock(uint8_t *pBuffer, uint32_t Block_Address,
-                       uint32_t OffsetInByte,
-                       uint32_t NumByteToWrite_up_to_BlockSize);
+void w25qxx_write_byte(uint8_t byte, uint32_t byte_address);
+void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
+                       uint32_t offset_in_bytes,
+                       uint32_t bytes_to_write_up_to_page_size);
+void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
+                         uint32_t offset_in_bytes,
+                         uint32_t bytes_to_write_up_to_sector_size);
+void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
+                        uint32_t offset_in_bytes,
+                        uint32_t bytes_to_write_up_to_block_size);
 
-void W25qxx_ReadByte(uint8_t *pBuffer, uint32_t Bytes_Address);
-void W25qxx_ReadBytes(uint8_t *pBuffer, uint32_t ReadAddr,
-                      uint32_t NumByteToRead);
-void W25qxx_ReadPage(uint8_t *pBuffer, uint32_t Page_Address,
-                     uint32_t OffsetInByte,
-                     uint32_t NumByteToRead_up_to_PageSize);
-void W25qxx_ReadSector(uint8_t *pBuffer, uint32_t Sector_Address,
-                       uint32_t OffsetInByte,
-                       uint32_t NumByteToRead_up_to_SectorSize);
-void W25qxx_ReadBlock(uint8_t *pBuffer, uint32_t Block_Address,
-                      uint32_t OffsetInByte,
-                      uint32_t NumByteToRead_up_to_BlockSize);
+void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address);
+void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
+                       uint32_t bytes_to_read);
+void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
+                      uint32_t bytes_to_read_up_to_page_size);
+void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
+                        uint32_t offset_in_bytes,
+                        uint32_t bytes_to_read_up_to_sector_size);
+void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
+                       uint32_t offset_in_bytes,
+                       uint32_t bytes_to_read_up_to_block_size);
 //############################################################################
-#ifdef __cplusplus
-}
-#endif
 
 #endif

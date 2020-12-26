@@ -94,3 +94,17 @@ void log_raw(const char *format, ...) {
   }
 #endif
 }
+
+void log_rawr(const char *format, ...) {
+#ifdef CATS_DEBUG
+  if (osMutexAcquire(print_mutex, 0U) == osOK) {
+    va_list argptr;
+    va_start(argptr, format);
+    vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
+    va_end(argptr);
+    CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
+    osMutexRelease(print_mutex);
+    osDelay(2);
+  }
+#endif
+}

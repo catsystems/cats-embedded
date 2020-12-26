@@ -14,6 +14,21 @@
 #include "FreeRTOSConfig.h"
 #include "cmsis_os.h"
 
+/** TRACING SECTION **/
+#if (configUSE_TRACE_FACILITY == 1)
+#define trace_print(ch, str)       vTracePrint(ch, str);
+#define trace_printf(ch, str, ...) vTracePrintF(ch, str, __VA_ARGS__);
+#else
+#define trace_print(ch, str) \
+  do {                       \
+  } while (0)
+#define trace_printf(ch, str, ...) \
+  do {                             \
+  } while (0)
+#endif
+
+/** LOGGING SECTION **/
+
 enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
 
 void log_set_level(int level);
@@ -68,5 +83,8 @@ void log_log(int level, const char *file, int line, const char *format, ...)
     __attribute__((format(printf, 4, 5)));
 
 void log_raw(const char *format, ...) __attribute__((format(printf, 1, 2)));
+
+/* just like log_raw, but without \n */
+void log_rawr(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 #endif /* INC_UTIL_H_ */

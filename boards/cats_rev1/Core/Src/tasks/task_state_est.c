@@ -113,8 +113,8 @@ void vTaskStateEst(void *argument) {
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
 
-    log_info("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
-             meters_per_s, millimeters_per_s);
+    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
+              meters_per_s, millimeters_per_s);
     /* END DEBUGGING */
 
     /* TODO: Stuff with this Information */

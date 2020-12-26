@@ -49,16 +49,16 @@ void cc_set_msg(const char *msg) {
 
 void cc_load() {
   /* TODO: global_cats_config can't be larger than sector size */
-  W25qxx_ReadSector((uint8_t *)(&global_cats_config), 0, 0,
-                    sizeof(global_cats_config));
+  w25qxx_read_sector((uint8_t *)(&global_cats_config), 0, 0,
+                     sizeof(global_cats_config));
 }
 
 void cc_save() {
   /* erase sector before writing to it */
-  W25qxx_EraseSector(0);
+  w25qxx_erase_sector(0);
   /* TODO: global_cats_config can't be larger than sector size */
-  W25qxx_WriteSector((uint8_t *)(&global_cats_config), 0, 0,
-                     sizeof(global_cats_config));
+  w25qxx_write_sector((uint8_t *)(&global_cats_config), 0, 0,
+                      sizeof(global_cats_config));
 }
 
 void cc_print() {

@@ -7,11 +7,12 @@
 
 #include <stdint.h>
 
-/* Constants */
+/** CONSTANTS **/
+
 #define PREPROCESS_QUEUE_SIZE 32
 #define BARO_MUTEX_TIMEOUT    0
 #define IMU_MUTEX_TIMEOUT     0
-#define GRAVITY               9.81f
+static const float GRAVITY = 9.81f;
 
 /** BASIC TYPES **/
 

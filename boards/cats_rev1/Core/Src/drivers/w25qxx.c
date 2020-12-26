@@ -2,849 +2,829 @@
 #include "drivers/w25qxx.h"
 #include "drivers/w25qxxConf.h"
 #include "stm32l4xx_hal.h"
-
-#if (_W25QXX_DEBUG == 1)
-#include "util.h"
-#endif
+#include "util/log.h"
 
 #define W25QXX_DUMMY_BYTE 0xA5
 
 w25qxx_t w25qxx;
 
 #if (_W25QXX_USE_FREERTOS == 1)
-#define W25qxx_Delay(delay) osDelay(delay)
+#define w25qxx_delay(delay) osDelay(delay)
 #include "cmsis_os.h"
 #else
-#define W25qxx_Delay(delay) HAL_Delay(delay)
+#define w25qxx_delay(delay) HAL_Delay(delay)
 #endif
+
+void w25qxx_send_address(uint32_t address) {
+  uint8_t buf[4];
+  uint8_t *addr_ptr = (uint8_t *)&address;
+  //  buf[0] = (address & 0xFF000000) >> 24;
+  //  buf[1] = (address & 0xFF0000) >> 16;
+  //  buf[2] = (address & 0xFF00) >> 8;
+  //  buf[3] = address & 0xFF;
+  buf[0] = addr_ptr[3];
+  buf[1] = addr_ptr[2];
+  buf[2] = addr_ptr[1];
+  buf[3] = addr_ptr[0];
+  HAL_SPI_Transmit(&_W25QXX_SPI, buf, sizeof(buf), 100);
+}
 //###################################################################################################################
-uint8_t W25qxx_Spi(uint8_t Data) {
+uint8_t w25qxx_spi(uint8_t data) {
   uint8_t ret;
-  HAL_SPI_TransmitReceive(&_W25QXX_SPI, &Data, &ret, 1, 100);
+  HAL_SPI_TransmitReceive(&_W25QXX_SPI, &data, &ret, 1, 100);
   return ret;
 }
 //###################################################################################################################
-uint32_t W25qxx_ReadID(void) {
-  uint32_t Temp = 0, Temp0 = 0, Temp1 = 0, Temp2 = 0;
+uint32_t w25qxx_read_id(void) {
+  uint32_t temp = 0, temp0 = 0, temp1 = 0, temp2 = 0;
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x9F);
-  Temp0 = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-  Temp1 = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-  Temp2 = W25qxx_Spi(W25QXX_DUMMY_BYTE);
+  w25qxx_spi(0x9F);
+  temp0 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  temp1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  temp2 = w25qxx_spi(W25QXX_DUMMY_BYTE);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  Temp = (Temp0 << 16) | (Temp1 << 8) | Temp2;
-  return Temp;
+  temp = (temp0 << 16) | (temp1 << 8) | temp2;
+  return temp;
 }
 //###################################################################################################################
-void W25qxx_ReadUniqID(void) {
+void w25qxx_read_uniq_id(void) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x4B);
-  for (uint8_t i = 0; i < 4; i++) W25qxx_Spi(W25QXX_DUMMY_BYTE);
+  w25qxx_spi(0x4B);
+  for (uint8_t i = 0; i < 4; i++) w25qxx_spi(W25QXX_DUMMY_BYTE);
   for (uint8_t i = 0; i < 8; i++)
-    w25qxx.UniqID[i] = W25qxx_Spi(W25QXX_DUMMY_BYTE);
+    w25qxx.uniq_id[i] = w25qxx_spi(W25QXX_DUMMY_BYTE);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 //###################################################################################################################
-void W25qxx_WriteEnable(void) {
+void w25qxx_write_enable(void) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x06);
+  w25qxx_spi(0x06);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_Delay(1);
+  w25qxx_delay(1);
 }
 //###################################################################################################################
-void W25qxx_WriteDisable(void) {
+void w25qxx_write_disable(void) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x04);
+  w25qxx_spi(0x04);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_Delay(1);
+  w25qxx_delay(1);
 }
 //###################################################################################################################
-uint8_t W25qxx_ReadStatusRegister(uint8_t SelectStatusRegister_1_2_3) {
+uint8_t w25qxx_read_status_register(uint8_t status_register) {
   uint8_t status = 0;
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  if (SelectStatusRegister_1_2_3 == 1) {
-    W25qxx_Spi(0x05);
-    status = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-    w25qxx.StatusRegister1 = status;
-  } else if (SelectStatusRegister_1_2_3 == 2) {
-    W25qxx_Spi(0x35);
-    status = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-    w25qxx.StatusRegister2 = status;
+  if (status_register == 1) {
+    w25qxx_spi(0x05);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_1 = status;
+  } else if (status_register == 2) {
+    w25qxx_spi(0x35);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_2 = status;
   } else {
-    W25qxx_Spi(0x15);
-    status = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-    w25qxx.StatusRegister3 = status;
+    w25qxx_spi(0x15);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_3 = status;
   }
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   return status;
 }
 //###################################################################################################################
-void W25qxx_WriteStatusRegister(uint8_t SelectStatusRegister_1_2_3,
-                                uint8_t Data) {
+void w25qxx_write_status_register(uint8_t status_register, uint8_t data) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  if (SelectStatusRegister_1_2_3 == 1) {
-    W25qxx_Spi(0x01);
-    w25qxx.StatusRegister1 = Data;
-  } else if (SelectStatusRegister_1_2_3 == 2) {
-    W25qxx_Spi(0x31);
-    w25qxx.StatusRegister2 = Data;
+  if (status_register == 1) {
+    w25qxx_spi(0x01);
+    w25qxx.status_reg_1 = data;
+  } else if (status_register == 2) {
+    w25qxx_spi(0x31);
+    w25qxx.status_reg_2 = data;
   } else {
-    W25qxx_Spi(0x11);
-    w25qxx.StatusRegister3 = Data;
+    w25qxx_spi(0x11);
+    w25qxx.status_reg_3 = data;
   }
-  W25qxx_Spi(Data);
+  w25qxx_spi(data);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 //###################################################################################################################
-void W25qxx_WaitForWriteEnd(void) {
-  W25qxx_Delay(1);
+void w25qxx_wait_for_write_end(void) {
+  w25qxx_delay(1);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x05);
+  w25qxx_spi(0x05);
   do {
-    w25qxx.StatusRegister1 = W25qxx_Spi(W25QXX_DUMMY_BYTE);
-    W25qxx_Delay(1);
-  } while ((w25qxx.StatusRegister1 & 0x01) == 0x01);
+    w25qxx.status_reg_1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx_delay(1);
+  } while ((w25qxx.status_reg_1 & 0x01) == 0x01);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 //###################################################################################################################
-bool W25qxx_Init(void) {
-  w25qxx.Lock = 1;
-  while (HAL_GetTick() < 100) W25qxx_Delay(1);
+bool w25qxx_init(void) {
+  w25qxx.lock = 1;
+  while (HAL_GetTick() < 100) w25qxx_delay(1);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_Delay(100);
+  w25qxx_delay(100);
   uint32_t id;
-#if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx Init Begin...\r\n");
-#endif
-  id = W25qxx_ReadID();
 
-#if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx ID:0x%X\r\n", id);
-#endif
+  log_debug("w25qxx Init Begin...");
+
+  id = w25qxx_read_id();
+
+  log_debug("w25qxx ID:0x%lX", id);
+
   switch (id & 0x0000FFFF) {
     case 0x4020:  // 	w25q512
-      w25qxx.ID = W25Q512;
-      w25qxx.BlockCount = 1024;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q512\r\n");
-#endif
+      w25qxx.id = W25Q512;
+      w25qxx.block_count = 1024;
+
+      log_debug("w25qxx Chip: w25q512");
+
       break;
     case 0x4019:  // 	w25q256
-      w25qxx.ID = W25Q256;
-      w25qxx.BlockCount = 512;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q256\r\n");
-#endif
+      w25qxx.id = W25Q256;
+      w25qxx.block_count = 512;
+
+      log_debug("w25qxx Chip: w25q256");
+
       break;
     case 0x4018:  // 	w25q128
-      w25qxx.ID = W25Q128;
-      w25qxx.BlockCount = 256;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q128\r\n");
-#endif
+      w25qxx.id = W25Q128;
+      w25qxx.block_count = 256;
+
+      log_debug("w25qxx Chip: w25q128");
+
       break;
     case 0x4017:  //	w25q64
-      w25qxx.ID = W25Q64;
-      w25qxx.BlockCount = 128;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q64\r\n");
-#endif
+      w25qxx.id = W25Q64;
+      w25qxx.block_count = 128;
+
+      log_debug("w25qxx Chip: w25q64");
+
       break;
     case 0x4016:  //	w25q32
-      w25qxx.ID = W25Q32;
-      w25qxx.BlockCount = 64;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q32\r\n");
-#endif
+      w25qxx.id = W25Q32;
+      w25qxx.block_count = 64;
+
+      log_debug("w25qxx Chip: w25q32");
+
       break;
     case 0x4015:  //	w25q16
-      w25qxx.ID = W25Q16;
-      w25qxx.BlockCount = 32;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q16\r\n");
-#endif
+      w25qxx.id = W25Q16;
+      w25qxx.block_count = 32;
+
+      log_debug("w25qxx Chip: w25q16");
+
       break;
     case 0x4014:  //	w25q80
-      w25qxx.ID = W25Q80;
-      w25qxx.BlockCount = 16;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q80\r\n");
-#endif
+      w25qxx.id = W25Q80;
+      w25qxx.block_count = 16;
+
+      log_debug("w25qxx Chip: w25q80");
+
       break;
     case 0x4013:  //	w25q40
-      w25qxx.ID = W25Q40;
-      w25qxx.BlockCount = 8;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q40\r\n");
-#endif
+      w25qxx.id = W25Q40;
+      w25qxx.block_count = 8;
+
+      log_debug("w25qxx Chip: w25q40");
+
       break;
     case 0x4012:  //	w25q20
-      w25qxx.ID = W25Q20;
-      w25qxx.BlockCount = 4;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q20\r\n");
-#endif
+      w25qxx.id = W25Q20;
+      w25qxx.block_count = 4;
+
+      log_debug("w25qxx Chip: w25q20");
+
       break;
     case 0x4011:  //	w25q10
-      w25qxx.ID = W25Q10;
-      w25qxx.BlockCount = 2;
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Chip: w25q10\r\n");
-#endif
+      w25qxx.id = W25Q10;
+      w25qxx.block_count = 2;
+
+      log_debug("w25qxx Chip: w25q10");
+
       break;
     default:
-#if (_W25QXX_DEBUG == 1)
-      UsbPrint("w25qxx Unknown ID\r\n");
-#endif
-      w25qxx.Lock = 0;
+
+      log_debug("w25qxx Unknown ID");
+
+      w25qxx.lock = 0;
       return false;
   }
-  w25qxx.PageSize = 256;
-  w25qxx.SectorSize = 0x1000;
-  w25qxx.SectorCount = w25qxx.BlockCount * 16;
-  w25qxx.PageCount = (w25qxx.SectorCount * w25qxx.SectorSize) / w25qxx.PageSize;
-  w25qxx.BlockSize = w25qxx.SectorSize * 16;
-  w25qxx.CapacityInKiloByte = (w25qxx.SectorCount * w25qxx.SectorSize) / 1024;
+  w25qxx.page_size = 256;
+  w25qxx.sector_size = 0x1000;
+  w25qxx.sector_count = w25qxx.block_count * 16;
+  w25qxx.page_count =
+      (w25qxx.sector_count * w25qxx.sector_size) / w25qxx.page_size;
+  w25qxx.block_size = w25qxx.sector_size * 16;
+  w25qxx.capacity_in_kilobytes =
+      (w25qxx.sector_count * w25qxx.sector_size) / 1024;
 
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0xB7);
+  w25qxx_spi(0xB7);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 
-  W25qxx_ReadUniqID();
-  W25qxx_ReadStatusRegister(1);
-  W25qxx_ReadStatusRegister(2);
-  W25qxx_ReadStatusRegister(3);
-#if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx Page Size: %d Bytes\r\n", w25qxx.PageSize);
-  UsbPrint("w25qxx Page Count: %d\r\n", w25qxx.PageCount);
-  UsbPrint("w25qxx Sector Size: %d Bytes\r\n", w25qxx.SectorSize);
-  UsbPrint("w25qxx Sector Count: %d\r\n", w25qxx.SectorCount);
-  UsbPrint("w25qxx Block Size: %d Bytes\r\n", w25qxx.BlockSize);
-  UsbPrint("w25qxx Block Count: %d\r\n", w25qxx.BlockCount);
-  UsbPrint("w25qxx Capacity: %d KiloBytes\r\n", w25qxx.CapacityInKiloByte);
-  UsbPrint("w25qxx Init Done\r\n");
-#endif
-  w25qxx.Lock = 0;
+  w25qxx_read_uniq_id();
+  w25qxx_read_status_register(1);
+  w25qxx_read_status_register(2);
+  w25qxx_read_status_register(3);
+
+  log_debug("w25qxx Page Size: %hu B", w25qxx.page_size);
+  log_debug("w25qxx Page Count: %lu", w25qxx.page_count);
+  log_debug("w25qxx Sector Size: %lu B", w25qxx.sector_size);
+  log_debug("w25qxx Sector Count: %lu", w25qxx.sector_count);
+  log_debug("w25qxx Block Size: %lu B", w25qxx.block_size);
+  log_debug("w25qxx Block Count: %lu", w25qxx.block_count);
+  log_debug("w25qxx Capacity: %lu KB", w25qxx.capacity_in_kilobytes);
+  log_debug("w25qxx Init Done");
+
+  w25qxx.lock = 0;
   return true;
 }
 //###################################################################################################################
-void W25qxx_EraseChip(void) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void w25qxx_erase_chip(void) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t StartTime = HAL_GetTick();
-  UsbPrint("w25qxx EraseChip Begin...\r\n");
+  uint32_t start_time = HAL_GetTick();
+  log_debug("w25qxx EraseChip Begin...");
 #endif
-  W25qxx_WriteEnable();
+  w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0xC7);
+  w25qxx_spi(0xC7);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_WaitForWriteEnd();
+  w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx EraseBlock done after %d ms!\r\n",
-           HAL_GetTick() - StartTime);
+  log_debug("w25qxx EraseBlock done after %lu ms!", HAL_GetTick() - start_time);
 #endif
-  W25qxx_Delay(10);
-  w25qxx.Lock = 0;
+  w25qxx_delay(10);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_EraseSector(uint32_t SectorAddr) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void w25qxx_erase_sector(uint32_t sector_addr) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t StartTime = HAL_GetTick();
-  UsbPrint("w25qxx EraseSector %d Begin...\r\n", SectorAddr);
+  uint32_t start_time = HAL_GetTick();
+  log_debug("w25qxx EraseSector %lu Begin...", sector_addr);
 #endif
-  W25qxx_WaitForWriteEnd();
-  SectorAddr = SectorAddr * w25qxx.SectorSize;
-  W25qxx_WriteEnable();
+  w25qxx_wait_for_write_end();
+  sector_addr = sector_addr * w25qxx.sector_size;
+  w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x20);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((SectorAddr & 0xFF000000) >> 24);
-  W25qxx_Spi((SectorAddr & 0xFF0000) >> 16);
-  W25qxx_Spi((SectorAddr & 0xFF00) >> 8);
-  W25qxx_Spi(SectorAddr & 0xFF);
+  w25qxx_spi(0x20);
+  w25qxx_send_address(sector_addr);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_WaitForWriteEnd();
+  w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx EraseSector done after %d ms\r\n",
-           HAL_GetTick() - StartTime);
+  log_debug("w25qxx EraseSector done after %lu ms", HAL_GetTick() - start_time);
 #endif
-  W25qxx_Delay(1);
-  w25qxx.Lock = 0;
+  w25qxx_delay(1);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_EraseBlock(uint32_t BlockAddr) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void W25qxx_EraseBlock(uint32_t block_num) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx EraseBlock %d Begin...\r\n", BlockAddr);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx EraseBlock %lu Begin...", block_num);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  W25qxx_WaitForWriteEnd();
-  BlockAddr = BlockAddr * w25qxx.SectorSize * 16;
-  W25qxx_WriteEnable();
+  w25qxx_wait_for_write_end();
+  block_num = block_num * w25qxx.sector_size * 16;
+  w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0xD8);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((BlockAddr & 0xFF000000) >> 24);
-  W25qxx_Spi((BlockAddr & 0xFF0000) >> 16);
-  W25qxx_Spi((BlockAddr & 0xFF00) >> 8);
-  W25qxx_Spi(BlockAddr & 0xFF);
+  w25qxx_spi(0xD8);
+  w25qxx_send_address(block_num);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_WaitForWriteEnd();
+  w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx EraseBlock done after %d ms\r\n", HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx EraseBlock done after %lu ms", HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  W25qxx_Delay(1);
-  w25qxx.Lock = 0;
+  w25qxx_delay(1);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-uint32_t W25qxx_PageToSector(uint32_t PageAddress) {
-  return ((PageAddress * w25qxx.PageSize) / w25qxx.SectorSize);
+uint32_t w25qxx_page_to_sector(uint32_t page_num) {
+  return ((page_num * w25qxx.page_size) / w25qxx.sector_size);
 }
 //###################################################################################################################
-uint32_t W25qxx_PageToBlock(uint32_t PageAddress) {
-  return ((PageAddress * w25qxx.PageSize) / w25qxx.BlockSize);
+uint32_t w25qxx_page_to_block(uint32_t page_num) {
+  return ((page_num * w25qxx.page_size) / w25qxx.block_size);
 }
 //###################################################################################################################
-uint32_t W25qxx_SectorToBlock(uint32_t SectorAddress) {
-  return ((SectorAddress * w25qxx.SectorSize) / w25qxx.BlockSize);
+uint32_t w25qxx_sector_to_block(uint32_t sector_num) {
+  return ((sector_num * w25qxx.sector_size) / w25qxx.block_size);
 }
 //###################################################################################################################
-uint32_t W25qxx_SectorToPage(uint32_t SectorAddress) {
-  return (SectorAddress * w25qxx.SectorSize) / w25qxx.PageSize;
+uint32_t w25qxx_sector_to_page(uint32_t sector_num) {
+  return (sector_num * w25qxx.sector_size) / w25qxx.page_size;
 }
 //###################################################################################################################
-uint32_t W25qxx_BlockToPage(uint32_t BlockAddress) {
-  return (BlockAddress * w25qxx.BlockSize) / w25qxx.PageSize;
+uint32_t w25qxx_block_to_page(uint32_t block_num) {
+  return (block_num * w25qxx.block_size) / w25qxx.page_size;
 }
 //###################################################################################################################
-bool W25qxx_IsEmptyPage(uint32_t Page_Address, uint32_t OffsetInByte,
-                        uint32_t NumByteToCheck_up_to_PageSize) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
-  if (((NumByteToCheck_up_to_PageSize + OffsetInByte) > w25qxx.PageSize) ||
-      (NumByteToCheck_up_to_PageSize == 0))
-    NumByteToCheck_up_to_PageSize = w25qxx.PageSize - OffsetInByte;
+bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
+                          uint32_t bytes_to_check_up_to_page_size) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
+  if (((bytes_to_check_up_to_page_size + offset_in_bytes) > w25qxx.page_size) ||
+      (bytes_to_check_up_to_page_size == 0))
+    bytes_to_check_up_to_page_size = w25qxx.page_size - offset_in_bytes;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckPage:%d, Offset:%d, Bytes:%d begin...\r\n",
-           Page_Address, OffsetInByte, NumByteToCheck_up_to_PageSize);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx CheckPage:%lu, Offset:%lu, Bytes:%lu begin...", page_num,
+            offset_in_bytes, bytes_to_check_up_to_page_size);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  uint8_t pBuffer[32];
-  uint32_t WorkAddress;
+  uint8_t buf[32];
+  uint32_t work_address;
   uint32_t i;
-  for (i = OffsetInByte; i < w25qxx.PageSize; i += sizeof(pBuffer)) {
+  for (i = offset_in_bytes; i < w25qxx.page_size; i += sizeof(buf)) {
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-    WorkAddress = (i + Page_Address * w25qxx.PageSize);
-    /* TODO: This probably won't work properly in 4-byte addressing version */
-    W25qxx_Spi(0x0B);
-    if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-    W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-    W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-    W25qxx_Spi(WorkAddress & 0xFF);
-    W25qxx_Spi(0);
-    HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, sizeof(pBuffer), 100);
+    work_address = (i + page_num * w25qxx.page_size);
+    w25qxx_spi(0x0C);
+    w25qxx_send_address(work_address);
+    w25qxx_spi(0);
+    HAL_SPI_Receive(&_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-    for (uint8_t x = 0; x < sizeof(pBuffer); x++) {
-      if (pBuffer[x] != 0xFF) goto NOT_EMPTY;
+    for (uint8_t x = 0; x < sizeof(buf); x++) {
+      if (buf[x] != 0xFF) goto NOT_EMPTY;
     }
   }
-  if ((w25qxx.PageSize + OffsetInByte) % sizeof(pBuffer) != 0) {
-    i -= sizeof(pBuffer);
-    for (; i < w25qxx.PageSize; i++) {
+  if ((w25qxx.page_size + offset_in_bytes) % sizeof(buf) != 0) {
+    i -= sizeof(buf);
+    for (; i < w25qxx.page_size; i++) {
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-      WorkAddress = (i + Page_Address * w25qxx.PageSize);
-      W25qxx_Spi(0x0B);
-      if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-      W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-      W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-      W25qxx_Spi(WorkAddress & 0xFF);
-      W25qxx_Spi(0);
-      HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, 1, 100);
+      work_address = (i + page_num * w25qxx.page_size);
+      w25qxx_spi(0x0C);
+      w25qxx_send_address(work_address);
+      w25qxx_spi(0);
+      HAL_SPI_Receive(&_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-      if (pBuffer[0] != 0xFF) goto NOT_EMPTY;
+      if (buf[0] != 0xFF) goto NOT_EMPTY;
     }
   }
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckPage is Empty in %d ms\r\n", HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckPage is Empty in %lu ms", HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckPage is Not Empty in %d ms\r\n",
-           HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckPage is Not Empty in %lu ms",
+            HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return false;
 }
 //###################################################################################################################
-bool W25qxx_IsEmptySector(uint32_t Sector_Address, uint32_t OffsetInByte,
-                          uint32_t NumByteToCheck_up_to_SectorSize) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
-  if ((NumByteToCheck_up_to_SectorSize > w25qxx.SectorSize) ||
-      (NumByteToCheck_up_to_SectorSize == 0))
-    NumByteToCheck_up_to_SectorSize = w25qxx.SectorSize;
+bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
+                            uint32_t bytes_to_check_up_to_sector_size) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
+  if ((bytes_to_check_up_to_sector_size > w25qxx.sector_size) ||
+      (bytes_to_check_up_to_sector_size == 0))
+    bytes_to_check_up_to_sector_size = w25qxx.sector_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckSector:%d, Offset:%d, Bytes:%d begin...\r\n",
-           Sector_Address, OffsetInByte, NumByteToCheck_up_to_SectorSize);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx CheckSector:%lu, Offset:%lu, Bytes:%lu begin...",
+            sector_num, offset_in_bytes, bytes_to_check_up_to_sector_size);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  uint8_t pBuffer[32];
-  uint32_t WorkAddress;
+  uint8_t buf[32];
+  uint32_t work_address;
   uint32_t i;
-  for (i = OffsetInByte; i < w25qxx.SectorSize; i += sizeof(pBuffer)) {
+  for (i = offset_in_bytes; i < w25qxx.sector_size; i += sizeof(buf)) {
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-    WorkAddress = (i + Sector_Address * w25qxx.SectorSize);
-    W25qxx_Spi(0x0B);
-    if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-    W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-    W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-    W25qxx_Spi(WorkAddress & 0xFF);
-    W25qxx_Spi(0);
-    HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, sizeof(pBuffer), 100);
+    work_address = (i + sector_num * w25qxx.sector_size);
+    w25qxx_spi(0x0C);
+    w25qxx_send_address(work_address);
+    w25qxx_spi(0);
+    HAL_SPI_Receive(&_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-    for (uint8_t x = 0; x < sizeof(pBuffer); x++) {
-      if (pBuffer[x] != 0xFF) goto NOT_EMPTY;
+    for (uint8_t x = 0; x < sizeof(buf); x++) {
+      if (buf[x] != 0xFF) goto NOT_EMPTY;
     }
   }
-  if ((w25qxx.SectorSize + OffsetInByte) % sizeof(pBuffer) != 0) {
-    i -= sizeof(pBuffer);
-    for (; i < w25qxx.SectorSize; i++) {
+  if ((w25qxx.sector_size + offset_in_bytes) % sizeof(buf) != 0) {
+    i -= sizeof(buf);
+    for (; i < w25qxx.sector_size; i++) {
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-      WorkAddress = (i + Sector_Address * w25qxx.SectorSize);
-      W25qxx_Spi(0x0B);
-      if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-      W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-      W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-      W25qxx_Spi(WorkAddress & 0xFF);
-      W25qxx_Spi(0);
-      HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, 1, 100);
+      work_address = (i + sector_num * w25qxx.sector_size);
+      w25qxx_spi(0x0C);
+      w25qxx_send_address(work_address);
+      w25qxx_spi(0);
+      HAL_SPI_Receive(&_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-      if (pBuffer[0] != 0xFF) goto NOT_EMPTY;
+      if (buf[0] != 0xFF) goto NOT_EMPTY;
     }
   }
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckSector is Empty in %d ms\r\n",
-           HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckSector is Empty in %lu ms",
+            HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckSector is Not Empty in %d ms\r\n",
-           HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckSector is Not Empty in %lu ms",
+            HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return false;
 }
 //###################################################################################################################
-bool W25qxx_IsEmptyBlock(uint32_t Block_Address, uint32_t OffsetInByte,
-                         uint32_t NumByteToCheck_up_to_BlockSize) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
-  if ((NumByteToCheck_up_to_BlockSize > w25qxx.BlockSize) ||
-      (NumByteToCheck_up_to_BlockSize == 0))
-    NumByteToCheck_up_to_BlockSize = w25qxx.BlockSize;
+bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
+                           uint32_t bytes_to_check_up_to_block_size) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
+  if ((bytes_to_check_up_to_block_size > w25qxx.block_size) ||
+      (bytes_to_check_up_to_block_size == 0))
+    bytes_to_check_up_to_block_size = w25qxx.block_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckBlock:%d, Offset:%d, Bytes:%d begin...\r\n",
-           Block_Address, OffsetInByte, NumByteToCheck_up_to_BlockSize);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx CheckBlock:%lu, Offset:%lu, Bytes:%lu begin...", block_num,
+            offset_in_bytes, bytes_to_check_up_to_block_size);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  uint8_t pBuffer[32];
-  uint32_t WorkAddress;
+  uint8_t buf[32];
+  uint32_t work_address;
   uint32_t i;
-  for (i = OffsetInByte; i < w25qxx.BlockSize; i += sizeof(pBuffer)) {
+  for (i = offset_in_bytes; i < w25qxx.block_size; i += sizeof(buf)) {
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-    WorkAddress = (i + Block_Address * w25qxx.BlockSize);
-    W25qxx_Spi(0x0B);
-    if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-    W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-    W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-    W25qxx_Spi(WorkAddress & 0xFF);
-    W25qxx_Spi(0);
-    HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, sizeof(pBuffer), 100);
+    work_address = (i + block_num * w25qxx.block_size);
+    w25qxx_spi(0x0C);
+    w25qxx_send_address(work_address);
+    w25qxx_spi(0);
+    HAL_SPI_Receive(&_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-    for (uint8_t x = 0; x < sizeof(pBuffer); x++) {
-      if (pBuffer[x] != 0xFF) goto NOT_EMPTY;
+    for (uint8_t x = 0; x < sizeof(buf); x++) {
+      if (buf[x] != 0xFF) goto NOT_EMPTY;
     }
   }
-  if ((w25qxx.BlockSize + OffsetInByte) % sizeof(pBuffer) != 0) {
-    i -= sizeof(pBuffer);
-    for (; i < w25qxx.BlockSize; i++) {
+  if ((w25qxx.block_size + offset_in_bytes) % sizeof(buf) != 0) {
+    i -= sizeof(buf);
+    for (; i < w25qxx.block_size; i++) {
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-      WorkAddress = (i + Block_Address * w25qxx.BlockSize);
-      W25qxx_Spi(0x0B);
-      if (w25qxx.ID >= W25Q256) W25qxx_Spi((WorkAddress & 0xFF000000) >> 24);
-      W25qxx_Spi((WorkAddress & 0xFF0000) >> 16);
-      W25qxx_Spi((WorkAddress & 0xFF00) >> 8);
-      W25qxx_Spi(WorkAddress & 0xFF);
-      W25qxx_Spi(0);
-      HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, 1, 100);
+      work_address = (i + block_num * w25qxx.block_size);
+      w25qxx_spi(0x0C);
+      w25qxx_send_address(work_address);
+      w25qxx_spi(0);
+      HAL_SPI_Receive(&_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-      if (pBuffer[0] != 0xFF) goto NOT_EMPTY;
+      if (buf[0] != 0xFF) goto NOT_EMPTY;
     }
   }
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckBlock is Empty in %d ms\r\n",
-           HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckBlock is Empty in %lu ms", HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx CheckBlock is Not Empty in %d ms\r\n",
-           HAL_GetTick() - StartTime);
-  W25qxx_Delay(100);
+  log_debug("w25qxx CheckBlock is Not Empty in %lu ms",
+            HAL_GetTick() - start_time);
+  w25qxx_delay(100);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
   return false;
 }
 //###################################################################################################################
-void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void w25qxx_write_byte(uint8_t byte, uint32_t byte_address) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t StartTime = HAL_GetTick();
-  UsbPrint("w25qxx WriteByte 0x%02X at address %d begin...", pBuffer,
-           WriteAddr_inBytes);
+  uint32_t start_time = HAL_GetTick();
+  log_debug("w25qxx WriteByte 0x%02X at address %lu begin...", byte,
+            byte_address);
 #endif
-  W25qxx_WaitForWriteEnd();
-  W25qxx_WriteEnable();
+  w25qxx_wait_for_write_end();
+  w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x02);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((WriteAddr_inBytes & 0xFF000000) >> 24);
-  W25qxx_Spi((WriteAddr_inBytes & 0xFF0000) >> 16);
-  W25qxx_Spi((WriteAddr_inBytes & 0xFF00) >> 8);
-  W25qxx_Spi(WriteAddr_inBytes & 0xFF);
-  W25qxx_Spi(pBuffer);
+  w25qxx_spi(0x02);
+  w25qxx_send_address(byte_address);
+  w25qxx_spi(byte);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_WaitForWriteEnd();
+  w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx WriteByte done after %d ms\r\n", HAL_GetTick() - StartTime);
+  log_debug("w25qxx WriteByte done after %lu ms", HAL_GetTick() - start_time);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_WritePage(uint8_t *pBuffer, uint32_t Page_Address,
-                      uint32_t OffsetInByte,
-                      uint32_t NumByteToWrite_up_to_PageSize) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
-  if (((NumByteToWrite_up_to_PageSize + OffsetInByte) > w25qxx.PageSize) ||
-      (NumByteToWrite_up_to_PageSize == 0))
-    NumByteToWrite_up_to_PageSize = w25qxx.PageSize - OffsetInByte;
-  if ((OffsetInByte + NumByteToWrite_up_to_PageSize) > w25qxx.PageSize)
-    NumByteToWrite_up_to_PageSize = w25qxx.PageSize - OffsetInByte;
+void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
+                       uint32_t offset_in_bytes,
+                       uint32_t bytes_to_write_up_to_page_size) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
+  if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25qxx.page_size) ||
+      (bytes_to_write_up_to_page_size == 0))
+    bytes_to_write_up_to_page_size = w25qxx.page_size - offset_in_bytes;
+  if ((offset_in_bytes + bytes_to_write_up_to_page_size) > w25qxx.page_size)
+    bytes_to_write_up_to_page_size = w25qxx.page_size - offset_in_bytes;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx WritePage:%d, Offset:%d ,Writes %d Bytes, begin...\r\n",
-           Page_Address, OffsetInByte, NumByteToWrite_up_to_PageSize);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx WritePage:%lu, Offset:%lu ,Writes %lu Bytes, begin...",
+            page_num, offset_in_bytes, bytes_to_write_up_to_page_size);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  W25qxx_WaitForWriteEnd();
-  W25qxx_WriteEnable();
+  w25qxx_wait_for_write_end();
+  w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x02);
-  Page_Address = (Page_Address * w25qxx.PageSize) + OffsetInByte;
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((Page_Address & 0xFF000000) >> 24);
-  W25qxx_Spi((Page_Address & 0xFF0000) >> 16);
-  W25qxx_Spi((Page_Address & 0xFF00) >> 8);
-  W25qxx_Spi(Page_Address & 0xFF);
-  HAL_SPI_Transmit(&_W25QXX_SPI, pBuffer, NumByteToWrite_up_to_PageSize, 100);
+  w25qxx_spi(0x02);
+  page_num = (page_num * w25qxx.page_size) + offset_in_bytes;
+  w25qxx_send_address(page_num);
+  HAL_SPI_Transmit(&_W25QXX_SPI, buf, bytes_to_write_up_to_page_size, 100);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  W25qxx_WaitForWriteEnd();
+  w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  StartTime = HAL_GetTick() - StartTime;
-  for (uint32_t i = 0; i < NumByteToWrite_up_to_PageSize; i++) {
+  start_time = HAL_GetTick() - start_time;
+  for (uint32_t i = 0; i < bytes_to_write_up_to_page_size; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      UsbPrint("\r\n");
-      W25qxx_Delay(10);
+      log_debug("");
+      w25qxx_delay(10);
     }
-    UsbPrint("0x%02X,", pBuffer[i]);
+    log_debug("0x%02X,", buf[i]);
   }
-  UsbPrint("\r\n");
-  UsbPrint("w25qxx WritePage done after %d ms\r\n", StartTime);
-  W25qxx_Delay(100);
+  log_debug("");
+  log_debug("w25qxx WritePage done after %lu ms", start_time);
+  w25qxx_delay(100);
 #endif
-  W25qxx_Delay(1);
-  w25qxx.Lock = 0;
+  w25qxx_delay(1);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_WriteSector(uint8_t *pBuffer, uint32_t Sector_Address,
-                        uint32_t OffsetInByte,
-                        uint32_t NumByteToWrite_up_to_SectorSize) {
-  if ((NumByteToWrite_up_to_SectorSize > w25qxx.SectorSize) ||
-      (NumByteToWrite_up_to_SectorSize == 0))
-    NumByteToWrite_up_to_SectorSize = w25qxx.SectorSize;
+void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
+                         uint32_t offset_in_bytes,
+                         uint32_t bytes_to_write_up_to_sector_size) {
+  if ((bytes_to_write_up_to_sector_size > w25qxx.sector_size) ||
+      (bytes_to_write_up_to_sector_size == 0))
+    bytes_to_write_up_to_sector_size = w25qxx.sector_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("+++w25qxx WriteSector:%d, Offset:%d ,Write %d Bytes, begin...\r\n",
-           Sector_Address, OffsetInByte, NumByteToWrite_up_to_SectorSize);
-  W25qxx_Delay(100);
+  log_debug("+++w25qxx WriteSector:%lu, Offset:%lu ,Write %lu Bytes, begin...",
+            sector_num, offset_in_bytes, bytes_to_write_up_to_sector_size);
+  w25qxx_delay(100);
 #endif
-  if (OffsetInByte >= w25qxx.SectorSize) {
+  if (offset_in_bytes >= w25qxx.sector_size) {
 #if (_W25QXX_DEBUG == 1)
-    UsbPrint("---w25qxx WriteSector Faild!\r\n");
-    W25qxx_Delay(100);
+    log_debug("---w25qxx WriteSector Faild!");
+    w25qxx_delay(100);
 #endif
     return;
   }
-  uint32_t StartPage;
-  int32_t BytesToWrite;
-  uint32_t LocalOffset;
-  if ((OffsetInByte + NumByteToWrite_up_to_SectorSize) > w25qxx.SectorSize)
-    BytesToWrite = w25qxx.SectorSize - OffsetInByte;
+  uint32_t start_page;
+  int32_t bytes_to_write;
+  uint32_t local_offset;
+  if ((offset_in_bytes + bytes_to_write_up_to_sector_size) > w25qxx.sector_size)
+    bytes_to_write = w25qxx.sector_size - offset_in_bytes;
   else
-    BytesToWrite = NumByteToWrite_up_to_SectorSize;
-  StartPage =
-      W25qxx_SectorToPage(Sector_Address) + (OffsetInByte / w25qxx.PageSize);
-  LocalOffset = OffsetInByte % w25qxx.PageSize;
+    bytes_to_write = bytes_to_write_up_to_sector_size;
+  start_page =
+      w25qxx_sector_to_page(sector_num) + (offset_in_bytes / w25qxx.page_size);
+  local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    W25qxx_WritePage(pBuffer, StartPage, LocalOffset, BytesToWrite);
-    StartPage++;
-    BytesToWrite -= w25qxx.PageSize - LocalOffset;
-    pBuffer += w25qxx.PageSize - LocalOffset;
-    LocalOffset = 0;
-  } while (BytesToWrite > 0);
+    w25qxx_write_page(buf, start_page, local_offset, bytes_to_write);
+    start_page++;
+    bytes_to_write -= w25qxx.page_size - local_offset;
+    buf += w25qxx.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_write > 0);
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("---w25qxx WriteSector Done\r\n");
-  W25qxx_Delay(100);
+  log_debug("---w25qxx WriteSector Done");
+  w25qxx_delay(100);
 #endif
 }
 //###################################################################################################################
-void W25qxx_WriteBlock(uint8_t *pBuffer, uint32_t Block_Address,
-                       uint32_t OffsetInByte,
-                       uint32_t NumByteToWrite_up_to_BlockSize) {
-  if ((NumByteToWrite_up_to_BlockSize > w25qxx.BlockSize) ||
-      (NumByteToWrite_up_to_BlockSize == 0))
-    NumByteToWrite_up_to_BlockSize = w25qxx.BlockSize;
+void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
+                        uint32_t offset_in_bytes,
+                        uint32_t bytes_to_write_up_to_block_size) {
+  if ((bytes_to_write_up_to_block_size > w25qxx.block_size) ||
+      (bytes_to_write_up_to_block_size == 0))
+    bytes_to_write_up_to_block_size = w25qxx.block_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("+++w25qxx WriteBlock:%d, Offset:%d ,Write %d Bytes, begin...\r\n",
-           Block_Address, OffsetInByte, NumByteToWrite_up_to_BlockSize);
-  W25qxx_Delay(100);
+  log_debug("+++w25qxx WriteBlock:%lu, Offset:%lu ,Write %lu Bytes, begin...",
+            block_num, offset_in_bytes, bytes_to_write_up_to_block_size);
+  w25qxx_delay(100);
 #endif
-  if (OffsetInByte >= w25qxx.BlockSize) {
+  if (offset_in_bytes >= w25qxx.block_size) {
 #if (_W25QXX_DEBUG == 1)
-    UsbPrint("---w25qxx WriteBlock Faild!\r\n");
-    W25qxx_Delay(100);
+    log_debug("---w25qxx WriteBlock Faild!");
+    w25qxx_delay(100);
 #endif
     return;
   }
-  uint32_t StartPage;
-  int32_t BytesToWrite;
-  uint32_t LocalOffset;
-  if ((OffsetInByte + NumByteToWrite_up_to_BlockSize) > w25qxx.BlockSize)
-    BytesToWrite = w25qxx.BlockSize - OffsetInByte;
+  uint32_t start_page;
+  int32_t bytes_to_write;
+  uint32_t local_offset;
+  if ((offset_in_bytes + bytes_to_write_up_to_block_size) > w25qxx.block_size)
+    bytes_to_write = w25qxx.block_size - offset_in_bytes;
   else
-    BytesToWrite = NumByteToWrite_up_to_BlockSize;
-  StartPage =
-      W25qxx_BlockToPage(Block_Address) + (OffsetInByte / w25qxx.PageSize);
-  LocalOffset = OffsetInByte % w25qxx.PageSize;
+    bytes_to_write = bytes_to_write_up_to_block_size;
+  start_page =
+      w25qxx_block_to_page(block_num) + (offset_in_bytes / w25qxx.page_size);
+  local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    W25qxx_WritePage(pBuffer, StartPage, LocalOffset, BytesToWrite);
-    StartPage++;
-    BytesToWrite -= w25qxx.PageSize - LocalOffset;
-    pBuffer += w25qxx.PageSize - LocalOffset;
-    LocalOffset = 0;
-  } while (BytesToWrite > 0);
+    w25qxx_write_page(buf, start_page, local_offset, bytes_to_write);
+    start_page++;
+    bytes_to_write -= w25qxx.page_size - local_offset;
+    buf += w25qxx.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_write > 0);
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("---w25qxx WriteBlock Done\r\n");
-  W25qxx_Delay(100);
+  log_debug("---w25qxx WriteBlock Done");
+  w25qxx_delay(100);
 #endif
 }
 //###################################################################################################################
-void W25qxx_ReadByte(uint8_t *pBuffer, uint32_t Bytes_Address) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t StartTime = HAL_GetTick();
-  UsbPrint("w25qxx ReadByte at address %d begin...\r\n", Bytes_Address);
+  uint32_t start_time = HAL_GetTick();
+  log_debug("w25qxx ReadByte at address %lu begin...", byte_address);
 #endif
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x0B);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((Bytes_Address & 0xFF000000) >> 24);
-  W25qxx_Spi((Bytes_Address & 0xFF0000) >> 16);
-  W25qxx_Spi((Bytes_Address & 0xFF00) >> 8);
-  W25qxx_Spi(Bytes_Address & 0xFF);
-  W25qxx_Spi(0);
-  *pBuffer = W25qxx_Spi(W25QXX_DUMMY_BYTE);
+  w25qxx_spi(0x0C);
+  w25qxx_send_address(byte_address);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi((byte_address & 0xFF000000) >> 24);
+  //  w25qxx_spi((byte_address & 0xFF0000) >> 16);
+  //  w25qxx_spi((byte_address & 0xFF00) >> 8);
+  //  w25qxx_spi(byte_address & 0xFF);
+  w25qxx_spi(0);
+  *buf = w25qxx_spi(W25QXX_DUMMY_BYTE);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx ReadByte 0x%02X done after %d ms\r\n", *pBuffer,
-           HAL_GetTick() - StartTime);
+  log_debug("w25qxx ReadByte 0x%02X done after %lu ms", *buf,
+            HAL_GetTick() - start_time);
 #endif
-  w25qxx.Lock = 0;
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_ReadBytes(uint8_t *pBuffer, uint32_t ReadAddr,
-                      uint32_t NumByteToRead) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
+void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
+                       uint32_t bytes_to_read) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t StartTime = HAL_GetTick();
-  UsbPrint("w25qxx ReadBytes at Address:%d, %d Bytes  begin...\r\n", ReadAddr,
-           NumByteToRead);
+  uint32_t start_time = HAL_GetTick();
+  log_debug("w25qxx ReadBytes at Address:%lu, %lu Bytes  begin...",
+            read_address, bytes_to_read);
 #endif
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x0B);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((ReadAddr & 0xFF000000) >> 24);
-  W25qxx_Spi((ReadAddr & 0xFF0000) >> 16);
-  W25qxx_Spi((ReadAddr & 0xFF00) >> 8);
-  W25qxx_Spi(ReadAddr & 0xFF);
-  W25qxx_Spi(0);
-  HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, NumByteToRead, 2000);
+  w25qxx_spi(0x0C);
+  w25qxx_send_address(read_address);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi((read_address & 0xFF000000) >> 24);
+  //  w25qxx_spi((read_address & 0xFF0000) >> 16);
+  //  w25qxx_spi((read_address & 0xFF00) >> 8);
+  //  w25qxx_spi(read_address & 0xFF);
+  w25qxx_spi(0);
+  HAL_SPI_Receive(&_W25QXX_SPI, buf, bytes_to_read, 2000);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
-  StartTime = HAL_GetTick() - StartTime;
-  for (uint32_t i = 0; i < NumByteToRead; i++) {
+  start_time = HAL_GetTick() - start_time;
+  for (uint32_t i = 0; i < bytes_to_read; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      UsbPrint("\r\n");
-      W25qxx_Delay(10);
+      log_debug("");
+      w25qxx_delay(10);
     }
-    UsbPrint("0x%02X,", pBuffer[i]);
+    log_debug("0x%02X,", buf[i]);
   }
-  UsbPrint("\r\n");
-  UsbPrint("w25qxx ReadBytes done after %d ms\r\n", StartTime);
-  W25qxx_Delay(100);
+  log_debug("");
+  log_debug("w25qxx ReadBytes done after %lu ms", start_time);
+  w25qxx_delay(100);
 #endif
-  W25qxx_Delay(1);
-  w25qxx.Lock = 0;
+  w25qxx_delay(1);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_ReadPage(uint8_t *pBuffer, uint32_t Page_Address,
-                     uint32_t OffsetInByte,
-                     uint32_t NumByteToRead_up_to_PageSize) {
-  while (w25qxx.Lock == 1) W25qxx_Delay(1);
-  w25qxx.Lock = 1;
-  if ((NumByteToRead_up_to_PageSize > w25qxx.PageSize) ||
+void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
+                        uint32_t offset_in_bytes,
+                        uint32_t NumByteToRead_up_to_PageSize) {
+  while (w25qxx.lock == 1) w25qxx_delay(1);
+  w25qxx.lock = 1;
+  if ((NumByteToRead_up_to_PageSize > w25qxx.page_size) ||
       (NumByteToRead_up_to_PageSize == 0))
-    NumByteToRead_up_to_PageSize = w25qxx.PageSize;
-  if ((OffsetInByte + NumByteToRead_up_to_PageSize) > w25qxx.PageSize)
-    NumByteToRead_up_to_PageSize = w25qxx.PageSize - OffsetInByte;
+    NumByteToRead_up_to_PageSize = w25qxx.page_size;
+  if ((offset_in_bytes + NumByteToRead_up_to_PageSize) > w25qxx.page_size)
+    NumByteToRead_up_to_PageSize = w25qxx.page_size - offset_in_bytes;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("w25qxx ReadPage:%d, Offset:%d ,Read %d Bytes, begin...\r\n",
-           Page_Address, OffsetInByte, NumByteToRead_up_to_PageSize);
-  W25qxx_Delay(100);
-  uint32_t StartTime = HAL_GetTick();
+  log_debug("w25qxx ReadPage:%lu, Offset:%lu ,Read %lu Bytes, begin...",
+            page_num, offset_in_bytes, NumByteToRead_up_to_PageSize);
+  w25qxx_delay(100);
+  uint32_t start_time = HAL_GetTick();
 #endif
-  Page_Address = Page_Address * w25qxx.PageSize + OffsetInByte;
+  page_num = page_num * w25qxx.page_size + offset_in_bytes;
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  W25qxx_Spi(0x0B);
-  if (w25qxx.ID >= W25Q256) W25qxx_Spi((Page_Address & 0xFF000000) >> 24);
-  W25qxx_Spi((Page_Address & 0xFF0000) >> 16);
-  W25qxx_Spi((Page_Address & 0xFF00) >> 8);
-  W25qxx_Spi(Page_Address & 0xFF);
-  W25qxx_Spi(0);
-  HAL_SPI_Receive(&_W25QXX_SPI, pBuffer, NumByteToRead_up_to_PageSize, 100);
+  w25qxx_spi(0x0C);
+  w25qxx_send_address(page_num);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi((page_num & 0xFF000000) >> 24);
+  //  w25qxx_spi((page_num & 0xFF0000) >> 16);
+  //  w25qxx_spi((page_num & 0xFF00) >> 8);
+  //  w25qxx_spi(page_num & 0xFF);
+  w25qxx_spi(0);
+  HAL_SPI_Receive(&_W25QXX_SPI, buf, NumByteToRead_up_to_PageSize, 100);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
-  StartTime = HAL_GetTick() - StartTime;
+  start_time = HAL_GetTick() - start_time;
   for (uint32_t i = 0; i < NumByteToRead_up_to_PageSize; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      UsbPrint("\r\n");
-      W25qxx_Delay(10);
+      log_debug("");
+      w25qxx_delay(10);
     }
-    UsbPrint("0x%02X,", pBuffer[i]);
+    log_debug("0x%02X,", buf[i]);
   }
-  UsbPrint("\r\n");
-  UsbPrint("w25qxx ReadPage done after %d ms\r\n", StartTime);
-  W25qxx_Delay(100);
+  log_debug("");
+  log_debug("w25qxx ReadPage done after %lu ms", start_time);
+  w25qxx_delay(100);
 #endif
-  W25qxx_Delay(1);
-  w25qxx.Lock = 0;
+  w25qxx_delay(1);
+  w25qxx.lock = 0;
 }
 //###################################################################################################################
-void W25qxx_ReadSector(uint8_t *pBuffer, uint32_t Sector_Address,
-                       uint32_t OffsetInByte,
-                       uint32_t NumByteToRead_up_to_SectorSize) {
-  if ((NumByteToRead_up_to_SectorSize > w25qxx.SectorSize) ||
-      (NumByteToRead_up_to_SectorSize == 0))
-    NumByteToRead_up_to_SectorSize = w25qxx.SectorSize;
+void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
+                        uint32_t offset_in_bytes,
+                        uint32_t bytes_to_read_up_to_sector_size) {
+  if ((bytes_to_read_up_to_sector_size > w25qxx.sector_size) ||
+      (bytes_to_read_up_to_sector_size == 0))
+    bytes_to_read_up_to_sector_size = w25qxx.sector_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("+++w25qxx ReadSector:%d, Offset:%d ,Read %d Bytes, begin...\r\n",
-           Sector_Address, OffsetInByte, NumByteToRead_up_to_SectorSize);
-  W25qxx_Delay(100);
+  log_debug("+++w25qxx ReadSector:%lu, Offset:%lu ,Read %lu Bytes, begin...",
+            sector_num, offset_in_bytes, bytes_to_read_up_to_sector_size);
+  w25qxx_delay(100);
 #endif
-  if (OffsetInByte >= w25qxx.SectorSize) {
+  if (offset_in_bytes >= w25qxx.sector_size) {
 #if (_W25QXX_DEBUG == 1)
-    UsbPrint("---w25qxx ReadSector Faild!\r\n");
-    W25qxx_Delay(100);
+    log_debug("---w25qxx ReadSector Faild!");
+    w25qxx_delay(100);
 #endif
     return;
   }
-  uint32_t StartPage;
-  int32_t BytesToRead;
-  uint32_t LocalOffset;
-  if ((OffsetInByte + NumByteToRead_up_to_SectorSize) > w25qxx.SectorSize)
-    BytesToRead = w25qxx.SectorSize - OffsetInByte;
+  uint32_t start_page;
+  int32_t bytes_to_read;
+  uint32_t local_offset;
+  if ((offset_in_bytes + bytes_to_read_up_to_sector_size) > w25qxx.sector_size)
+    bytes_to_read = w25qxx.sector_size - offset_in_bytes;
   else
-    BytesToRead = NumByteToRead_up_to_SectorSize;
-  StartPage =
-      W25qxx_SectorToPage(Sector_Address) + (OffsetInByte / w25qxx.PageSize);
-  LocalOffset = OffsetInByte % w25qxx.PageSize;
+    bytes_to_read = bytes_to_read_up_to_sector_size;
+  start_page =
+      w25qxx_sector_to_page(sector_num) + (offset_in_bytes / w25qxx.page_size);
+  local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    W25qxx_ReadPage(pBuffer, StartPage, LocalOffset, BytesToRead);
-    StartPage++;
-    BytesToRead -= w25qxx.PageSize - LocalOffset;
-    pBuffer += w25qxx.PageSize - LocalOffset;
-    LocalOffset = 0;
-  } while (BytesToRead > 0);
+    w_25_qxx_read_page(buf, start_page, local_offset, bytes_to_read);
+    start_page++;
+    bytes_to_read -= w25qxx.page_size - local_offset;
+    buf += w25qxx.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_read > 0);
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("---w25qxx ReadSector Done\r\n");
-  W25qxx_Delay(100);
+  log_debug("---w25qxx ReadSector Done");
+  w25qxx_delay(100);
 #endif
 }
 //###################################################################################################################
-void W25qxx_ReadBlock(uint8_t *pBuffer, uint32_t Block_Address,
-                      uint32_t OffsetInByte,
-                      uint32_t NumByteToRead_up_to_BlockSize) {
-  if ((NumByteToRead_up_to_BlockSize > w25qxx.BlockSize) ||
-      (NumByteToRead_up_to_BlockSize == 0))
-    NumByteToRead_up_to_BlockSize = w25qxx.BlockSize;
+void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
+                       uint32_t offset_in_bytes,
+                       uint32_t bytes_to_read_up_to_block_size) {
+  if ((bytes_to_read_up_to_block_size > w25qxx.block_size) ||
+      (bytes_to_read_up_to_block_size == 0))
+    bytes_to_read_up_to_block_size = w25qxx.block_size;
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("+++w25qxx ReadBlock:%d, Offset:%d ,Read %d Bytes, begin...\r\n",
-           Block_Address, OffsetInByte, NumByteToRead_up_to_BlockSize);
-  W25qxx_Delay(100);
+  log_debug("+++w25qxx ReadBlock:%lu, Offset:%lu ,Read %lu Bytes, begin...",
+            block_num, offset_in_bytes, bytes_to_read_up_to_block_size);
+  w25qxx_delay(100);
 #endif
-  if (OffsetInByte >= w25qxx.BlockSize) {
+  if (offset_in_bytes >= w25qxx.block_size) {
 #if (_W25QXX_DEBUG == 1)
-    UsbPrint("w25qxx ReadBlock Faild!\r\n");
-    W25qxx_Delay(100);
+    log_debug("w25qxx ReadBlock Faild!");
+    w25qxx_delay(100);
 #endif
     return;
   }
-  uint32_t StartPage;
-  int32_t BytesToRead;
-  uint32_t LocalOffset;
-  if ((OffsetInByte + NumByteToRead_up_to_BlockSize) > w25qxx.BlockSize)
-    BytesToRead = w25qxx.BlockSize - OffsetInByte;
+  uint32_t start_page;
+  int32_t bytes_to_read;
+  uint32_t local_offset;
+  if ((offset_in_bytes + bytes_to_read_up_to_block_size) > w25qxx.block_size)
+    bytes_to_read = w25qxx.block_size - offset_in_bytes;
   else
-    BytesToRead = NumByteToRead_up_to_BlockSize;
-  StartPage =
-      W25qxx_BlockToPage(Block_Address) + (OffsetInByte / w25qxx.PageSize);
-  LocalOffset = OffsetInByte % w25qxx.PageSize;
+    bytes_to_read = bytes_to_read_up_to_block_size;
+  start_page =
+      w25qxx_block_to_page(block_num) + (offset_in_bytes / w25qxx.page_size);
+  local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    W25qxx_ReadPage(pBuffer, StartPage, LocalOffset, BytesToRead);
-    StartPage++;
-    BytesToRead -= w25qxx.PageSize - LocalOffset;
-    pBuffer += w25qxx.PageSize - LocalOffset;
-    LocalOffset = 0;
-  } while (BytesToRead > 0);
+    w_25_qxx_read_page(buf, start_page, local_offset, bytes_to_read);
+    start_page++;
+    bytes_to_read -= w25qxx.page_size - local_offset;
+    buf += w25qxx.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_read > 0);
 #if (_W25QXX_DEBUG == 1)
-  UsbPrint("---w25qxx ReadBlock Done\r\n");
-  W25qxx_Delay(100);
+  log_debug("---w25qxx ReadBlock Done");
+  w25qxx_delay(100);
 #endif
 }
 //###################################################################################################################
