@@ -8,44 +8,32 @@
 #include <string.h>
 
 typedef struct {
-  int i1;
-  float f1;
-  float f2;
-  char msg[20];
+  /* Last sector where task_recorder wrote the data; The next sector will be
+   * first checked if it's empty and if so, the next flight recorder
+   * log will be recorded starting from that sector */
+  uint16_t last_recorded_sector;
 } cats_config_t;
 
-static cats_config_t global_cats_config = {0};
+cats_config_t global_cats_config = {0};
 
-void cc_init(float f1, float f2, uint32_t i1, const char *msg) {
-  global_cats_config.f1 = f1;
-  global_cats_config.f2 = f2;
-  global_cats_config.i1 = i1;
-  /* TODO: change this string copying if needed later */
-  memset(global_cats_config.msg, '\0', sizeof(global_cats_config.msg));
-  if (msg != NULL) {
-    strncpy(global_cats_config.msg, msg, sizeof(global_cats_config.msg));
-  }
+/** cats config initialization **/
+
+void cc_init(uint16_t last_recorded_sector) {
+  global_cats_config.last_recorded_sector = last_recorded_sector;
 }
 
 void cc_clear() { memset(&global_cats_config, 0, sizeof(global_cats_config)); }
 
-/* accessor functions */
-float cc_get_f1() { return global_cats_config.f1; }
-void cc_set_f1(float f1) { global_cats_config.f1 = f1; }
+/** accessor functions **/
 
-float cc_get_f2() { return global_cats_config.f2; }
-void cc_set_f2(float f2) { global_cats_config.f2 = f2; }
-
-uint32_t cc_get_i1() { return global_cats_config.i1; }
-void cc_set_i1(uint32_t i1) { global_cats_config.i1 = i1; }
-
-const char *cc_get_msg() { return global_cats_config.msg; }
-void cc_set_msg(const char *msg) {
-  memset(global_cats_config.msg, '\0', sizeof(global_cats_config.msg));
-  if (msg != NULL) {
-    strncpy(global_cats_config.msg, msg, sizeof(global_cats_config.msg));
-  }
+uint16_t cc_get_last_recorded_sector() {
+  return global_cats_config.last_recorded_sector;
 }
+void cc_set_last_recorded_sector(uint16_t last_recorded_sector) {
+  global_cats_config.last_recorded_sector = last_recorded_sector;
+}
+
+/** persistence functions **/
 
 void cc_load() {
   /* TODO: global_cats_config can't be larger than sector size */
@@ -61,8 +49,9 @@ void cc_save() {
                       sizeof(global_cats_config));
 }
 
+/** debug functions **/
+
 void cc_print() {
-  log_info("Config: f1: %f, f2: %f, i1: %d, msg: %s",
-           (double)global_cats_config.f1, (double)global_cats_config.f2,
-           global_cats_config.i1, global_cats_config.msg);
+  log_info("Config: Last recorded sector: %u",
+           global_cats_config.last_recorded_sector);
 }

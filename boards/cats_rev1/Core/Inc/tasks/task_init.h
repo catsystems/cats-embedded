@@ -5,6 +5,6 @@
 #ifndef INC_TASK_INIT_H_
 #define INC_TASK_INIT_H_
 
-void vTaskInit(void *argument);
+void task_init(void *argument);
 
 #endif  // INC_TASK_INIT_H_

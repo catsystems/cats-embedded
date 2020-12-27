@@ -8,6 +8,7 @@
 #include "cmsis_os.h"
 #include "tasks/task_imu_read.h"
 #include "drivers/icm20601.h"
+#include "util/recorder.h"
 
 static void init_imu();
 static void read_imu(int16_t gyroscope_data[], int16_t acceleration[],
@@ -24,7 +25,7 @@ ICM20601 ICM3 = ICM20601_INIT3();
  * @param argument: Not used
  * @retval None
  */
-void vTaskImuRead(void *argument) {
+void task_imu_read(void *argument) {
   uint32_t tick_count, tick_update;
 
   /* initialize data variables */
@@ -61,6 +62,9 @@ void vTaskImuRead(void *argument) {
     global_imu[imu_idx].gyro_x = gyroscope_data[1];
     global_imu[imu_idx].gyro_x = gyroscope_data[2];
     global_imu[imu_idx].ts = tick_count;
+
+    /* TODO: how fast are we recording here, 300x or 100x per second? */
+    record(IMU0 + imu_idx, &(global_imu[imu_idx]));
 
     imu_idx = (imu_idx + 1) % 3;
     osDelayUntil(tick_count);

@@ -7,28 +7,20 @@
 
 #include <stdint.h>
 
-/* cats config initialization */
-void cc_init(float f1, float f2, uint32_t i1, const char *msg);
+/** cats config initialization **/
+void cc_init(uint16_t last_recorded_sector);
 void cc_clear();
 
-/* accessor functions */
-float cc_get_f1();
-void cc_set_f1(float f1);
+/** accessor functions **/
 
-float cc_get_f2();
-void cc_set_f2(float f2);
+uint16_t cc_get_last_recorded_sector();
+void cc_set_last_recorded_sector(uint16_t last_recorded_sector);
 
-uint32_t cc_get_i1();
-void cc_set_i1(uint32_t i1);
-
-const char *cc_get_msg();
-void cc_set_msg(const char *msg);
-
-/* persistence functions */
+/** persistence functions **/
 void cc_load();
 void cc_save();
 
-/* debug functions */
+/** debug functions **/
 void cc_print();
 
 #endif  // CATS_CONFIG_H_

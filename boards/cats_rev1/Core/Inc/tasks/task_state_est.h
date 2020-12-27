@@ -20,6 +20,6 @@ extern imu_data_t global_imu[3];
 extern flight_fsm_t global_flight_state;
 
 /* Tasks */
-void vTaskStateEst(void *argument);
+void task_state_est(void *argument);
 
 #endif /* INC_TASK_STATE_EST_H_ */

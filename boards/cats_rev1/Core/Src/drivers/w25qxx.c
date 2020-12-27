@@ -269,7 +269,7 @@ void w25qxx_erase_sector(uint32_t sector_addr) {
   sector_addr = sector_addr * w25qxx.sector_size;
   w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x20);
+  w25qxx_spi(0x21);
   w25qxx_send_address(sector_addr);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
@@ -537,6 +537,8 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   w25qxx_wait_for_write_end();
   w25qxx_write_enable();
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  /* TODO: This should probably be 0x12 */
+  /* TODO: most likely the last address bits should be 0 */
   w25qxx_spi(0x02);
   page_num = (page_num * w25qxx.page_size) + offset_in_bytes;
   w25qxx_send_address(page_num);
@@ -590,6 +592,7 @@ void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
   local_offset = offset_in_bytes % w25qxx.page_size;
   do {
     w25qxx_write_page(buf, start_page, local_offset, bytes_to_write);
+    // log_debug("Page %lu written", start_page);
     start_page++;
     bytes_to_write -= w25qxx.page_size - local_offset;
     buf += w25qxx.page_size - local_offset;

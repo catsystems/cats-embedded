@@ -8,7 +8,7 @@
  * Read more at http://percepio.com/2016/10/05/rtos-tracing/
  *
  * Terms of Use
- * This file is part of the trace recorder library (RECORDER), which is the 
+ * This file is part of the trace recorder library (RECORDER), which is the
  * intellectual property of Percepio AB (PERCEPIO) and provided under a
  * license as follows.
  * The RECORDER may be used free of charge for the purpose of recording data
@@ -17,14 +17,14 @@
  * You may distribute the RECORDER in its original source code form, assuming
  * this text (terms of use, disclaimer, copyright notice) is unchanged. You are
  * allowed to distribute the RECORDER with minor modifications intended for
- * configuration or porting of the RECORDER, e.g., to allow using it on a 
+ * configuration or porting of the RECORDER, e.g., to allow using it on a
  * specific processor, processor family or with a specific communication
  * interface. Any such modifications should be documented directly below
- * this comment block.  
+ * this comment block.
  *
  * Disclaimer
  * The RECORDER is being delivered to you AS IS and PERCEPIO makes no warranty
- * as to its use or performance. PERCEPIO does not and cannot warrant the 
+ * as to its use or performance. PERCEPIO does not and cannot warrant the
  * performance or results you may obtain by using the RECORDER or documentation.
  * PERCEPIO make no warranties, express or implied, as to noninfringement of
  * third party rights, merchantability, or fitness for any particular purpose.
@@ -97,42 +97,42 @@ extern "C" {
  *
  * Note: not used by the J-Link RTT stream port (see trcStreamingPort.h instead)
  ******************************************************************************/
-#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_COUNT 10
+#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_COUNT 20
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_PAGED_EVENT_BUFFER_PAGE_SIZE
  *
- * Specifies the size of each page in the paged event buffer. This can be tuned 
+ * Specifies the size of each page in the paged event buffer. This can be tuned
  * to match any internal low-level buffers used by the streaming interface, like
  * the Ethernet MTU (Maximum Transmission Unit). However, since the currently
  * active page can't be transfered, having more but smaller pages is more
- * efficient with respect memory usage, than having a few large pages.  
+ * efficient with respect memory usage, than having a few large pages.
  *
  * Note: not used by the J-Link RTT stream port (see trcStreamingPort.h instead)
  ******************************************************************************/
-#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_SIZE 500
+#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_SIZE 512
 
 /*******************************************************************************
  * TRC_CFG_ISR_TAILCHAINING_THRESHOLD
  *
  * Macro which should be defined as an integer value.
  *
- * If tracing multiple ISRs, this setting allows for accurate display of the 
+ * If tracing multiple ISRs, this setting allows for accurate display of the
  * context-switching also in cases when the ISRs execute in direct sequence.
- * 
+ *
  * vTraceStoreISREnd normally assumes that the ISR returns to the previous
- * context, i.e., a task or a preempted ISR. But if another traced ISR 
+ * context, i.e., a task or a preempted ISR. But if another traced ISR
  * executes in direct sequence, Tracealyzer may incorrectly display a minimal
  * fragment of the previous context in between the ISRs.
  *
- * By using TRC_CFG_ISR_TAILCHAINING_THRESHOLD you can avoid this. This is 
+ * By using TRC_CFG_ISR_TAILCHAINING_THRESHOLD you can avoid this. This is
  * however a threshold value that must be measured for your specific setup.
  * See http://percepio.com/2014/03/21/isr_tailchaining_threshold/
  *
- * The default setting is 0, meaning "disabled" and that you may get an 
+ * The default setting is 0, meaning "disabled" and that you may get an
  * extra fragments of the previous context in between tail-chained ISRs.
  *
- * Note: This setting has separate definitions in trcSnapshotConfig.h and 
+ * Note: This setting has separate definitions in trcSnapshotConfig.h and
  * trcStreamingConfig.h, since it is affected by the recorder mode.
  ******************************************************************************/
 #define TRC_CFG_ISR_TAILCHAINING_THRESHOLD 0

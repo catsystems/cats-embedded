@@ -18,6 +18,6 @@
 extern baro_data_t global_baro[3];
 
 /* Tasks */
-void vTaskBaroRead(void *argument);
+void task_baro_read(void *argument);
 
 #endif /* INC_TASK_BARO_READ_H_ */

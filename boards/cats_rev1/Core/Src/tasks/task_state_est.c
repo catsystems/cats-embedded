@@ -10,6 +10,8 @@
 #include "control/sensor_elimination.h"
 #include "control/calibration.h"
 #include "util/log.h"
+#include "util/types.h"
+#include "util/recorder.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -25,7 +27,7 @@ static void get_data_float(state_estimation_data_t *state_data,
  * @param argument: Not used
  * @retval None
  */
-void vTaskStateEst(void *argument) {
+void task_state_est(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
@@ -57,11 +59,11 @@ void vTaskStateEst(void *argument) {
   initialize_matrices(&filter);
   /* End Initialization */
 
+  osDelay(5000);
+
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / STATE_EST_SAMPLING_FREQ;
-
-  osDelay(5000);
 
   while (1) {
     tick_count += tick_update;
@@ -116,6 +118,11 @@ void vTaskStateEst(void *argument) {
     log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
               meters_per_s, millimeters_per_s);
     /* END DEBUGGING */
+    flight_info_t flight_info = {
+        .ts = osKernelGetTickCount(),
+        .height = meters + millimeters / 1000.f,
+        .velocity = meters_per_s + millimeters_per_s / 1000.f};
+    record(FLIGHT_INFO, &flight_info);
 
     /* TODO: Stuff with this Information */
 

@@ -7,9 +7,11 @@
 
 #include "drivers/ms5607.h"
 #include "tasks/task_baro_read.h"
+#include "tasks/task_recorder.h"
 
 #include "tracing/trcRecorder.h"
 #include "util/log.h"
+#include "util/recorder.h"
 
 #if (configUSE_TRACE_FACILITY == 1)
 traceString baro_channel;
@@ -31,7 +33,7 @@ MS5607 MS3 = MS5607_INIT3();
  * @param argument: Not used
  * @retval None
  */
-void vTaskBaroRead(void *argument) {
+void task_baro_read(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
   /* actual measurements from sensor */
@@ -73,6 +75,8 @@ void vTaskBaroRead(void *argument) {
       global_baro[i].pressure = pressure[i];
       global_baro[i].temperature = temperature[i];
       global_baro[i].ts = tick_count;
+
+      record(BARO0 + i, &(global_baro[i]));
     }
 
     osDelayUntil(tick_count);

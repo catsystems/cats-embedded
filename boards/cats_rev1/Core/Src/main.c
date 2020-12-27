@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "util/types.h"
 #include "util/log.h"
+#include "util/recorder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -110,7 +111,7 @@ const osThreadAttr_t task_state_est_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-/* Definitions for task_state_est */
+/* Definitions for task_flight_fsm */
 osThreadId_t task_flight_fsmHandle;
 uint32_t task_flight_fsm_buffer[1024];
 osStaticThreadDef_t task_flight_fsm_control_block;
@@ -123,9 +124,24 @@ const osThreadAttr_t task_flight_fsm_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+/* Definitions for task_recorder */
+osThreadId_t task_recorderHandle;
+uint32_t task_recorder_buffer[512];
+osStaticThreadDef_t task_recorder_control_block;
+const osThreadAttr_t task_recorder_attributes = {
+    .name = "task_recorder",
+    .stack_mem = &task_recorder_buffer[0],
+    .stack_size = sizeof(task_recorder_buffer),
+    .cb_mem = &task_recorder_control_block,
+    .cb_size = sizeof(task_recorder_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
 baro_data_t global_baro[3];
 imu_data_t global_imu[3];
 flight_fsm_t global_flight_state;
+
+osMessageQueueId_t rec_queue;
 
 /* USER CODE END PV */
 
@@ -140,16 +156,10 @@ static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM15_Init(void);
-void vTaskInit(void *argument);
+void task_init(void *argument);
 
 /* USER CODE BEGIN PFP */
-extern void vTaskBaroRead(void *argument);
 
-extern void vTaskImuRead(void *argument);
-
-extern void vTaskStateEst(void *argument);
-
-extern void vTaskFlightFSM(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -225,29 +235,17 @@ int main(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+#if (configUSE_TRACE_FACILITY == 1)
+  vTraceSetQueueName(rec_queue, "Recorder Queue");
+#endif
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of task_init */
-  task_initHandle = osThreadNew(vTaskInit, NULL, &task_init_attributes);
+  task_initHandle = osThreadNew(task_init, NULL, &task_init_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* creation of task_baro_read */
-  task_baro_readHandle =
-      osThreadNew(vTaskBaroRead, NULL, &task_baro_read_attributes);
-
-  /* creation of task_imu_read */
-  task_imu_readHandle =
-      osThreadNew(vTaskImuRead, NULL, &task_imu_read_attributes);
-
-  /* creation of task_state_est */
-  task_state_estHandle =
-      osThreadNew(vTaskStateEst, NULL, &task_state_est_attributes);
-
-  /* creation of task_state_est */
-  task_flight_fsmHandle =
-      osThreadNew(vTaskFlightFSM, NULL, &task_flight_fsm_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -519,7 +517,7 @@ static void MX_SPI2_Init(void) {
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -728,14 +726,14 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_vTaskInit */
+/* USER CODE BEGIN Header_task_init */
 /**
  * @brief  Function implementing the task_init thread.
  * @param  argument: Not used
  * @retval None
  */
-/* USER CODE END Header_vTaskInit */
-__weak void vTaskInit(void *argument) {
+/* USER CODE END Header_task_init */
+__weak void task_init(void *argument) {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */

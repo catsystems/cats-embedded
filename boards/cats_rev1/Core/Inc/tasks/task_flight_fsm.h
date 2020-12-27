@@ -15,6 +15,6 @@
 extern imu_data_t global_imu[3];
 extern flight_fsm_t global_flight_state;
 
-void vTaskFlightFSM(void *argument);
+void task_flight_fsm(void *argument);
 
 #endif /* INC_TASKS_TASK_FLIGHT_FSM_H_ */

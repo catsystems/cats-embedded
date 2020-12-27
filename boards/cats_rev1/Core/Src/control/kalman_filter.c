@@ -65,6 +65,7 @@ void initialize_matrices(kalman_filter_t *filter) {
 }
 
 void reset_kalman(kalman_filter_t *filter) {
+  /* TODO: this can be done with memset instead of memcpy */
   float x_dash[3] = {0, 0, 0};
   float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
 
