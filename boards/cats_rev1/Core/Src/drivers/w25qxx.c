@@ -6,122 +6,27 @@
 
 #define W25QXX_DUMMY_BYTE 0xA5
 
-w25qxx_t w25qxx;
+w25qxx_t w25qxx = {0};
 
-#if (_W25QXX_USE_FREERTOS == 1)
-#define w25qxx_delay(delay) osDelay(delay)
-#include "cmsis_os.h"
-#else
-#define w25qxx_delay(delay) HAL_Delay(delay)
-#endif
+/** Private Function Declarations **/
 
-void w25qxx_send_address(uint32_t address) {
-  uint8_t buf[4];
-  uint8_t *addr_ptr = (uint8_t *)&address;
-  //  buf[0] = (address & 0xFF000000) >> 24;
-  //  buf[1] = (address & 0xFF0000) >> 16;
-  //  buf[2] = (address & 0xFF00) >> 8;
-  //  buf[3] = address & 0xFF;
-  buf[0] = addr_ptr[3];
-  buf[1] = addr_ptr[2];
-  buf[2] = addr_ptr[1];
-  buf[3] = addr_ptr[0];
-  HAL_SPI_Transmit(&_W25QXX_SPI, buf, sizeof(buf), 100);
-}
-//###################################################################################################################
-uint8_t w25qxx_spi(uint8_t data) {
-  uint8_t ret;
-  HAL_SPI_TransmitReceive(&_W25QXX_SPI, &data, &ret, 1, 100);
-  return ret;
-}
-//###################################################################################################################
-uint32_t w25qxx_read_id(void) {
-  uint32_t temp = 0, temp0 = 0, temp1 = 0, temp2 = 0;
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x9F);
-  temp0 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  temp1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  temp2 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  temp = (temp0 << 16) | (temp1 << 8) | temp2;
-  return temp;
-}
-//###################################################################################################################
-void w25qxx_read_uniq_id(void) {
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x4B);
-  for (uint8_t i = 0; i < 4; i++) w25qxx_spi(W25QXX_DUMMY_BYTE);
-  for (uint8_t i = 0; i < 8; i++)
-    w25qxx.uniq_id[i] = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-}
-//###################################################################################################################
-void w25qxx_write_enable(void) {
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x06);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  w25qxx_delay(1);
-}
-//###################################################################################################################
-void w25qxx_write_disable(void) {
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x04);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  w25qxx_delay(1);
-}
-//###################################################################################################################
-uint8_t w25qxx_read_status_register(uint8_t status_register) {
-  uint8_t status = 0;
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  if (status_register == 1) {
-    w25qxx_spi(0x05);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
-    w25qxx.status_reg_1 = status;
-  } else if (status_register == 2) {
-    w25qxx_spi(0x35);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
-    w25qxx.status_reg_2 = status;
-  } else {
-    w25qxx_spi(0x15);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
-    w25qxx.status_reg_3 = status;
-  }
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  return status;
-}
-//###################################################################################################################
-void w25qxx_write_status_register(uint8_t status_register, uint8_t data) {
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  if (status_register == 1) {
-    w25qxx_spi(0x01);
-    w25qxx.status_reg_1 = data;
-  } else if (status_register == 2) {
-    w25qxx_spi(0x31);
-    w25qxx.status_reg_2 = data;
-  } else {
-    w25qxx_spi(0x11);
-    w25qxx.status_reg_3 = data;
-  }
-  w25qxx_spi(data);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-}
-//###################################################################################################################
-void w25qxx_wait_for_write_end(void) {
-  w25qxx_delay(1);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x05);
-  do {
-    w25qxx.status_reg_1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-    w25qxx_delay(1);
-  } while ((w25qxx.status_reg_1 & 0x01) == 0x01);
-  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-}
-//###################################################################################################################
+static void w25qxx_send_address(uint32_t address);
+static uint8_t w25qxx_spi(uint8_t data);
+static uint32_t w25qxx_read_id(void);
+static void w25qxx_read_uniq_id(void);
+static void w25qxx_write_enable(void);
+static void w25qxx_write_disable(void);
+static uint8_t w25qxx_read_status_register(uint8_t status_register);
+static void w25qxx_write_status_register(uint8_t status_register, uint8_t data);
+static void w25qxx_wait_for_write_end(void);
+
+/** Exported Function Definitions **/
+
 bool w25qxx_init(void) {
   w25qxx.lock = 1;
-  while (HAL_GetTick() < 100) w25qxx_delay(1);
+  while (osKernelGetTickCount() < 100) osDelay(1);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-  w25qxx_delay(100);
+  osDelay(100);
   uint32_t id;
 
   log_debug("w25qxx Init Begin...");
@@ -134,77 +39,55 @@ bool w25qxx_init(void) {
     case 0x4020:  // 	w25q512
       w25qxx.id = W25Q512;
       w25qxx.block_count = 1024;
-
       log_debug("w25qxx Chip: w25q512");
-
       break;
     case 0x4019:  // 	w25q256
       w25qxx.id = W25Q256;
       w25qxx.block_count = 512;
-
       log_debug("w25qxx Chip: w25q256");
-
       break;
     case 0x4018:  // 	w25q128
       w25qxx.id = W25Q128;
       w25qxx.block_count = 256;
-
       log_debug("w25qxx Chip: w25q128");
-
       break;
     case 0x4017:  //	w25q64
       w25qxx.id = W25Q64;
       w25qxx.block_count = 128;
-
       log_debug("w25qxx Chip: w25q64");
-
       break;
     case 0x4016:  //	w25q32
       w25qxx.id = W25Q32;
       w25qxx.block_count = 64;
-
       log_debug("w25qxx Chip: w25q32");
-
       break;
     case 0x4015:  //	w25q16
       w25qxx.id = W25Q16;
       w25qxx.block_count = 32;
-
       log_debug("w25qxx Chip: w25q16");
-
       break;
     case 0x4014:  //	w25q80
       w25qxx.id = W25Q80;
       w25qxx.block_count = 16;
-
       log_debug("w25qxx Chip: w25q80");
-
       break;
     case 0x4013:  //	w25q40
       w25qxx.id = W25Q40;
       w25qxx.block_count = 8;
-
       log_debug("w25qxx Chip: w25q40");
-
       break;
     case 0x4012:  //	w25q20
       w25qxx.id = W25Q20;
       w25qxx.block_count = 4;
-
       log_debug("w25qxx Chip: w25q20");
-
       break;
     case 0x4011:  //	w25q10
       w25qxx.id = W25Q10;
       w25qxx.block_count = 2;
-
       log_debug("w25qxx Chip: w25q10");
-
       break;
     default:
-
       log_debug("w25qxx Unknown ID");
-
       w25qxx.lock = 0;
       return false;
   }
@@ -238,12 +121,12 @@ bool w25qxx_init(void) {
   w25qxx.lock = 0;
   return true;
 }
-//###################################################################################################################
+
 void w25qxx_erase_chip(void) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t start_time = HAL_GetTick();
+  uint32_t start_time = osKernelGetTickCount();
   log_debug("w25qxx EraseChip Begin...");
 #endif
   w25qxx_write_enable();
@@ -252,17 +135,18 @@ void w25qxx_erase_chip(void) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx EraseBlock done after %lu ms!", HAL_GetTick() - start_time);
+  log_debug("w25qxx EraseBlock done after %lu ms!",
+            osKernelGetTickCount() - start_time);
 #endif
-  w25qxx_delay(10);
+  osDelay(10);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w25qxx_erase_sector(uint32_t sector_addr) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t start_time = HAL_GetTick();
+  uint32_t start_time = osKernelGetTickCount();
   log_debug("w25qxx EraseSector %lu Begin...", sector_addr);
 #endif
   w25qxx_wait_for_write_end();
@@ -274,19 +158,20 @@ void w25qxx_erase_sector(uint32_t sector_addr) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx EraseSector done after %lu ms", HAL_GetTick() - start_time);
+  log_debug("w25qxx EraseSector done after %lu ms",
+            osKernelGetTickCount() - start_time);
 #endif
-  w25qxx_delay(1);
+  osDelay(1);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void W25qxx_EraseBlock(uint32_t block_num) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx EraseBlock %lu Begin...", block_num);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   w25qxx_wait_for_write_end();
   block_num = block_num * w25qxx.sector_size * 16;
@@ -297,36 +182,37 @@ void W25qxx_EraseBlock(uint32_t block_num) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx EraseBlock done after %lu ms", HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+  log_debug("w25qxx EraseBlock done after %lu ms",
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
-  w25qxx_delay(1);
+  osDelay(1);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 uint32_t w25qxx_page_to_sector(uint32_t page_num) {
   return ((page_num * w25qxx.page_size) / w25qxx.sector_size);
 }
-//###################################################################################################################
+
 uint32_t w25qxx_page_to_block(uint32_t page_num) {
   return ((page_num * w25qxx.page_size) / w25qxx.block_size);
 }
-//###################################################################################################################
+
 uint32_t w25qxx_sector_to_block(uint32_t sector_num) {
   return ((sector_num * w25qxx.sector_size) / w25qxx.block_size);
 }
-//###################################################################################################################
+
 uint32_t w25qxx_sector_to_page(uint32_t sector_num) {
   return (sector_num * w25qxx.sector_size) / w25qxx.page_size;
 }
-//###################################################################################################################
+
 uint32_t w25qxx_block_to_page(uint32_t block_num) {
   return (block_num * w25qxx.block_size) / w25qxx.page_size;
 }
-//###################################################################################################################
+
 bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
                           uint32_t bytes_to_check_up_to_page_size) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if (((bytes_to_check_up_to_page_size + offset_in_bytes) > w25qxx.page_size) ||
       (bytes_to_check_up_to_page_size == 0))
@@ -334,8 +220,8 @@ bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckPage:%lu, Offset:%lu, Bytes:%lu begin...", page_num,
             offset_in_bytes, bytes_to_check_up_to_page_size);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   uint8_t buf[32];
   uint32_t work_address;
@@ -348,7 +234,7 @@ bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
     w25qxx_spi(0);
     HAL_SPI_Receive(&_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
-    for (uint8_t x = 0; x < sizeof(buf); x++) {
+    for (int x = 0; x < sizeof(buf); x++) {
       if (buf[x] != 0xFF) goto NOT_EMPTY;
     }
   }
@@ -366,24 +252,25 @@ bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
     }
   }
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx CheckPage is Empty in %lu ms", HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+  log_debug("w25qxx CheckPage is Empty in %lu ms",
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckPage is Not Empty in %lu ms",
-            HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return false;
 }
-//###################################################################################################################
+
 bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
                             uint32_t bytes_to_check_up_to_sector_size) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if ((bytes_to_check_up_to_sector_size > w25qxx.sector_size) ||
       (bytes_to_check_up_to_sector_size == 0))
@@ -391,8 +278,8 @@ bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckSector:%lu, Offset:%lu, Bytes:%lu begin...",
             sector_num, offset_in_bytes, bytes_to_check_up_to_sector_size);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   uint8_t buf[32];
   uint32_t work_address;
@@ -424,24 +311,24 @@ bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
   }
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckSector is Empty in %lu ms",
-            HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckSector is Not Empty in %lu ms",
-            HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return false;
 }
-//###################################################################################################################
+
 bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
                            uint32_t bytes_to_check_up_to_block_size) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if ((bytes_to_check_up_to_block_size > w25qxx.block_size) ||
       (bytes_to_check_up_to_block_size == 0))
@@ -449,8 +336,8 @@ bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckBlock:%lu, Offset:%lu, Bytes:%lu begin...", block_num,
             offset_in_bytes, bytes_to_check_up_to_block_size);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   uint8_t buf[32];
   uint32_t work_address;
@@ -481,26 +368,27 @@ bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
     }
   }
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx CheckBlock is Empty in %lu ms", HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+  log_debug("w25qxx CheckBlock is Empty in %lu ms",
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return true;
 NOT_EMPTY:
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx CheckBlock is Not Empty in %lu ms",
-            HAL_GetTick() - start_time);
-  w25qxx_delay(100);
+            osKernelGetTickCount() - start_time);
+  osDelay(100);
 #endif
   w25qxx.lock = 0;
   return false;
 }
-//###################################################################################################################
+
 void w25qxx_write_byte(uint8_t byte, uint32_t byte_address) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t start_time = HAL_GetTick();
+  uint32_t start_time = osKernelGetTickCount();
   log_debug("w25qxx WriteByte 0x%02X at address %lu begin...", byte,
             byte_address);
 #endif
@@ -513,15 +401,16 @@ void w25qxx_write_byte(uint8_t byte, uint32_t byte_address) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  log_debug("w25qxx WriteByte done after %lu ms", HAL_GetTick() - start_time);
+  log_debug("w25qxx WriteByte done after %lu ms",
+            osKernelGetTickCount() - start_time);
 #endif
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
                        uint32_t offset_in_bytes,
                        uint32_t bytes_to_write_up_to_page_size) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25qxx.page_size) ||
       (bytes_to_write_up_to_page_size == 0))
@@ -531,8 +420,8 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx WritePage:%lu, Offset:%lu ,Writes %lu Bytes, begin...",
             page_num, offset_in_bytes, bytes_to_write_up_to_page_size);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   w25qxx_wait_for_write_end();
   w25qxx_write_enable();
@@ -546,22 +435,22 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (_W25QXX_DEBUG == 1)
-  start_time = HAL_GetTick() - start_time;
+  start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < bytes_to_write_up_to_page_size; i++) {
     if ((i % 8 == 0) && (i > 2)) {
       log_debug("");
-      w25qxx_delay(10);
+      osDelay(10);
     }
     log_debug("0x%02X,", buf[i]);
   }
   log_debug("");
   log_debug("w25qxx WritePage done after %lu ms", start_time);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
-  w25qxx_delay(1);
+  osDelay(1);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
                          uint32_t offset_in_bytes,
                          uint32_t bytes_to_write_up_to_sector_size) {
@@ -571,12 +460,12 @@ void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("+++w25qxx WriteSector:%lu, Offset:%lu ,Write %lu Bytes, begin...",
             sector_num, offset_in_bytes, bytes_to_write_up_to_sector_size);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
   if (offset_in_bytes >= w25qxx.sector_size) {
 #if (_W25QXX_DEBUG == 1)
     log_debug("---w25qxx WriteSector Faild!");
-    w25qxx_delay(100);
+    osDelay(100);
 #endif
     return;
   }
@@ -600,10 +489,10 @@ void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
   } while (bytes_to_write > 0);
 #if (_W25QXX_DEBUG == 1)
   log_debug("---w25qxx WriteSector Done");
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
 }
-//###################################################################################################################
+
 void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
                         uint32_t offset_in_bytes,
                         uint32_t bytes_to_write_up_to_block_size) {
@@ -613,12 +502,12 @@ void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("+++w25qxx WriteBlock:%lu, Offset:%lu ,Write %lu Bytes, begin...",
             block_num, offset_in_bytes, bytes_to_write_up_to_block_size);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
   if (offset_in_bytes >= w25qxx.block_size) {
 #if (_W25QXX_DEBUG == 1)
     log_debug("---w25qxx WriteBlock Faild!");
-    w25qxx_delay(100);
+    osDelay(100);
 #endif
     return;
   }
@@ -641,15 +530,15 @@ void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
   } while (bytes_to_write > 0);
 #if (_W25QXX_DEBUG == 1)
   log_debug("---w25qxx WriteBlock Done");
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
 }
-//###################################################################################################################
+
 void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t start_time = HAL_GetTick();
+  uint32_t start_time = osKernelGetTickCount();
   log_debug("w25qxx ReadByte at address %lu begin...", byte_address);
 #endif
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
@@ -664,17 +553,17 @@ void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address) {
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx ReadByte 0x%02X done after %lu ms", *buf,
-            HAL_GetTick() - start_time);
+            osKernelGetTickCount() - start_time);
 #endif
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
                        uint32_t bytes_to_read) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
 #if (_W25QXX_DEBUG == 1)
-  uint32_t start_time = HAL_GetTick();
+  uint32_t start_time = osKernelGetTickCount();
   log_debug("w25qxx ReadBytes at Address:%lu, %lu Bytes  begin...",
             read_address, bytes_to_read);
 #endif
@@ -689,26 +578,26 @@ void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
   HAL_SPI_Receive(&_W25QXX_SPI, buf, bytes_to_read, 2000);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
-  start_time = HAL_GetTick() - start_time;
+  start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < bytes_to_read; i++) {
     if ((i % 8 == 0) && (i > 2)) {
       log_debug("");
-      w25qxx_delay(10);
+      osDelay(10);
     }
     log_debug("0x%02X,", buf[i]);
   }
   log_debug("");
   log_debug("w25qxx ReadBytes done after %lu ms", start_time);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
-  w25qxx_delay(1);
+  osDelay(1);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
                         uint32_t offset_in_bytes,
                         uint32_t NumByteToRead_up_to_PageSize) {
-  while (w25qxx.lock == 1) w25qxx_delay(1);
+  while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if ((NumByteToRead_up_to_PageSize > w25qxx.page_size) ||
       (NumByteToRead_up_to_PageSize == 0))
@@ -718,8 +607,8 @@ void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("w25qxx ReadPage:%lu, Offset:%lu ,Read %lu Bytes, begin...",
             page_num, offset_in_bytes, NumByteToRead_up_to_PageSize);
-  w25qxx_delay(100);
-  uint32_t start_time = HAL_GetTick();
+  osDelay(100);
+  uint32_t start_time = osKernelGetTickCount();
 #endif
   page_num = page_num * w25qxx.page_size + offset_in_bytes;
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
@@ -733,22 +622,22 @@ void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
   HAL_SPI_Receive(&_W25QXX_SPI, buf, NumByteToRead_up_to_PageSize, 100);
   HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (_W25QXX_DEBUG == 1)
-  start_time = HAL_GetTick() - start_time;
+  start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < NumByteToRead_up_to_PageSize; i++) {
     if ((i % 8 == 0) && (i > 2)) {
       log_debug("");
-      w25qxx_delay(10);
+      osDelay(10);
     }
     log_debug("0x%02X,", buf[i]);
   }
   log_debug("");
   log_debug("w25qxx ReadPage done after %lu ms", start_time);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
-  w25qxx_delay(1);
+  osDelay(1);
   w25qxx.lock = 0;
 }
-//###################################################################################################################
+
 void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
                         uint32_t offset_in_bytes,
                         uint32_t bytes_to_read_up_to_sector_size) {
@@ -758,12 +647,12 @@ void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("+++w25qxx ReadSector:%lu, Offset:%lu ,Read %lu Bytes, begin...",
             sector_num, offset_in_bytes, bytes_to_read_up_to_sector_size);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
   if (offset_in_bytes >= w25qxx.sector_size) {
 #if (_W25QXX_DEBUG == 1)
     log_debug("---w25qxx ReadSector Faild!");
-    w25qxx_delay(100);
+    osDelay(100);
 #endif
     return;
   }
@@ -786,10 +675,10 @@ void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
   } while (bytes_to_read > 0);
 #if (_W25QXX_DEBUG == 1)
   log_debug("---w25qxx ReadSector Done");
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
 }
-//###################################################################################################################
+
 void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
                        uint32_t offset_in_bytes,
                        uint32_t bytes_to_read_up_to_block_size) {
@@ -799,12 +688,12 @@ void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
 #if (_W25QXX_DEBUG == 1)
   log_debug("+++w25qxx ReadBlock:%lu, Offset:%lu ,Read %lu Bytes, begin...",
             block_num, offset_in_bytes, bytes_to_read_up_to_block_size);
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
   if (offset_in_bytes >= w25qxx.block_size) {
 #if (_W25QXX_DEBUG == 1)
     log_debug("w25qxx ReadBlock Faild!");
-    w25qxx_delay(100);
+    osDelay(100);
 #endif
     return;
   }
@@ -827,7 +716,111 @@ void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
   } while (bytes_to_read > 0);
 #if (_W25QXX_DEBUG == 1)
   log_debug("---w25qxx ReadBlock Done");
-  w25qxx_delay(100);
+  osDelay(100);
 #endif
 }
-//###################################################################################################################
+
+/** Private Function Definitions **/
+
+static void w25qxx_send_address(uint32_t address) {
+  uint8_t buf[4];
+  uint8_t *addr_ptr = (uint8_t *)&address;
+  //  buf[0] = (address & 0xFF000000) >> 24;
+  //  buf[1] = (address & 0xFF0000) >> 16;
+  //  buf[2] = (address & 0xFF00) >> 8;
+  //  buf[3] = address & 0xFF;
+  buf[0] = addr_ptr[3];
+  buf[1] = addr_ptr[2];
+  buf[2] = addr_ptr[1];
+  buf[3] = addr_ptr[0];
+  HAL_SPI_Transmit(&_W25QXX_SPI, buf, sizeof(buf), 100);
+}
+
+static uint8_t w25qxx_spi(uint8_t data) {
+  uint8_t ret;
+  HAL_SPI_TransmitReceive(&_W25QXX_SPI, &data, &ret, 1, 100);
+  return ret;
+}
+
+static uint32_t w25qxx_read_id(void) {
+  uint32_t temp = 0, temp0 = 0, temp1 = 0, temp2 = 0;
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi(0x9F);
+  temp0 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  temp1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  temp2 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+  temp = (temp0 << 16) | (temp1 << 8) | temp2;
+  return temp;
+}
+
+static void w25qxx_read_uniq_id(void) {
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi(0x4B);
+  for (int i = 0; i < 4; i++) w25qxx_spi(W25QXX_DUMMY_BYTE);
+  for (int i = 0; i < 8; i++) w25qxx.uniq_id[i] = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+}
+
+/* TODO: run this at initialization */
+static void w25qxx_write_enable(void) {
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi(0x06);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+  osDelay(1);
+}
+
+static void w25qxx_write_disable(void) {
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi(0x04);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+  osDelay(1);
+}
+
+static uint8_t w25qxx_read_status_register(uint8_t status_register) {
+  uint8_t status = 0;
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  if (status_register == 1) {
+    w25qxx_spi(0x05);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_1 = status;
+  } else if (status_register == 2) {
+    w25qxx_spi(0x35);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_2 = status;
+  } else {
+    w25qxx_spi(0x15);
+    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_3 = status;
+  }
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+  return status;
+}
+
+static void w25qxx_write_status_register(uint8_t status_register,
+                                         uint8_t data) {
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  if (status_register == 1) {
+    w25qxx_spi(0x01);
+    w25qxx.status_reg_1 = data;
+  } else if (status_register == 2) {
+    w25qxx_spi(0x31);
+    w25qxx.status_reg_2 = data;
+  } else {
+    w25qxx_spi(0x11);
+    w25qxx.status_reg_3 = data;
+  }
+  w25qxx_spi(data);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+}
+
+static void w25qxx_wait_for_write_end(void) {
+  osDelay(1);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi(0x05);
+  do {
+    w25qxx.status_reg_1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    osDelay(1);
+  } while ((w25qxx.status_reg_1 & 0x01) == 0x01);
+  HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
+}

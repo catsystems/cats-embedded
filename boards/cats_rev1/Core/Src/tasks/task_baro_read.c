@@ -7,17 +7,18 @@
 
 #include "drivers/ms5607.h"
 #include "tasks/task_baro_read.h"
-#include "tasks/task_recorder.h"
-
-#include "tracing/trcRecorder.h"
 #include "util/log.h"
 #include "util/recorder.h"
+#include "config/globals.h"
+#include "tasks/task_recorder.h"
 
 #if (configUSE_TRACE_FACILITY == 1)
+#include "tracing/trcRecorder.h"
 traceString baro_channel;
 #endif
 
-static void init_baro();
+/** Externs **/
+
 static void prepare_temp();
 static void prepare_pres();
 static void get_temp_pres(int32_t *temperature, int32_t *pressure);
@@ -25,9 +26,6 @@ static void read_baro();
 
 #define MS_TIMEOUT 5
 
-MS5607 MS1 = MS5607_INIT1();
-MS5607 MS2 = MS5607_INIT2();
-MS5607 MS3 = MS5607_INIT3();
 /**
  * @brief Function implementing the task_baro_read thread.
  * @param argument: Not used
@@ -39,8 +37,6 @@ void task_baro_read(void *argument) {
   /* actual measurements from sensor */
   int32_t temperature[3];
   int32_t pressure[3];
-
-  init_baro();
 
 #if (configUSE_TRACE_FACILITY == 1)
   baro_channel = xTraceRegisterString("Baro Channel");
@@ -83,15 +79,6 @@ void task_baro_read(void *argument) {
   }
 }
 
-void init_baro() {
-  ms5607_init(&MS1);
-  trace_print(baro_channel, "Init baro 1");
-  ms5607_init(&MS2);
-  trace_print(baro_channel, "Init baro 2");
-  ms5607_init(&MS3);
-  trace_print(baro_channel, "Init baro 3");
-}
-
 void prepare_temp() {
   trace_print(baro_channel, "Prepare temp 1 start");
   ms5607_prepare_temp(&MS1);
@@ -119,24 +106,24 @@ void prepare_pres() {
 void read_baro() {
   trace_print(baro_channel, "Read baro 1 start");
   int counter = 0;
-  while ((ms5607_try_readout(&MS1) == 0) && (MS_TIMEOUT >= counter)) {
-    counter++;
+  while ((ms5607_try_readout(&MS1) == false) && (MS_TIMEOUT >= counter)) {
+    ++counter;
     osDelay(1);
   }
   trace_printf(baro_channel, "Read baro 1 end, counter: %d", counter);
 
   trace_print(baro_channel, "Read baro 2 start");
   counter = 0;
-  while ((ms5607_try_readout(&MS2) == 0) && (MS_TIMEOUT >= counter)) {
-    counter++;
+  while ((ms5607_try_readout(&MS2) == false) && (MS_TIMEOUT >= counter)) {
+    ++counter;
     osDelay(1);
   }
   trace_printf(baro_channel, "Read baro 2 end, counter: %d", counter);
 
   trace_print(baro_channel, "Read baro 3 start");
   counter = 0;
-  while ((ms5607_try_readout(&MS3) == 0) && (MS_TIMEOUT >= counter)) {
-    counter++;
+  while ((ms5607_try_readout(&MS3) == false) && (MS_TIMEOUT >= counter)) {
+    ++counter;
     osDelay(1);
   }
   trace_printf(baro_channel, "Read baro 3 end, counter: %d", counter);

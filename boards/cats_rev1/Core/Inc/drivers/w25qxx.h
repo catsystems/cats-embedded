@@ -1,6 +1,3 @@
-#ifndef _W25QXX_H
-#define _W25QXX_H
-
 /*
   Author:     Nima Askari
   WebSite:    http://www.github.com/NimaLTD
@@ -22,8 +19,13 @@
   First release.
 */
 
+#ifndef _W25QXX_H
+#define _W25QXX_H
+
 #include <stdbool.h>
 #include <stdint.h>
+
+/** Exported Types **/
 
 typedef enum {
   W25Q10 = 1,
@@ -53,14 +55,10 @@ typedef struct {
   uint8_t status_reg_2;
   uint8_t status_reg_3;
   uint8_t lock;
-
 } w25qxx_t;
 
-extern w25qxx_t w25qxx;
-//############################################################################
-// in Page,Sector and block read/write functions, can put 0 to read maximum
-// bytes
-//############################################################################
+/** Exported Functions **/
+
 bool w25qxx_init(void);
 
 void w25qxx_erase_chip(void);
@@ -102,6 +100,9 @@ void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
 void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
                        uint32_t offset_in_bytes,
                        uint32_t bytes_to_read_up_to_block_size);
-//############################################################################
+
+/** Externs **/
+
+extern w25qxx_t w25qxx;
 
 #endif

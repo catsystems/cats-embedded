@@ -5,88 +5,103 @@
 // *** Includes *** //
 
 #include "drivers/icm20601.h"
+#include "util/types.h"
+#include <stdbool.h>
 
-// *** Macros *** //
+/** Private Defines **/
 
-#define UINT8_TO_INT16(dst, src_high, src_low) \
-  do {                                         \
-    dst = (src_high);                          \
-    dst <<= 8;                                 \
-    dst |= (src_low);                          \
-  } while (0)
+#define REG_SELF_TEST_X_GYRO   0x00
+#define REG_SELF_TEST_Y_GYRO   0x01
+#define REG_SELF_TEST_Z_GYRO   0x02
+#define REG_SELF_TEST_X_ACCEL  0x0D
+#define REG_SELF_TEST_Y_ACCEL  0x0E
+#define REG_SELF_TEST_Z_ACCEL  0x0F
+#define REG_XG_OFFS_USRH       0x13
+#define REG_XG_OFFS_USRL       0x14
+#define REG_YG_OFFS_USRH       0x15
+#define REG_YG_OFFS_USRL       0x16
+#define REG_ZG_OFFS_USRH       0x17
+#define REG_ZG_OFFS_USRL       0x18
+#define REG_SMPLRT_DIV         0x19
+#define REG_CONFIG             0x1A
+#define REG_GYRO_CONFIG        0x1B
+#define REG_ACCEL_CONFIG_1     0x1C
+#define REG_ACCEL_CONFIG_2     0x1D
+#define REG_LP_MODE_CFG        0x1E
+#define REG_ACCEL_WOM_X_THR    0x20
+#define REG_ACCEL_WOM_Y_THR    0x21
+#define REG_ACCEL_WOM_Z_THR    0x22
+#define REG_FIFO_EN            0x23
+#define REG_FSYNC_INT          0x36
+#define REG_INT_PIN_CFG        0x37
+#define REG_INT_ENABLE         0x38
+#define REG_FIFO_WM_INT_STATUS 0x39
+#define REG_INT_STATUS         0x3A
+#define REG_ACCEL_XOUT_H       0x3B
+#define REG_ACCEL_XOUT_L       0x3C
+#define REG_ACCEL_YOUT_H       0x3D
+#define REG_ACCEL_YOUT_L       0x3E
+#define REG_ACCEL_ZOUT_H       0x3F
+#define REG_ACCEL_ZOUT_L       0x40
+#define REG_TEMP_OUT_H         0x41
+#define REG_TEMP_OUT_L         0x42
+#define REG_GYRO_XOUT_H        0x43
+#define REG_GYRO_XOUT_L        0x44
+#define REG_GYRO_YOUT_H        0x45
+#define REG_GYRO_YOUT_L        0x46
+#define REG_GYRO_ZOUT_H        0x47
+#define REG_GYRO_ZOUT_L        0x48
+#define REG_SIGNAL_PATH_RESET  0x68
+#define REG_ACCEL_INTEL_CTRL   0x69
+#define REG_USER_CTRL          0x6A
+#define REG_PWR_MGMT_1         0x6B
+#define REG_PWR_MGMT_2         0x6C
+#define REG_FIFO_COUNTH        0x72
+#define REG_FIFO_COUNTL        0x73
+#define REG_FIFO_R_W           0x74
+#define REG_WHO_AM_I           0x75
+#define REG_XA_OFFSET_H        0x77
+#define REG_XA_OFFSET_L        0x78
+#define REG_YA_OFFSET_H        0x7A
+#define REG_YA_OFFSET_L        0x7B
+#define REG_ZA_OFFSET_H        0x7D
+#define REG_ZA_OFFSET_L        0x7E
+
+#define REG_WHO_AM_I_CONST 0xAC
+
+#define IMU20601_SPI_TIMEOUT 3000
+
+#define SENS_reset       0x81
+#define SENS_internalpll 0x01
+#define SENS_standby     0x3F
+#define SENS_nofifo      0x00
+#define SENS_disablei2c  0x41
+
+/** Private Constants **/
 
 static const float temperature_sensitivity = 326.8f;
 
-// *** Local functions *** //
+/** Private Function Declarations **/
 
 // Used to convert raw accelerometer readings to G-force.
-static float get_accel_sensitivity(enum icm20601_accel_g accel_g) {
-  float f;
-
-  switch (accel_g) {
-    case (ICM20601_ACCEL_RANGE_4G):
-      f = 8192.0f;
-      break;
-    case (ICM20601_ACCEL_RANGE_8G):
-      f = 4096.0f;
-      break;
-    case (ICM20601_ACCEL_RANGE_16G):
-      f = 2048.0f;
-      break;
-    case (ICM20601_ACCEL_RANGE_32G):
-      f = 1024.0f;
-      break;
-    default:
-      f = 0.0f;
-  }
-  return f;
-}
-
+static float get_accel_sensitivity(enum icm20601_accel_g accel_g);
 // Used to convert raw gyroscope readings to degrees per second.
-static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps) {
-  float f;
-
-  switch (gyro_dps) {
-    case (ICM20601_GYRO_RANGE_500_DPS):
-      f = 65.5f;
-      break;
-    case (ICM20601_GYRO_RANGE_1000_DPS):
-      f = 32.8f;
-      break;
-    case (ICM20601_GYRO_RANGE_2000_DPS):
-      f = 16.4f;
-      break;
-    case (ICM20601_GYRO_RANGE_4000_DPS):
-      f = 8.2f;
-      break;
-    default:
-      f = 0.0f;
-  }
-  return f;
-}
-
+static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps);
 // Read bytes from MEMS
-static void icm_read_bytes(struct icm20601_dev *dev, uint8_t reg,
-                           uint8_t *pData, uint16_t size) {
-  reg = reg | 0x80;
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
-  HAL_SPI_Receive(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
-}
-
+static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData,
+                           uint16_t size);
 // Write bytes to MEMS
-static void icm_write_bytes(struct icm20601_dev *dev, uint8_t reg,
-                            uint8_t *pData, uint16_t size) {
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
-  HAL_SPI_Transmit(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
-}
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData,
+                            uint16_t size);
 
-// *** Global Functions *** //
+/** Exported Function Definitions **/
 
-int8_t icm20601_init(struct icm20601_dev *dev) {
+/**
+ *
+ * @param dev
+ * @return true if initialization successful
+ */
+bool icm20601_init(const ICM20601 *dev) {
   uint8_t tmp = 0;
   uint8_t r[1] = {0};
 
@@ -110,7 +125,7 @@ int8_t icm20601_init(struct icm20601_dev *dev) {
 
   // verify we are able to read from the chip
   icm_read_bytes(dev, REG_WHO_AM_I, r, 1);
-  if (r[0] != REG_WHO_AM_I_CONST) return 0;
+  if (r[0] != REG_WHO_AM_I_CONST) return false;
 
   // place accel and gyro on standby
   tmp = SENS_standby;  // 0x3F
@@ -125,7 +140,7 @@ int8_t icm20601_init(struct icm20601_dev *dev) {
   icm_write_bytes(dev, REG_USER_CTRL, &tmp, 1);
 
   // Accelerometer filtering
-  if (ICM20601_ACCEL_DLPF_BYPASS_1046_HZ == dev->accel_dlpf) {
+  if (dev->accel_dlpf == ICM20601_ACCEL_DLPF_BYPASS_1046_HZ) {
     tmp = (0x01 << 3);
   } else {
     tmp = dev->accel_dlpf;
@@ -166,21 +181,21 @@ int8_t icm20601_init(struct icm20601_dev *dev) {
   tmp = 0x00;
   icm_write_bytes(dev, REG_PWR_MGMT_2, &tmp, 1);
 
-  return 1;
+  return true;
 }
 
 // Read out raw acceleration data
-void icm20601_read_accel_raw(struct icm20601_dev *dev, int16_t *accel) {
+void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel) {
   uint8_t accel_8bit[6] = {0};
   icm_read_bytes(dev, REG_ACCEL_XOUT_H, accel_8bit, 6);
 
-  UINT8_TO_INT16(accel[0], accel_8bit[0], accel_8bit[1]);
-  UINT8_TO_INT16(accel[1], accel_8bit[2], accel_8bit[3]);
-  UINT8_TO_INT16(accel[2], accel_8bit[4], accel_8bit[5]);
+  accel[0] = uint8_to_int16(accel_8bit[0], accel_8bit[1]);
+  accel[1] = uint8_to_int16(accel_8bit[2], accel_8bit[3]);
+  accel[2] = uint8_to_int16(accel_8bit[4], accel_8bit[5]);
 }
 
 // Read out processed acceleration data
-void icm20601_read_accel(struct icm20601_dev *dev, float *accel) {
+void icm20601_read_accel(const ICM20601 *dev, float *accel) {
   float accel_sensitivity;
   int16_t accel_raw[3] = {0};
 
@@ -194,17 +209,17 @@ void icm20601_read_accel(struct icm20601_dev *dev, float *accel) {
 }
 
 // Read out raw gyro data
-void icm20601_read_gyro_raw(struct icm20601_dev *dev, int16_t *gyro) {
+void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro) {
   uint8_t gyro_8bit[6] = {0};
   icm_read_bytes(dev, REG_GYRO_XOUT_H, gyro_8bit, 6);
 
-  UINT8_TO_INT16(gyro[0], gyro_8bit[0], gyro_8bit[1]);
-  UINT8_TO_INT16(gyro[1], gyro_8bit[2], gyro_8bit[3]);
-  UINT8_TO_INT16(gyro[2], gyro_8bit[4], gyro_8bit[5]);
+  gyro[0] = uint8_to_int16(gyro_8bit[0], gyro_8bit[1]);
+  gyro[1] = uint8_to_int16(gyro_8bit[2], gyro_8bit[3]);
+  gyro[2] = uint8_to_int16(gyro_8bit[4], gyro_8bit[5]);
 }
 
 // Read out processed gyro data
-void icm20601_read_gyro(struct icm20601_dev *dev, float *gyro) {
+void icm20601_read_gyro(const ICM20601 *dev, float *gyro) {
   float gyro_sensitivity;
   int16_t gyro_raw[3] = {0};
 
@@ -218,15 +233,15 @@ void icm20601_read_gyro(struct icm20601_dev *dev, float *gyro) {
 }
 
 // Read out raw temperature data
-void icm20601_read_temp_raw(struct icm20601_dev *dev, int16_t *temp) {
+void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp) {
   uint8_t temp_8bit[2] = {0};
   icm_read_bytes(dev, REG_TEMP_OUT_H, temp_8bit, 2);
 
-  UINT8_TO_INT16(*temp, temp_8bit[0], temp_8bit[1]);
+  *temp = uint8_to_int16(temp_8bit[0], temp_8bit[1]);
 }
 
 // Read out processed temperature in degC
-void icm20601_read_temp(struct icm20601_dev *dev, float *temp) {
+void icm20601_read_temp(const ICM20601 *dev, float *temp) {
   int16_t temperature_raw;
   icm20601_read_temp_raw(dev, &temperature_raw);
 
@@ -235,14 +250,14 @@ void icm20601_read_temp(struct icm20601_dev *dev, float *temp) {
                   // + 25degC
 }
 
-void icm20601_accel_z_calib(struct icm20601_dev *dev) {
+void icm20601_accel_z_calib(const ICM20601 *dev) {
   uint8_t accel_offset_8bit[2] = {0};
   int16_t accel_offset = 0;
   int16_t accel_real[3] = {0};
 
   // Read current offset
   icm_read_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
-  UINT8_TO_INT16(accel_offset, accel_offset_8bit[0], accel_offset_8bit[1]);
+  accel_offset = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
 
   // Remove first bit as it is reserved and not used
   accel_offset = accel_offset >> 1;
@@ -265,7 +280,7 @@ void icm20601_accel_z_calib(struct icm20601_dev *dev) {
   icm_write_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
 }
 
-void icm20601_accel_calib(struct icm20601_dev *dev, uint8_t axis) {
+void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis) {
   if (axis > 2) return;
   HAL_Delay(100);
   uint8_t accel_offset_8bit[2] = {0};
@@ -274,7 +289,7 @@ void icm20601_accel_calib(struct icm20601_dev *dev, uint8_t axis) {
 
   // Read current offset
   icm_read_bytes(dev, REG_XA_OFFSET_H + (3 * axis), accel_offset_8bit, 2);
-  UINT8_TO_INT16(accel_offset, accel_offset_8bit[0], accel_offset_8bit[1]);
+  accel_offset = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
 
   // Remove first bit as it is reserved and not used
   accel_offset = accel_offset >> 1;
@@ -295,4 +310,57 @@ void icm20601_accel_calib(struct icm20601_dev *dev, uint8_t axis) {
 
   // Write to offset register
   icm_write_bytes(dev, REG_XA_OFFSET_H + (3 * axis), accel_offset_8bit, 2);
+}
+
+/** Private Function Definitions **/
+
+// Used to convert raw accelerometer readings to G-force.
+static float get_accel_sensitivity(enum icm20601_accel_g accel_g) {
+  switch (accel_g) {
+    case (ICM20601_ACCEL_RANGE_4G):
+      return 8192.0f;
+    case (ICM20601_ACCEL_RANGE_8G):
+      return 4096.0f;
+    case (ICM20601_ACCEL_RANGE_16G):
+      return 2048.0f;
+    case (ICM20601_ACCEL_RANGE_32G):
+      return 1024.0f;
+    default:
+      return 0.0f;
+  }
+}
+
+// Used to convert raw gyroscope readings to degrees per second.
+static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps) {
+  switch (gyro_dps) {
+    case (ICM20601_GYRO_RANGE_500_DPS):
+      return 65.5f;
+    case (ICM20601_GYRO_RANGE_1000_DPS):
+      return 32.8f;
+    case (ICM20601_GYRO_RANGE_2000_DPS):
+      return 16.4f;
+    case (ICM20601_GYRO_RANGE_4000_DPS):
+      return 8.2f;
+    default:
+      return 0.0f;
+  }
+}
+
+// Read bytes from MEMS
+static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData,
+                           uint16_t size) {
+  reg = reg | 0x80;
+  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
+  HAL_SPI_Receive(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
+  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
+}
+
+// Write bytes to MEMS
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData,
+                            uint16_t size) {
+  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
+  HAL_SPI_Transmit(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
+  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
 }

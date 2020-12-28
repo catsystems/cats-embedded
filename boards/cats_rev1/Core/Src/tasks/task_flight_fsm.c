@@ -26,7 +26,7 @@ void task_flight_fsm(void *argument) {
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / FLIGHT_FSM_SAMPLING_FREQ;
 
-  osDelay(5000);
+  osDelay(1000);
 
   while (1) {
     tick_count += tick_update;

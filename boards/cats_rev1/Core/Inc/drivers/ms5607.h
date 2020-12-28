@@ -7,19 +7,9 @@
 
 #include "stm32l4xx_hal.h"
 #include "cmsis_os.h"
+#include <stdbool.h>
 
-// *** Macros *** //
-
-#define MS5607_INIT1() \
-  { .i2c_address = 0xEE, .i2c_bus = &hi2c1, .osr = MS5607_OSR_256, }
-
-#define MS5607_INIT2() \
-  { .i2c_address = 0xEC, .i2c_bus = &hi2c1, .osr = MS5607_OSR_256, }
-
-#define MS5607_INIT3() \
-  { .i2c_address = 0xEE, .i2c_bus = &hi2c2, .osr = MS5607_OSR_256, }
-
-// *** Defines *** //
+/** Exported Defines **/
 
 #define BARO_I2C_TIMEOUT 10
 
@@ -33,7 +23,7 @@
 // Conversion time
 #define BARO_CONVERSION_TIME_OSR_BASE 0.6
 
-// *** Enums *** //
+/** Exported Types **/
 
 enum ms5607_osr {
   MS5607_OSR_256 = 0,
@@ -47,8 +37,6 @@ enum ms5607_data {
   MS5607_PRESSURE = 1,
   MS5607_TEMPERATURE = 2,
 };
-
-// *** Structs *** //
 
 typedef struct ms5607_dev {
   // Hardware Configuration
@@ -65,26 +53,22 @@ typedef struct ms5607_dev {
   uint8_t raw_temp[3];
 } MS5607;
 
-// *** Extern *** //
+/** Exported Functions **/
 
-extern void ms5607_init(struct ms5607_dev *dev);
+void ms5607_init(MS5607 *dev);
 
-// extern void ms5607_read_raw_pres_temp(struct ms5607_dev *dev,
+// extern void ms5607_read_raw_pres_temp(MS5607   *dev,
 //                                      int32_t *pressure_raw,
 //                                      int32_t *temperature_raw);
 
-// extern void ms5607_read_pres_temp(struct ms5607_dev *dev, int32_t
+// extern void ms5607_read_pres_temp(MS5607   *dev, int32_t
 // *temperature,
 //                                  int32_t *pressure);
 
-extern void ms5607_prepare_temp(struct ms5607_dev *dev);
-extern void ms5607_prepare_pres(struct ms5607_dev *dev);
-extern uint8_t ms5607_busy();
-extern uint8_t ms5607_try_readout(struct ms5607_dev *dev);
-extern uint8_t ms5607_get_temp_pres(struct ms5607_dev *dev,
-                                    int32_t *temperature, int32_t *pressure);
-
-extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c2;
+void ms5607_prepare_temp(MS5607 *dev);
+void ms5607_prepare_pres(MS5607 *dev);
+bool ms5607_busy();
+bool ms5607_try_readout(MS5607 *dev);
+bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature, int32_t *pressure);
 
 #endif

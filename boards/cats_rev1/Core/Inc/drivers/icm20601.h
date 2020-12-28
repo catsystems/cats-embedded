@@ -6,106 +6,10 @@
 #define _ICM20602_H
 
 #include "stm32l4xx_hal.h"
+#include "cmsis_os.h"
+#include <stdbool.h>
 
-// *** Macros *** //
-
-#define ICM20601_INIT1()                                       \
-  {                                                            \
-    .cs_port = GPIOB, .cs_pin = GPIO_PIN_0, .spi_bus = &hspi1, \
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,                 \
-    .accel_g = ICM20601_ACCEL_RANGE_32G,                       \
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,                     \
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,                  \
-  }
-
-#define ICM20601_INIT2()                                       \
-  {                                                            \
-    .cs_port = GPIOB, .cs_pin = GPIO_PIN_1, .spi_bus = &hspi1, \
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,                 \
-    .accel_g = ICM20601_ACCEL_RANGE_32G,                       \
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,                     \
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,                  \
-  }
-
-#define ICM20601_INIT3()                                       \
-  {                                                            \
-    .cs_port = GPIOB, .cs_pin = GPIO_PIN_2, .spi_bus = &hspi1, \
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,                 \
-    .accel_g = ICM20601_ACCEL_RANGE_32G,                       \
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,                     \
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,                  \
-  }
-
-// *** Defines *** //
-
-#define REG_SELF_TEST_X_GYRO   0x00
-#define REG_SELF_TEST_Y_GYRO   0x01
-#define REG_SELF_TEST_Z_GYRO   0x02
-#define REG_SELF_TEST_X_ACCEL  0x0D
-#define REG_SELF_TEST_Y_ACCEL  0x0E
-#define REG_SELF_TEST_Z_ACCEL  0x0F
-#define REG_XG_OFFS_USRH       0x13
-#define REG_XG_OFFS_USRL       0x14
-#define REG_YG_OFFS_USRH       0x15
-#define REG_YG_OFFS_USRL       0x16
-#define REG_ZG_OFFS_USRH       0x17
-#define REG_ZG_OFFS_USRL       0x18
-#define REG_SMPLRT_DIV         0x19
-#define REG_CONFIG             0x1A
-#define REG_GYRO_CONFIG        0x1B
-#define REG_ACCEL_CONFIG_1     0x1C
-#define REG_ACCEL_CONFIG_2     0x1D
-#define REG_LP_MODE_CFG        0x1E
-#define REG_ACCEL_WOM_X_THR    0x20
-#define REG_ACCEL_WOM_Y_THR    0x21
-#define REG_ACCEL_WOM_Z_THR    0x22
-#define REG_FIFO_EN            0x23
-#define REG_FSYNC_INT          0x36
-#define REG_INT_PIN_CFG        0x37
-#define REG_INT_ENABLE         0x38
-#define REG_FIFO_WM_INT_STATUS 0x39
-#define REG_INT_STATUS         0x3A
-#define REG_ACCEL_XOUT_H       0x3B
-#define REG_ACCEL_XOUT_L       0x3C
-#define REG_ACCEL_YOUT_H       0x3D
-#define REG_ACCEL_YOUT_L       0x3E
-#define REG_ACCEL_ZOUT_H       0x3F
-#define REG_ACCEL_ZOUT_L       0x40
-#define REG_TEMP_OUT_H         0x41
-#define REG_TEMP_OUT_L         0x42
-#define REG_GYRO_XOUT_H        0x43
-#define REG_GYRO_XOUT_L        0x44
-#define REG_GYRO_YOUT_H        0x45
-#define REG_GYRO_YOUT_L        0x46
-#define REG_GYRO_ZOUT_H        0x47
-#define REG_GYRO_ZOUT_L        0x48
-#define REG_SIGNAL_PATH_RESET  0x68
-#define REG_ACCEL_INTEL_CTRL   0x69
-#define REG_USER_CTRL          0x6A
-#define REG_PWR_MGMT_1         0x6B
-#define REG_PWR_MGMT_2         0x6C
-#define REG_FIFO_COUNTH        0x72
-#define REG_FIFO_COUNTL        0x73
-#define REG_FIFO_R_W           0x74
-#define REG_WHO_AM_I           0x75
-#define REG_XA_OFFSET_H        0x77
-#define REG_XA_OFFSET_L        0x78
-#define REG_YA_OFFSET_H        0x7A
-#define REG_YA_OFFSET_L        0x7B
-#define REG_ZA_OFFSET_H        0x7D
-#define REG_ZA_OFFSET_L        0x7E
-
-#define REG_WHO_AM_I_CONST 0xAC
-
-#define SENS_reset       0x81
-#define SENS_internalpll 0x01
-#define SENS_standby     0x3F
-#define SENS_nofifo      0x00
-#define SENS_disablei2c  0x41
-
-#define IMU20601_SPI_TIMEOUT 3000
-
-// *** enums *** //
+/** Exported Types **/
 
 /** Enumerated value corresponds with A_DLPF_CFG in the ACCEL_CONFIG2 register
  * unless BYPASS is specified in the name. If BYPASS is used, the DLPF is
@@ -154,13 +58,11 @@ enum icm20601_gyro_dps {
   ICM20601_GYRO_RANGE_4000_DPS = 3,
 };
 
-// *** structs *** //
-
 typedef struct icm20601_dev {
   // Hardware Configuration
-  GPIO_TypeDef *cs_port;
+  GPIO_TypeDef *const cs_port;
   uint16_t cs_pin;
-  SPI_HandleTypeDef *spi_bus;
+  SPI_HandleTypeDef *const spi_bus;
   // Sensor Configuration
   enum icm20601_accel_dlpf accel_dlpf;
   enum icm20601_accel_g accel_g;
@@ -168,22 +70,14 @@ typedef struct icm20601_dev {
   enum icm20601_gyro_dps gyro_dps;
 } ICM20601;
 
-// *** Global Functions *** //
+/** Exported Functions **/
 
-extern int8_t icm20601_init(struct icm20601_dev *dev);
-
-extern void icm20601_read_accel(struct icm20601_dev *dev, float *accel);
-
-extern void icm20601_read_accel_raw(struct icm20601_dev *dev, int16_t *accel);
-
-extern void icm20601_read_gyro(struct icm20601_dev *dev, float *gyro);
-
-extern void icm20601_read_gyro_raw(struct icm20601_dev *dev, int16_t *gyro);
-
-extern void icm20601_read_temp_raw(struct icm20601_dev *dev, int16_t *temp);
-
-extern void icm20601_accel_calib(struct icm20601_dev *dev, uint8_t axis);
-
-extern SPI_HandleTypeDef hspi1;
+bool icm20601_init(const ICM20601 *dev);
+void icm20601_read_accel(const ICM20601 *dev, float *accel);
+void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel);
+void icm20601_read_gyro(const ICM20601 *dev, float *gyro);
+void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro);
+void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp);
+void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis);
 
 #endif

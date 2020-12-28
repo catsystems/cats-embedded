@@ -14,9 +14,6 @@
 /* Constants */
 #define BARO_SAMPLING_FREQ 100
 
-/* Extern */
-extern baro_data_t global_baro[3];
-
 /* Tasks */
 void task_baro_read(void *argument);
 

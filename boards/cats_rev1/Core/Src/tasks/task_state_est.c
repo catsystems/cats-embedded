@@ -12,6 +12,7 @@
 #include "util/log.h"
 #include "util/types.h"
 #include "util/recorder.h"
+#include "config/globals.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -59,7 +60,7 @@ void task_state_est(void *argument) {
   initialize_matrices(&filter);
   /* End Initialization */
 
-  osDelay(5000);
+  osDelay(1000);
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -72,9 +73,13 @@ void task_state_est(void *argument) {
     fsm_state = global_flight_state;
 
     /* Really basic "Calibration" of the pressure just for testing purposes */
-    if ((tick_count > 10000) && (tick_count < 10100)) {
+    if ((tick_count >= 5000) && (tick_count <= 5010)) {
       reset_kalman(&filter);
       filter.pressure_0 = state_data.pressure[0];
+    }
+
+    if (fsm_state.flight_state == INVALID) {
+      log_error("Invalid FSM state!");
     }
 
     /* Reset IMU when we go from moving to IDLE */

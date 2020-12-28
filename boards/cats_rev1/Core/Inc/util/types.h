@@ -59,7 +59,8 @@ typedef struct {
 } calibration_data_t;
 
 typedef enum {
-  MOVING = 0,
+  INVALID = 0,
+  MOVING = 1,
   IDLE,
   THRUSTING_1,
   THRUSTING_2,
@@ -110,5 +111,16 @@ typedef enum {
   CATS_FILTER_ERROR,
   CATS_HARD_FAULT
 } cats_status_e;
+
+/** CONVERSION FUNCTIONS **/
+
+inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) {
+  return (src_high << 8 | src_low);
+}
+
+/* TODO: is this really the same? It's taken from the macros.. */
+inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) {
+  return uint8_to_uint16(src_high, src_low);
+}
 
 #endif  // CATS_REV1_TYPES_H

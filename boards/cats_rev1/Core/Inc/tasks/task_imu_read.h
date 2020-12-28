@@ -14,6 +14,4 @@
 /* Constants */
 #define IMU20601_SAMPLING_FREQ 300
 
-extern imu_data_t global_imu[3];
-
 #endif /* INC_TASK_IMU_READ_H_ */

@@ -10,15 +10,13 @@
 #include "drivers/buzzer.h"
 #include "cmsis_os2.h"
 
-uint32_t get_pulse;
-
-void buzzer_beep(struct buzzer_dev *dev, uint32_t duration) {
+void buzzer_beep(BUZ *dev, uint32_t duration) {
   dev->end_time = osKernelGetTickCount() + duration;
   buzzer_start(dev);
 }
 
 // Set the volume between 0 and 100
-void buzzer_set_volume(struct buzzer_dev *dev, uint16_t volume) {
+void buzzer_set_volume(BUZ *dev, uint16_t volume) {
   if (volume > 100) volume = 100;
 
   TIM_OC_InitTypeDef sConfigOC;
@@ -34,7 +32,7 @@ void buzzer_set_volume(struct buzzer_dev *dev, uint16_t volume) {
   dev->volume = volume;
 }
 
-void buzzer_set_freq(struct buzzer_dev *dev, float frequency) {
+void buzzer_set_freq(BUZ *dev, float frequency) {
   // FREQ = CORE_FREQ / ((AAR+1) * (PSC+1))
   float core_freq = HAL_RCC_GetHCLKFreq();
   float psc = 1;
@@ -52,19 +50,19 @@ void buzzer_set_freq(struct buzzer_dev *dev, float frequency) {
   buzzer_set_volume(dev, dev->volume);
 }
 
-void buzzer_start(struct buzzer_dev *dev) {
+void buzzer_start(BUZ *dev) {
   dev->started = 1;
   HAL_TIM_PWM_Start(dev->timer, dev->channel);  // start pwm generation
 }
 
-void buzzer_stop(struct buzzer_dev *dev) {
+void buzzer_stop(BUZ *dev) {
   dev->started = 0;
   HAL_TIM_PWM_Stop(dev->timer, dev->channel);  // start pwm generation
 }
 
 // Stops the buzzer when time ran out
 // Returns 1 if buzzer is still running
-uint8_t buzzer_update(struct buzzer_dev *dev) {
+uint8_t buzzer_update(BUZ *dev) {
   if (dev->started && (dev->end_time > osKernelGetTickCount()))
     return 1;
   else if (dev->started)

@@ -9,14 +9,10 @@
 #include "tasks/task_imu_read.h"
 #include "drivers/icm20601.h"
 #include "util/recorder.h"
+#include "config/globals.h"
 
-static void init_imu();
-static void read_imu(int16_t gyroscope_data[], int16_t acceleration[],
+static void read_imu(int16_t gyroscope_data[3], int16_t acceleration[3],
                      int16_t *temperature, int32_t id);
-
-ICM20601 ICM1 = ICM20601_INIT1();
-ICM20601 ICM2 = ICM20601_INIT2();
-ICM20601 ICM3 = ICM20601_INIT3();
 
 //#define CALIBRATE_ACCEL
 
@@ -37,8 +33,6 @@ void task_imu_read(void *argument) {
 
   /* initialize queue message */
   // imu_data_t queue_data = { 0 };
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
-  init_imu();
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -59,8 +53,12 @@ void task_imu_read(void *argument) {
     global_imu[imu_idx].acc_y = acceleration[1];
     global_imu[imu_idx].acc_z = acceleration[2];
     global_imu[imu_idx].gyro_x = gyroscope_data[0];
-    global_imu[imu_idx].gyro_x = gyroscope_data[1];
-    global_imu[imu_idx].gyro_x = gyroscope_data[2];
+    global_imu[imu_idx].gyro_y = gyroscope_data[1];
+    global_imu[imu_idx].gyro_z = gyroscope_data[2];
+    /* TODO: maybe replace with this */
+    //    memcpy(&global_imu[imu_idx].acc_x, &acceleration, 3*sizeof(int16_t));
+    //    memcpy(&global_imu[imu_idx].gyro_x, &gyroscope_data,
+    //    3*sizeof(int16_t));
     global_imu[imu_idx].ts = tick_count;
 
     /* TODO: how fast are we recording here, 300x or 100x per second? */
@@ -71,33 +69,7 @@ void task_imu_read(void *argument) {
   }
 }
 
-void init_imu() {
-  osDelayUntil(1000);
-  uint8_t r;
-  do {
-    r = icm20601_init(&ICM1);
-    HAL_Delay(10);
-    // UsbPrint("Init1 failed!");
-  } while (!r);
-  do {
-    r = icm20601_init(&ICM2);
-    HAL_Delay(10);
-    // UsbPrint("Init2 failed!");
-  } while (!r);
-
-  do {
-    r = icm20601_init(&ICM3);
-    HAL_Delay(10);
-    // UsbPrint("Init3 failed!");
-  } while (!r);
-#ifdef CALIBRATE_ACCEL
-  icm20601_accel_calib(&ICM1, 2);  // Axis 0 = x, 1 = y, 2 = z
-  icm20601_accel_calib(&ICM2, 2);
-  icm20601_accel_calib(&ICM3, 2);
-#endif
-}
-
-void read_imu(int16_t gyroscope_data[], int16_t acceleration[],
+void read_imu(int16_t gyroscope_data[3], int16_t acceleration[3],
               int16_t *temperature, int32_t id) {
   switch (id) {
     case 0:

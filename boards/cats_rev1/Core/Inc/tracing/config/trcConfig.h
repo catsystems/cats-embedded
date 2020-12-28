@@ -129,8 +129,8 @@ extern "C" {
  *v10.3.0
  * TRC_FREERTOS_VERSION_10_3_1				If using FreeRTOS
  *v10.3.1
- * TRC_FREERTOS_VERSION_10_4_0				If using FreeRTOS v10.4.0
- *or later
+ * TRC_FREERTOS_VERSION_10_4_0				If using FreeRTOS
+ *v10.4.0 or later
  *****************************************************************************/
 #define TRC_CFG_FREERTOS_VERSION TRC_FREERTOS_VERSION_10_2_1
 
@@ -181,7 +181,7 @@ extern "C" {
  *
  * Default value is 1.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_USER_EVENTS 0
+#define TRC_CFG_INCLUDE_USER_EVENTS 1
 
 /*****************************************************************************
  * TRC_CFG_INCLUDE_ISR_TRACING

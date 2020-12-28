@@ -65,7 +65,7 @@ void initialize_matrices(kalman_filter_t *filter) {
 }
 
 void reset_kalman(kalman_filter_t *filter) {
-  /* TODO: this can be done with memset instead of memcpy */
+  log_debug("Resetting Kalman Filter...");
   float x_dash[3] = {0, 0, 0};
   float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
 
@@ -392,6 +392,11 @@ cats_status_e kalman_step(kalman_filter_t *filter,
       status = CATS_FILTER_ERROR;
       break;
   }
-
+  if (elimination->num_faulty_baros > 1) {
+    log_error("Kalman step faulty baros: %d", elimination->num_faulty_baros);
+  }
+  if (elimination->num_faulty_imus > 1) {
+    log_error("Faulty IMUs: %d", elimination->num_faulty_imus);
+  }
   return status;
 }

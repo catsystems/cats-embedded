@@ -10,11 +10,7 @@
 
 #include "stm32l4xx_hal.h"
 
-#define BUZZER_INIT()                                                      \
-  {                                                                        \
-    .timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .started = 0, \
-    .volume = 100                                                          \
-  }
+/** Exported Types **/
 
 typedef struct buzzer_dev {
   // Hardware Configuration
@@ -25,16 +21,15 @@ typedef struct buzzer_dev {
   uint8_t started;
   uint16_t volume;
   uint32_t end_time;
-
 } BUZ;
 
-extern TIM_HandleTypeDef htim15;
+/** Exported Functions **/
 
-void buzzer_set_volume(struct buzzer_dev *dev, uint16_t volume);
-void buzzer_beep(struct buzzer_dev *dev, uint32_t duration);
-void buzzer_set_freq(struct buzzer_dev *dev, float frequency);
-void buzzer_start(struct buzzer_dev *dev);
-void buzzer_stop(struct buzzer_dev *dev);
-uint8_t buzzer_update(struct buzzer_dev *dev);
+void buzzer_set_volume(BUZ *dev, uint16_t volume);
+void buzzer_beep(BUZ *dev, uint32_t duration);
+void buzzer_set_freq(BUZ *dev, float frequency);
+void buzzer_start(BUZ *dev);
+void buzzer_stop(BUZ *dev);
+uint8_t buzzer_update(BUZ *dev);
 
 #endif /* INC_DRIVERS_BUZZER_H_ */
