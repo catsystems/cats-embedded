@@ -62,6 +62,6 @@ extern osMessageQueueId_t rec_queue;
 #ifdef FLASH_TESTING
 #undef FLASH_TESTING
 #endif
-#define FLASH_TESTING
+//#define FLASH_TESTING
 
 #endif  // CATS_REV1_RECORDER_H
