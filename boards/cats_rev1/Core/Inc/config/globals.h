@@ -27,6 +27,6 @@ extern BUZ BUZZER;
 
 extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];
-extern volatile flight_fsm_t global_flight_state;
+extern flight_fsm_t global_flight_state;
 
 #endif  // CATS_REV1_GLOBALS_H
