@@ -77,3 +77,11 @@ flight_fsm_t global_flight_state = {.flight_state = INVALID};
 /** Recorder Queue **/
 
 osMessageQueueId_t rec_queue;
+
+/** Tracing Channels **/
+
+#if (configUSE_TRACE_FACILITY == 1)
+#include "tracing/trcRecorder.h"
+traceString baro_channel;
+traceString flash_channel;
+#endif

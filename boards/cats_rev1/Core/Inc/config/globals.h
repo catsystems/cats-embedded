@@ -29,4 +29,12 @@ extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];
 extern flight_fsm_t global_flight_state;
 
+/** Tracing Channels **/
+
+#if (configUSE_TRACE_FACILITY == 1)
+#include "tracing/trcRecorder.h"
+extern traceString baro_channel;
+extern traceString flash_channel;
+#endif
+
 #endif  // CATS_REV1_GLOBALS_H

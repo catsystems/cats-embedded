@@ -10,15 +10,18 @@ w25qxx_t w25qxx = {0};
 
 /** Private Function Declarations **/
 
-static void w25qxx_send_address(uint32_t address);
-static uint8_t w25qxx_spi(uint8_t data);
-static uint32_t w25qxx_read_id(void);
-static void w25qxx_read_uniq_id(void);
-static void w25qxx_write_enable(void);
-static void w25qxx_write_disable(void);
-static uint8_t w25qxx_read_status_register(uint8_t status_register);
-static void w25qxx_write_status_register(uint8_t status_register, uint8_t data);
-static void w25qxx_wait_for_write_end(void);
+static inline void w25qxx_send_address(uint32_t address);
+static inline void w25qxx_spi_transmit(uint8_t data);
+static inline uint8_t w25qxx_spi_receive();
+static inline uint8_t w25qxx_spi_transmit_receive(uint8_t data);
+static inline uint32_t w25qxx_read_id(void);
+static inline void w25qxx_read_uniq_id(void);
+static inline void w25qxx_write_enable(void);
+static inline void w25qxx_write_disable(void);
+static inline uint8_t w25qxx_read_status_register(uint8_t status_register);
+static inline void w25qxx_write_status_register(uint8_t status_register,
+                                                uint8_t data);
+static inline void w25qxx_wait_for_write_end(void);
 
 /** Exported Function Definitions **/
 
@@ -101,7 +104,7 @@ bool w25qxx_init(void) {
       (w25qxx.sector_count * w25qxx.sector_size) / 1024;
 
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0xB7);
+  w25qxx_spi_transmit(0xB7);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 
   w25qxx_read_uniq_id();
@@ -131,7 +134,7 @@ void w25qxx_erase_chip(void) {
 #endif
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0xC7);
+  w25qxx_spi_transmit(0xC7);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (CATS_W25QXX_DEBUG == 1)
@@ -153,7 +156,7 @@ void w25qxx_erase_sector(uint32_t sector_addr) {
   sector_addr = sector_addr * w25qxx.sector_size;
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x21);
+  w25qxx_spi_transmit(0x21);
   w25qxx_send_address(sector_addr);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
@@ -177,7 +180,7 @@ void W25qxx_EraseBlock(uint32_t block_num) {
   block_num = block_num * w25qxx.sector_size * 16;
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0xD8);
+  w25qxx_spi_transmit(0xD8);
   w25qxx_send_address(block_num);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
@@ -227,11 +230,11 @@ bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
   uint32_t work_address;
   uint32_t i;
   for (i = offset_in_bytes; i < w25qxx.page_size; i += sizeof(buf)) {
-    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
     work_address = (i + page_num * w25qxx.page_size);
-    w25qxx_spi(0x0C);
+    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
+    w25qxx_spi_transmit(0x0C);
     w25qxx_send_address(work_address);
-    w25qxx_spi(0);
+    w25qxx_spi_transmit(0);
     HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
     for (int x = 0; x < sizeof(buf); x++) {
@@ -241,12 +244,12 @@ bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
   if ((w25qxx.page_size + offset_in_bytes) % sizeof(buf) != 0) {
     i -= sizeof(buf);
     for (; i < w25qxx.page_size; i++) {
+      work_address = (i + page_num * w25qxx.page_size);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN,
                         GPIO_PIN_RESET);
-      work_address = (i + page_num * w25qxx.page_size);
-      w25qxx_spi(0x0C);
+      w25qxx_spi_transmit(0x0C);
       w25qxx_send_address(work_address);
-      w25qxx_spi(0);
+      w25qxx_spi_transmit(0);
       HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
       if (buf[0] != 0xFF) goto NOT_EMPTY;
@@ -286,11 +289,11 @@ bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
   uint32_t work_address;
   uint32_t i;
   for (i = offset_in_bytes; i < w25qxx.sector_size; i += sizeof(buf)) {
-    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
     work_address = (i + sector_num * w25qxx.sector_size);
-    w25qxx_spi(0x0C);
+    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
+    w25qxx_spi_transmit(0x0C);
     w25qxx_send_address(work_address);
-    w25qxx_spi(0);
+    w25qxx_spi_transmit(0);
     HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
     for (int x = 0; x < sizeof(buf); x++) {
@@ -300,12 +303,12 @@ bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
   if ((w25qxx.sector_size + offset_in_bytes) % sizeof(buf) != 0) {
     i -= sizeof(buf);
     for (; i < w25qxx.sector_size; i++) {
+      work_address = (i + sector_num * w25qxx.sector_size);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN,
                         GPIO_PIN_RESET);
-      work_address = (i + sector_num * w25qxx.sector_size);
-      w25qxx_spi(0x0C);
+      w25qxx_spi_transmit(0x0C);
       w25qxx_send_address(work_address);
-      w25qxx_spi(0);
+      w25qxx_spi_transmit(0);
       HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
       if (buf[0] != 0xFF) goto NOT_EMPTY;
@@ -345,11 +348,11 @@ bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
   uint32_t work_address;
   uint32_t i;
   for (i = offset_in_bytes; i < w25qxx.block_size; i += sizeof(buf)) {
-    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
     work_address = (i + block_num * w25qxx.block_size);
-    w25qxx_spi(0x0C);
+    HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
+    w25qxx_spi_transmit(0x0C);
     w25qxx_send_address(work_address);
-    w25qxx_spi(0);
+    w25qxx_spi_transmit(0);
     HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, sizeof(buf), 100);
     HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
     for (int x = 0; x < sizeof(buf); x++) {
@@ -359,12 +362,12 @@ bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
   if ((w25qxx.block_size + offset_in_bytes) % sizeof(buf) != 0) {
     i -= sizeof(buf);
     for (; i < w25qxx.block_size; i++) {
+      work_address = (i + block_num * w25qxx.block_size);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN,
                         GPIO_PIN_RESET);
-      work_address = (i + block_num * w25qxx.block_size);
-      w25qxx_spi(0x0C);
+      w25qxx_spi_transmit(0x0C);
       w25qxx_send_address(work_address);
-      w25qxx_spi(0);
+      w25qxx_spi_transmit(0);
       HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, 1, 100);
       HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
       if (buf[0] != 0xFF) goto NOT_EMPTY;
@@ -398,9 +401,9 @@ void w25qxx_write_byte(uint8_t byte, uint32_t byte_address) {
   w25qxx_wait_for_write_end();
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x02);
+  w25qxx_spi_transmit(0x02);
   w25qxx_send_address(byte_address);
-  w25qxx_spi(byte);
+  w25qxx_spi_transmit(byte);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (CATS_W25QXX_DEBUG == 1)
@@ -426,13 +429,13 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   osDelay(100);
   uint32_t start_time = osKernelGetTickCount();
 #endif
+  page_num = (page_num * w25qxx.page_size) + offset_in_bytes;
   w25qxx_wait_for_write_end();
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
   /* TODO: This should probably be 0x12 */
   /* TODO: most likely the last address bits should be 0 */
-  w25qxx_spi(0x02);
-  page_num = (page_num * w25qxx.page_size) + offset_in_bytes;
+  w25qxx_spi_transmit(0x02);
   w25qxx_send_address(page_num);
   HAL_SPI_Transmit(&CATS_W25QXX_SPI, buf, bytes_to_write_up_to_page_size, 100);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
@@ -441,16 +444,16 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < bytes_to_write_up_to_page_size; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      log_debug("");
+      log_rawr("\n");
       osDelay(10);
     }
-    log_debug("0x%02X,", buf[i]);
+    log_rawr("0x%02X,", buf[i]);
   }
-  log_debug("");
+  log_rawr("\n");
   log_debug("w25qxx WritePage done after %lu ms", start_time);
   osDelay(100);
 #endif
-  osDelay(1);
+  // osDelay(1);
   w25qxx.lock = 0;
 }
 
@@ -461,7 +464,7 @@ void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
       (bytes_to_write_up_to_sector_size == 0))
     bytes_to_write_up_to_sector_size = w25qxx.sector_size;
 #if (CATS_W25QXX_DEBUG == 1)
-  log_debug("+++w25qxx WriteSector:%lu, Offset:%lu ,Write %lu Bytes, begin...",
+  log_debug("w25qxx WriteSector:%lu, Offset:%lu ,Write %lu Bytes, begin...",
             sector_num, offset_in_bytes, bytes_to_write_up_to_sector_size);
   osDelay(100);
 #endif
@@ -503,7 +506,7 @@ void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
       (bytes_to_write_up_to_block_size == 0))
     bytes_to_write_up_to_block_size = w25qxx.block_size;
 #if (CATS_W25QXX_DEBUG == 1)
-  log_debug("+++w25qxx WriteBlock:%lu, Offset:%lu ,Write %lu Bytes, begin...",
+  log_debug("w25qxx WriteBlock:%lu, Offset:%lu ,Write %lu Bytes, begin...",
             block_num, offset_in_bytes, bytes_to_write_up_to_block_size);
   osDelay(100);
 #endif
@@ -545,14 +548,14 @@ void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address) {
   log_debug("w25qxx ReadByte at address %lu begin...", byte_address);
 #endif
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x0C);
+  w25qxx_spi_transmit(0x0C);
   w25qxx_send_address(byte_address);
-  //  if (w25qxx.id >= W25Q256) w25qxx_spi((byte_address & 0xFF000000) >> 24);
-  //  w25qxx_spi((byte_address & 0xFF0000) >> 16);
-  //  w25qxx_spi((byte_address & 0xFF00) >> 8);
-  //  w25qxx_spi(byte_address & 0xFF);
-  w25qxx_spi(0);
-  *buf = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi_transmit((byte_address & 0xFF000000)
+  //  >> 24); w25qxx_spi_transmit((byte_address & 0xFF0000) >> 16);
+  //  w25qxx_spi_transmit((byte_address & 0xFF00) >> 8);
+  //  w25qxx_spi_transmit(byte_address & 0xFF);
+  w25qxx_spi_transmit(0);
+  *buf = w25qxx_spi_receive();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (CATS_W25QXX_DEBUG == 1)
   log_debug("w25qxx ReadByte 0x%02X done after %lu ms", *buf,
@@ -571,25 +574,25 @@ void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
             read_address, bytes_to_read);
 #endif
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x0C);
+  w25qxx_spi_transmit(0x0C);
   w25qxx_send_address(read_address);
-  //  if (w25qxx.id >= W25Q256) w25qxx_spi((read_address & 0xFF000000) >> 24);
-  //  w25qxx_spi((read_address & 0xFF0000) >> 16);
-  //  w25qxx_spi((read_address & 0xFF00) >> 8);
-  //  w25qxx_spi(read_address & 0xFF);
-  w25qxx_spi(0);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi_transmit((read_address & 0xFF000000)
+  //  >> 24); w25qxx_spi_transmit((read_address & 0xFF0000) >> 16);
+  //  w25qxx_spi_transmit((read_address & 0xFF00) >> 8);
+  //  w25qxx_spi_transmit(read_address & 0xFF);
+  w25qxx_spi_transmit(0);
   HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, bytes_to_read, 2000);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (CATS_W25QXX_DEBUG == 1)
   start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < bytes_to_read; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      log_debug("");
+      log_rawr("\n");
       osDelay(10);
     }
-    log_debug("0x%02X,", buf[i]);
+    log_rawr("0x%02X,", buf[i]);
   }
-  log_debug("");
+  log_rawr("\n");
   log_debug("w25qxx ReadBytes done after %lu ms", start_time);
   osDelay(100);
 #endif
@@ -597,9 +600,8 @@ void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
   w25qxx.lock = 0;
 }
 
-void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
-                        uint32_t offset_in_bytes,
-                        uint32_t NumByteToRead_up_to_PageSize) {
+void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
+                      uint32_t NumByteToRead_up_to_PageSize) {
   while (w25qxx.lock == 1) osDelay(1);
   w25qxx.lock = 1;
   if ((NumByteToRead_up_to_PageSize > w25qxx.page_size) ||
@@ -615,29 +617,29 @@ void w_25_qxx_read_page(uint8_t *buf, uint32_t page_num,
 #endif
   page_num = page_num * w25qxx.page_size + offset_in_bytes;
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x0C);
+  w25qxx_spi_transmit(0x0C);
   w25qxx_send_address(page_num);
-  //  if (w25qxx.id >= W25Q256) w25qxx_spi((page_num & 0xFF000000) >> 24);
-  //  w25qxx_spi((page_num & 0xFF0000) >> 16);
-  //  w25qxx_spi((page_num & 0xFF00) >> 8);
-  //  w25qxx_spi(page_num & 0xFF);
-  w25qxx_spi(0);
+  //  if (w25qxx.id >= W25Q256) w25qxx_spi_transmit((page_num & 0xFF000000) >>
+  //  24); w25qxx_spi_transmit((page_num & 0xFF0000) >> 16);
+  //  w25qxx_spi_transmit((page_num & 0xFF00) >> 8);
+  //  w25qxx_spi_transmit(page_num & 0xFF);
+  w25qxx_spi_transmit(0);
   HAL_SPI_Receive(&CATS_W25QXX_SPI, buf, NumByteToRead_up_to_PageSize, 100);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 #if (CATS_W25QXX_DEBUG == 1)
   start_time = osKernelGetTickCount() - start_time;
   for (uint32_t i = 0; i < NumByteToRead_up_to_PageSize; i++) {
     if ((i % 8 == 0) && (i > 2)) {
-      log_debug("");
+      log_rawr("\n");
       osDelay(10);
     }
-    log_debug("0x%02X,", buf[i]);
+    log_rawr("0x%02X,", buf[i]);
   }
-  log_debug("");
+  log_rawr("\n");
   log_debug("w25qxx ReadPage done after %lu ms", start_time);
   osDelay(100);
 #endif
-  osDelay(1);
+  // osDelay(1);
   w25qxx.lock = 0;
 }
 
@@ -648,7 +650,7 @@ void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
       (bytes_to_read_up_to_sector_size == 0))
     bytes_to_read_up_to_sector_size = w25qxx.sector_size;
 #if (CATS_W25QXX_DEBUG == 1)
-  log_debug("+++w25qxx ReadSector:%lu, Offset:%lu ,Read %lu Bytes, begin...",
+  log_debug("w25qxx ReadSector:%lu, Offset:%lu ,Read %lu Bytes, begin...",
             sector_num, offset_in_bytes, bytes_to_read_up_to_sector_size);
   osDelay(100);
 #endif
@@ -670,7 +672,7 @@ void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
       w25qxx_sector_to_page(sector_num) + (offset_in_bytes / w25qxx.page_size);
   local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    w_25_qxx_read_page(buf, start_page, local_offset, bytes_to_read);
+    w25qxx_read_page(buf, start_page, local_offset, bytes_to_read);
     start_page++;
     bytes_to_read -= w25qxx.page_size - local_offset;
     buf += w25qxx.page_size - local_offset;
@@ -689,7 +691,7 @@ void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
       (bytes_to_read_up_to_block_size == 0))
     bytes_to_read_up_to_block_size = w25qxx.block_size;
 #if (CATS_W25QXX_DEBUG == 1)
-  log_debug("+++w25qxx ReadBlock:%lu, Offset:%lu ,Read %lu Bytes, begin...",
+  log_debug("w25qxx ReadBlock:%lu, Offset:%lu ,Read %lu Bytes, begin...",
             block_num, offset_in_bytes, bytes_to_read_up_to_block_size);
   osDelay(100);
 #endif
@@ -711,7 +713,7 @@ void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
       w25qxx_block_to_page(block_num) + (offset_in_bytes / w25qxx.page_size);
   local_offset = offset_in_bytes % w25qxx.page_size;
   do {
-    w_25_qxx_read_page(buf, start_page, local_offset, bytes_to_read);
+    w25qxx_read_page(buf, start_page, local_offset, bytes_to_read);
     start_page++;
     bytes_to_read -= w25qxx.page_size - local_offset;
     buf += w25qxx.page_size - local_offset;
@@ -725,7 +727,7 @@ void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
 
 /** Private Function Definitions **/
 
-static void w25qxx_send_address(uint32_t address) {
+static inline void w25qxx_send_address(uint32_t address) {
   uint8_t buf[4];
   uint8_t *addr_ptr = (uint8_t *)&address;
   //  buf[0] = (address & 0xFF000000) >> 24;
@@ -739,90 +741,103 @@ static void w25qxx_send_address(uint32_t address) {
   HAL_SPI_Transmit(&CATS_W25QXX_SPI, buf, sizeof(buf), 100);
 }
 
-static uint8_t w25qxx_spi(uint8_t data) {
+static inline void w25qxx_spi_transmit(uint8_t data) {
+  HAL_SPI_Transmit(&CATS_W25QXX_SPI, &data, 1, 100);
+}
+
+static inline uint8_t w25qxx_spi_receive() {
+  uint8_t ret;
+  HAL_SPI_Receive(&CATS_W25QXX_SPI, &ret, 1, 100);
+  return ret;
+}
+
+static inline uint8_t w25qxx_spi_transmit_receive(uint8_t data) {
   uint8_t ret;
   HAL_SPI_TransmitReceive(&CATS_W25QXX_SPI, &data, &ret, 1, 100);
   return ret;
 }
 
-static uint32_t w25qxx_read_id(void) {
-  uint32_t temp = 0, temp0 = 0, temp1 = 0, temp2 = 0;
+static inline uint32_t w25qxx_read_id(void) {
+  uint32_t temp0 = 0, temp1 = 0, temp2 = 0;
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x9F);
-  temp0 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  temp1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
-  temp2 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  //(0x9F);
+  w25qxx_spi_transmit(0x9F);
+  temp0 = w25qxx_spi_receive();
+  temp1 = w25qxx_spi_receive();
+  temp2 = w25qxx_spi_receive();
+  //  temp0 = w25qxx_spi_receive(W25QXX_DUMMY_BYTE);
+  //  temp1 = w25qxx_spi_receive(W25QXX_DUMMY_BYTE);
+  //  temp2 = w25qxx_spi_receive(W25QXX_DUMMY_BYTE);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
-  temp = (temp0 << 16) | (temp1 << 8) | temp2;
-  return temp;
+  return (temp0 << 16) | (temp1 << 8) | temp2;
 }
 
-static void w25qxx_read_uniq_id(void) {
+static inline void w25qxx_read_uniq_id(void) {
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x4B);
-  for (int i = 0; i < 4; i++) w25qxx_spi(W25QXX_DUMMY_BYTE);
-  for (int i = 0; i < 8; i++) w25qxx.uniq_id[i] = w25qxx_spi(W25QXX_DUMMY_BYTE);
+  w25qxx_spi_transmit(0x4B);
+  for (int i = 0; i < 4; i++) w25qxx_spi_receive();
+  for (int i = 0; i < 8; i++) w25qxx.uniq_id[i] = w25qxx_spi_receive();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 
 /* TODO: run this at initialization */
-static void w25qxx_write_enable(void) {
+static inline void w25qxx_write_enable(void) {
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x06);
+  w25qxx_spi_transmit(0x06);
+  HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
+  // osDelay(1);
+}
+
+static inline void w25qxx_write_disable(void) {
+  HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
+  w25qxx_spi_transmit(0x04);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   osDelay(1);
 }
 
-static void w25qxx_write_disable(void) {
-  HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x04);
-  HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
-  osDelay(1);
-}
-
-static uint8_t w25qxx_read_status_register(uint8_t status_register) {
+static inline uint8_t w25qxx_read_status_register(uint8_t status_register) {
   uint8_t status = 0;
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
   if (status_register == 1) {
-    w25qxx_spi(0x05);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx_spi_transmit(0x05);
+    status = w25qxx_spi_receive();
     w25qxx.status_reg_1 = status;
   } else if (status_register == 2) {
-    w25qxx_spi(0x35);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx_spi_transmit(0x35);
+    status = w25qxx_spi_receive();
     w25qxx.status_reg_2 = status;
   } else {
-    w25qxx_spi(0x15);
-    status = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx_spi_transmit(0x15);
+    status = w25qxx_spi_receive();
     w25qxx.status_reg_3 = status;
   }
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   return status;
 }
 
-static void w25qxx_write_status_register(uint8_t status_register,
-                                         uint8_t data) {
+static inline void w25qxx_write_status_register(uint8_t status_register,
+                                                uint8_t data) {
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
   if (status_register == 1) {
-    w25qxx_spi(0x01);
+    w25qxx_spi_transmit(0x01);
     w25qxx.status_reg_1 = data;
   } else if (status_register == 2) {
-    w25qxx_spi(0x31);
+    w25qxx_spi_transmit(0x31);
     w25qxx.status_reg_2 = data;
   } else {
-    w25qxx_spi(0x11);
+    w25qxx_spi_transmit(0x11);
     w25qxx.status_reg_3 = data;
   }
-  w25qxx_spi(data);
+  w25qxx_spi_transmit(data);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 
-static void w25qxx_wait_for_write_end(void) {
-  osDelay(1);
+static inline void w25qxx_wait_for_write_end(void) {
+  // osDelay(1);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi(0x05);
+  w25qxx_spi_transmit(0x05);
   do {
-    w25qxx.status_reg_1 = w25qxx_spi(W25QXX_DUMMY_BYTE);
+    w25qxx.status_reg_1 = w25qxx_spi_receive();
     osDelay(1);
   } while ((w25qxx.status_reg_1 & 0x01) == 0x01);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);

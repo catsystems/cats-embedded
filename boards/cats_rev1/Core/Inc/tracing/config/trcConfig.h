@@ -181,7 +181,7 @@ extern "C" {
  *
  * Default value is 1.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_USER_EVENTS 1
+#define TRC_CFG_INCLUDE_USER_EVENTS 0
 
 /*****************************************************************************
  * TRC_CFG_INCLUDE_ISR_TRACING

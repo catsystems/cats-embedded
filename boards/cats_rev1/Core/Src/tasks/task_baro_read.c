@@ -12,11 +12,6 @@
 #include "config/globals.h"
 #include "tasks/task_recorder.h"
 
-#if (configUSE_TRACE_FACILITY == 1)
-#include "tracing/trcRecorder.h"
-traceString baro_channel;
-#endif
-
 /** Externs **/
 
 static void prepare_temp();
@@ -37,10 +32,6 @@ void task_baro_read(void *argument) {
   /* actual measurements from sensor */
   int32_t temperature[3];
   int32_t pressure[3];
-
-#if (configUSE_TRACE_FACILITY == 1)
-  baro_channel = xTraceRegisterString("Baro Channel");
-#endif
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();

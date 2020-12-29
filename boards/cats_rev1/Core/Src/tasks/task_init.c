@@ -95,18 +95,33 @@ void task_init(void *argument) {
   init_tasks();
   log_info("Task initialization complete.");
 
+#if (configUSE_TRACE_FACILITY == 1)
+  baro_channel = xTraceRegisterString("Baro Channel");
+  flash_channel = xTraceRegisterString("Flash Channel");
+#endif
+
   uint32_t i = 1;
+
   //  uint8_t *send_buf = calloc(512, sizeof(uint8_t));
   //  uint8_t *rec_buf = calloc(512, sizeof(uint8_t));
   //  for (int j = 0; j < 512; ++j) {
   //    send_buf[j] = 511 - j;
   //  }
+  //  w25qxx_init();
+  //  /* TODO: We should have a config flag that can be set from PC which says
+  //  if we
+  //   * should erase the entire flash chip */
+  //  for (uint32_t j = 1; j < 127; j++) {
+  //    w25qxx_erase_sector(j);
+  //    log_debug("Erasing sector %lu", j);
+  //  }
+
   /* Infinite loop */
   for (;;) {
     //    w25qxx_write_sector(send_buf, i, 0, 512);
     //
     //    w25qxx_read_sector(rec_buf, i, 0, 512);
-
+    //
     //    log_raw("sector: %lu", i);
     //    for (int j = 0; j < 512; ++j) {
     //      log_rawr("%hu ", rec_buf[j]);
