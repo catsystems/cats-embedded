@@ -2,8 +2,8 @@
 // Author: Luca Jost
 // 11.06.2020
 
-#ifndef _ICM20602_H
-#define _ICM20602_H
+#ifndef CATS_ICM20602_H
+#define CATS_ICM20602_H
 
 #include "stm32l4xx_hal.h"
 #include "cmsis_os.h"

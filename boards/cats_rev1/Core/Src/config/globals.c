@@ -72,7 +72,7 @@ BUZ BUZZER = {.timer = &htim15,
 
 baro_data_t global_baro[3] = {0};
 imu_data_t global_imu[3] = {0};
-flight_fsm_t global_flight_state = {0};
+flight_fsm_t global_flight_state = {.flight_state = INVALID};
 
 /** Recorder Queue **/
 

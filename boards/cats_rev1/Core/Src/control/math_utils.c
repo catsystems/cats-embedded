@@ -122,7 +122,7 @@ cats_status_e inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
   // Find Inverse using formula "inverse(A) = adj(A)/det(A)"
   for (int i = 0; i < dim; i++) {
     for (int j = 0; j < dim; j++) {
-      A_inv[i][j] = adj[i][j] / ((float)det);
+      A_inv[i][j] = adj[i][j] / det;
     }
   }
 

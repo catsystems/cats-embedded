@@ -34,7 +34,7 @@ void task_recorder(void *argument) {
   uint32_t page_id = w25qxx_sector_to_page(last_recorded_sector + 1);
 
   while (1) {
-    rec_elem_t curr_log_elem = {0};
+    rec_elem_t curr_log_elem;
 
     while (rec_buffer_idx < (REC_BUFFER_LEN - sizeof(rec_elem_t))) {
       if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==

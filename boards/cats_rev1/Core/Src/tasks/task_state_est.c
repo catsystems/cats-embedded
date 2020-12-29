@@ -40,8 +40,7 @@ void task_state_est(void *argument) {
   /* End Debugging */
 
   /* local flight phase */
-  flight_fsm_t fsm_state = {0};
-  fsm_state.flight_state = MOVING;
+  flight_fsm_t fsm_state = {.flight_state = MOVING};
   /* end local flight phase */
 
   /* calibration data */

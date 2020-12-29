@@ -13,7 +13,7 @@
 /* in m/s^2 */
 #define UPPER_BOUND_ACC 320
 /* in m/s^2 */
-#define LOWER_BOUND_ACC -320
+#define LOWER_BOUND_ACC (-320)
 /* in Pa */
 #define UPPER_BOUND_PRESSURE 200000
 /* in Pa */
@@ -21,7 +21,7 @@
 /* in °C */
 #define UPPER_BOUND_TEMPERATURE 100
 /* in °C */
-#define LOWER_BOUND_TEMPERATURE -50
+#define LOWER_BOUND_TEMPERATURE (-50)
 /* maximum times a value is allowed to be the same value before we assume that
  * it is faulty */
 #define MAX_NUM_SAME_VALUE_PRESSURE 1000

@@ -19,8 +19,8 @@
   First release.
 */
 
-#ifndef _W25QXX_H
-#define _W25QXX_H
+#ifndef CATS_W25QXX_H
+#define CATS_W25QXX_H
 
 #include <stdbool.h>
 #include <stdint.h>

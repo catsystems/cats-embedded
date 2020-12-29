@@ -2,8 +2,8 @@
 // Author: Luca Jost
 // 11.06.2020
 
-#ifndef _MS5607_H
-#define _MS5607_H
+#ifndef CATS_MS5607_H
+#define CATS_MS5607_H
 
 #include "stm32l4xx_hal.h"
 #include "cmsis_os.h"
@@ -21,7 +21,7 @@
 #define COMMAND_PROM_READ_BASE  0xA0
 
 // Conversion time
-#define BARO_CONVERSION_TIME_OSR_BASE 0.6
+#define BARO_CONVERSION_TIME_OSR_BASE 0.6f
 
 /** Exported Types **/
 

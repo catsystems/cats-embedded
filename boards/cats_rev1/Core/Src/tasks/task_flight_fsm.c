@@ -18,8 +18,7 @@ void task_flight_fsm(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  flight_fsm_t fsm_state = {0};
-  fsm_state.flight_state = MOVING;
+  flight_fsm_t fsm_state = {.flight_state = MOVING};
   imu_data_t local_imu = {0};
 
   /* Infinite loop */
