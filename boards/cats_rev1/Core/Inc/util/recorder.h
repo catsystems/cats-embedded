@@ -18,7 +18,8 @@ typedef enum {
   BARO1,
   BARO2,
   FLIGHT_INFO,
-  FLIGHT_STATE
+  FLIGHT_STATE,
+  HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
 typedef struct {
@@ -63,5 +64,10 @@ extern osMessageQueueId_t rec_queue;
 #undef FLASH_TESTING
 #endif
 //#define FLASH_TESTING
+
+#ifdef FLASH_READ_TEST
+#undef FLASH_READ_TEST
+#endif
+//#define FLASH_READ_TEST
 
 #endif  // CATS_REV1_RECORDER_H

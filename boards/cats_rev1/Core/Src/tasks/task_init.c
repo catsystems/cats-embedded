@@ -176,7 +176,7 @@ static void init_devices() {
   w25qxx_init();
   /* TODO: We should have a config flag that can be set from PC which says if we
    * should erase the entire flash chip */
-  for (uint32_t i = 1; i < 127; i++) {
+  for (uint32_t i = 1; i < 11; i++) {
     w25qxx_erase_sector(i);
     log_debug("Erasing sector %lu", i);
   }

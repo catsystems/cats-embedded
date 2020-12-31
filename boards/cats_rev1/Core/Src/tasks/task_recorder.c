@@ -3,6 +3,7 @@
 //
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "cmsis_os.h"
 #include "tasks/task_recorder.h"
 #include "util/log.h"
@@ -18,106 +19,105 @@ static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer,
                                uint16_t *rec_buffer_idx,
                                uint_fast8_t *rec_elem_size);
 
-//#define PAGE_BREAK_TEST
-#ifdef PAGE_BREAK_TEST
-static inline void write_value_test(const rec_elem_t *rec_elem,
-                                    uint8_t *rec_buffer,
-                                    uint16_t *rec_buffer_idx,
-                                    uint_fast8_t *rec_elem_size);
+#ifdef FLASH_READ_TEST
+static inline void print_elem(const rec_elem_t *rec_elem, char prefix);
+uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
+                   const rec_elem_t *break_elem);
+
+char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
+                         "IMU2",  "BARO0",       "BARO1",
+                         "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
 #endif
 
 void task_recorder(void *argument) {
   uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
-
-#ifdef PAGE_BREAK_TEST
-  uint16_t test_mem_idx = 0;
-  uint8_t *test_mem_buffer = (uint8_t *)calloc(4096, sizeof(uint8_t));
-  uint8_t *test_flash_buffer = (uint8_t *)calloc(4096, sizeof(uint8_t));
-  uint_fast8_t curr_test_log_elem_size = 0;
-#endif
 
   uint16_t rec_buffer_idx = 0;
   uint_fast8_t curr_log_elem_size = 0;
 
   log_debug("Recorder Task Started...\n");
 
-#ifdef FLASH_READ
-  uint8_t *flash_read_buffer =
-      (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
-  uint16_t flash_read_buffer_idx = 0;
+#ifdef FLASH_READ_TEST
+  uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
 #endif
 
-  /* at this point, last recorded should be 100% accurate */
+  /* At this point, last recorded sector should be 100% accurate */
   uint16_t last_recorded_sector = cc_get_last_recorded_sector();
   uint32_t page_id = w25qxx_sector_to_page(last_recorded_sector + 1);
+
+#ifdef FLASH_READ_TEST
+  rec_elem_t break_elem_mem = {.rec_type = HEHE};
+  rec_elem_t break_elem_flash = {.rec_type = HEHE};
+#endif
+
+  uint16_t bytes_remaining = 0;
+
+#ifdef FLASH_READ_TEST
+  uint16_t print_bytes_remaining_mem = 0;
+  uint16_t print_bytes_remaining_flash = 0;
+#endif
 
   while (1) {
     rec_elem_t curr_log_elem;
 
+#ifdef FLASH_READ_TEST
+    if (bytes_remaining > 0) {
+      memcpy(((uint8_t *)(&break_elem_mem)) + print_bytes_remaining_mem,
+             &rec_buffer[0], bytes_remaining);
+      print_elem(&break_elem_mem, '~');
+    }
+#endif
+
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
+      // while (rec_buffer_idx < (REC_BUFFER_LEN - sizeof(curr_log_elem))) {
       if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
           osOK) {
+#ifdef FLASH_READ_TEST
+        print_elem(&curr_log_elem, '-');
+#endif
         write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx,
                     &curr_log_elem_size);
-#ifdef PAGE_BREAK_TEST
-        /* TODO: You need to set the offset here when reading every subsequent
-         * sector because the struct was also broken on the sector boundary */
-        if (test_mem_idx < 4096 - sizeof(rec_elem_t)) {
-          write_value_test(&curr_log_elem, test_mem_buffer, &test_mem_idx,
-                           &curr_test_log_elem_size);
-        }
-#endif
       } else {
         log_error("Receiver queue full!");
       }
     }
 
-    // log_debug("Rec buffer filled.");
-
-    /* TODO: if the actual buffer size is < 256 the rest is filled with
-     * leftover junk; should be optimized later */
+#ifdef FLASH_READ_TEST
+    print_bytes_remaining_mem =
+        print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
+#endif
     w25qxx_write_page(rec_buffer, page_id, 0, 256);
 
-#ifdef FLASH_READ
-    osDelay(500);
-    W25qxx_ReadPage(flash_read_buffer, page_id, 0, FLASH_BUFFER_LEN);
-    // osDelay(1000);
+#ifdef FLASH_READ_TEST
+    w25qxx_read_page(read_buf, page_id, 0, 256);
 
-    if (compare_arrays(flash_buffer, flash_read_buffer, FLASH_BUFFER_LEN)) {
-      osDelay(100);
-      usb_print("[FLASH] Re-reading the data\n");
-      osDelay(100);
-      W25qxx_ReadPage(flash_read_buffer, page_id, 0, FLASH_BUFFER_LEN);
+    if (bytes_remaining > 0) {
+      memcpy(((uint8_t *)(&break_elem_flash)) + print_bytes_remaining_flash,
+             &rec_buffer[0], bytes_remaining);
+      print_elem(&break_elem_flash, '*');
     }
 
-    compare_arrays(flash_buffer, flash_read_buffer, FLASH_BUFFER_LEN);
-
-    flash_read_buffer_idx = 0;
-    while (flash_read_buffer_idx < (FLASH_BUFFER_LEN - sizeof(log_elem_t))) {
-      read_value(flash_read_buffer, &flash_read_buffer_idx, &curr_log_elem,
-                 page_id);
-    }
+    print_bytes_remaining_flash =
+        print_page(read_buf, bytes_remaining, '$', &break_elem_flash);
 #endif
 
     /* reset log buffer index */
     if (rec_buffer_idx > REC_BUFFER_LEN) {
-      uint16_t bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
-      //      log_warn(
-      //          "rec_buffer_idx = %u, bytes_remaining = %u, curr_log_elem_size
-      //          = "
-      //          "%u",
-      //          rec_buffer_idx, bytes_remaining, curr_log_elem_size);
-      memcpy(rec_buffer,
-             (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining,
-             bytes_remaining);
+      bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
       rec_buffer_idx = bytes_remaining;
     } else {
+#ifdef FLASH_READ_TEST
+      bytes_remaining = 0;
+#endif
       rec_buffer_idx = 0;
     }
 
-    // HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
-    // log_debug("Page %lu filled.", page_id);
+    if (rec_buffer_idx > 0) {
+      memcpy(rec_buffer,
+             (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining,
+             bytes_remaining);
+    }
 
     if (page_id == w25qxx.page_count) {
       /* throw an error */
@@ -127,24 +127,6 @@ void task_recorder(void *argument) {
     } else {
       uint32_t last_page_of_last_recorded_sector =
           w25qxx_sector_to_page(last_recorded_sector) + 15;
-#ifdef PAGE_BREAK_TEST
-      if (page_id == last_page_of_last_recorded_sector) {
-        /* test-read the current sector */
-        w25qxx_read_sector(test_flash_buffer, last_recorded_sector, 0,
-                           test_mem_idx);
-        int i;
-        for (i = 0; i < test_mem_idx; i++) {
-          if (test_mem_buffer[i] != test_flash_buffer[i]) {
-            log_error("arrays not same %d!", i);
-            break;
-          }
-        }
-        if (i == test_mem_idx) {
-          log_info("ARRAYS SAME!!!");
-        }
-        test_mem_idx = 0;
-      }
-#endif
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
         cc_set_last_recorded_sector(++last_recorded_sector);
@@ -157,9 +139,6 @@ void task_recorder(void *argument) {
     }
   }
   free(rec_buffer);
-#ifdef FLASH_READ
-  free(flash_read_buffer);
-#endif
 }
 
 static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
@@ -175,11 +154,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case BARO2:
       rec_elem_size += sizeof(rec_elem->u.baro);
       break;
-
     case FLIGHT_INFO:
       rec_elem_size += sizeof(rec_elem->u.flight_info);
       break;
-
     case FLIGHT_STATE:
       rec_elem_size += sizeof(rec_elem->u.flight_state);
       break;
@@ -204,11 +181,106 @@ static inline void write_value(const rec_elem_t *const rec_elem,
   *rec_buffer_idx += *rec_elem_size;
 }
 
-static inline void write_value_test(const rec_elem_t *const rec_elem,
-                                    uint8_t *const rec_buffer,
-                                    uint16_t *rec_buffer_idx,
-                                    uint_fast8_t *const rec_elem_size) {
-  *rec_elem_size = get_rec_elem_size(rec_elem);
-  memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem, *rec_elem_size);
-  *rec_buffer_idx += *rec_elem_size;
+#ifdef FLASH_READ_TEST
+uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
+                   const rec_elem_t *const break_elem) {
+  uint8_t bytes_remaining = 0;
+  uint32_t i = print_offset;
+  rec_elem_t curr_elem;
+  if (i > 0) {
+    memcpy(((uint8_t *)(break_elem)) + bytes_remaining, &rec_buffer[0],
+           print_offset);
+  }
+  while (i <= (REC_BUFFER_LEN - sizeof(curr_elem))) {
+    curr_elem.rec_type = rec_buffer[i];
+    i += sizeof(curr_elem.rec_type);
+    log_rawr("%cType: %s, ", prefix, rec_type_map[curr_elem.rec_type]);
+    switch (curr_elem.rec_type) {
+      case IMU0:
+      case IMU1:
+      case IMU2:
+        memcpy(&(curr_elem.u.imu), &(rec_buffer[i]), sizeof(curr_elem.u.imu));
+        i += sizeof(curr_elem.u.imu);
+        log_raw("TS: %lu, %d, %d, %d, %d, %d, %d", curr_elem.u.imu.ts,
+                curr_elem.u.imu.gyro_x, curr_elem.u.imu.gyro_y,
+                curr_elem.u.imu.gyro_z, curr_elem.u.imu.acc_x,
+                curr_elem.u.imu.acc_y, curr_elem.u.imu.acc_z);
+        break;
+      case BARO0:
+      case BARO1:
+      case BARO2:
+        memcpy(&(curr_elem.u.baro), &(rec_buffer[i]), sizeof(curr_elem.u.baro));
+        i += sizeof(curr_elem.u.baro);
+        log_raw("TS: %lu, %ld, %ld", curr_elem.u.baro.ts,
+                curr_elem.u.baro.pressure, curr_elem.u.baro.temperature);
+        break;
+      case FLIGHT_INFO:
+        memcpy(&(curr_elem.u.flight_info), &(rec_buffer[i]),
+               sizeof(curr_elem.u.flight_info));
+        i += sizeof(curr_elem.u.flight_info);
+        log_raw("TS: %lu, %f, %f", curr_elem.u.flight_info.ts,
+                (double)curr_elem.u.flight_info.height,
+                (double)curr_elem.u.flight_info.velocity);
+        break;
+      case FLIGHT_STATE:
+        memcpy(&(curr_elem.u.flight_state), &(rec_buffer[i]),
+               sizeof(curr_elem.u.flight_state));
+        i += sizeof(curr_elem.u.flight_state);
+        log_raw("TS: %lu, %d", curr_elem.u.flight_state.ts,
+                curr_elem.u.flight_state.flight_state);
+        break;
+      default:
+        log_fatal("Impossible recorder entry type!");
+        break;
+    }
+  }
+  if (REC_BUFFER_LEN - i > 0) {
+    bytes_remaining = (REC_BUFFER_LEN - i);
+    memcpy(break_elem, &rec_buffer[i], bytes_remaining);
+  }
+  if (i > REC_BUFFER_LEN) {
+    log_fatal("log struct broken, %lu", i);
+  }
+  return bytes_remaining;
 }
+
+static inline void print_elem(const rec_elem_t *const rec_elem, char prefix) {
+  char buf[100];
+  uint8_t len =
+      sprintf(buf, "%cType: %s, ", prefix, rec_type_map[rec_elem->rec_type]);
+  switch (rec_elem->rec_type) {
+    case IMU0:
+    case IMU1:
+    case IMU2:
+      sprintf(buf + len, "TS: %lu, %d, %d, %d, %d, %d, %d\n",
+              rec_elem->u.imu.ts, rec_elem->u.imu.gyro_x,
+              rec_elem->u.imu.gyro_y, rec_elem->u.imu.gyro_z,
+              rec_elem->u.imu.acc_x, rec_elem->u.imu.acc_y,
+              rec_elem->u.imu.acc_z);
+      //      sprintf(buf + len, "TS: %lu, %d, %d\n", rec_elem->u.imu.ts,
+      //              rec_elem->u.imu.gyro_x, rec_elem->u.imu.acc_x);
+      break;
+    case BARO0:
+    case BARO1:
+    case BARO2:
+      sprintf(buf + len, "TS: %lu, %ld, %ld\n", rec_elem->u.baro.ts,
+              rec_elem->u.baro.pressure, rec_elem->u.baro.temperature);
+      break;
+    case FLIGHT_INFO:
+      // sprintf(buf + len, "TS: %lu\n", rec_elem->u.flight_info.ts);
+      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.flight_info.ts,
+              (double)rec_elem->u.flight_info.height,
+              (double)rec_elem->u.flight_info.velocity);
+      break;
+    case FLIGHT_STATE:
+      sprintf(buf + len, "TS: %lu, %d\n", rec_elem->u.flight_state.ts,
+              rec_elem->u.flight_state.flight_state);
+      break;
+    default:
+      log_fatal("Impossible recorder entry type!");
+      break;
+  }
+  log_rawr("%s", buf);
+}
+
+#endif
