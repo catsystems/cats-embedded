@@ -6,6 +6,7 @@
 #define CATS_REV1_GLOBALS_H
 
 #include "util/types.h"
+#include "util/recorder.h"
 #include "drivers/icm20601.h"
 #include "drivers/ms5607.h"
 #include "drivers/buzzer.h"
@@ -35,6 +36,10 @@ extern flight_fsm_t global_flight_state;
 #include "tracing/trcRecorder.h"
 extern traceString baro_channel;
 extern traceString flash_channel;
+#endif
+
+#ifdef FLASH_TESTING
+extern osMessageQueueId_t rec_queue;
 #endif
 
 #endif  // CATS_REV1_GLOBALS_H

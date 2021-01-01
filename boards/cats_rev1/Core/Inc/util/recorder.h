@@ -8,7 +8,24 @@
 #include "util/types.h"
 #include "cmsis_os.h"
 
-/** RECORDER TYPES **/
+/** Exported Defines **/
+
+/* TODO: remove this when flash logging is working */
+#ifdef FLASH_TESTING
+#undef FLASH_TESTING
+#endif
+//#define FLASH_TESTING
+
+#ifdef FLASH_READ_TEST
+#undef FLASH_READ_TEST
+#endif
+//#define FLASH_READ_TEST
+
+/** Exported Consts **/
+
+const static uint32_t REC_QUEUE_SIZE = 256;
+
+/** Exported Types **/
 
 typedef enum {
   IMU0 = 1,
@@ -45,29 +62,8 @@ typedef struct {
   rec_elem_u u;
 } rec_elem_t;
 
-/** RECORDER FUNCTIONS **/
+/** Exported Functions **/
 
 void record(rec_entry_type_e rec_type, const void *rec_value);
-
-/** RECORDER CONSTS **/
-
-const static uint32_t REC_QUEUE_SIZE = 256;
-
-/** RECORDER EXTERNS **/
-
-extern osMessageQueueId_t rec_queue;
-
-/** RECORDER DEFINES **/
-
-/* TODO: remove this when flash logging is working */
-#ifdef FLASH_TESTING
-#undef FLASH_TESTING
-#endif
-//#define FLASH_TESTING
-
-#ifdef FLASH_READ_TEST
-#undef FLASH_READ_TEST
-#endif
-//#define FLASH_READ_TEST
 
 #endif  // CATS_REV1_RECORDER_H

@@ -8,10 +8,6 @@
 #ifndef INC_TASK_IMU_READ_H_
 #define INC_TASK_IMU_READ_H_
 
-/* Includes */
-#include "util/types.h"
-
-/* Constants */
-#define IMU20601_SAMPLING_FREQ 300
+void task_imu_read(void *argument);
 
 #endif /* INC_TASK_IMU_READ_H_ */

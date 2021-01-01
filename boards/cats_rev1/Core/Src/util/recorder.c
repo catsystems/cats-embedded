@@ -4,6 +4,7 @@
 
 #include "util/recorder.h"
 #include "util/log.h"
+#include "config/globals.h"
 #include "cmsis_os.h"
 
 void record(rec_entry_type_e rec_type, const void *rec_value) {

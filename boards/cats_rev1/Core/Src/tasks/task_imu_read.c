@@ -11,10 +11,18 @@
 #include "util/recorder.h"
 #include "config/globals.h"
 
-static void read_imu(int16_t gyroscope_data[3], int16_t acceleration[3],
+//#define CALIBRATE_ACCEL
+
+/** Private Constants **/
+
+static const int_fast16_t IMU20601_SAMPLING_FREQ = 300;
+
+/** Private Function Declarations **/
+
+static void read_imu(int16_t gyroscope[3], int16_t acceleration[3],
                      int16_t *temperature, int32_t id);
 
-//#define CALIBRATE_ACCEL
+/** Exported Function Definitions **/
 
 /**
  * @brief Function implementing the task_baro_read thread.
@@ -25,8 +33,8 @@ void task_imu_read(void *argument) {
   uint32_t tick_count, tick_update;
 
   /* initialize data variables */
-  int16_t gyroscope_data[3] = {0}; /* 0 = x, 1 = y, 2 = z */
-  int16_t acceleration[3] = {0};   /* 0 = x, 1 = y, 2 = z */
+  int16_t gyroscope[3] = {0};    /* 0 = x, 1 = y, 2 = z */
+  int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
   int16_t temperature;
 
   int32_t imu_idx = 0;
@@ -40,28 +48,27 @@ void task_imu_read(void *argument) {
 
   for (;;) {
     tick_count += tick_update;
-    read_imu(gyroscope_data, acceleration, &temperature, imu_idx);
+    read_imu(gyroscope, acceleration, &temperature, imu_idx);
 
     /* Debugging */
 
     //		UsbPrint("IMU %ld: RAW Gx: %ld, Gy:%ld, Gz:%ld; Ax: %ld, Ay:%ld,
     // Az:%ld, T:%ld; \n", 				imu_idx,
-    // gyroscope_data[0], gyroscope_data[1], gyroscope_data[2], acceleration[0],
+    // gyroscope[0], gyroscope[1], gyroscope[2], acceleration[0],
     // acceleration[1], acceleration[2], temperature);
 
     global_imu[imu_idx].acc_x = acceleration[0];
     global_imu[imu_idx].acc_y = acceleration[1];
     global_imu[imu_idx].acc_z = acceleration[2];
-    global_imu[imu_idx].gyro_x = gyroscope_data[0];
-    global_imu[imu_idx].gyro_y = gyroscope_data[1];
-    global_imu[imu_idx].gyro_z = gyroscope_data[2];
+    global_imu[imu_idx].gyro_x = gyroscope[0];
+    global_imu[imu_idx].gyro_y = gyroscope[1];
+    global_imu[imu_idx].gyro_z = gyroscope[2];
     /* TODO: maybe replace with this */
     //    memcpy(&global_imu[imu_idx].acc_x, &acceleration, 3*sizeof(int16_t));
-    //    memcpy(&global_imu[imu_idx].gyro_x, &gyroscope_data,
+    //    memcpy(&global_imu[imu_idx].gyro_x, &gyroscope,
     //    3*sizeof(int16_t));
     global_imu[imu_idx].ts = tick_count;
 
-    /* TODO: how fast are we recording here, 300x or 100x per second? */
     record(IMU0 + imu_idx, &(global_imu[imu_idx]));
 
     imu_idx = (imu_idx + 1) % 3;
@@ -69,22 +76,24 @@ void task_imu_read(void *argument) {
   }
 }
 
-void read_imu(int16_t gyroscope_data[3], int16_t acceleration[3],
-              int16_t *temperature, int32_t id) {
+/** Private Function Definitions **/
+
+static void read_imu(int16_t gyroscope[3], int16_t acceleration[3],
+                     int16_t *temperature, int32_t id) {
   switch (id) {
     case 0:
       icm20601_read_accel_raw(&ICM1, acceleration);
-      icm20601_read_gyro_raw(&ICM1, gyroscope_data);
+      icm20601_read_gyro_raw(&ICM1, gyroscope);
       icm20601_read_temp_raw(&ICM1, temperature);
       break;
     case 1:
       icm20601_read_accel_raw(&ICM2, acceleration);
-      icm20601_read_gyro_raw(&ICM2, gyroscope_data);
+      icm20601_read_gyro_raw(&ICM2, gyroscope);
       icm20601_read_temp_raw(&ICM2, temperature);
       break;
     case 2:
       icm20601_read_accel_raw(&ICM3, acceleration);
-      icm20601_read_gyro_raw(&ICM3, gyroscope_data);
+      icm20601_read_gyro_raw(&ICM3, gyroscope);
       icm20601_read_temp_raw(&ICM3, temperature);
       break;
     default:

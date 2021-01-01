@@ -17,12 +17,22 @@
 #include <math.h>
 #include <stdlib.h>
 
+/** Private Constants **/
+
+static const int_fast8_t STATE_EST_SAMPLING_FREQ = 100;
+static const float P_INITIAL = 101250.f;
+
+/** Private Function Declarations **/
+
 inline static float calculate_height(float pressure_initial, float pressure,
                                      float temperature);
 
 static void get_data_float(state_estimation_data_t *state_data,
                            kalman_filter_t *filter,
                            calibration_data_t *calibration);
+
+/** Exported Function Definitions **/
+
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Not used
@@ -134,14 +144,17 @@ void task_state_est(void *argument) {
   }
 }
 
+/** Private Function Definitions **/
+
 inline static float calculate_height(float pressure_initial, float pressure,
                                      float temperature) {
   return ((powf(pressure_initial / pressure, (1 / 5.257f)) - 1) *
           (temperature + 273.15f) / 0.0065f);
 }
 
-void get_data_float(state_estimation_data_t *state_data,
-                    kalman_filter_t *filter, calibration_data_t *calibration) {
+static void get_data_float(state_estimation_data_t *state_data,
+                           kalman_filter_t *filter,
+                           calibration_data_t *calibration) {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (calibration->axis) {

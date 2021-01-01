@@ -6,8 +6,17 @@
  */
 
 #include "cmsis_os.h"
+#include "config/globals.h"
 #include "tasks/task_flight_fsm.h"
 #include "control/flight_phases.h"
+
+/** Private Constants **/
+
+static const int_fast8_t FLIGHT_FSM_SAMPLING_FREQ = 100;
+
+/** Private Function Declarations **/
+
+/** Exported Function Definitions **/
 
 /**
  * @brief Function implementing the task_state_est thread.
@@ -42,3 +51,5 @@ void task_flight_fsm(void *argument) {
     osDelayUntil(tick_count);
   }
 }
+
+/** Private Function Definitions **/

@@ -2,21 +2,26 @@
 // Created by stoja on 20.12.20.
 //
 
-#include "cmsis_os.h"
 #include "drivers/w25qxx.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/log.h"
-#include "drivers/buzzer.h"
-#include "main.h"
 #include "util/recorder.h"
-#include "drivers/icm20601.h"
-#include "drivers/ms5607.h"
+#include "drivers/buzzer.h"
+#include "tasks/task_baro_read.h"
+#include "tasks/task_flight_fsm.h"
+#include "tasks/task_imu_read.h"
+#include "tasks/task_init.h"
+#include "tasks/task_recorder.h"
+#include "tasks/task_state_est.h"
+#include "main.h"
+#include "cmsis_os.h"
 #include <stdlib.h>
 
 /** Task Definitions **/
+
 /* Definitions for task_baro_read */
-uint32_t task_baro_read_buffer[512];
+uint32_t task_baro_read_buffer[256];
 StaticTask_t task_baro_read_control_block;
 const osThreadAttr_t task_baro_read_attributes = {
     .name = "task_baro_read",
@@ -28,7 +33,7 @@ const osThreadAttr_t task_baro_read_attributes = {
 };
 
 /* Definitions for task_imu_read */
-uint32_t task_imu_read_buffer[1024];
+uint32_t task_imu_read_buffer[256];
 StaticTask_t task_imu_read_control_block;
 const osThreadAttr_t task_imu_read_attributes = {
     .name = "task_imu_read",
@@ -52,7 +57,7 @@ const osThreadAttr_t task_state_est_attributes = {
 };
 
 /* Definitions for task_flight_fsm */
-uint32_t task_flight_fsm_buffer[1024];
+uint32_t task_flight_fsm_buffer[256];
 StaticTask_t task_flight_fsm_control_block;
 const osThreadAttr_t task_flight_fsm_attributes = {
     .name = "task_flight_fsm",
@@ -64,7 +69,7 @@ const osThreadAttr_t task_flight_fsm_attributes = {
 };
 
 /* Definitions for task_recorder */
-uint32_t task_recorder_buffer[512];
+uint32_t task_recorder_buffer[256];
 StaticTask_t task_recorder_control_block;
 const osThreadAttr_t task_recorder_attributes = {
     .name = "task_recorder",
@@ -75,12 +80,18 @@ const osThreadAttr_t task_recorder_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+/** Private Constants **/
+
+/** Private Function Declarations **/
+
 static void init_system();
 static void init_devices();
 static void init_tasks();
 static void init_imu();
 static void init_baro();
 static void init_buzzer();
+
+/** Exported Function Definitions **/
 
 void task_init(void *argument) {
   osDelay(2000);
@@ -94,11 +105,6 @@ void task_init(void *argument) {
   osDelay(1000);
   init_tasks();
   log_info("Task initialization complete.");
-
-#if (configUSE_TRACE_FACILITY == 1)
-  baro_channel = xTraceRegisterString("Baro Channel");
-  flash_channel = xTraceRegisterString("Flash Channel");
-#endif
 
   uint32_t i = 1;
 
@@ -140,15 +146,7 @@ void task_init(void *argument) {
   /* USER CODE END 5 */
 }
 
-extern void task_baro_read(void *argument);
-
-extern void task_imu_read(void *argument);
-
-extern void task_state_est(void *argument);
-
-extern void task_flight_fsm(void *argument);
-
-extern void task_recorder(void *argument);
+/** Private Function Definitions **/
 
 static void init_system() {
 #if (configUSE_TRACE_FACILITY == 1)
@@ -225,8 +223,19 @@ static void init_devices() {
 }
 
 static void init_tasks() {
+#if (configUSE_TRACE_FACILITY == 1)
+  baro_channel = xTraceRegisterString("Baro Channel");
+  flash_channel = xTraceRegisterString("Flash Channel");
+#endif
+
   /* creation of task_recorder */
 #ifdef FLASH_TESTING
+
+  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+#if (configUSE_TRACE_FACILITY == 1)
+  vTraceSetQueueName(rec_queue, "Recorder Queue");
+#endif
+
   osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 #endif
 

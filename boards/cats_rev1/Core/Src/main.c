@@ -164,10 +164,7 @@ int main(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
-#if (configUSE_TRACE_FACILITY == 1)
-  vTraceSetQueueName(rec_queue, "Recorder Queue");
-#endif
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */

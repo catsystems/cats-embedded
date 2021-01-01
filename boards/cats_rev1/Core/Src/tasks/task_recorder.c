@@ -2,8 +2,6 @@
 // Created by stoja on 26.12.20.
 //
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "cmsis_os.h"
 #include "tasks/task_recorder.h"
 #include "util/log.h"
@@ -11,8 +9,16 @@
 #include "drivers/w25qxx.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
+#include "config/globals.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
+/** Private Constants **/
 
 const static uint32_t REC_BUFFER_LEN = 256;
+
+/** Private Function Declarations **/
 
 static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
 static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer,
@@ -28,6 +34,8 @@ char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
                          "IMU2",  "BARO0",       "BARO1",
                          "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
 #endif
+
+/** Exported Function Definitions **/
 
 void task_recorder(void *argument) {
   uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
@@ -70,7 +78,7 @@ void task_recorder(void *argument) {
 
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
-      // while (rec_buffer_idx < (REC_BUFFER_LEN - sizeof(curr_log_elem))) {
+#ifdef FLASH_TESTING
       if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
           osOK) {
 #ifdef FLASH_READ_TEST
@@ -81,6 +89,7 @@ void task_recorder(void *argument) {
       } else {
         log_error("Receiver queue full!");
       }
+#endif
     }
 
 #ifdef FLASH_READ_TEST
@@ -140,6 +149,8 @@ void task_recorder(void *argument) {
   }
   free(rec_buffer);
 }
+
+/** Private Function Definitions **/
 
 static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
   uint_fast8_t rec_elem_size = sizeof(rec_elem->rec_type);

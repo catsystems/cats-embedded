@@ -10,16 +10,20 @@
 #include "util/log.h"
 #include "util/recorder.h"
 #include "config/globals.h"
-#include "tasks/task_recorder.h"
 
-/** Externs **/
+/** Private Constants **/
+
+static const int_fast8_t BARO_SAMPLING_FREQ = 100;
+static const int_fast8_t MS_TIMEOUT = 5;
+
+/** Private Function Declarations **/
 
 static void prepare_temp();
 static void prepare_pres();
 static void get_temp_pres(int32_t *temperature, int32_t *pressure);
 static void read_baro();
 
-#define MS_TIMEOUT 5
+/** Exported Function Definitions **/
 
 /**
  * @brief Function implementing the task_baro_read thread.
@@ -70,7 +74,9 @@ void task_baro_read(void *argument) {
   }
 }
 
-void prepare_temp() {
+/** Private Function Definitions **/
+
+static void prepare_temp() {
   trace_print(baro_channel, "Prepare temp 1 start");
   ms5607_prepare_temp(&MS1);
   trace_print(baro_channel, "Prepare temp 1 end");
@@ -82,7 +88,7 @@ void prepare_temp() {
   trace_print(baro_channel, "Prepare temp 3 end");
 }
 
-void prepare_pres() {
+static void prepare_pres() {
   trace_print(baro_channel, "Prepare pres 1 start");
   ms5607_prepare_pres(&MS1);
   trace_print(baro_channel, "Prepare pres 1 end");
@@ -94,7 +100,7 @@ void prepare_pres() {
   trace_print(baro_channel, "Prepare pres 3 end");
 }
 
-void read_baro() {
+static void read_baro() {
   trace_print(baro_channel, "Read baro 1 start");
   int counter = 0;
   while ((ms5607_try_readout(&MS1) == false) && (MS_TIMEOUT >= counter)) {
@@ -120,7 +126,7 @@ void read_baro() {
   trace_printf(baro_channel, "Read baro 3 end, counter: %d", counter);
 }
 
-void get_temp_pres(int32_t *temperature, int32_t *pressure) {
+static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
   trace_print(baro_channel, "Get temp pres 1 start");
   ms5607_get_temp_pres(&MS1, &temperature[0], &pressure[0]);
   trace_print(baro_channel, "Get temp pres 1 end");
