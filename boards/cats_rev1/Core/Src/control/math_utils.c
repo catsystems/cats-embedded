@@ -6,8 +6,9 @@
  */
 
 #include "control/math_utils.h"
+#include "util/log.h"
 
-void transpose(int m, int n, float A[m][n], float A_T[n][m]) {
+void transpose(int m, int n, const float A[m][n], float A_T[n][m]) {
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
       A_T[j][i] = A[i][j];
@@ -18,8 +19,8 @@ void transpose(int m, int n, float A[m][n], float A_T[n][m]) {
 /* Function to get cofactor of A[p][q] in temp[][]. n is current dimension of
  * A[][] */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-void cofactor(int dim, float A[dim][dim], float temp[dim][dim], int p, int q,
-              int n) {
+void cofactor(int dim, const float A[dim][dim], float temp[dim][dim], int p,
+              int q, int n) {
   int i = 0, j = 0;
 
   // Looping for each element of the matrix
@@ -44,7 +45,7 @@ void cofactor(int dim, float A[dim][dim], float temp[dim][dim], int p, int q,
 /* Recursive function for finding determinant of matrix. n is current dimension
  * of A[][]. */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-float determinant(int dim, float A[dim][dim], int n) {
+float determinant(int dim, const float A[dim][dim], int n) {
   float D = 0;  // Initialize result
 
   //  Base case : if matrix contains single element
@@ -69,7 +70,7 @@ float determinant(int dim, float A[dim][dim], int n) {
 
 /* Function to get adjoint of A[dim][dim] in adj[dim][dim]. */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
+void adjoint(int dim, const float A[dim][dim], float adj[dim][dim]) {
   if (dim == 1) {
     adj[0][0] = 1;
     return;
@@ -98,7 +99,7 @@ void adjoint(int dim, float A[dim][dim], float adj[dim][dim]) {
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-cats_status_e inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
+cats_status_e inverse(int dim, const float A[dim][dim], float A_inv[dim][dim],
                       float lambda) {
   /* add damping factor to avoid singularities. */
   /* if no damping is required set lambda to 0.0 */
@@ -112,6 +113,7 @@ cats_status_e inverse(int dim, float A[dim][dim], float A_inv[dim][dim],
   float det = determinant(dim, A_dash, dim);
 
   if (det == 0) {
+    log_fatal("Determinant is zero!");
     return CATS_FILTER_ERROR;
   }
 

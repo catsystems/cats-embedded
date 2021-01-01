@@ -9,59 +9,39 @@
 #include "cmsis_os.h"
 #include <string.h>
 
-void initialize_matrices(kalman_filter_t *filter) {
-  float A_dash[3][3] = {
-      {1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
-      {0, 1, filter->t_sampl},
-      {0, 0, 1}};
-  float A_dash_T[3][3] = {0};
-  transpose(3, 3, A_dash, A_dash_T);
-  float G_dash[3] = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0};
-  float B_dash[3] = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0};
+void initialize_matrices(kalman_filter_t *const filter) {
+  /* Initialize static values */
+  kalman_filter_t temp_filter = {
+      .Ad = {{1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
+             {0, 1, filter->t_sampl},
+             {0, 0, 1}},
+      .Gd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
+      .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
+      .P_hat = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}},
+      .P_bar = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}},
+      .Q = 1,
+      .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
+      .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
+      .R_full = {{0.1f, 0, 0}, {0, 0.1f, 0}, {0, 0, 0.1f}},
+      .R_eliminated = {{0.1f, 0}, {0, 0.1f}},
+      .pressure_0 = filter->pressure_0,
+      .t_sampl = filter->t_sampl};
 
-  float Q_dash = 1;
-  float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
-  float H_full_dash[3][3] = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
-  float H_full_dash_T[3][3] = {0};
-  transpose(3, 3, H_full_dash, H_full_dash_T);
-  float H_eliminated_dash[2][3] = {{1, 0, 0}, {1, 0, 0}};
-  float H_eliminated_dash_T[3][2] = {0};
-  transpose(2, 3, H_eliminated_dash, H_eliminated_dash_T);
-  float R_full_dash[3][3] = {{0.1f, 0, 0}, {0, 0.1f, 0}, {0, 0, 0.1f}};
-  float R_eliminated_dash[2][2] = {{0.1f, 0}, {0, 0.1f}};
-  float x_dash[3] = {0, 0, 0};
+  /* Transpose matrices */
+  transpose(3, 3, temp_filter.Ad, temp_filter.Ad_T);
+  transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
+  transpose(2, 3, temp_filter.H_eliminated, temp_filter.H_eliminated_T);
 
-  float GdQGd_T_dash[3][3] = {0};
-  GdQGd_T_dash[0][0] = Q_dash * G_dash[0] * G_dash[0];
-  GdQGd_T_dash[0][1] = Q_dash * G_dash[0] * G_dash[1];
-  GdQGd_T_dash[0][2] = Q_dash * G_dash[0] * G_dash[2];
-  GdQGd_T_dash[1][0] = Q_dash * G_dash[1] * G_dash[0];
-  GdQGd_T_dash[1][1] = Q_dash * G_dash[1] * G_dash[1];
-  GdQGd_T_dash[1][2] = Q_dash * G_dash[1] * G_dash[2];
-  GdQGd_T_dash[2][0] = Q_dash * G_dash[2] * G_dash[0];
-  GdQGd_T_dash[2][1] = Q_dash * G_dash[2] * G_dash[1];
-  GdQGd_T_dash[2][2] = Q_dash * G_dash[2] * G_dash[2];
+  /* Fill up GdQGd_T */
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      temp_filter.GdQGd_T[i][j] =
+          temp_filter.Q * temp_filter.Gd[i] * temp_filter.Gd[j];
+    }
+  }
 
-  const size_t flt_3x3_size = 9 * sizeof(float);
-  const size_t flt_3_size = 3 * sizeof(float);
-  const size_t flt_2x3_size = 6 * sizeof(float);
-  const size_t flt_2x2_size = 4 * sizeof(float);
-  memcpy(filter->Ad, A_dash, flt_3x3_size);
-  memcpy(filter->Ad_T, A_dash_T, flt_3x3_size);
-  memcpy(filter->Gd, G_dash, flt_3_size);
-  memcpy(filter->Bd, B_dash, flt_3_size);
-  memcpy(filter->P_hat, P_dash, flt_3x3_size);
-  memcpy(filter->P_bar, P_dash, flt_3x3_size);
-  memcpy(filter->x_hat, x_dash, flt_3_size);
-  memcpy(filter->x_bar, x_dash, flt_3_size);
-  filter->Q = Q_dash;
-  memcpy(filter->H_full, H_full_dash, flt_3x3_size);
-  memcpy(filter->H_full_T, H_full_dash_T, flt_3x3_size);
-  memcpy(filter->H_eliminated, H_eliminated_dash, flt_2x3_size);
-  memcpy(filter->H_eliminated_T, H_eliminated_dash_T, flt_2x3_size);
-  memcpy(filter->R_full, R_full_dash, flt_3x3_size);
-  memcpy(filter->R_eliminated, R_eliminated_dash, flt_2x2_size);
-  memcpy(filter->GdQGd_T, GdQGd_T_dash, flt_3x3_size);
+  /* Copy over the entire temp struct to filter */
+  memcpy(filter, &temp_filter, sizeof(kalman_filter_t));
 }
 
 void reset_kalman(kalman_filter_t *filter) {
