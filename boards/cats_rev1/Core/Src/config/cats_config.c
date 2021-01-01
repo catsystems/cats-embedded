@@ -5,7 +5,6 @@
 #include "config/cats_config.h"
 #include "drivers/w25qxx.h"
 #include "util/log.h"
-#include <string.h>
 
 typedef struct {
   /* Last sector where task_recorder wrote the data; The next sector will be

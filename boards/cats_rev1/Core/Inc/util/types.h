@@ -7,13 +7,6 @@
 
 #include <stdint.h>
 
-/** CONSTANTS **/
-
-#define PREPROCESS_QUEUE_SIZE 32
-#define BARO_MUTEX_TIMEOUT    0
-#define IMU_MUTEX_TIMEOUT     0
-static const float GRAVITY = 9.81f;
-
 /** BASIC TYPES **/
 
 /* Timestamp */
@@ -65,9 +58,9 @@ typedef enum {
   THRUSTING_1,
   THRUSTING_2,
   COASTING,
-  TRANSSONIC_1,
+  TRANSONIC_1,
   SUPERSONIC,
-  TRANSSONIC_2,
+  TRANSONIC_2,
   APOGEE,
   PARACHUTE,
   TOUCHDOWN

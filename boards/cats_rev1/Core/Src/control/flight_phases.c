@@ -25,9 +25,9 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
       break;
     case COASTING:
       break;
-    case TRANSSONIC_1:
+    case TRANSONIC_1:
       break;
-    case TRANSSONIC_2:
+    case TRANSONIC_2:
       break;
     case APOGEE:
       break;

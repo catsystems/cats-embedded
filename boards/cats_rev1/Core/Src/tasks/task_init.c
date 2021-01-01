@@ -106,6 +106,8 @@ void task_init(void *argument) {
   init_tasks();
   log_info("Task initialization complete.");
 
+  init_end_time = osKernelGetTickCount();
+
   uint32_t i = 1;
 
   //  uint8_t *send_buf = calloc(512, sizeof(uint8_t));

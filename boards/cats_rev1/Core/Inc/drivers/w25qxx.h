@@ -28,6 +28,7 @@
 /** Exported Types **/
 
 typedef enum {
+  W25QINVALID = 0,
   W25Q10 = 1,
   W25Q20,
   W25Q40,

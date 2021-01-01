@@ -6,7 +6,6 @@
 
 #include "drivers/icm20601.h"
 #include "util/types.h"
-#include <stdbool.h>
 
 /** Private Defines **/
 

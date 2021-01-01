@@ -30,15 +30,12 @@ void task_flight_fsm(void *argument) {
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   imu_data_t local_imu = {0};
 
-  /* Infinite loop */
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / FLIGHT_FSM_SAMPLING_FREQ;
 
-  osDelay(1000);
+  // osDelay(1000);
 
   while (1) {
-    tick_count += tick_update;
-
     local_imu = global_imu[0];
 
     check_flight_phase(&fsm_state, &local_imu);
@@ -48,6 +45,7 @@ void task_flight_fsm(void *argument) {
     //    usb_print("Phase: %ld Memory: %ld\n", fsm_state.flight_state,
     //    fsm_state.memory);
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

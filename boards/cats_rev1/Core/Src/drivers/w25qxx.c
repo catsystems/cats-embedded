@@ -6,7 +6,7 @@
 
 #define W25QXX_DUMMY_BYTE 0xA5
 
-w25qxx_t w25qxx = {0};
+w25qxx_t w25qxx = {.id = W25QINVALID};
 
 /** Private Function Declarations **/
 

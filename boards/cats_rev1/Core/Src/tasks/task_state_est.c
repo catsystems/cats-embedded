@@ -21,6 +21,7 @@
 
 static const int_fast8_t STATE_EST_SAMPLING_FREQ = 100;
 static const float P_INITIAL = 101250.f;
+static const float GRAVITY = 9.81f;
 
 /** Private Function Declarations **/
 
@@ -69,26 +70,31 @@ void task_state_est(void *argument) {
   initialize_matrices(&filter);
   /* End Initialization */
 
+  /* TODO: why is this needed? Without it We get num_faulty_baros = 3... */
   osDelay(1000);
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / STATE_EST_SAMPLING_FREQ;
 
-  while (1) {
-    tick_count += tick_update;
+  /* Calibration will happen three seconds after this task starts, floored to a
+   * full second */
+  timestamp_t calib_time = (init_end_time + 3000) / 1000 * 1000;
+  log_info("Calibration will happen between [%lu ms, %lu ms]", calib_time,
+           calib_time + 10);
 
+  while (1) {
     /* Update Flight Phase */
     fsm_state = global_flight_state;
 
-    /* Really basic "Calibration" of the pressure just for testing purposes */
-    if ((tick_count >= 5000) && (tick_count <= 5010)) {
-      reset_kalman(&filter);
-      filter.pressure_0 = state_data.pressure[0];
-    }
-
     if (fsm_state.flight_state == INVALID) {
       log_error("Invalid FSM state!");
+    }
+
+    /* Really basic "Calibration" of the pressure just for testing purposes */
+    if ((tick_count >= calib_time) && (tick_count <= calib_time + 10)) {
+      reset_kalman(&filter);
+      filter.pressure_0 = state_data.pressure[0];
     }
 
     /* Reset IMU when we go from moving to IDLE */
@@ -140,6 +146,7 @@ void task_state_est(void *argument) {
 
     /* TODO: Stuff with this Information */
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
@@ -158,8 +165,8 @@ static void get_data_float(state_estimation_data_t *state_data,
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (calibration->axis) {
-    /* Choose X Axis */
     case 0:
+      /* Choose X Axis */
       state_data->acceleration[0] =
           (float)(global_imu[0].acc_x) / (1024) * GRAVITY / calibration->angle -
           GRAVITY;
@@ -170,8 +177,8 @@ static void get_data_float(state_estimation_data_t *state_data,
           (float)(global_imu[2].acc_x) / (1024) * GRAVITY / calibration->angle -
           GRAVITY;
       break;
-      /* Choose Y Axis */
     case 1:
+      /* Choose Y Axis */
       state_data->acceleration[0] =
           (float)(global_imu[0].acc_y) / (1024) * GRAVITY / calibration->angle -
           GRAVITY;
@@ -182,8 +189,8 @@ static void get_data_float(state_estimation_data_t *state_data,
           (float)(global_imu[2].acc_y) / (1024) * GRAVITY / calibration->angle -
           GRAVITY;
       break;
-      /* Choose Z Axis */
     case 2:
+      /* Choose Z Axis */
       state_data->acceleration[0] =
           (float)(global_imu[0].acc_z) / (1024) * GRAVITY / calibration->angle -
           GRAVITY;
@@ -202,9 +209,9 @@ static void get_data_float(state_estimation_data_t *state_data,
   state_data->pressure[1] = (float)(global_baro[1].pressure);
   state_data->pressure[2] = (float)(global_baro[2].pressure);
 
-  state_data->temperature[0] = (float)(global_baro[0].temperature) / 100;
-  state_data->temperature[1] = (float)(global_baro[1].temperature) / 100;
-  state_data->temperature[2] = (float)(global_baro[2].temperature) / 100;
+  state_data->temperature[0] = global_baro[0].temperature / 100.f;
+  state_data->temperature[1] = global_baro[1].temperature / 100.f;
+  state_data->temperature[2] = global_baro[2].temperature / 100.f;
 
   state_data->calculated_AGL[0] = calculate_height(
       filter->pressure_0, state_data->pressure[0], state_data->temperature[0]);

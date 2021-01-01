@@ -1,5 +1,5 @@
 /*
- * sensor_elemination.c
+ * sensor_elimination.c
  *
  *  Created on: Dec 20, 2020
  *      Author: Jonas
@@ -101,7 +101,7 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
     elimination->num_maj_vote[2] = 0;
   }
 
-  /* Add Up all the faulty IMU's */
+  /* Add Up all the faulty IMUs */
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_imu[i] == 1) {
       elimination->num_faulty_imus += 1;
@@ -272,7 +272,7 @@ cats_status_e check_imus_1_fault(state_estimation_data_t *data,
     }
   }
 
-  /* Add Up all the faulty IMU's */
+  /* Add Up all the faulty IMUs */
   uint8_t counter = 0;
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_imu[i] == 1) {

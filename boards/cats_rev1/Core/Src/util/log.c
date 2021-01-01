@@ -59,7 +59,7 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
         '\0';
     static char buf_loc[30];
     buf_loc[snprintf(buf_loc, sizeof(buf_loc), "%s:%d:", file, line)] = '\0';
-    uint_fast8_t len;
+    int len;
 #ifdef CATS_RAINBOW_LOG
     len = snprintf(print_buffer, PRINT_BUFFER_LEN,
                    "%6s %s%5s\x1b[0m \x1b[90m%30s\x1b[0m ", buf_ts,

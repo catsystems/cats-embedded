@@ -28,13 +28,13 @@ void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration) {
    * further use */
   switch (calibration->axis) {
     case 0:
-      calibration->angle = (float)(imu_data->acc_x) / (1024);
+      calibration->angle = (float)(imu_data->acc_x) / 1024;
       break;
     case 1:
-      calibration->angle = (float)(imu_data->acc_y) / (1024);
+      calibration->angle = (float)(imu_data->acc_y) / 1024;
       break;
     case 2:
-      calibration->angle = (float)(imu_data->acc_z) / (1024);
+      calibration->angle = (float)(imu_data->acc_z) / 1024;
       break;
     default:
       break;

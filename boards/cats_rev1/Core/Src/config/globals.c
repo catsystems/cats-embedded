@@ -71,9 +71,15 @@ baro_data_t global_baro[3] = {0};
 imu_data_t global_imu[3] = {0};
 flight_fsm_t global_flight_state = {.flight_state = INVALID};
 
+/** Initialization End Time **/
+
+timestamp_t init_end_time = {0};
+
+#ifdef FLASH_TESTING
 /** Recorder Queue **/
 
 osMessageQueueId_t rec_queue;
+#endif
 
 /** Tracing Channels **/
 

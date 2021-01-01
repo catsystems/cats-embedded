@@ -37,12 +37,10 @@ void task_baro_read(void *argument) {
   int32_t temperature[3];
   int32_t pressure[3];
 
-  /* Infinite loop */
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / BARO_SAMPLING_FREQ;
-  while (1) {
-    tick_count += tick_update;
 
+  while (1) {
     // Phase 1, get the temperature
     prepare_temp();
     osDelay(1);
@@ -70,6 +68,7 @@ void task_baro_read(void *argument) {
       record(BARO0 + i, &(global_baro[i]));
     }
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

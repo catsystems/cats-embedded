@@ -10,6 +10,9 @@
 #include "drivers/icm20601.h"
 #include "util/recorder.h"
 #include "config/globals.h"
+#include "util/log.h"
+
+#include <string.h>
 
 //#define CALIBRATE_ACCEL
 
@@ -47,7 +50,6 @@ void task_imu_read(void *argument) {
   tick_update = osKernelGetTickFreq() / IMU20601_SAMPLING_FREQ;
 
   for (;;) {
-    tick_count += tick_update;
     read_imu(gyroscope, acceleration, &temperature, imu_idx);
 
     /* Debugging */
@@ -57,21 +59,24 @@ void task_imu_read(void *argument) {
     // gyroscope[0], gyroscope[1], gyroscope[2], acceleration[0],
     // acceleration[1], acceleration[2], temperature);
 
-    global_imu[imu_idx].acc_x = acceleration[0];
-    global_imu[imu_idx].acc_y = acceleration[1];
-    global_imu[imu_idx].acc_z = acceleration[2];
-    global_imu[imu_idx].gyro_x = gyroscope[0];
-    global_imu[imu_idx].gyro_y = gyroscope[1];
-    global_imu[imu_idx].gyro_z = gyroscope[2];
-    /* TODO: maybe replace with this */
-    //    memcpy(&global_imu[imu_idx].acc_x, &acceleration, 3*sizeof(int16_t));
-    //    memcpy(&global_imu[imu_idx].gyro_x, &gyroscope,
-    //    3*sizeof(int16_t));
+    //    global_imu[imu_idx].acc_x = acceleration[0];
+    //    global_imu[imu_idx].acc_y = acceleration[1];
+    //    global_imu[imu_idx].acc_z = acceleration[2];
+    //    global_imu[imu_idx].gyro_x = gyroscope[0];
+    //    global_imu[imu_idx].gyro_y = gyroscope[1];
+    //    global_imu[imu_idx].gyro_z = gyroscope[2];
+
+    /* TODO: The speed of copying looks to be the same, code size reduced by 16B
+     * with memcpy vs. assignment with -0g */
+    memcpy(&(global_imu[imu_idx].acc_x), &acceleration, 3 * sizeof(int16_t));
+    memcpy(&(global_imu[imu_idx].gyro_x), &gyroscope, 3 * sizeof(int16_t));
     global_imu[imu_idx].ts = tick_count;
 
     record(IMU0 + imu_idx, &(global_imu[imu_idx]));
 
     imu_idx = (imu_idx + 1) % 3;
+
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

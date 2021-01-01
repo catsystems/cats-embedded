@@ -204,9 +204,9 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 
 static uint32_t get_conversion_ticks(MS5607 *dev) {
   uint32_t time;
-  time =
-      (BARO_CONVERSION_TIME_OSR_BASE * (dev->osr + 1) * osKernelGetTickFreq()) /
-      1000;
+  time = (BARO_CONVERSION_TIME_OSR_BASE * ((float)dev->osr + 1) *
+          osKernelGetTickFreq()) /
+         1000;
   if (time < 1) time = 1;
   return time;
 }
