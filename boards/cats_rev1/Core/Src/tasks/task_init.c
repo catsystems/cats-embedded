@@ -102,6 +102,9 @@ void task_init(void *argument) {
   init_devices();
   log_info("Device initialization complete.");
 
+  /* TODO: this should be set from PC and read from config afterwards */
+  cc_init(0, 0, CATS_FLIGHT);
+
   osDelay(1000);
   init_tasks();
   log_info("Task initialization complete.");
@@ -184,7 +187,7 @@ static void init_devices() {
   // log_debug("Erasing chip...");
   // w25qxx_erase_chip();
   /* fill the config with some values */
-  cc_init(0);
+  cc_init(0, 0, CATS_FLIGHT);
   /* persist it to flash */
   cc_save();
   /* load the values from the flash back to the config */
@@ -225,33 +228,42 @@ static void init_devices() {
 }
 
 static void init_tasks() {
+  switch (cc_get_boot_state()) {
+    case CATS_FLIGHT: {
 #if (configUSE_TRACE_FACILITY == 1)
-  baro_channel = xTraceRegisterString("Baro Channel");
-  flash_channel = xTraceRegisterString("Flash Channel");
+      baro_channel = xTraceRegisterString("Baro Channel");
+      flash_channel = xTraceRegisterString("Flash Channel");
 #endif
 
-  /* creation of task_recorder */
+      /* creation of task_recorder */
 #ifdef FLASH_TESTING
-
-  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+      rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
-  vTraceSetQueueName(rec_queue, "Recorder Queue");
+      vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-  osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 #endif
 
-  /* creation of task_baro_read */
-  osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
+      /* creation of task_baro_read */
+      osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
-  /* creation of task_imu_read */
-  osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
+      /* creation of task_imu_read */
+      osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
-  /* creation of task_flight_fsm */
-  osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+      /* creation of task_flight_fsm */
+      osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
-  /* creation of task_state_est */
-  osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+      /* creation of task_state_est */
+      osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+    } break;
+    case CATS_CONFIG:
+    case CATS_TIMER:
+    case CATS_DROP:
+      break;
+    default:
+      log_fatal("Wrong boot state!");
+  }
 }
 
 static void init_imu() {
