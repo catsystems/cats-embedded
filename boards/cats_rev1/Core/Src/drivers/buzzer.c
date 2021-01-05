@@ -38,10 +38,9 @@ void buzzer_set_freq(BUZ *dev, float frequency) {
   float psc = 1;
   if (frequency < 2000) psc = 2;
   if (frequency < 500) psc = 3;
-  // https://www.wolframalpha.com/input/?i=solve+f+%3D+c+%2F+%28%28x%2B1%29*%28n-1%29%29
+
   dev->arr = (uint16_t)(core_freq / (frequency * psc + frequency)) - 1;
 
-  // PSC is fixed to 1
   // Update timer period
   dev->timer->Init.Period = dev->arr;
   HAL_TIM_PWM_Init(dev->timer);

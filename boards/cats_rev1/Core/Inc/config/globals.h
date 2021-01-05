@@ -10,6 +10,7 @@
 #include "drivers/icm20601.h"
 #include "drivers/ms5607.h"
 #include "drivers/buzzer.h"
+#include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
 
 /** Device Handles **/
@@ -23,6 +24,9 @@ extern MS5607 MS2;
 extern MS5607 MS3;
 
 extern BUZ BUZZER;
+
+extern SERVO SERVO1;
+extern SERVO SERVO2;
 
 /** State Estimation **/
 

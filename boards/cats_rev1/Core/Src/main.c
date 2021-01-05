@@ -58,12 +58,12 @@ TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart1;
 
-/* Definitions for task_init */
-osThreadId_t task_initHandle;
+/* Definitions for task_init_name */
+osThreadId_t task_init_nameHandle;
 uint32_t task_init_buffer[256];
 osStaticThreadDef_t task_init_control_block;
-const osThreadAttr_t task_init_attributes = {
-    .name = "task_init",
+const osThreadAttr_t task_init_name_attributes = {
+    .name = "task_init_name",
     .stack_mem = &task_init_buffer[0],
     .stack_size = sizeof(task_init_buffer),
     .cb_mem = &task_init_control_block,
@@ -168,8 +168,9 @@ int main(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of task_init */
-  task_initHandle = osThreadNew(task_init, NULL, &task_init_attributes);
+  /* creation of task_init_name */
+  task_init_nameHandle =
+      osThreadNew(task_init, NULL, &task_init_name_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -475,9 +476,9 @@ static void MX_TIM2_Init(void) {
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 7;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 199999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK) {
@@ -499,7 +500,8 @@ static void MX_TIM2_Init(void) {
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-
+  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
 }

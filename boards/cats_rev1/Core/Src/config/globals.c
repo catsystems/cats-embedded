@@ -9,6 +9,7 @@
 extern SPI_HandleTypeDef hspi1;
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
+extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim15;
 
 /** Device Handles **/
@@ -64,6 +65,12 @@ BUZ BUZZER = {.timer = &htim15,
               .arr = 4000,
               .started = 0,
               .volume = 100};
+
+SERVO SERVO1 = {
+    .timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .started = 0};
+
+SERVO SERVO2 = {
+    .timer = &htim2, .channel = TIM_CHANNEL_2, .pulse = 15000, .started = 0};
 
 /** State Estimation **/
 

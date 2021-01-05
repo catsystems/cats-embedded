@@ -8,6 +8,7 @@
 #include "util/log.h"
 #include "util/recorder.h"
 #include "drivers/buzzer.h"
+#include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_imu_read.h"
@@ -126,7 +127,10 @@ void task_init(void *argument) {
   //    w25qxx_erase_sector(j);
   //    log_debug("Erasing sector %lu", j);
   //  }
-
+  servo_set_position(&SERVO1, 90);
+  servo_set_position(&SERVO2, 180);
+  servo_start(&SERVO1);
+  servo_start(&SERVO2);
   /* Infinite loop */
   for (;;) {
     //    w25qxx_write_sector(send_buf, i, 0, 512);
@@ -140,11 +144,11 @@ void task_init(void *argument) {
     //
     //    log_raw("\n\n");
 
-    if (i++ % 100 == 0) {
-      buzzer_beep(&BUZZER, 500);
-    }
-
-    buzzer_update(&BUZZER);
+    //    if (i++ % 100 == 0) {
+    //      buzzer_beep(&BUZZER, 500);
+    //    }
+    //
+    //    buzzer_update(&BUZZER);
 
     osDelay(10);
   }
@@ -301,6 +305,6 @@ static void init_baro() {
 }
 
 static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 1000);
+  buzzer_set_freq(&BUZZER, 4000);
   buzzer_set_volume(&BUZZER, 1);
 }
