@@ -105,6 +105,20 @@ typedef enum {
   CATS_HARD_FAULT
 } cats_status_e;
 
+typedef enum {
+  CATS_ERROR_OK = 0,
+  CATS_ERROR_NO_CONFIG,
+  CATS_ERROR_NO_PYRO,
+  CATS_ERROR_LOG_FULL,
+  CATS_ERROR_USB_CONNECTED,
+  CATS_ERROR_BAT_LOW,
+  CATS_ERROR_BAT_CRIT,
+  CATS_ERROR_IMU_ERROR,
+  CATS_ERROR_BARO_ERROR,
+  CATS_ERROR_FILTER_ERROR,
+  CATS_ERROR_HARD_FAULT
+} cats_error_e;
+
 /** CONVERSION FUNCTIONS **/
 
 inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) {

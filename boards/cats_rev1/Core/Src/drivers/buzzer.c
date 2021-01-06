@@ -12,7 +12,7 @@
 
 void buzzer_beep(BUZ *dev, uint32_t duration) {
   dev->end_time = osKernelGetTickCount() + duration;
-  buzzer_start(dev);
+  dev->start = 1;
 }
 
 // Set the volume between 0 and 100
@@ -27,17 +27,30 @@ void buzzer_set_volume(BUZ *dev, uint16_t volume) {
   HAL_TIM_PWM_ConfigChannel(dev->timer, &sConfigOC, dev->channel);
 
   // Start the pwm channel again if it should be running
-  if (dev->started) HAL_TIM_PWM_Start(dev->timer, dev->channel);
+  if (dev->started)
+    HAL_TIM_PWM_Start(dev->timer, dev->channel);
+  else
+    HAL_TIM_PWM_Stop(dev->timer, dev->channel);
 
   dev->volume = volume;
 }
+
+// Set buzzer freqency between 200 and 10kHz
 
 void buzzer_set_freq(BUZ *dev, float frequency) {
   // FREQ = CORE_FREQ / ((AAR+1) * (PSC+1))
   float core_freq = HAL_RCC_GetHCLKFreq();
   float psc = 1;
-  if (frequency < 2000) psc = 2;
-  if (frequency < 500) psc = 3;
+  // guards
+  if (frequency > 10000)
+    frequency = 10000;
+  else if (frequency < 200)
+    frequency = 200;
+
+  if (frequency < 500)
+    psc = 3;
+  else if (frequency < 2000)
+    psc = 2;
 
   dev->arr = (uint16_t)(core_freq / (frequency * psc + frequency)) - 1;
 
@@ -49,19 +62,26 @@ void buzzer_set_freq(BUZ *dev, float frequency) {
   buzzer_set_volume(dev, dev->volume);
 }
 
+// Starts pwm timer
 void buzzer_start(BUZ *dev) {
   dev->started = 1;
   HAL_TIM_PWM_Start(dev->timer, dev->channel);  // start pwm generation
 }
 
+// Stops pwm timer
 void buzzer_stop(BUZ *dev) {
   dev->started = 0;
-  HAL_TIM_PWM_Stop(dev->timer, dev->channel);  // start pwm generation
+  HAL_TIM_PWM_Stop(dev->timer, dev->channel);  // stop pwm generation
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 }
 
-// Stops the buzzer when time ran out
-// Returns 1 if buzzer is still running
+// Starts and Stops the buzzer
+// Returns 1 if buzzer is running
 uint8_t buzzer_update(BUZ *dev) {
+  if (dev->start) {
+    buzzer_start(dev);
+    dev->start = 0;
+  }
   if (dev->started && (dev->end_time > osKernelGetTickCount()))
     return 1;
   else if (dev->started)

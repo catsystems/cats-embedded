@@ -8,6 +8,7 @@
 #include "util/log.h"
 #include "util/recorder.h"
 #include "drivers/buzzer.h"
+#include "util/buzzer_handler.h"
 #include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
@@ -112,8 +113,6 @@ void task_init(void *argument) {
 
   init_end_time = osKernelGetTickCount();
 
-  uint32_t i = 1;
-
   //  uint8_t *send_buf = calloc(512, sizeof(uint8_t));
   //  uint8_t *rec_buf = calloc(512, sizeof(uint8_t));
   //  for (int j = 0; j < 512; ++j) {
@@ -144,11 +143,9 @@ void task_init(void *argument) {
     //
     //    log_raw("\n\n");
 
-    //    if (i++ % 100 == 0) {
-    //      buzzer_beep(&BUZZER, 500);
-    //    }
-    //
-    //    buzzer_update(&BUZZER);
+    error_buzzer(CATS_ERROR_LOG_FULL);
+
+    buzzer_update(&BUZZER);
 
     osDelay(10);
   }

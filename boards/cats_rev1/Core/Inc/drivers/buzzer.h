@@ -19,6 +19,7 @@ typedef struct buzzer_dev {
   uint16_t arr;
 
   uint8_t started;
+  uint8_t start;
   uint16_t volume;
   uint32_t end_time;
 } BUZ;

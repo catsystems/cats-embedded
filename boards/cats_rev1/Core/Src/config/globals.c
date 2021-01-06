@@ -63,6 +63,7 @@ MS5607 MS3 = {
 BUZ BUZZER = {.timer = &htim15,
               .channel = TIM_CHANNEL_2,
               .arr = 4000,
+              .start = 0,
               .started = 0,
               .volume = 100};
 
