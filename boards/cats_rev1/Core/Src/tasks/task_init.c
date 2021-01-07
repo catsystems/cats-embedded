@@ -8,6 +8,8 @@
 #include "util/log.h"
 #include "util/recorder.h"
 #include "drivers/buzzer.h"
+#include "drivers/adc.h"
+#include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
@@ -130,6 +132,11 @@ void task_init(void *argument) {
   servo_set_position(&SERVO2, 180);
   servo_start(&SERVO1);
   servo_start(&SERVO2);
+
+  // adc test
+  adc_init();
+  osDelay(100);
+  battery_monitor_init();
   /* Infinite loop */
   for (;;) {
     //    w25qxx_write_sector(send_buf, i, 0, 512);
@@ -143,7 +150,13 @@ void task_init(void *argument) {
     //
     //    log_raw("\n\n");
 
-    error_buzzer(CATS_ERROR_LOG_FULL);
+    battery_level_e level = battery_level();
+    if (level == BATTERY_CRIT)
+      error_buzzer(CATS_ERROR_BAT_CRIT);
+    else if (level == BATTERY_LOW)
+      error_buzzer(CATS_ERROR_BAT_LOW);
+    else
+      error_buzzer(CATS_ERROR_OK);
 
     buzzer_update(&BUZZER);
 
@@ -303,5 +316,5 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 4000);
-  buzzer_set_volume(&BUZZER, 1);
+  buzzer_set_volume(&BUZZER, 5);
 }
