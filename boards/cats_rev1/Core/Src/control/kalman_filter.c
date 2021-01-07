@@ -44,10 +44,12 @@ void initialize_matrices(kalman_filter_t *const filter) {
   memcpy(filter, &temp_filter, sizeof(kalman_filter_t));
 }
 
-void reset_kalman(kalman_filter_t *filter) {
+void reset_kalman(kalman_filter_t *filter, int32_t initial_pressure) {
   log_debug("Resetting Kalman Filter...");
   float x_dash[3] = {0, 0, 0};
   float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
+
+  filter->pressure_0 = (float)initial_pressure;
 
   const size_t flt_3x3_size = 9 * sizeof(float);
   const size_t flt_3_size = 3 * sizeof(float);

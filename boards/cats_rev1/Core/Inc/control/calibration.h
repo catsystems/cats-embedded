@@ -10,6 +10,7 @@
 
 #include "util/types.h"
 
-void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration);
+void calibrate_imu(imu_data_t *imu_data, calibration_data_t *,
+                   sensor_elimination_t *elimination);
 
 #endif /* INC_CONTROL_CALIBRATION_H_ */

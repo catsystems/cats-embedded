@@ -18,7 +18,7 @@ void initialize_matrices(kalman_filter_t *filter);
 void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
                        sensor_elimination_t *elimination);
 
-void reset_kalman(kalman_filter_t *filter);
+void reset_kalman(kalman_filter_t *filter, int32_t initial_pressure);
 
 cats_status_e kalman_update_full(kalman_filter_t *filter,
                                  state_estimation_data_t *data);

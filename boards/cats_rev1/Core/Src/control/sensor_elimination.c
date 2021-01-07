@@ -104,6 +104,7 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
   /* Add Up all the faulty IMUs */
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_imu[i] == 1) {
+      log_warn("IMU Number %d faulty", i);
       elimination->num_faulty_imus += 1;
     }
   }
@@ -113,6 +114,7 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
       return CATS_OK;
     case 1:
       return CATS_IMU_ERROR;
+
     case 2:
       return CATS_FILTER_ERROR;
     default:
@@ -232,6 +234,7 @@ cats_status_e check_baros_no_faults(state_estimation_data_t *data,
   /* Add Up all the faulty Baros */
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_baro[i] == 1) {
+      log_warn("BARO Number %d faulty", i);
       elimination->num_faulty_baros += 1;
     }
   }
@@ -276,6 +279,7 @@ cats_status_e check_imus_1_fault(state_estimation_data_t *data,
   uint8_t counter = 0;
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_imu[i] == 1) {
+      log_warn("IMU Number %d faulty", i);
       counter += 1;
     }
   }
@@ -333,6 +337,7 @@ cats_status_e check_baros_1_fault(state_estimation_data_t *data,
   uint8_t counter = 0;
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_baro[i] == 1) {
+      log_warn("BARO Number %d faulty", i);
       counter += 1;
     }
   }

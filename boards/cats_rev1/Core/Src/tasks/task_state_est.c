@@ -58,6 +58,14 @@ void task_state_est(void *argument) {
   calibration_data_t calibration;
   calibration.angle = 1;
   calibration.axis = 2;
+  uint8_t imu_counter = 0;
+  imu_data_t rolling_imu[10];
+  imu_data_t global_average_imu;
+  imu_data_t average_imu;
+  uint8_t pressure_counter = 0;
+  int32_t rolling_pressure[10];
+  int32_t global_average_pressure;
+  int32_t average_pressure;
   /* end calibration data */
 
   /* Initialize State Estimation */
@@ -77,12 +85,6 @@ void task_state_est(void *argument) {
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / STATE_EST_SAMPLING_FREQ;
 
-  /* Calibration will happen three seconds after this task starts, floored to a
-   * full second */
-  timestamp_t calib_time = (init_end_time + 3000) / 1000 * 1000;
-  log_info("Calibration will happen between [%lu ms, %lu ms]", calib_time,
-           calib_time + 10);
-
   while (1) {
     /* Update Flight Phase */
     fsm_state = global_flight_state;
@@ -91,16 +93,10 @@ void task_state_est(void *argument) {
       log_error("Invalid FSM state!");
     }
 
-    /* Really basic "Calibration" of the pressure just for testing purposes */
-    if ((tick_count >= calib_time) && (tick_count <= calib_time + 10)) {
-      reset_kalman(&filter);
-      filter.pressure_0 = state_data.pressure[0];
-    }
-
     /* Reset IMU when we go from moving to IDLE */
     if ((fsm_state.flight_state == IDLE) && (fsm_state.state_changed == 1)) {
-      reset_kalman(&filter);
-      calibrate_imu(&global_imu[0], &calibration);
+      reset_kalman(&filter, average_pressure);
+      calibrate_imu(&average_imu, &calibration, &elimination);
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -109,8 +105,79 @@ void task_state_est(void *argument) {
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
 
+    /* Do the preprocessing on the IMU and BARO for calibration */
+    /* Only do if we are in MOVING */
+    if (fsm_state.flight_state == MOVING) {
+      /* First average the 3 IMU measurements if no IMU's have been eliminated
+       */
+      global_average_imu.acc_x = 0;
+      global_average_imu.acc_y = 0;
+      global_average_imu.acc_z = 0;
+      for (int i = 0; i < 3; i++) {
+        if (elimination.faulty_imu[i] == 0)
+          global_average_imu.acc_x +=
+              global_imu[i].acc_x / (3 - elimination.num_faulty_imus);
+        global_average_imu.acc_y +=
+            global_imu[i].acc_y / (3 - elimination.num_faulty_imus);
+        global_average_imu.acc_z +=
+            global_imu[i].acc_z / (3 - elimination.num_faulty_imus);
+      }
+
+      /* Write this into the rolling IMU array */
+      rolling_imu[imu_counter] = global_average_imu;
+
+      /* Average the rolling IMU Array */
+      average_imu.acc_x = 0;
+      average_imu.acc_y = 0;
+      average_imu.acc_z = 0;
+      for (int i = 0; i < 10; i++) {
+        average_imu.acc_x += rolling_imu[i].acc_x;
+        average_imu.acc_y += rolling_imu[i].acc_y;
+        average_imu.acc_z += rolling_imu[i].acc_z;
+      }
+      average_imu.acc_x /= 10;
+      average_imu.acc_y /= 10;
+      average_imu.acc_z /= 10;
+
+      /* Increase the counter for the rolling IMU array */
+      imu_counter++;
+      if (imu_counter > 9) {
+        imu_counter = 0;
+      }
+
+      /* Do the Baro */
+      /* First average the 3 Baro measurements if no Baro's have been eliminated
+       */
+      global_average_pressure = 0;
+      for (int i = 0; i < 3; i++) {
+        if (elimination.faulty_baro[i] == 0)
+          global_average_pressure +=
+              global_baro[i].pressure / (3 - elimination.num_faulty_baros);
+      }
+
+      /* Write this into the rolling Baro array */
+      rolling_pressure[pressure_counter] = global_average_pressure;
+
+      /* Average the rolling IMU Array */
+      average_pressure = 0;
+      for (int i = 0; i < 10; i++) {
+        average_pressure += rolling_pressure[i];
+      }
+      average_pressure /= 10;
+
+      /* Increase the counter for the rolling Baro array */
+      pressure_counter++;
+      if (pressure_counter > 9) {
+        pressure_counter = 0;
+      }
+    }
+
     /* Do a Kalman Step */
     kalman_step(&filter, &state_data, &elimination);
+
+    /* write the Data into the global variable */
+    global_kf_data.height = filter.x_bar[0];
+    global_kf_data.velocity = filter.x_bar[1];
 
     /* DEBUGGING: Making it Ready for Printing */
     if (filter.x_bar[0] > 0) {
@@ -135,8 +202,13 @@ void task_state_est(void *argument) {
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
 
-    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
-              meters_per_s, millimeters_per_s);
+    //    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
+    //              meters_per_s, millimeters_per_s);
+    //        log_trace("Calibrated IMU 1: Z: %ld",
+    //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
+    //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
+    //        log_trace("Calibrated IMU 3: Z: %ld",
+    //        (int32_t)(1000*state_data.acceleration[2]));
     /* END DEBUGGING */
     flight_info_t flight_info = {
         .ts = osKernelGetTickCount(),

@@ -47,6 +47,11 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
+  float height;
+  float velocity;
+} estimation_output_t;
+
+typedef struct {
   float angle;
   uint8_t axis;
 } calibration_data_t;
@@ -63,14 +68,17 @@ typedef enum {
   TRANSONIC_2,
   APOGEE,
   PARACHUTE,
+  BALLISTIC,
   TOUCHDOWN
 } flight_fsm_e;
 
 typedef struct {
   flight_fsm_e flight_state;
   imu_data_t old_imu_data;
+  float old_height;
+  float angular_movement[3];
   uint32_t clock_memory;
-  uint32_t memory;
+  uint32_t memory[3];
   uint8_t state_changed;
 } flight_fsm_t;
 

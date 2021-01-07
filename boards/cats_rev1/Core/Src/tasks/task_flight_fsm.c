@@ -7,6 +7,7 @@
 
 #include "cmsis_os.h"
 #include "config/globals.h"
+#include "util/log.h"
 #include "tasks/task_flight_fsm.h"
 #include "control/flight_phases.h"
 
@@ -29,6 +30,7 @@ void task_flight_fsm(void *argument) {
 
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   imu_data_t local_imu = {0};
+  estimation_output_t local_kf_data = {0};
 
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / FLIGHT_FSM_SAMPLING_FREQ;
@@ -37,13 +39,15 @@ void task_flight_fsm(void *argument) {
 
   while (1) {
     local_imu = global_imu[0];
+    local_kf_data = global_kf_data;
 
-    check_flight_phase(&fsm_state, &local_imu);
+    check_flight_phase(&fsm_state, &local_imu, &local_kf_data);
 
     global_flight_state = fsm_state;
 
-    //    usb_print("Phase: %ld Memory: %ld\n", fsm_state.flight_state,
-    //    fsm_state.memory);
+    if (fsm_state.state_changed == 1) {
+      log_info("State Changed to %d", fsm_state.flight_state);
+    }
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
