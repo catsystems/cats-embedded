@@ -297,6 +297,7 @@ static void init_imu() {
     osDelay(10);
     log_error("IMU 3 initialization failed");
   }
+#define CALIBRATE_ACCEL
 
 #ifdef CALIBRATE_ACCEL
   icm20601_accel_calib(&ICM1, 2);  // Axis 0 = x, 1 = y, 2 = z
@@ -316,5 +317,5 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 4000);
-  buzzer_set_volume(&BUZZER, 5);
+  buzzer_set_volume(&BUZZER, 1);
 }

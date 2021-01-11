@@ -19,3 +19,5 @@ copy the pre-commit hook from `./hooks` to `./.git/hooks`.
 Unfortunately, it is not easily possible to check whether the code is
 formatted correctly on the server side (while you are doing a push) so
 _**please**_ do this if you are working with C/C++ files. 
+
+##FAQ
