@@ -18,8 +18,6 @@
 
 /** Private Constants **/
 
-static const int_fast16_t IMU20601_SAMPLING_FREQ = 300;
-
 /** Private Function Declarations **/
 
 static void read_imu(int16_t gyroscope[3], int16_t acceleration[3],
@@ -47,9 +45,11 @@ void task_imu_read(void *argument) {
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / IMU20601_SAMPLING_FREQ;
+  tick_update = osKernelGetTickFreq() / (3 * CONTROL_SAMPLING_FREQ);
 
-  for (;;) {
+  while (1) {
+    tick_count += tick_update;
+
     read_imu(gyroscope, acceleration, &temperature, imu_idx);
 
     /* Debugging */
@@ -76,7 +76,6 @@ void task_imu_read(void *argument) {
 
     imu_idx = (imu_idx + 1) % 3;
 
-    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

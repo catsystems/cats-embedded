@@ -13,7 +13,6 @@
 
 /** Private Constants **/
 
-static const int_fast8_t BARO_SAMPLING_FREQ = 100;
 static const int_fast8_t MS_TIMEOUT = 5;
 
 /** Private Function Declarations **/
@@ -38,9 +37,10 @@ void task_baro_read(void *argument) {
   int32_t pressure[3];
 
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / BARO_SAMPLING_FREQ;
+  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
+    tick_count += tick_update;
     // Phase 1, get the temperature
     prepare_temp();
     osDelay(1);
@@ -68,7 +68,6 @@ void task_baro_read(void *argument) {
       record(BARO0 + i, &(global_baro[i]));
     }
 
-    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

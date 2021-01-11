@@ -13,6 +13,9 @@
 #include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
 
+/** Sampling Frequencies **/
+#define CONTROL_SAMPLING_FREQ 100
+
 /** Device Handles **/
 
 extern const ICM20601 ICM1;

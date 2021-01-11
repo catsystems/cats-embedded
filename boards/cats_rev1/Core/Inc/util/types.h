@@ -82,6 +82,24 @@ typedef struct {
   uint8_t state_changed;
 } flight_fsm_t;
 
+typedef enum {
+  SERVO_1_TRIGGER = 0,
+  SERVO_2_TRIGGER,
+  SERVO_1_2_TRIGGER,
+  PYRO_1_TRIGGER,
+  PYRO_2_TRIGGER,
+  PYRO_3_TRIGGER,
+  ALL_PYROS_TRIGGER
+} chute_trigger_e;
+
+typedef struct {
+  uint8_t stages;
+  chute_trigger_e stage_type_1;
+  int32_t servo_angle_1;
+  chute_trigger_e stage_type_2;
+  int32_t servo_angle_2;
+} chute_type_t;
+
 typedef struct {
   float Ad[3][3];
   float Ad_T[3][3];

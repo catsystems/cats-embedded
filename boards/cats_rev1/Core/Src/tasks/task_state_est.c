@@ -19,7 +19,6 @@
 
 /** Private Constants **/
 
-static const int_fast8_t STATE_EST_SAMPLING_FREQ = 100;
 static const float P_INITIAL = 101250.f;
 static const float GRAVITY = 9.81f;
 
@@ -73,7 +72,7 @@ void task_state_est(void *argument) {
   sensor_elimination_t elimination = {0};
   kalman_filter_t filter = {0};
   filter.pressure_0 = P_INITIAL;
-  filter.t_sampl = 1 / (float)(STATE_EST_SAMPLING_FREQ);
+  filter.t_sampl = 1 / (float)(CONTROL_SAMPLING_FREQ);
 
   initialize_matrices(&filter);
   /* End Initialization */
@@ -83,9 +82,11 @@ void task_state_est(void *argument) {
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / STATE_EST_SAMPLING_FREQ;
+  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
+    tick_count += tick_update;
+
     /* Update Flight Phase */
     fsm_state = global_flight_state;
 
@@ -218,7 +219,6 @@ void task_state_est(void *argument) {
 
     /* TODO: Stuff with this Information */
 
-    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

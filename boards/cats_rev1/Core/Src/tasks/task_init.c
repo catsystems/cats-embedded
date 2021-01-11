@@ -18,6 +18,7 @@
 #include "tasks/task_init.h"
 #include "tasks/task_recorder.h"
 #include "tasks/task_state_est.h"
+#include "tasks/task_peripherals.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
@@ -69,6 +70,18 @@ const osThreadAttr_t task_flight_fsm_attributes = {
     .stack_size = sizeof(task_flight_fsm_buffer),
     .cb_mem = &task_flight_fsm_control_block,
     .cb_size = sizeof(task_flight_fsm_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+/* Definitions for task_peripherals */
+uint32_t task_peripherals_buffer[256];
+StaticTask_t task_peripherals_control_block;
+const osThreadAttr_t task_peripherals_attributes = {
+    .name = "task_peripherals",
+    .stack_mem = &task_peripherals_buffer[0],
+    .stack_size = sizeof(task_peripherals_buffer),
+    .cb_mem = &task_peripherals_control_block,
+    .cb_size = sizeof(task_peripherals_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -267,6 +280,9 @@ static void init_tasks() {
 
       /* creation of task_flight_fsm */
       osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+
+      /* creation of task_flight_fsm */
+      osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
       /* creation of task_state_est */
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
