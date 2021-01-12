@@ -31,6 +31,7 @@ void task_peripherals(void *argument) {
   flight_fsm_t fsm_state = {.flight_state = MOVING};
 
   uint8_t parachute_fired = 0;
+  uint8_t trigger_parachute = 0;
 
   chute_type_t chute_type;
 
@@ -47,7 +48,12 @@ void task_peripherals(void *argument) {
     tick_count += tick_update;
     fsm_state = global_flight_state;
 
+    /* Check If we need to Trigger Parachute */
     if (fsm_state.flight_state == APOGEE && fsm_state.state_changed) {
+      trigger_parachute = 1;
+    }
+
+    if (trigger_parachute == 1) {
       if (chute_type.stages == 1) {
         switch (chute_type.stage_type_1) {
           case SERVO_1_TRIGGER:
@@ -61,18 +67,18 @@ void task_peripherals(void *argument) {
             servo_set_position(&SERVO2, chute_type.servo_angle_2);
             break;
           case PYRO_1_TRIGGER:
-            HAL_GPIO_WritePin(GPIOA, PYRO_1_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
             break;
           case PYRO_2_TRIGGER:
-            HAL_GPIO_WritePin(GPIOA, PYRO_2_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
             break;
           case PYRO_3_TRIGGER:
-            HAL_GPIO_WritePin(GPIOA, PYRO_3_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
             break;
           case ALL_PYROS_TRIGGER:
-            HAL_GPIO_WritePin(GPIOA, PYRO_1_Pin, GPIO_PIN_SET);
-            HAL_GPIO_WritePin(GPIOA, PYRO_2_Pin, GPIO_PIN_SET);
-            HAL_GPIO_WritePin(GPIOA, PYRO_3_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
             break;
           default:
             break;
@@ -80,7 +86,34 @@ void task_peripherals(void *argument) {
       }
     }
 
-    /* TODO: Check if we have actually triggered the Parachute */
+    /* Check if we have actually triggered the Parachute */
+    if (chute_type.stages == 1) {
+      switch (chute_type.stage_type_1) {
+        case SERVO_1_TRIGGER:
+          /* Can we Read the Servo Angle?*/
+          break;
+        case SERVO_2_TRIGGER:
+          /* Can we Read the Servo Angle?*/
+          break;
+        case SERVO_1_2_TRIGGER:
+          /* Can we Read the Servo Angle?*/
+          break;
+        case PYRO_1_TRIGGER:
+          /* Read Pyro Voltage */
+          break;
+        case PYRO_2_TRIGGER:
+          /* Read Pyro Voltage */
+          break;
+        case PYRO_3_TRIGGER:
+          /* Read Pyro Voltage */
+          break;
+        case ALL_PYROS_TRIGGER:
+          /* Read Pyro Voltage */
+          break;
+        default:
+          break;
+      }
+    }
 
     osDelayUntil(tick_count);
   }
