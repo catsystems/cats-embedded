@@ -17,13 +17,13 @@ void initialize_matrices(kalman_filter_t *const filter) {
              {0, 0, 1}},
       .Gd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
       .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
-      .P_hat = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}},
-      .P_bar = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}},
-      .Q = 1,
+      .P_hat = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
+      .P_bar = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
+      .Q = 0.01f,
       .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
       .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
-      .R_full = {{0.1f, 0, 0}, {0, 0.1f, 0}, {0, 0, 0.1f}},
-      .R_eliminated = {{0.1f, 0}, {0, 0.1f}},
+      .R_full = {{4.0f, 0, 0}, {0, 4.0f, 0}, {0, 0, 4.0f}},
+      .R_eliminated = {{4.0f, 0}, {0, 4.0f}},
       .pressure_0 = filter->pressure_0,
       .t_sampl = filter->t_sampl};
 
@@ -47,7 +47,7 @@ void initialize_matrices(kalman_filter_t *const filter) {
 void reset_kalman(kalman_filter_t *filter, int32_t initial_pressure) {
   log_debug("Resetting Kalman Filter...");
   float x_dash[3] = {0, 0, 0};
-  float P_dash[3][3] = {{0.00001f, 0, 0}, {0, 0.00001f, 0}, {0, 0, 0.00001f}};
+  float P_dash[3][3] = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}};
 
   filter->pressure_0 = (float)initial_pressure;
 

@@ -5,6 +5,7 @@
 #include "config/cats_config.h"
 #include "drivers/w25qxx.h"
 #include "util/log.h"
+#include "util/types.h"
 
 /* TODO: separate this structure into "config" and "status" structs.
  * - "config" should hold all user-settable parameters (e.g., numbers and backup
@@ -22,6 +23,8 @@ typedef struct {
   uint16_t num_recorded_flights;
   /* state according to /concepts/v1/cats_fsm.jpg */
   cats_boot_state boot_state;
+
+  chute_type_t chute_type;
 } cats_config_t;
 
 cats_config_t global_cats_config = {0};
@@ -33,6 +36,7 @@ void cc_init(uint16_t last_recorded_sector, uint16_t num_recorded_flights,
   global_cats_config.last_recorded_sector = last_recorded_sector;
   global_cats_config.num_recorded_flights = num_recorded_flights;
   global_cats_config.boot_state = boot_state;
+  //  chute_type_t chute_type;
 }
 
 void cc_clear() { memset(&global_cats_config, 0, sizeof(global_cats_config)); }

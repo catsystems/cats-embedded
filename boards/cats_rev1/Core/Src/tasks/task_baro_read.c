@@ -58,8 +58,6 @@ void task_baro_read(void *argument) {
     }
     get_temp_pres(temperature, pressure);
 
-    //		UsbPrint("BARO %ld: %ld; T: %ld; t: %ld\n", baro_idx, pressure,
-    //				temperature, tick_count);
     for (int i = 0; i < 3; i++) {
       global_baro[i].pressure = pressure[i];
       global_baro[i].temperature = temperature[i];

@@ -203,8 +203,8 @@ void task_state_est(void *argument) {
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
 
-    //    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
-    //              meters_per_s, millimeters_per_s);
+    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
+              meters_per_s, millimeters_per_s);
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
@@ -291,4 +291,12 @@ static void get_data_float(state_estimation_data_t *state_data,
       filter->pressure_0, state_data->pressure[1], state_data->temperature[1]);
   state_data->calculated_AGL[2] = calculate_height(
       filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
+
+  //  log_raw("Height; %ld; %ld; %ld; Acc; %ld; %ld; %ld",
+  //  (int32_t)(state_data->calculated_AGL[0]*1000),
+  //			(int32_t)(state_data->calculated_AGL[1]*1000),
+  //(int32_t)(state_data->calculated_AGL[2]*1000),
+  //(int32_t)(state_data->acceleration[0]*1000000),
+  //			(int32_t)(state_data->acceleration[1]*1000000),
+  //(int32_t)(state_data->acceleration[2]*1000000));
 }
