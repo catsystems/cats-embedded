@@ -23,7 +23,7 @@
 
 /** Exported Consts **/
 
-const static uint32_t REC_QUEUE_SIZE = 256;
+extern const uint32_t REC_QUEUE_SIZE;
 
 /** Exported Types **/
 

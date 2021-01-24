@@ -12,6 +12,20 @@
 // TODO right now this file only supports errors, should be updated to support
 // all buzzer things
 
+const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH] = {
+    ".-.-.-",  // Error start
+    "-",       // no config
+    "--",      // no pyro detected
+    "---",     // log full
+    "..--",    // usb connected
+    ".-",      // battery low
+    "..-",     // battery critical
+    ".--",     // imu error
+    ".---",    // baro error
+    ".----",   // filter error
+    "....."    // hard fault
+};
+
 void error_buzzer(cats_error_e error) {
   static uint32_t timeout = 0;
   static int32_t i = 0;

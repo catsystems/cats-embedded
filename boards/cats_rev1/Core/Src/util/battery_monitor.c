@@ -47,11 +47,11 @@ float battery_voltage() {
   // https://www.wolframalpha.com/input/?i=linear+fit+%281215%2C6.35%29%2C%281840%2C9.35%29%2C%282342%2C11.96%29%2C%282820%2C14.36%29
   // TODO remove the +0.65 when there is a final solution (ideal diode, diode
   // etc.)
-  return (float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65;
+  return (float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65f;
 }
 
 float battery_cell_voltage() {
-  return ((float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65) /
+  return ((float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65f) /
          cell_count;
 }
 

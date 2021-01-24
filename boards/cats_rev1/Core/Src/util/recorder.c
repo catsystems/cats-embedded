@@ -7,6 +7,8 @@
 #include "config/globals.h"
 #include "cmsis_os.h"
 
+const uint32_t REC_QUEUE_SIZE = 256;
+
 void record(rec_entry_type_e rec_type, const void *rec_value) {
 #ifdef FLASH_TESTING
   rec_elem_t e = {.rec_type = rec_type};

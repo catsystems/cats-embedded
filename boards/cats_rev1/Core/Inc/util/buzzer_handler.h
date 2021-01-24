@@ -10,19 +10,7 @@
 
 #define BUZZER_COMMAND_MAX_LENGTH 7
 
-static const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH] = {
-    ".-.-.-",  // Error start
-    "-",       // no config
-    "--",      // no pyro detected
-    "---",     // log full
-    "..--",    // usb connected
-    ".-",      // battery low
-    "..-",     // battery critical
-    ".--",     // imu error
-    ".---",    // baro error
-    ".----",   // filter error
-    "....."    // hard fault
-};
+extern const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH];
 
 #define BUZZER_SHORT_BEEP  100
 #define BUZZER_LONG_BEEP   400

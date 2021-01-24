@@ -16,7 +16,7 @@
 
 /** Private Constants **/
 
-const static uint32_t REC_BUFFER_LEN = 256;
+static const uint32_t REC_BUFFER_LEN = 256;
 
 /** Private Function Declarations **/
 
@@ -37,6 +37,7 @@ char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
 
 /** Exported Function Definitions **/
 
+/* TODO: Look up some wear leveling algorithms... */
 void task_recorder(void *argument) {
   uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
 
