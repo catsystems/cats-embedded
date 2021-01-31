@@ -19,6 +19,7 @@
 #include "tasks/task_recorder.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_peripherals.h"
+#include "tasks/task_flash_reader.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
@@ -97,6 +98,18 @@ const osThreadAttr_t task_recorder_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+/* Definitions for task_flash_reader */
+uint32_t task_flash_reader_buffer[256];
+StaticTask_t task_flash_reader_control_block;
+const osThreadAttr_t task_flash_reader_attributes = {
+    .name = "task_flash_reader",
+    .stack_mem = &task_flash_reader_buffer[0],
+    .stack_size = sizeof(task_flash_reader_buffer),
+    .cb_mem = &task_flash_reader_control_block,
+    .cb_size = sizeof(task_flash_reader_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
 /** Private Constants **/
 
 /** Private Function Declarations **/
@@ -111,6 +124,9 @@ static void init_buzzer();
 /** Exported Function Definitions **/
 
 void task_init(void *argument) {
+  /* TODO: this should be set from PC and read from config afterwards */
+  cc_init(0, 0, CATS_FLIGHT);
+
   osDelay(2000);
   init_system();
   log_info("System initialization complete.");
@@ -118,9 +134,6 @@ void task_init(void *argument) {
   osDelay(1000);
   init_devices();
   log_info("Device initialization complete.");
-
-  /* TODO: this should be set from PC and read from config afterwards */
-  cc_init(0, 0, CATS_FLIGHT);
 
   osDelay(1000);
   init_tasks();
@@ -206,7 +219,7 @@ static void init_devices() {
   w25qxx_init();
   /* TODO: We should have a config flag that can be set from PC which says if we
    * should erase the entire flash chip */
-  for (uint32_t i = 1; i < 11; i++) {
+  for (uint32_t i = 1; i < 128; i++) {
     w25qxx_erase_sector(i);
     log_debug("Erasing sector %lu", i);
   }
@@ -251,6 +264,10 @@ static void init_devices() {
   } else if (first_writable_sector >= w25qxx.sector_count - 16) {
     log_warn("Less than 16 sectors left!");
   }
+#else
+  if (cc_get_boot_state() == CATS_CONFIG) {
+    w25qxx_init();
+  }
 #endif
 }
 
@@ -288,6 +305,9 @@ static void init_tasks() {
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
     } break;
     case CATS_CONFIG:
+      /* creation of task_flash_reader */
+      osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
+      break;
     case CATS_TIMER:
     case CATS_DROP:
       break;

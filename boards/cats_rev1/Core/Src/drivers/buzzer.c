@@ -35,7 +35,7 @@ void buzzer_set_volume(BUZ *dev, uint16_t volume) {
   dev->volume = volume;
 }
 
-// Set buzzer freqency between 200 and 10kHz
+// Set buzzer frequency between 200 and 10kHz
 
 void buzzer_set_freq(BUZ *dev, float frequency) {
   // FREQ = CORE_FREQ / ((AAR+1) * (PSC+1))

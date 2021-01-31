@@ -54,10 +54,11 @@ void task_imu_read(void *argument) {
 
     /* Debugging */
 
-    //		UsbPrint("IMU %ld: RAW Gx: %ld, Gy:%ld, Gz:%ld; Ax: %ld, Ay:%ld,
-    // Az:%ld, T:%ld; \n", 				imu_idx,
-    // gyroscope[0], gyroscope[1], gyroscope[2], acceleration[0],
-    // acceleration[1], acceleration[2], temperature);
+    //    log_info(
+    //        "IMU %ld: RAW Gx: %hd, Gy:%hd, Gz:%hd; Ax: %hd, Ay:%hd, Az:%hd, "
+    //        "T:%hd",
+    //        imu_idx, gyroscope[0], gyroscope[1], gyroscope[2],
+    //        acceleration[0], acceleration[1], acceleration[2], temperature);
 
     //    global_imu[imu_idx].acc_x = acceleration[0];
     //    global_imu[imu_idx].acc_y = acceleration[1];
