@@ -10,6 +10,7 @@
 #include "util/recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "main.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -141,6 +142,8 @@ void task_recorder(void *argument) {
         /* we stepped into a new sector, need to update it */
         cc_set_last_recorded_sector(++last_recorded_sector);
         log_debug("Updating last recorded sector to %d", last_recorded_sector);
+        HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+
         cc_save();
       } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
         log_fatal("Something went horribly wrong!");
@@ -171,6 +174,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
       break;
     case FLIGHT_STATE:
       rec_elem_size += sizeof(rec_elem->u.flight_state);
+      break;
+    case COVARIANCE_INFO:
+      rec_elem_size += sizeof(rec_elem->u.covariance_info);
       break;
     default:
       log_fatal("Impossible recorder entry type!");
@@ -241,6 +247,14 @@ uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
         log_raw("TS: %lu, %d", curr_elem.u.flight_state.ts,
                 curr_elem.u.flight_state.flight_state);
         break;
+      case COVARIANCE_INFO:
+        memcpy(&(curr_elem.u.covariance_info), &(rec_buffer[i]),
+               sizeof(curr_elem.u.covariance_info));
+        i += sizeof(curr_elem.u.covariance_info);
+        log_raw("TS: %lu, %f, %f", curr_elem.u.covariance_info.ts,
+                (double)curr_elem.u.covariance_info.height_cov,
+                (double)curr_elem.u.covariance_info.velocity_cov);
+        break;
       default:
         log_fatal("Impossible recorder entry type!");
         break;
@@ -287,6 +301,11 @@ static inline void print_elem(const rec_elem_t *const rec_elem, char prefix) {
     case FLIGHT_STATE:
       sprintf(buf + len, "TS: %lu, %d\n", rec_elem->u.flight_state.ts,
               rec_elem->u.flight_state.flight_state);
+      break;
+    case COVARIANCE_INFO:
+      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.covariance_info.ts,
+              (double)rec_elem->u.covariance_info.height_cov,
+              (double)rec_elem->u.covariance_info.velocity_cov);
       break;
     default:
       log_fatal("Impossible recorder entry type!");

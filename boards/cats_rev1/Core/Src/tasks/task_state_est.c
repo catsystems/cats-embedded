@@ -47,6 +47,8 @@ void task_state_est(void *argument) {
   int32_t millimeters = 0;
   int32_t meters_per_s = 0;
   int32_t millimeters_per_s = 0;
+  int32_t meters_per_s2 = 0;
+  int32_t millimeters_per_s2 = 0;
   /* End Debugging */
 
   /* local flight phase */
@@ -64,7 +66,7 @@ void task_state_est(void *argument) {
   uint8_t pressure_counter = 0;
   int32_t rolling_pressure[10];
   int32_t global_average_pressure;
-  int32_t average_pressure;
+  int32_t average_pressure = P_INITIAL;
   /* end calibration data */
 
   /* Initialize State Estimation */
@@ -100,11 +102,17 @@ void task_state_est(void *argument) {
       calibrate_imu(&average_imu, &calibration, &elimination);
     }
 
+    if ((fsm_state.flight_state == APOGEE) && (fsm_state.state_changed == 1)) {
+      filter.Q = 1;
+    }
+
     /* Get Sensor Readings already transformed in the right coordinate Frame */
     get_data_float(&state_data, &filter, &calibration);
 
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
+
+    // state_data.acceleration
 
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
@@ -179,6 +187,7 @@ void task_state_est(void *argument) {
     /* write the Data into the global variable */
     global_kf_data.height = filter.x_bar[0];
     global_kf_data.velocity = filter.x_bar[1];
+    global_kf_data.acceleration = state_data.acceleration[1];
 
     /* DEBUGGING: Making it Ready for Printing */
     if (filter.x_bar[0] > 0) {
@@ -190,32 +199,48 @@ void task_state_est(void *argument) {
       meters = -abs((int32_t)(filter.x_bar[0]));
       millimeters = abs((int32_t)(filter.x_bar[0] * 1000) - meters * 1000);
     }
-
     if (filter.x_bar[1] > 0) {
       meters_per_s = abs((int32_t)(filter.x_bar[1]));
       millimeters_per_s =
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
-    }
-
-    else {
+    } else {
       meters_per_s = -abs((int32_t)(filter.x_bar[1]));
       millimeters_per_s =
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
+    if (state_data.acceleration[1] > 0) {
+      meters_per_s2 = abs((int32_t)(state_data.acceleration[1]));
+      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
+                               meters_per_s2 * 1000);
+    } else {
+      meters_per_s2 = -abs((int32_t)(state_data.acceleration[1]));
+      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
+                               meters_per_s2 * 1000);
+    }
 
-    log_trace("Height %ld.%ld: Velocity: %ld.%ld", meters, millimeters,
-              meters_per_s, millimeters_per_s);
+    uint32_t ts = osKernelGetTickCount();
+
+    covariance_info_t cov_info = {.ts = ts,
+                                  .height_cov = filter.P_bar[1][1],
+                                  .velocity_cov = filter.P_bar[2][2]};
+    record(COVARIANCE_INFO, &cov_info);
+
+    flight_info_t flight_info = {
+        .ts = ts,
+        .height = meters + millimeters / 1000.f,
+        .velocity = meters_per_s + millimeters_per_s / 1000.f,
+        .acceleration = state_data.acceleration[1]};
+    record(FLIGHT_INFO, &flight_info);
+
+    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld.%ld", meters,
+              millimeters, meters_per_s, millimeters_per_s, meters_per_s2,
+              millimeters_per_s2);
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
     //        log_trace("Calibrated IMU 3: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[2]));
     /* END DEBUGGING */
-    flight_info_t flight_info = {
-        .ts = osKernelGetTickCount(),
-        .height = meters + millimeters / 1000.f,
-        .velocity = meters_per_s + millimeters_per_s / 1000.f};
-    record(FLIGHT_INFO, &flight_info);
 
     /* TODO: Stuff with this Information */
 

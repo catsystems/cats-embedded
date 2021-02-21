@@ -125,7 +125,12 @@ static void init_buzzer();
 
 void task_init(void *argument) {
   /* TODO: this should be set from PC and read from config afterwards */
+
+#ifdef FLASH_READ_TEST
+  cc_init(0, 0, CATS_CONFIG);
+#else
   cc_init(0, 0, CATS_FLIGHT);
+#endif
 
   osDelay(2000);
   init_system();
@@ -217,15 +222,17 @@ static void init_devices() {
   /* FLASH */
 #ifdef FLASH_TESTING
   w25qxx_init();
+  log_debug("Waiting 10 seconds...");
+  osDelay(10000);
   /* TODO: We should have a config flag that can be set from PC which says if we
    * should erase the entire flash chip */
-  for (uint32_t i = 1; i < 128; i++) {
+  for (uint32_t i = 1; i < 300; i++) {
     w25qxx_erase_sector(i);
     log_debug("Erasing sector %lu", i);
   }
 
-  // log_debug("Erasing chip...");
-  // w25qxx_erase_chip();
+  //   log_debug("Erasing chip...");
+  //   w25qxx_erase_chip();
   /* fill the config with some values */
   cc_init(0, 0, CATS_FLIGHT);
   /* persist it to flash */

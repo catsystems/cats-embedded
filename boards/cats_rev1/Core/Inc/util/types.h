@@ -49,6 +49,7 @@ typedef struct {
 typedef struct {
   float height;
   float velocity;
+  float acceleration;
 } estimation_output_t;
 
 typedef struct {
@@ -69,7 +70,8 @@ typedef enum {
   APOGEE,
   PARACHUTE,
   BALLISTIC,
-  TOUCHDOWN
+  TOUCHDOWN,
+  HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } flight_fsm_e;
 
 typedef struct {

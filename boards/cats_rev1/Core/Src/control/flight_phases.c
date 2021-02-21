@@ -12,7 +12,8 @@
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
 void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
-void check_thrusting_1_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
+void check_thrusting_1_phase(flight_fsm_t *fsm_state,
+                             estimation_output_t *state_data);
 void check_coasting_phase(flight_fsm_t *fsm_state,
                           estimation_output_t *state_data);
 void check_apogee_phase(flight_fsm_t *fsm_state,
@@ -22,6 +23,7 @@ void check_descent_phase(flight_fsm_t *fsm_state,
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
                         estimation_output_t *state_data) {
+  fsm_state->state_changed = 0;
   switch (fsm_state->flight_state) {
     case MOVING:
       check_moving_phase(fsm_state, imu_data);
@@ -30,7 +32,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
       check_idle_phase(fsm_state, imu_data);
       break;
     case THRUSTING_1:
-      check_thrusting_1_phase(fsm_state, imu_data);
+      check_thrusting_1_phase(fsm_state, state_data);
       break;
     case THRUSTING_2:
       break;
@@ -190,9 +192,12 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   }
 }
 
-void check_thrusting_1_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
-  if (imu_data->acc_z < 0) {
+void check_thrusting_1_phase(flight_fsm_t *fsm_state,
+                             estimation_output_t *state_data) {
+  if (state_data->acceleration < 0) {
     fsm_state->memory[1]++;
+  } else {
+    fsm_state->memory[1] = 0;
   }
 
   if (fsm_state->memory[1] > COASTING_SAFETY_COUNTER) {

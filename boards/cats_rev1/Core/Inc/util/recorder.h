@@ -19,7 +19,7 @@
 #ifdef FLASH_READ_TEST
 #undef FLASH_READ_TEST
 #endif
-//#define FLASH_READ_TEST
+#define FLASH_READ_TEST
 
 /** Exported Consts **/
 
@@ -36,13 +36,21 @@ typedef enum {
   BARO2,
   FLIGHT_INFO,
   FLIGHT_STATE,
+  COVARIANCE_INFO,
   HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
 typedef struct {
   timestamp_t ts;
+  float height_cov;
+  float velocity_cov;
+} covariance_info_t;
+
+typedef struct {
+  timestamp_t ts;
   float height;
   float velocity;
+  float acceleration;
 } flight_info_t;
 
 typedef struct {
@@ -55,6 +63,7 @@ typedef union {
   baro_data_t baro;
   flight_info_t flight_info;
   flight_state_t flight_state;
+  covariance_info_t covariance_info;
 } rec_elem_u;
 
 typedef struct {

@@ -56,7 +56,7 @@ void log_disable();
 #endif
 
 #ifdef CATS_DEBUG
-#define PRINT_BUFFER_LEN 200
+#define PRINT_BUFFER_LEN 420
 extern osMutexId_t print_mutex;
 #endif
 
