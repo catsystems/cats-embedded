@@ -47,8 +47,6 @@ void task_state_est(void *argument) {
   int32_t millimeters = 0;
   int32_t meters_per_s = 0;
   int32_t millimeters_per_s = 0;
-  int32_t meters_per_s2 = 0;
-  int32_t millimeters_per_s2 = 0;
   /* End Debugging */
 
   /* local flight phase */
@@ -112,8 +110,6 @@ void task_state_est(void *argument) {
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
 
-    // state_data.acceleration
-
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
     if (fsm_state.flight_state == MOVING) {
@@ -131,6 +127,9 @@ void task_state_est(void *argument) {
         global_average_imu.acc_z +=
             global_imu[i].acc_z / (3 - elimination.num_faulty_imus);
       }
+
+      log_trace("Acc_X: %ld Acc_Y: %ld Acc_Z: %ld\n", global_average_imu.acc_x,
+                global_average_imu.acc_y, global_average_imu.acc_z);
 
       /* Write this into the rolling IMU array */
       rolling_imu[imu_counter] = global_average_imu;
@@ -208,15 +207,6 @@ void task_state_est(void *argument) {
       millimeters_per_s =
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
-    if (state_data.acceleration[1] > 0) {
-      meters_per_s2 = abs((int32_t)(state_data.acceleration[1]));
-      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
-                               meters_per_s2 * 1000);
-    } else {
-      meters_per_s2 = -abs((int32_t)(state_data.acceleration[1]));
-      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
-                               meters_per_s2 * 1000);
-    }
 
     uint32_t ts = osKernelGetTickCount();
 
@@ -232,9 +222,9 @@ void task_state_est(void *argument) {
         .acceleration = state_data.acceleration[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld.%ld", meters,
-              millimeters, meters_per_s, millimeters_per_s, meters_per_s2,
-              millimeters_per_s2);
+    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld", meters,
+              millimeters, meters_per_s, millimeters_per_s,
+              (int32_t)(state_data.acceleration[1] * 1000));
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
