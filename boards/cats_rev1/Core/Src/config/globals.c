@@ -97,3 +97,7 @@ osMessageQueueId_t rec_queue;
 traceString baro_channel;
 traceString flash_channel;
 #endif
+
+uint8_t usb_receive_buffer[APP_RX_DATA_SIZE] = {0};
+volatile bool usb_msg_received = false;
+volatile bool usb_communication_complete = false;

@@ -12,6 +12,7 @@
 #include "drivers/buzzer.h"
 #include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
+#include "usbd_cdc_if.h"
 
 /** Sampling Frequencies **/
 #define CONTROL_SAMPLING_FREQ 100
@@ -55,5 +56,9 @@ extern osMessageQueueId_t rec_queue;
 extern traceString baro_channel;
 extern traceString flash_channel;
 #endif
+
+extern uint8_t usb_receive_buffer[APP_RX_DATA_SIZE];
+extern volatile bool usb_msg_received;
+extern volatile bool usb_communication_complete;
 
 #endif  // CATS_REV1_GLOBALS_H

@@ -25,6 +25,7 @@
 /* USER CODE BEGIN INCLUDE */
 #include "cmsis_os2.h"
 #include "FreeRTOSConfig.h"
+#include "config/globals.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -268,7 +269,18 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
     commandBuffer.data[commandBuffer.idx] = Buf[i];
     commandBuffer.idx++;
   }
+#else
+  // TODO: Fix this length calculation
+  uint32_t buf_length = *Len;
+  if (buf_length != 0) {
+    memcpy(usb_receive_buffer, Buf,
+           buf_length < APP_RX_DATA_SIZE ? buf_length : APP_RX_DATA_SIZE);
+    usb_receive_buffer[buf_length < APP_RX_DATA_SIZE ? buf_length
+                                                     : buf_length - 1] = 0;
+    usb_msg_received = true;
+  }
 #endif
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);

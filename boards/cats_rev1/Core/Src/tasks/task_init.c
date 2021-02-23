@@ -20,9 +20,11 @@
 #include "tasks/task_state_est.h"
 #include "tasks/task_peripherals.h"
 #include "tasks/task_flash_reader.h"
+#include "tasks/task_usb_communicator.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 /** Task Definitions **/
 
@@ -110,6 +112,18 @@ const osThreadAttr_t task_flash_reader_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+/* Definitions for task_usb_communicator */
+uint32_t task_usb_communicator_buffer[256];
+StaticTask_t task_usb_communicator_control_block;
+const osThreadAttr_t task_usb_communicator_attributes = {
+    .name = "task_usb_communicator",
+    .stack_mem = &task_usb_communicator_buffer[0],
+    .stack_size = sizeof(task_usb_communicator_buffer),
+    .cb_mem = &task_usb_communicator_control_block,
+    .cb_size = sizeof(task_usb_communicator_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
 /** Private Constants **/
 
 /** Private Function Declarations **/
@@ -124,8 +138,32 @@ static void init_buzzer();
 /** Exported Function Definitions **/
 
 void task_init(void *argument) {
-  /* TODO: this should be set from PC and read from config afterwards */
+  /**
+   * Comm steps:
+   *  1) While response_received == true or 30 seconds passed:
+   *        Write "hello" to USB every second
+   *  2) If response received == true:
+   *        parse config_buffer (this should be enough for now...)
+   *        update in-memory config
+   *        update flash config
+   *     Else:
+   *        continue by reading the setup from config
+   */
 
+  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+
+  uint32_t comm_start_time = osKernelGetTickCount();
+  while (usb_communication_complete != true &&
+         (osKernelGetTickCount() - comm_start_time < 30000)) {
+    log_raw("What is my purpose?");
+    osDelay(1000);
+  }
+  if (usb_communication_complete == true) {
+    log_raw("USB communication complete, config updated.");
+  } else {
+    log_raw("No USB communication detected, reusing old config");
+  }
+  /* TODO: this should be set from PC and read from config afterwards */
 #ifdef FLASH_READ_TEST
   cc_init(0, 0, CATS_CONFIG);
 #else
@@ -285,7 +323,6 @@ static void init_tasks() {
       baro_channel = xTraceRegisterString("Baro Channel");
       flash_channel = xTraceRegisterString("Flash Channel");
 #endif
-
       /* creation of task_recorder */
 #ifdef FLASH_TESTING
       rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);

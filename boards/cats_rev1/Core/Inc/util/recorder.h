@@ -19,7 +19,7 @@
 #ifdef FLASH_READ_TEST
 #undef FLASH_READ_TEST
 #endif
-#define FLASH_READ_TEST
+//#define FLASH_READ_TEST
 
 /** Exported Consts **/
 
