@@ -377,7 +377,7 @@ static void init_imu() {
     osDelay(10);
     log_error("IMU 3 initialization failed");
   }
-#define CALIBRATE_ACCEL
+  //#define CALIBRATE_ACCEL
 
 #ifdef CALIBRATE_ACCEL
   icm20601_accel_calib(&ICM1, 2);  // Axis 0 = x, 1 = y, 2 = z

@@ -23,7 +23,9 @@ void check_descent_phase(flight_fsm_t *fsm_state,
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
                         estimation_output_t *state_data) {
-  fsm_state->state_changed = 0;
+  /* Save old FSM state */
+  flight_fsm_t old_fsm_state = *fsm_state;
+
   switch (fsm_state->flight_state) {
     case MOVING:
       check_moving_phase(fsm_state, imu_data);
@@ -56,6 +58,12 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
     default:
       break;
   }
+
+  if (old_fsm_state.flight_state != fsm_state->flight_state) {
+    fsm_state->state_changed = 1;
+  } else {
+    fsm_state->state_changed = 0;
+  }
 }
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
@@ -80,13 +88,15 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Update old IMU value */
   fsm_state->old_imu_data = *imu_data;
 
-  fsm_state->state_changed = 0;
-
   /* Check if we reached the threshold */
   if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_IDLE) {
     fsm_state->flight_state = IDLE;
-    fsm_state->state_changed = 1;
+    fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
+    fsm_state->memory[2] = 0;
+    fsm_state->angular_movement[0] = 0;
+    fsm_state->angular_movement[1] = 0;
+    fsm_state->angular_movement[2] = 0;
   }
 }
 
@@ -125,8 +135,6 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Update old IMU value */
   fsm_state->old_imu_data = *imu_data;
 
-  fsm_state->state_changed = 0;
-
   /* Check if we reached the threshold */
   if (fsm_state->memory[1] > TIME_THRESHOLD_IDLE_TO_MOV) {
     fsm_state->flight_state = MOVING;
@@ -158,7 +166,6 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
        abs(fsm_state->angular_movement[1]) +
        abs(fsm_state->angular_movement[2])) > ANGLE_MOVE_MAX) {
     fsm_state->flight_state = MOVING;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -171,8 +178,8 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* To Make sure that the timers start any acceleration direction is accepted
    * here */
   int32_t acceleration = imu_data->acc_x * imu_data->acc_x +
-                         imu_data->acc_y * imu_data->acc_y + imu_data->acc_z +
-                         imu_data->acc_z;
+                         imu_data->acc_y * imu_data->acc_y +
+                         imu_data->acc_z * imu_data->acc_z;
 
   if (acceleration > LIFTOFF_ACC_THRESHOLD_SQUARED) {
     fsm_state->memory[2]++;
@@ -182,7 +189,6 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
 
   if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER) {
     fsm_state->flight_state = THRUSTING_1;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -202,10 +208,12 @@ void check_thrusting_1_phase(flight_fsm_t *fsm_state,
 
   if (fsm_state->memory[1] > COASTING_SAFETY_COUNTER) {
     fsm_state->flight_state = COASTING;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
+    fsm_state->angular_movement[0] = 0;
+    fsm_state->angular_movement[1] = 0;
+    fsm_state->angular_movement[2] = 0;
   }
 }
 
@@ -217,7 +225,6 @@ void check_coasting_phase(flight_fsm_t *fsm_state,
 
   if (fsm_state->memory[1] > APOGEE_SAFETY_COUNTER) {
     fsm_state->flight_state = APOGEE;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -236,7 +243,6 @@ void check_apogee_phase(flight_fsm_t *fsm_state,
 
   if (fsm_state->memory[1] > PARACHUTE_SAFETY_COUNTER) {
     fsm_state->flight_state = PARACHUTE;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -244,7 +250,6 @@ void check_apogee_phase(flight_fsm_t *fsm_state,
 
   if (fsm_state->memory[2] > BALISTIC_SAFETY_COUNTER) {
     fsm_state->flight_state = BALLISTIC;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -265,7 +270,6 @@ void check_descent_phase(flight_fsm_t *fsm_state,
 
   if (fsm_state->memory[1] > TOUCHDOWN_SAFETY_COUNTER) {
     fsm_state->flight_state = TOUCHDOWN;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;

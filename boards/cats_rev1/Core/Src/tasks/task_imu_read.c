@@ -38,19 +38,15 @@ void task_imu_read(void *argument) {
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
   int16_t temperature;
 
-  int32_t imu_idx = 0;
-
   /* initialize queue message */
   // imu_data_t queue_data = { 0 };
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / (3 * CONTROL_SAMPLING_FREQ);
+  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
     tick_count += tick_update;
-
-    read_imu(gyroscope, acceleration, &temperature, imu_idx);
 
     /* Debugging */
 
@@ -69,13 +65,16 @@ void task_imu_read(void *argument) {
 
     /* TODO: The speed of copying looks to be the same, code size reduced by 16B
      * with memcpy vs. assignment with -0g */
-    memcpy(&(global_imu[imu_idx].acc_x), &acceleration, 3 * sizeof(int16_t));
-    memcpy(&(global_imu[imu_idx].gyro_x), &gyroscope, 3 * sizeof(int16_t));
-    global_imu[imu_idx].ts = tick_count;
+    for (int i = 0; i < 3; i++) {
+      read_imu(gyroscope, acceleration, &temperature, i);
+      memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
+      memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
+      global_imu[i].ts = tick_count;
+      record(IMU0 + i, &(global_imu[i]));
+    }
 
-    record(IMU0 + imu_idx, &(global_imu[imu_idx]));
-
-    imu_idx = (imu_idx + 1) % 3;
+    uint8_t gyro_cali[6];
+    icm20601_gyro_cal(&ICM2, gyro_cali);
 
     osDelayUntil(tick_count);
   }
@@ -89,17 +88,17 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3],
     case 0:
       icm20601_read_accel_raw(&ICM1, acceleration);
       icm20601_read_gyro_raw(&ICM1, gyroscope);
-      icm20601_read_temp_raw(&ICM1, temperature);
+      // icm20601_read_temp_raw(&ICM1, temperature);
       break;
     case 1:
       icm20601_read_accel_raw(&ICM2, acceleration);
       icm20601_read_gyro_raw(&ICM2, gyroscope);
-      icm20601_read_temp_raw(&ICM2, temperature);
+      // icm20601_read_temp_raw(&ICM2, temperature);
       break;
     case 2:
       icm20601_read_accel_raw(&ICM3, acceleration);
       icm20601_read_gyro_raw(&ICM3, gyroscope);
-      icm20601_read_temp_raw(&ICM3, temperature);
+      // icm20601_read_temp_raw(&ICM3, temperature);
       break;
     default:
       break;

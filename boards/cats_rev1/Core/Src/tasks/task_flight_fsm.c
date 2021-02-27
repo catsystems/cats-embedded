@@ -37,8 +37,8 @@ void task_flight_fsm(void *argument) {
 
   while (1) {
     tick_count += tick_update;
-
-    local_imu = global_imu[0];
+    /* Todo: Do not take that IMU*/
+    local_imu = global_imu[1];
     local_kf_data = global_kf_data;
 
     check_flight_phase(&fsm_state, &local_imu, &local_kf_data);

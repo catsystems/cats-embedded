@@ -47,8 +47,6 @@ void task_state_est(void *argument) {
   int32_t millimeters = 0;
   int32_t meters_per_s = 0;
   int32_t millimeters_per_s = 0;
-  int32_t meters_per_s2 = 0;
-  int32_t millimeters_per_s2 = 0;
   /* End Debugging */
 
   /* local flight phase */
@@ -111,8 +109,6 @@ void task_state_est(void *argument) {
 
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
-
-    // state_data.acceleration
 
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
@@ -208,17 +204,17 @@ void task_state_est(void *argument) {
       millimeters_per_s =
           abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
     }
-    if (state_data.acceleration[1] > 0) {
-      meters_per_s2 = abs((int32_t)(state_data.acceleration[1]));
-      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
-                               meters_per_s2 * 1000);
-    } else {
-      meters_per_s2 = -abs((int32_t)(state_data.acceleration[1]));
-      millimeters_per_s2 = abs((int32_t)(state_data.acceleration[1] * 1000) -
-                               meters_per_s2 * 1000);
-    }
 
     uint32_t ts = osKernelGetTickCount();
+
+    sensor_info_t sensor_info = {.ts = ts,
+                                 .faulty_baro[0] = elimination.faulty_baro[0],
+                                 .faulty_baro[1] = elimination.faulty_baro[1],
+                                 .faulty_baro[2] = elimination.faulty_baro[2],
+                                 .faulty_imu[0] = elimination.faulty_imu[0],
+                                 .faulty_imu[1] = elimination.faulty_imu[1],
+                                 .faulty_imu[2] = elimination.faulty_imu[2]};
+    record(SENSOR_INFO, &sensor_info);
 
     covariance_info_t cov_info = {.ts = ts,
                                   .height_cov = filter.P_bar[1][1],
@@ -229,12 +225,14 @@ void task_state_est(void *argument) {
         .ts = ts,
         .height = meters + millimeters / 1000.f,
         .velocity = meters_per_s + millimeters_per_s / 1000.f,
-        .acceleration = state_data.acceleration[1]};
+        .acceleration = state_data.acceleration[1],
+        .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld.%ld", meters,
-              millimeters, meters_per_s, millimeters_per_s, meters_per_s2,
-              millimeters_per_s2);
+    //    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld",
+    //    meters,
+    //              millimeters, meters_per_s, millimeters_per_s,
+    //              (int32_t)(state_data.acceleration[1] * 1000));
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
@@ -310,18 +308,56 @@ static void get_data_float(state_estimation_data_t *state_data,
   state_data->temperature[1] = global_baro[1].temperature / 100.f;
   state_data->temperature[2] = global_baro[2].temperature / 100.f;
 
+  /* Add Sensor Noise if asked to */
+#ifdef INCLUDE_NOISE
+  float rand_pressure[3] = {0};
+  float rand_acc[3] = {0};
+  rand_pressure[0] = PRESSURE_NOISE_MAX_AMPL *
+                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+  rand_pressure[1] = PRESSURE_NOISE_MAX_AMPL *
+                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+  rand_pressure[2] = PRESSURE_NOISE_MAX_AMPL *
+                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+  rand_acc[0] =
+      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+  rand_acc[1] =
+      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+  rand_acc[2] =
+      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+
+  state_data->pressure[0] += rand_pressure[0];
+  state_data->pressure[1] += rand_pressure[1];
+  state_data->pressure[2] += rand_pressure[2];
+  state_data->acceleration[0] += rand_acc[0];
+  state_data->acceleration[1] += rand_acc[1];
+  state_data->acceleration[2] += rand_acc[2];
+#endif
+  /* Add Spikes in the Data if asked to */
+#ifdef INCLUDE_SPIKES
+  float spike = (float)rand() / 2147483648;
+  if (spike < SPIKE_THRESHOLD) {
+#ifdef SPIKE_BARO
+    state_data->pressure[SPIKE_SENSOR_CHOICE] += 10000000;
+#endif
+#ifdef SPIKE_IMU
+    state_data->acceleration[SPIKE_SENSOR_CHOICE] += 10000000;
+#endif
+  }
+#endif
+  /* Add Offset to one Sensor if asked to */
+#ifdef INCLUDE_OFFSET
+#ifdef OFFSET_BARO
+  state_data->pressure[OFFSET_SENSOR_CHOICE] += OFFSET_P;
+#endif
+#ifdef OFFSET_IMU
+  state_data->acceleration[OFFSET_SENSOR_CHOICE] += OFFSET_ACC;
+#endif
+#endif
+
   state_data->calculated_AGL[0] = calculate_height(
       filter->pressure_0, state_data->pressure[0], state_data->temperature[0]);
   state_data->calculated_AGL[1] = calculate_height(
       filter->pressure_0, state_data->pressure[1], state_data->temperature[1]);
   state_data->calculated_AGL[2] = calculate_height(
       filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
-
-  //  log_raw("Height; %ld; %ld; %ld; Acc; %ld; %ld; %ld",
-  //  (int32_t)(state_data->calculated_AGL[0]*1000),
-  //			(int32_t)(state_data->calculated_AGL[1]*1000),
-  //(int32_t)(state_data->calculated_AGL[2]*1000),
-  //(int32_t)(state_data->acceleration[0]*1000000),
-  //			(int32_t)(state_data->acceleration[1]*1000000),
-  //(int32_t)(state_data->acceleration[2]*1000000));
 }

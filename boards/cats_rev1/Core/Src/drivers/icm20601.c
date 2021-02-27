@@ -311,6 +311,11 @@ void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis) {
   icm_write_bytes(dev, REG_XA_OFFSET_H + (3 * axis), accel_offset_8bit, 2);
 }
 
+void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data) {
+  // uint8_t gyro_cal[8];
+  icm_read_bytes(dev, REG_XG_OFFS_USRH, data, 6);
+}
+
 /** Private Function Definitions **/
 
 // Used to convert raw accelerometer readings to G-force.
