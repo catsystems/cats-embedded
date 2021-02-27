@@ -73,9 +73,6 @@ void task_imu_read(void *argument) {
       record(IMU0 + i, &(global_imu[i]));
     }
 
-    float gyro_real[3];
-    icm20601_read_gyro(&ICM1, gyro_real);
-
     osDelayUntil(tick_count);
   }
 }
