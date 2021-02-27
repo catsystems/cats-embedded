@@ -70,10 +70,11 @@ void task_imu_read(void *argument) {
       memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
       memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
       global_imu[i].ts = tick_count;
-      gyroscope[i] = 0;
-      acceleration[i] = 0;
       record(IMU0 + i, &(global_imu[i]));
     }
+
+    float gyro_real[3];
+    icm20601_read_gyro(&ICM1, gyro_real);
 
     osDelayUntil(tick_count);
   }
@@ -87,17 +88,17 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3],
     case 0:
       icm20601_read_accel_raw(&ICM1, acceleration);
       icm20601_read_gyro_raw(&ICM1, gyroscope);
-      icm20601_read_temp_raw(&ICM1, temperature);
+      // icm20601_read_temp_raw(&ICM1, temperature);
       break;
     case 1:
       icm20601_read_accel_raw(&ICM2, acceleration);
       icm20601_read_gyro_raw(&ICM2, gyroscope);
-      icm20601_read_temp_raw(&ICM2, temperature);
+      // icm20601_read_temp_raw(&ICM2, temperature);
       break;
     case 2:
       icm20601_read_accel_raw(&ICM3, acceleration);
       icm20601_read_gyro_raw(&ICM3, gyroscope);
-      icm20601_read_temp_raw(&ICM3, temperature);
+      // icm20601_read_temp_raw(&ICM3, temperature);
       break;
     default:
       break;
