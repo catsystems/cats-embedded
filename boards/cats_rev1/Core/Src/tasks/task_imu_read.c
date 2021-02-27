@@ -70,7 +70,8 @@ void task_imu_read(void *argument) {
       memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
       memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
       global_imu[i].ts = tick_count;
-
+      gyroscope[i] = 0;
+      acceleration[i] = 0;
       record(IMU0 + i, &(global_imu[i]));
     }
 

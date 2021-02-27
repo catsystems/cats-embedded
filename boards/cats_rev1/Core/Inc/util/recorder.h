@@ -37,6 +37,7 @@ typedef enum {
   FLIGHT_INFO,
   FLIGHT_STATE,
   COVARIANCE_INFO,
+  SENSOR_INFO,
   HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
@@ -51,6 +52,7 @@ typedef struct {
   float height;
   float velocity;
   float acceleration;
+  float measured_altitude_AGL;
 } flight_info_t;
 
 typedef struct {
@@ -58,12 +60,19 @@ typedef struct {
   flight_fsm_e flight_state;
 } flight_state_t;
 
+typedef struct {
+  timestamp_t ts;
+  uint8_t faulty_imu[3];
+  uint8_t faulty_baro[3];
+} sensor_info_t;
+
 typedef union {
   imu_data_t imu;
   baro_data_t baro;
   flight_info_t flight_info;
   flight_state_t flight_state;
   covariance_info_t covariance_info;
+  sensor_info_t sensor_info;
 } rec_elem_u;
 
 typedef struct {

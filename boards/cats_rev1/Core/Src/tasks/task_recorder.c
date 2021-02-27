@@ -178,6 +178,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case COVARIANCE_INFO:
       rec_elem_size += sizeof(rec_elem->u.covariance_info);
       break;
+    case SENSOR_INFO:
+      rec_elem_size += sizeof(rec_elem->u.sensor_info);
+      break;
     default:
       log_fatal("Impossible recorder entry type!");
       break;
@@ -236,9 +239,10 @@ uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
         memcpy(&(curr_elem.u.flight_info), &(rec_buffer[i]),
                sizeof(curr_elem.u.flight_info));
         i += sizeof(curr_elem.u.flight_info);
-        log_raw("TS: %lu, %f, %f", curr_elem.u.flight_info.ts,
+        log_raw("TS: %lu, %f, %f, %f", curr_elem.u.flight_info.ts,
                 (double)curr_elem.u.flight_info.height,
-                (double)curr_elem.u.flight_info.velocity);
+                (double)curr_elem.u.flight_info.velocity,
+                (double)curr_elem.u.flight_info.measured_altitude_AGL);
         break;
       case FLIGHT_STATE:
         memcpy(&(curr_elem.u.flight_state), &(rec_buffer[i]),
@@ -254,6 +258,19 @@ uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
         log_raw("TS: %lu, %f, %f", curr_elem.u.covariance_info.ts,
                 (double)curr_elem.u.covariance_info.height_cov,
                 (double)curr_elem.u.covariance_info.velocity_cov);
+        break;
+      case SENSOR_INFO:
+        memcpy(&(curr_elem.u.sensor_info), &(rec_buffer[i]),
+               sizeof(curr_elem.u.sensor_info));
+        i += sizeof(curr_elem.u.sensor_info);
+        log_raw("TS: %lu, %u, %u, %u, %u, %u, %u, %u, %u",
+                curr_elem.u.sensor_info.ts,
+                curr_elem.u.sensor_info.faulty_imu[0],
+                curr_elem.u.sensor_info.faulty_imu[1],
+                curr_elem.u.sensor_info.faulty_imu[2],
+                curr_elem.u.sensor_info.faulty_baro[0],
+                curr_elem.u.sensor_info.faulty_baro[1],
+                curr_elem.u.sensor_info.faulty_baro[2]);
         break;
       default:
         log_fatal("Impossible recorder entry type!");
