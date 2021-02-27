@@ -38,19 +38,15 @@ void task_imu_read(void *argument) {
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
   int16_t temperature;
 
-  int32_t imu_idx = 0;
-
   /* initialize queue message */
   // imu_data_t queue_data = { 0 };
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / (3 * CONTROL_SAMPLING_FREQ);
+  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
     tick_count += tick_update;
-
-    read_imu(gyroscope, acceleration, &temperature, imu_idx);
 
     /* Debugging */
 
@@ -69,13 +65,14 @@ void task_imu_read(void *argument) {
 
     /* TODO: The speed of copying looks to be the same, code size reduced by 16B
      * with memcpy vs. assignment with -0g */
-    memcpy(&(global_imu[imu_idx].acc_x), &acceleration, 3 * sizeof(int16_t));
-    memcpy(&(global_imu[imu_idx].gyro_x), &gyroscope, 3 * sizeof(int16_t));
-    global_imu[imu_idx].ts = tick_count;
+    for (int i = 0; i < 3; i++) {
+      read_imu(gyroscope, acceleration, &temperature, i);
+      memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
+      memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
+      global_imu[i].ts = tick_count;
 
-    record(IMU0 + imu_idx, &(global_imu[imu_idx]));
-
-    imu_idx = (imu_idx + 1) % 3;
+      record(IMU0 + i, &(global_imu[i]));
+    }
 
     osDelayUntil(tick_count);
   }
