@@ -79,5 +79,6 @@ void icm20601_read_gyro(const ICM20601 *dev, float *gyro);
 void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro);
 void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp);
 void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis);
+void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data);
 
 #endif
