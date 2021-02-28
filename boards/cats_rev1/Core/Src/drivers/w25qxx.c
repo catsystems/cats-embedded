@@ -435,7 +435,7 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
   /* TODO: This should probably be 0x12 */
   /* TODO: most likely the last address bits should be 0 */
-  w25qxx_spi_transmit(0x02);
+  w25qxx_spi_transmit(0x12);
   w25qxx_send_address(page_num);
   HAL_SPI_Transmit(&CATS_W25QXX_SPI, buf, bytes_to_write_up_to_page_size, 100);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);

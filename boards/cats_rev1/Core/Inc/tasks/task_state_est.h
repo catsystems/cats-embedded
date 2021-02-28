@@ -10,16 +10,16 @@
 
 void task_state_est(void *argument);
 
-#define INCLUDE_NOISE
+//#define INCLUDE_NOISE
 //#define INCLUDE_SPIKES
-#define INCLUDE_OFFSET
+//#define INCLUDE_OFFSET
 
 /* Offset Settings */
 #define OFFSET_BARO
 #define OFFSET_IMU
 #define OFFSET_SENSOR_CHOICE 1
-#define OFFSET_P             500 /* Pa */
-#define OFFSET_ACC           1 /* m/s^2 */
+#define OFFSET_P             1500 /* Pa */
+#define OFFSET_ACC           5 /* m/s^2 */
 
 /* Spike Settings */
 #define SPIKE_BARO

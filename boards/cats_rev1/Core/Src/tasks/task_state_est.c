@@ -101,7 +101,7 @@ void task_state_est(void *argument) {
     }
 
     if ((fsm_state.flight_state == APOGEE) && (fsm_state.state_changed == 1)) {
-      filter.Q = 1;
+      filter.Q = 10;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */

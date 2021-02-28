@@ -130,6 +130,7 @@ const osThreadAttr_t task_usb_communicator_attributes = {
 
 static void init_system();
 static void init_devices();
+static void init_communication();
 static void init_tasks();
 static void init_imu();
 static void init_baro();
@@ -138,38 +139,6 @@ static void init_buzzer();
 /** Exported Function Definitions **/
 
 void task_init(void *argument) {
-  /**
-   * Comm steps:
-   *  1) While response_received == true or 30 seconds passed:
-   *        Write "hello" to USB every second
-   *  2) If response received == true:
-   *        parse config_buffer (this should be enough for now...)
-   *        update in-memory config
-   *        update flash config
-   *     Else:
-   *        continue by reading the setup from config
-   */
-
-  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
-
-  uint32_t comm_start_time = osKernelGetTickCount();
-  while (usb_communication_complete != true &&
-         (osKernelGetTickCount() - comm_start_time < 30000)) {
-    log_raw("What is my purpose?");
-    osDelay(1000);
-  }
-  if (usb_communication_complete == true) {
-    log_raw("USB communication complete, config updated.");
-  } else {
-    log_raw("No USB communication detected, reusing old config");
-  }
-  /* TODO: this should be set from PC and read from config afterwards */
-#ifdef FLASH_READ_TEST
-  cc_init(0, 0, CATS_CONFIG);
-#else
-  cc_init(0, 0, CATS_FLIGHT);
-#endif
-
   osDelay(2000);
   init_system();
   log_info("System initialization complete.");
@@ -179,24 +148,37 @@ void task_init(void *argument) {
   log_info("Device initialization complete.");
 
   osDelay(1000);
+  init_communication();
+
+  /* After this point the cats config is either updated or the old config is
+   * loaded from the flash. */
+  if (cc_get_boot_state() != CATS_CONFIG && cc_get_clear_flash() == true) {
+    /* TODO: when we know how many logs we have we don't have to erase the
+     * entire chip */
+    log_info("Erasing chip...");
+    w25qxx_erase_chip();
+    cs_init(CATS_STATUS_SECTOR, 0);
+    cs_save();
+  }
+  osDelay(10);
+  if (cc_get_boot_state() == CATS_FLIGHT) {
+    cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
+    cs_save();
+  }
+
+  uint16_t num_flights = cs_get_num_recorded_flights();
+  log_trace("Number of recorded flights: %hu", num_flights);
+  for (uint16_t i = 0; i < num_flights; i++) {
+    log_trace("Last sectors of flight %hu: %hu", i,
+              cs_get_last_sector_of_flight(i));
+  }
+
+  osDelay(1000);
   init_tasks();
   log_info("Task initialization complete.");
 
   init_end_time = osKernelGetTickCount();
 
-  //  uint8_t *send_buf = calloc(512, sizeof(uint8_t));
-  //  uint8_t *rec_buf = calloc(512, sizeof(uint8_t));
-  //  for (int j = 0; j < 512; ++j) {
-  //    send_buf[j] = 511 - j;
-  //  }
-  //  w25qxx_init();
-  //  /* TODO: We should have a config flag that can be set from PC which says
-  //  if we
-  //   * should erase the entire flash chip */
-  //  for (uint32_t j = 1; j < 127; j++) {
-  //    w25qxx_erase_sector(j);
-  //    log_debug("Erasing sector %lu", j);
-  //  }
   servo_set_position(&SERVO1, 90);
   servo_set_position(&SERVO2, 180);
   servo_start(&SERVO1);
@@ -208,17 +190,6 @@ void task_init(void *argument) {
   battery_monitor_init();
   /* Infinite loop */
   for (;;) {
-    //    w25qxx_write_sector(send_buf, i, 0, 512);
-    //
-    //    w25qxx_read_sector(rec_buf, i, 0, 512);
-    //
-    //    log_raw("sector: %lu", i);
-    //    for (int j = 0; j < 512; ++j) {
-    //      log_rawr("%hu ", rec_buf[j]);
-    //    }
-    //
-    //    log_raw("\n\n");
-
     battery_level_e level = battery_level();
     if (level == BATTERY_CRIT)
       error_buzzer(CATS_ERROR_BAT_CRIT);
@@ -226,6 +197,13 @@ void task_init(void *argument) {
       error_buzzer(CATS_ERROR_BAT_LOW);
     else
       error_buzzer(CATS_ERROR_OK);
+
+    if (global_flight_state.flight_state == APOGEE) {
+      buzzer_beep(&BUZZER, 1000);
+    } else if (global_flight_state.flight_state == IDLE &&
+               global_flight_state.state_changed) {
+      buzzer_beep(&BUZZER, 1000);
+    }
 
     buzzer_update(&BUZZER);
 
@@ -258,30 +236,18 @@ static void init_devices() {
   init_buzzer();
 
   /* FLASH */
-#ifdef FLASH_TESTING
   w25qxx_init();
-  log_debug("Waiting 10 seconds...");
-  osDelay(10000);
-  /* TODO: We should have a config flag that can be set from PC which says if we
-   * should erase the entire flash chip */
-  for (uint32_t i = 1; i < 300; i++) {
-    w25qxx_erase_sector(i);
-    log_debug("Erasing sector %lu", i);
+#ifdef FLASH_TESTING
+  osDelay(10);
+  cs_load();
+
+  if (cs_get_num_recorded_flights() > 32) {
+    cs_init(CATS_STATUS_SECTOR, 0);
+    cs_save();
   }
 
-  //   log_debug("Erasing chip...");
-  //   w25qxx_erase_chip();
-  /* fill the config with some values */
-  cc_init(0, 0, CATS_FLIGHT);
-  /* persist it to flash */
-  cc_save();
-  /* load the values from the flash back to the config */
-  cc_load();
-  /* print out the config */
-  cc_print();
-
   /* set the first writable sector as the last recorded sector + 1 */
-  uint16_t first_writable_sector = cc_get_last_recorded_sector() + 1;
+  uint16_t first_writable_sector = cs_get_last_recorded_sector() + 1;
   /* increment the first writable sector as long as the current sector is not
    * empty */
   while (
@@ -292,28 +258,59 @@ static void init_devices() {
 
   /* if the first writable sector is not immediately following the last recorded
    * sector, update the config */
-  if (first_writable_sector != cc_get_last_recorded_sector() + 1) {
+  if (first_writable_sector != cs_get_last_recorded_sector() + 1) {
     log_warn(
         "Last recorded sector was: %hu and first writable sector is: "
         "%hu!",
-        cc_get_last_recorded_sector(), first_writable_sector);
+        cs_get_last_recorded_sector(), first_writable_sector);
     uint16_t actual_last_recorded_sector = first_writable_sector - 1;
     log_info("Updating last recorded sector to %hu",
              actual_last_recorded_sector);
-    cc_set_last_recorded_sector(actual_last_recorded_sector);
-    cc_save();
+    cs_set_last_recorded_sector(actual_last_recorded_sector);
+    cs_save();
   }
 
   if (first_writable_sector >= w25qxx.sector_count) {
     log_error("No empty sectors left!");
-  } else if (first_writable_sector >= w25qxx.sector_count - 16) {
-    log_warn("Less than 16 sectors left!");
+  } else if (first_writable_sector >= w25qxx.sector_count - 256) {
+    log_warn("Less than 256 sectors left!");
   }
 #else
   if (cc_get_boot_state() == CATS_CONFIG) {
     w25qxx_init();
   }
 #endif
+}
+
+static void init_communication() {
+  /**
+   * Comm steps:
+   *  1) While response_received == true or 30 seconds passed:
+   *        Write "hello" to USB every second
+   *  2) If response received == true:
+   *        parse config_buffer (this should be enough for now...)
+   *        update in-memory config
+   *        update flash config
+   *     Else:
+   *        continue by reading the setup from config
+   */
+
+  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+
+  uint32_t comm_start_time = osKernelGetTickCount();
+  while (usb_communication_complete != true &&
+         (osKernelGetTickCount() - comm_start_time < 10000)) {
+    log_raw("What is my purpose?");
+    osDelay(1000);
+  }
+  if (usb_communication_complete == true) {
+    log_raw("USB communication complete, config updated.");
+  } else {
+    log_raw("No USB communication detected, reusing old config");
+    /* Load old config from the flash. */
+    cc_load();
+  }
+  cc_print();
 }
 
 static void init_tasks() {
@@ -325,6 +322,7 @@ static void init_tasks() {
 #endif
       /* creation of task_recorder */
 #ifdef FLASH_TESTING
+      // TODO: Check rec_queue for validity here
       rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
       vTraceSetQueueName(rec_queue, "Recorder Queue");
@@ -397,5 +395,5 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 4000);
-  buzzer_set_volume(&BUZZER, 1);
+  buzzer_set_volume(&BUZZER, 100);
 }

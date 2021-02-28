@@ -19,17 +19,17 @@ void initialize_matrices(kalman_filter_t *const filter) {
       .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
       .P_hat = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
       .P_bar = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
-      .Q = 0.01f,
+      .Q = 0.1f,
       .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
       .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
       .R_full = {{1.0f, 0, 0}, {0, 1.0f, 0}, {0, 0, 1.0f}},
-      .R_eliminated = {{4.0f, 0}, {0, 4.0f}},
+      .R_eliminated = {{1.0f, 0}, {0, 1.0f}},
       .pressure_0 = filter->pressure_0,
       .t_sampl = filter->t_sampl};
 
   /* Transpose matrices */
   transpose(3, 3, temp_filter.Ad, temp_filter.Ad_T);
-  transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
+  SAM **transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
   transpose(2, 3, temp_filter.H_eliminated, temp_filter.H_eliminated_T);
 
   /* Fill up GdQGd_T */

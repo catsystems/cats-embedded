@@ -31,9 +31,9 @@ static inline void print_elem(const rec_elem_t *rec_elem, char prefix);
 uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
                    const rec_elem_t *break_elem);
 
-char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
-                         "IMU2",  "BARO0",       "BARO1",
-                         "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
+static const char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
+                                      "IMU2",  "BARO0",       "BARO1",
+                                      "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
 #endif
 
 /** Exported Function Definitions **/
@@ -52,7 +52,7 @@ void task_recorder(void *argument) {
 #endif
 
   /* At this point, last recorded sector should be 100% accurate */
-  uint16_t last_recorded_sector = cc_get_last_recorded_sector();
+  uint16_t last_recorded_sector = cs_get_last_recorded_sector();
   uint32_t page_id = w25qxx_sector_to_page(last_recorded_sector + 1);
 
 #ifdef FLASH_READ_TEST
@@ -66,7 +66,7 @@ void task_recorder(void *argument) {
   uint16_t print_bytes_remaining_mem = 0;
   uint16_t print_bytes_remaining_flash = 0;
 #endif
-
+  uint32_t max_elem_count = 0;
   while (1) {
     rec_elem_t curr_log_elem;
 
@@ -83,13 +83,18 @@ void task_recorder(void *argument) {
 #ifdef FLASH_TESTING
       if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
           osOK) {
-#ifdef FLASH_READ_TEST
-        print_elem(&curr_log_elem, '-');
-#endif
+        //#ifdef FLASH_READ_TEST
+        //        print_elem(&curr_log_elem, '-');
+        //#endif
+        uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
+        if (max_elem_count < curr_elem_count) {
+          max_elem_count = curr_elem_count;
+          log_warn("max_queued_elems: %lu", max_elem_count);
+        }
         write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx,
                     &curr_log_elem_size);
       } else {
-        log_error("Receiver queue full!");
+        log_error("Something wrong with the recording queue!");
       }
 #endif
     }
@@ -140,11 +145,11 @@ void task_recorder(void *argument) {
           w25qxx_sector_to_page(last_recorded_sector) + 15;
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
-        cc_set_last_recorded_sector(++last_recorded_sector);
-        log_debug("Updating last recorded sector to %d", last_recorded_sector);
+        cs_set_last_recorded_sector(++last_recorded_sector);
+        log_debug("Updating last recorded sector to %d; num_flights: %hu",
+                  last_recorded_sector, cs_get_num_recorded_flights());
         HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-
-        cc_save();
+        cs_save();
       } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
         log_fatal("Something went horribly wrong!");
       }

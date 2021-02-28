@@ -7,12 +7,12 @@
 #include "config/globals.h"
 #include "cmsis_os.h"
 
-const uint32_t REC_QUEUE_SIZE = 256;
+const uint32_t REC_QUEUE_SIZE = 128;
 
 void record(rec_entry_type_e rec_type, const void *rec_value) {
 #ifdef FLASH_TESTING
   // TODO: remove this condition
-  if (osKernelGetTickCount() > 35000) {
+  if (osKernelGetTickCount() > 25000) {
     rec_elem_t e = {.rec_type = rec_type};
     switch (rec_type) {
       case IMU0:
@@ -38,6 +38,9 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
         break;
       case COVARIANCE_INFO:
         e.u.covariance_info = *((covariance_info_t *)rec_value);
+        break;
+      case SENSOR_INFO:
+        e.u.sensor_info = *((sensor_info_t *)rec_value);
         break;
       default:
         log_fatal("Impossible recorder entry type!");

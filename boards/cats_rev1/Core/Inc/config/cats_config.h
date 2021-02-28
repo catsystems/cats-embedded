@@ -6,6 +6,7 @@
 #define CATS_CONFIG_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Exported types */
 
@@ -19,21 +20,20 @@ typedef enum {
   CATS_HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_boot_state;
 
+extern const uint32_t CATS_CONFIG_SECTOR;
+extern const uint32_t CATS_STATUS_SECTOR;
+
 /** cats config initialization **/
-void cc_init(uint16_t last_recorded_sector, uint16_t num_recorded_flights,
-             cats_boot_state boot_state);
+void cc_init(cats_boot_state boot_state, bool clear_flash);
 void cc_clear();
 
 /** accessor functions **/
 
-uint16_t cc_get_last_recorded_sector();
-void cc_set_last_recorded_sector(uint16_t last_recorded_sector);
-
-uint16_t cc_get_num_recorded_flights();
-void cc_set_num_recorded_flights(uint16_t last_recorded_sector);
-
 cats_boot_state cc_get_boot_state();
 void cc_set_boot_state(cats_boot_state boot_state);
+
+bool cc_get_clear_flash();
+void cc_set_clear_flash(bool clear_flash);
 
 /** persistence functions **/
 void cc_load();
@@ -41,5 +41,26 @@ void cc_save();
 
 /** debug functions **/
 void cc_print();
+
+/** cats state initialization **/
+void cs_init(uint16_t last_recorded_sector, uint16_t num_recorded_flights);
+void cs_clear();
+
+/** accessor functions **/
+
+uint16_t cs_get_last_recorded_sector();
+void cs_set_last_recorded_sector(uint16_t last_recorded_sector);
+
+uint16_t cs_get_num_recorded_flights();
+void cs_set_num_recorded_flights(uint16_t last_recorded_sector);
+
+uint16_t cs_get_last_sector_of_flight(uint16_t flight_idx);
+
+/** persistence functions **/
+void cs_load();
+void cs_save();
+
+/** debug functions **/
+void cs_print();
 
 #endif  // CATS_CONFIG_H_
