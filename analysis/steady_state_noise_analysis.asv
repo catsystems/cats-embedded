@@ -19,9 +19,9 @@ plot(height)
 % plot(vel)
 A = [0, 1, 0; 0, 0, 1; 0, 0, 0];
 A = expm(A*0.01)
-Q = [0.1, 0; 0, 0];
-Gd = A*[0, 0; 1, 0; 0, 1];
+Q = [0.1, 0; 0, 0.1];
+Gd = A*[0, 0; 1, 0; 0, 0];
 dummy = Gd*Q*Gd'
 Q_dash = 0.1;
 Gd = A*[0; 1; 0];
-dummy2 = Q_dash*Gd*Gd'
+dummy2 = Q.*Gd*Gd'

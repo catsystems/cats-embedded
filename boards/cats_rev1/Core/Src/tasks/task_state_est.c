@@ -42,13 +42,6 @@ void task_state_est(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  /* For Debugging */
-  int32_t meters = 0;
-  int32_t millimeters = 0;
-  int32_t meters_per_s = 0;
-  int32_t millimeters_per_s = 0;
-  /* End Debugging */
-
   /* local flight phase */
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   /* end local flight phase */
@@ -101,7 +94,7 @@ void task_state_est(void *argument) {
     }
 
     if ((fsm_state.flight_state == APOGEE) && (fsm_state.state_changed == 1)) {
-      filter.Q = 10;
+      filter.Q[0][0] = 10;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -185,26 +178,6 @@ void task_state_est(void *argument) {
     global_kf_data.velocity = filter.x_bar[1];
     global_kf_data.acceleration = state_data.acceleration[1];
 
-    /* DEBUGGING: Making it Ready for Printing */
-    if (filter.x_bar[0] > 0) {
-      meters = abs((int32_t)(filter.x_bar[0]));
-      millimeters = abs((int32_t)(filter.x_bar[0] * 1000) - meters * 1000);
-    }
-
-    else {
-      meters = -abs((int32_t)(filter.x_bar[0]));
-      millimeters = abs((int32_t)(filter.x_bar[0] * 1000) - meters * 1000);
-    }
-    if (filter.x_bar[1] > 0) {
-      meters_per_s = abs((int32_t)(filter.x_bar[1]));
-      millimeters_per_s =
-          abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
-    } else {
-      meters_per_s = -abs((int32_t)(filter.x_bar[1]));
-      millimeters_per_s =
-          abs((int32_t)(filter.x_bar[1] * 1000) - meters_per_s * 1000);
-    }
-
     uint32_t ts = osKernelGetTickCount();
 
     sensor_info_t sensor_info = {.ts = ts,
@@ -223,16 +196,17 @@ void task_state_est(void *argument) {
 
     flight_info_t flight_info = {
         .ts = ts,
-        .height = meters + millimeters / 1000.f,
-        .velocity = meters_per_s + millimeters_per_s / 1000.f,
+        .height = filter.x_bar[0],
+        .velocity = filter.x_bar[1],
         .acceleration = state_data.acceleration[1],
         .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    //    log_trace("Height %ld.%ld: Velocity: %ld.%ld Acceleration: %ld",
-    //    meters,
-    //              millimeters, meters_per_s, millimeters_per_s,
-    //              (int32_t)(state_data.acceleration[1] * 1000));
+    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
+              (int32_t)(filter.x_bar[0] * 1000),
+              (int32_t)(filter.x_bar[0] * 1000),
+              (int32_t)(state_data.acceleration[1] * 1000),
+              (int32_t)(filter.x_bar[2] * 1000));
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));

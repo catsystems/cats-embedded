@@ -15,11 +15,16 @@ void initialize_matrices(kalman_filter_t *const filter) {
       .Ad = {{1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
              {0, 1, filter->t_sampl},
              {0, 0, 1}},
-      .Gd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
+      .Gd = {{filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
+             {1, filter->t_sampl},
+             {0, 1}},
+      //			       .Gd = {{filter->t_sampl, 0},
+      //			     		  {1, 0},
+      //			 			  {0, 0}},
       .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
-      .P_hat = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
-      .P_bar = {{10.0f, 0, 0}, {10.0f, 0}, {0, 0, 10.0f}},
-      .Q = 0.1f,
+      .P_hat = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
+      .P_bar = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
+      .Q = {{0.01f, 0}, {0, 0.00000001f}},
       .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
       .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
       .R_full = {{1.0f, 0, 0}, {0, 1.0f, 0}, {0, 0, 1.0f}},
@@ -29,14 +34,24 @@ void initialize_matrices(kalman_filter_t *const filter) {
 
   /* Transpose matrices */
   transpose(3, 3, temp_filter.Ad, temp_filter.Ad_T);
-  SAM **transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
+  transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
   transpose(2, 3, temp_filter.H_eliminated, temp_filter.H_eliminated_T);
 
   /* Fill up GdQGd_T */
+  float placeholder[3][2] = {0};
+  placeholder[0][0] = temp_filter.Gd[0][0] * temp_filter.Q[0][0];
+  placeholder[0][1] = temp_filter.Gd[0][1] * temp_filter.Q[1][1];
+  placeholder[1][0] = temp_filter.Gd[1][0] * temp_filter.Q[0][0];
+  placeholder[1][1] = temp_filter.Gd[1][1] * temp_filter.Q[1][1];
+  placeholder[2][0] = temp_filter.Gd[2][0] * temp_filter.Q[0][0];
+  placeholder[2][1] = temp_filter.Gd[2][1] * temp_filter.Q[1][1];
+  float placeholder2[2][3] = {0};
+  transpose(3, 2, temp_filter.Gd, placeholder2);
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      temp_filter.GdQGd_T[i][j] =
-          temp_filter.Q * temp_filter.Gd[i] * temp_filter.Gd[j];
+      for (int k = 0; k < 2; k++) {
+        temp_filter.GdQGd_T[i][j] += placeholder[i][k] * placeholder2[k][j];
+      }
     }
   }
 

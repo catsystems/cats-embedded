@@ -105,9 +105,9 @@ typedef struct {
 typedef struct {
   float Ad[3][3];
   float Ad_T[3][3];
-  float Gd[3];
+  float Gd[3][2];
   float Bd[3];
-  float Q;
+  float Q[2][2];
   float GdQGd_T[3][3];
   float H_full[3][3];
   float H_full_T[3][3];
