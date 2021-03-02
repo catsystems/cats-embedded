@@ -5,6 +5,7 @@
 #include "util/log.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "tasks/task_usb_communicator.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -13,6 +14,18 @@
  *
  * @return True if config update successful
  */
+
+const char usb_config_command_list[USB_COMMAND_NR][15] = {
+    "save",        "exit", "status", "version", "dump",
+    "flash_erase", "set",  "get",    "read",    "help"};
+
+const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
+    "lf_timer1",  "lf_timer2", "apo_timer1",
+    "apo_timer2", "stages",    "boot_state"};
+
+cats_usb_commands parse_usb_cmd();
+cats_usb_commands parse_usb_var(uint16_t *value);
+
 static bool update_config() {
   /* Start from "CFG:" onwards */
   char *token = strtok((char *)(&usb_receive_buffer[4]), ";");
@@ -38,21 +51,180 @@ static bool update_config() {
 }
 
 void task_usb_communicator(void *argument) {
+  log_raw("USB config started");
+  log_raw("C.A.T.S. is now ready to receive commands...");
   while (1) {
     if (usb_msg_received == true) {
       usb_msg_received = false;
-      if (!strcmp((const char *)usb_receive_buffer, "Wait for instructions!")) {
-        log_raw("OK!");
-      } else if (!strcmp((const char *)usb_receive_buffer, "Hello from PC!")) {
-        log_raw("Waiting for config");
-      } else if (usb_receive_buffer[0] == 'C' && usb_receive_buffer[1] == 'F' &&
-                 usb_receive_buffer[2] == 'G') {
-        /* USB communication is complete if the config is updated */
-        usb_communication_complete = update_config();
-      } else {
-        log_raw("bad message received: \"%s\"", usb_receive_buffer);
+      //      if (!strcmp((const char *)usb_receive_buffer, "Wait for
+      //      instructions!")) {
+      //        log_raw("OK!");
+      //      } else if (!strcmp((const char *)usb_receive_buffer, "Hello from
+      //      PC!")) {
+      //        log_raw("Waiting for config");
+      //      } else if (usb_receive_buffer[0] == 'C' && usb_receive_buffer[1]
+      //      == 'F' &&
+      //                 usb_receive_buffer[2] == 'G') {
+      //        /* USB communication is complete if the config is updated */
+      //        usb_communication_complete = update_config();
+      //      } else {
+      //        log_raw("bad message received: \"%s\"", usb_receive_buffer);
+      //      }
+      cats_usb_commands command = parse_usb_cmd();
+      cats_usb_variables variable;
+      uint16_t value;
+
+      switch (command) {
+        case CATS_USB_CMD_SAVE:
+          cc_save();
+          log_raw("saving...");
+          break;
+        case CATS_USB_CMD_EXIT:
+          log_raw("disconnected");
+          NVIC_SystemReset();
+          break;
+        case CATS_USB_CMD_STATUS:
+          log_raw("Number of recorded flights: %hu",
+                  cs_get_num_recorded_flights());
+          log_raw("Number of recorded sectors: %hu",
+                  cs_get_last_recorded_sector());
+          cc_print();
+          break;
+        case CATS_USB_CMD_VERSION:
+          log_raw("still in beta");
+          break;
+        case CATS_USB_CMD_DUMP:
+          log_raw("nothing special");
+          break;
+        case CATS_USB_CMD_FLASH_ERASE:
+          log_raw("erasing all your files in 3..2..1");
+          break;
+        case CATS_USB_CMD_SET:
+          variable = parse_usb_var(&value);
+          switch (variable) {
+            case CATS_USB_VAR_LIFTOFF_TIMER1:
+              break;
+            case CATS_USB_VAR_LIFTOFF_TIMER2:
+              break;
+            case CATS_USB_VAR_APOGEE_TIMER1:
+              break;
+            case CATS_USB_VAR_APOGEE_TIMER2:
+              break;
+            case CATS_USB_VAR_STAGES:
+              break;
+            case CATS_USB_VAR_BOOT_STATE:
+              if (value >= 0 && value < 6) {
+                cc_set_boot_state(value);
+                log_raw("%s set to %hu", usb_config_variable_list[variable],
+                        value);
+              } else
+                log_raw("boot_state needs to be between 0 and 6");
+              break;
+            case CATS_USB_VAR_UNKNOWN:
+              for (int i = 0; i < USB_VARIABLE_NR; i++)
+                log_raw("%s", usb_config_variable_list[i]);
+              break;
+            default:
+              break;
+          }
+
+          break;
+        case CATS_USB_CMD_GET:
+          variable = parse_usb_var(&value);
+          uint16_t number = 0;
+          switch (variable) {
+            case CATS_USB_VAR_LIFTOFF_TIMER1:
+              break;
+            case CATS_USB_VAR_LIFTOFF_TIMER2:
+              break;
+            case CATS_USB_VAR_APOGEE_TIMER1:
+              break;
+            case CATS_USB_VAR_APOGEE_TIMER2:
+              break;
+            case CATS_USB_VAR_STAGES:
+              break;
+            case CATS_USB_VAR_BOOT_STATE:
+              log_raw("boot_state is %hu", cc_get_boot_state());
+              break;
+            case CATS_USB_VAR_UNKNOWN:
+              for (int i = 0; i < USB_VARIABLE_NR; i++)
+                log_raw("%s", usb_config_variable_list[i]);
+              break;
+            default:
+              break;
+          }
+          break;
+        case CATS_USB_CMD_READ:
+          log_raw("Use of this command: read 'flight_nr'");
+          break;
+        case CATS_USB_CMD_HELP:
+          log_raw("Full command list:");
+          for (int i = 0; i < USB_COMMAND_NR; i++)
+            log_raw("%s", usb_config_command_list[i]);
+          break;
+        case CATS_USB_CMD_UNKNOWN:
+          log_raw("Unknown command! Send help for the command list");
+          break;
+        default:
+          log_raw("Something went seriously wrong :(");
+          break;
       }
     }
     osDelay(100);
   }
+}
+
+cats_usb_commands parse_usb_cmd() {
+  uint8_t cmd_buffer[20];
+  for (int i = 0; i < 20; i++) cmd_buffer[i] = 0;
+  int i = 0;
+  while (i < 20 &&
+         !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
+           usb_receive_buffer[i] == '\n')) {
+    cmd_buffer[i] = usb_receive_buffer[i];
+    i++;
+  }
+
+  for (int i = 0; i < USB_COMMAND_NR; i++) {
+    if (!strcmp((const char *)cmd_buffer, usb_config_command_list[i])) return i;
+  }
+  return CATS_USB_CMD_UNKNOWN;
+}
+
+cats_usb_commands parse_usb_var(uint16_t *value) {
+  uint8_t var_buffer[20];
+  for (int i = 0; i < 20; i++) var_buffer[i] = 0;
+  int i = 0;
+  int n = 0;
+  while (i < 20 && usb_receive_buffer[i] != ' ') i++;
+  if (i == 20) {
+    *value = 0;
+    return CATS_USB_VAR_UNKNOWN;
+  }
+  i++;
+  while (n < 20 &&
+         !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
+           usb_receive_buffer[i] == '\n')) {
+    var_buffer[n] = usb_receive_buffer[i];
+    i++;
+    n++;
+  }
+  if (n == 20) {
+    *value = 0;
+    return CATS_USB_VAR_UNKNOWN;
+  }
+
+  for (int j = 0; j < USB_VARIABLE_NR; j++) {
+    if (!strcmp((const char *)var_buffer, usb_config_variable_list[j])) {
+      uint8_t num_buffer[10];
+      for (int j1 = 0; j1 < 10; j1++) num_buffer[j1] = 0;
+      for (int j1 = 0; j1 < 9; j1++)
+        num_buffer[j1] = usb_receive_buffer[i + j1];
+      // TODO This breaks sometimes
+      sscanf(num_buffer, "%hu", value);
+      //*value = 1;
+      return j;
+    }
+  }
+  return CATS_USB_VAR_UNKNOWN;
 }

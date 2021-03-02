@@ -90,7 +90,7 @@ void log_raw(const char *format, ...) {
     snprintf(print_buffer + strlen(print_buffer), PRINT_BUFFER_LEN, "\n");
     CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
     osMutexRelease(print_mutex);
-    osDelay(2);
+    // osDelay(2);
   }
 #endif
 }

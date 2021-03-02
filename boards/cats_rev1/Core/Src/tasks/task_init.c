@@ -277,6 +277,7 @@ static void init_devices() {
   }
 #else
   if (cc_get_boot_state() == CATS_CONFIG) {
+    // TODO This makes no sense
     w25qxx_init();
   }
 #endif
@@ -294,23 +295,47 @@ static void init_communication() {
    *     Else:
    *        continue by reading the setup from config
    */
-
-  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
-
+  log_raw("Waiting 10s for usb connection");
   uint32_t comm_start_time = osKernelGetTickCount();
-  while (usb_communication_complete != true &&
-         (osKernelGetTickCount() - comm_start_time < 10000)) {
-    log_raw("What is my purpose?");
-    osDelay(1000);
+  while (osKernelGetTickCount() - comm_start_time < 10000 &&
+         usb_communication_complete != true) {
+    if (usb_msg_received) {
+      usb_msg_received = false;
+      uint8_t buffer[20];
+      for (int i = 0; i < 20; i++) buffer[i] = 0;
+      int i = 0;
+      while (i < 20 &&
+             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
+               usb_receive_buffer[i] == '\n')) {
+        buffer[i] = usb_receive_buffer[i];
+        i++;
+      }
+
+      if (!strcmp((const char *)buffer, "config")) {
+        usb_communication_complete = true;
+        cc_load();
+        osThreadNew(task_usb_communicator, NULL,
+                    &task_usb_communicator_attributes);
+      }
+    }
+    osDelay(100);
   }
-  if (usb_communication_complete == true) {
-    log_raw("USB communication complete, config updated.");
-  } else {
-    log_raw("No USB communication detected, reusing old config");
-    /* Load old config from the flash. */
-    cc_load();
-  }
-  cc_print();
+
+  cc_load();
+  //  uint32_t comm_start_time = osKernelGetTickCount();
+  //  while (usb_communication_complete != true &&
+  //         (osKernelGetTickCount() - comm_start_time < 10000)) {
+  //    log_raw("What is my purpose?");
+  //    osDelay(1000);
+  //  }
+  //  if (usb_communication_complete == true) {
+  //    log_raw("USB communication complete, config updated.");
+  //  } else {
+  //    log_raw("No USB communication detected, reusing old config");
+  //    /* Load old config from the flash. */
+  //    cc_load();
+  //  }
+  //  cc_print();
 }
 
 static void init_tasks() {
@@ -395,5 +420,5 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 4000);
-  buzzer_set_volume(&BUZZER, 100);
+  buzzer_set_volume(&BUZZER, 1);
 }
