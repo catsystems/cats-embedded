@@ -149,7 +149,7 @@ void task_recorder(void *argument) {
         log_debug("Updating last recorded sector to %d; num_flights: %hu",
                   last_recorded_sector, cs_get_num_recorded_flights());
         HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-        cs_save();
+        // cs_save();
       } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
         log_fatal("Something went horribly wrong!");
       }

@@ -14,7 +14,7 @@
 #ifdef FLASH_TESTING
 #undef FLASH_TESTING
 #endif
-//#define FLASH_TESTING
+#define FLASH_TESTING
 
 #ifdef FLASH_READ_TEST
 #undef FLASH_READ_TEST

@@ -152,6 +152,7 @@ void task_init(void *argument) {
 
   /* After this point the cats config is either updated or the old config is
    * loaded from the flash. */
+  cs_load();
   if (cc_get_boot_state() != CATS_CONFIG && cc_get_clear_flash() == true) {
     /* TODO: when we know how many logs we have we don't have to erase the
      * entire chip */
@@ -161,7 +162,8 @@ void task_init(void *argument) {
     cs_save();
   }
   osDelay(10);
-  if (cc_get_boot_state() == CATS_FLIGHT) {
+  if (cc_get_boot_state() == CATS_FLIGHT &&
+      usb_communication_complete != true) {
     cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
     cs_save();
   }
@@ -339,47 +341,51 @@ static void init_communication() {
 }
 
 static void init_tasks() {
-  switch (cc_get_boot_state()) {
-    case CATS_FLIGHT: {
+  if (usb_communication_complete == true) {
+    // osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
+  } else {
+    switch (cc_get_boot_state()) {
+      case CATS_FLIGHT: {
 #if (configUSE_TRACE_FACILITY == 1)
-      baro_channel = xTraceRegisterString("Baro Channel");
-      flash_channel = xTraceRegisterString("Flash Channel");
+        baro_channel = xTraceRegisterString("Baro Channel");
+        flash_channel = xTraceRegisterString("Flash Channel");
 #endif
-      /* creation of task_recorder */
+        /* creation of task_recorder */
 #ifdef FLASH_TESTING
-      // TODO: Check rec_queue for validity here
-      rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+        // TODO: Check rec_queue for validity here
+        rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
-      vTraceSetQueueName(rec_queue, "Recorder Queue");
+        vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+        osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 #endif
 
-      /* creation of task_baro_read */
-      osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
+        /* creation of task_baro_read */
+        osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
-      /* creation of task_imu_read */
-      osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
+        /* creation of task_imu_read */
+        osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
-      /* creation of task_flight_fsm */
-      osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+        /* creation of task_flight_fsm */
+        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
-      /* creation of task_flight_fsm */
-      osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
+        /* creation of task_flight_fsm */
+        osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
-      /* creation of task_state_est */
-      osThreadNew(task_state_est, NULL, &task_state_est_attributes);
-    } break;
-    case CATS_CONFIG:
-      /* creation of task_flash_reader */
-      osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
-      break;
-    case CATS_TIMER:
-    case CATS_DROP:
-      break;
-    default:
-      log_fatal("Wrong boot state!");
+        /* creation of task_state_est */
+        osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+      } break;
+      case CATS_CONFIG:
+        /* creation of task_flash_reader */
+        osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
+        break;
+      case CATS_TIMER:
+      case CATS_DROP:
+        break;
+      default:
+        log_fatal("Wrong boot state!");
+    }
   }
 }
 

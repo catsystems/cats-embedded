@@ -6,6 +6,7 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "tasks/task_usb_communicator.h"
+#include "util/reader.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,9 +71,9 @@ void task_usb_communicator(void *argument) {
       //      } else {
       //        log_raw("bad message received: \"%s\"", usb_receive_buffer);
       //      }
+      uint16_t value = 0;
       cats_usb_commands command = parse_usb_cmd();
       cats_usb_variables variable;
-      uint16_t value;
 
       switch (command) {
         case CATS_USB_CMD_SAVE:
@@ -88,7 +89,6 @@ void task_usb_communicator(void *argument) {
                   cs_get_num_recorded_flights());
           log_raw("Number of recorded sectors: %hu",
                   cs_get_last_recorded_sector());
-          cc_print();
           break;
         case CATS_USB_CMD_VERSION:
           log_raw("still in beta");
@@ -98,6 +98,8 @@ void task_usb_communicator(void *argument) {
           break;
         case CATS_USB_CMD_FLASH_ERASE:
           log_raw("erasing all your files in 3..2..1");
+          erase_recordings();
+          log_raw("done");
           break;
         case CATS_USB_CMD_SET:
           variable = parse_usb_var(&value);
@@ -155,7 +157,10 @@ void task_usb_communicator(void *argument) {
           }
           break;
         case CATS_USB_CMD_READ:
-          log_raw("Use of this command: read 'flight_nr'");
+          if (value > cs_get_num_recorded_flights() - 1)
+            log_raw("Error: Value to big");
+          print_recording(value);
+
           break;
         case CATS_USB_CMD_HELP:
           log_raw("Full command list:");
@@ -185,8 +190,10 @@ cats_usb_commands parse_usb_cmd() {
     i++;
   }
 
-  for (int i = 0; i < USB_COMMAND_NR; i++) {
-    if (!strcmp((const char *)cmd_buffer, usb_config_command_list[i])) return i;
+  for (int j = 0; j < USB_COMMAND_NR; j++) {
+    if (!strcmp((const char *)cmd_buffer, usb_config_command_list[j])) {
+      return j;
+    }
   }
   return CATS_USB_CMD_UNKNOWN;
 }
