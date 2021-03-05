@@ -27,8 +27,8 @@ void initialize_matrices(kalman_filter_t *const filter) {
       .Q = {{0.01f, 0}, {0, 0.00000001f}},
       .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
       .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
-      .R_full = {{1.0f, 0, 0}, {0, 1.0f, 0}, {0, 0, 1.0f}},
-      .R_eliminated = {{1.0f, 0}, {0, 1.0f}},
+      .R_full = {{4.0f, 0, 0}, {0, 4.0f, 0}, {0, 0, 4.0f}},
+      .R_eliminated = {{4.0f, 0}, {0, 4.0f}},
       .pressure_0 = filter->pressure_0,
       .t_sampl = filter->t_sampl};
 

@@ -29,7 +29,8 @@ inline static float calculate_height(float pressure_initial, float pressure,
 
 static void get_data_float(state_estimation_data_t *state_data,
                            kalman_filter_t *filter,
-                           calibration_data_t *calibration);
+                           calibration_data_t *calibration,
+                           flight_fsm_t *fsm_state);
 
 /** Exported Function Definitions **/
 
@@ -98,7 +99,7 @@ void task_state_est(void *argument) {
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    get_data_float(&state_data, &filter, &calibration);
+    get_data_float(&state_data, &filter, &calibration, &fsm_state);
 
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
@@ -230,7 +231,8 @@ inline static float calculate_height(float pressure_initial, float pressure,
 
 static void get_data_float(state_estimation_data_t *state_data,
                            kalman_filter_t *filter,
-                           calibration_data_t *calibration) {
+                           calibration_data_t *calibration,
+                           flight_fsm_t *fsm_state) {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (calibration->axis) {
@@ -283,50 +285,52 @@ static void get_data_float(state_estimation_data_t *state_data,
   state_data->temperature[2] = global_baro[2].temperature / 100.f;
 
   /* Add Sensor Noise if asked to */
+  if (fsm_state->flight_state == THRUSTING_1) {
 #ifdef INCLUDE_NOISE
-  float rand_pressure[3] = {0};
-  float rand_acc[3] = {0};
-  rand_pressure[0] = PRESSURE_NOISE_MAX_AMPL *
-                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-  rand_pressure[1] = PRESSURE_NOISE_MAX_AMPL *
-                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-  rand_pressure[2] = PRESSURE_NOISE_MAX_AMPL *
-                     ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-  rand_acc[0] =
-      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-  rand_acc[1] =
-      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-  rand_acc[2] =
-      ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    float rand_pressure[3] = {0};
+    float rand_acc[3] = {0};
+    rand_pressure[0] = PRESSURE_NOISE_MAX_AMPL *
+                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_pressure[1] = PRESSURE_NOISE_MAX_AMPL *
+                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_pressure[2] = PRESSURE_NOISE_MAX_AMPL *
+                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_acc[0] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
+                  (2147483648 / 2);
+    rand_acc[1] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
+                  (2147483648 / 2);
+    rand_acc[2] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
+                  (2147483648 / 2);
 
-  state_data->pressure[0] += rand_pressure[0];
-  state_data->pressure[1] += rand_pressure[1];
-  state_data->pressure[2] += rand_pressure[2];
-  state_data->acceleration[0] += rand_acc[0];
-  state_data->acceleration[1] += rand_acc[1];
-  state_data->acceleration[2] += rand_acc[2];
+    state_data->pressure[0] += rand_pressure[0];
+    state_data->pressure[1] += rand_pressure[1];
+    state_data->pressure[2] += rand_pressure[2];
+    state_data->acceleration[0] += rand_acc[0];
+    state_data->acceleration[1] += rand_acc[1];
+    state_data->acceleration[2] += rand_acc[2];
 #endif
-  /* Add Spikes in the Data if asked to */
+    /* Add Spikes in the Data if asked to */
 #ifdef INCLUDE_SPIKES
-  float spike = (float)rand() / 2147483648;
-  if (spike < SPIKE_THRESHOLD) {
+    float spike = (float)rand() / 2147483648;
+    if (spike < SPIKE_THRESHOLD) {
 #ifdef SPIKE_BARO
-    state_data->pressure[SPIKE_SENSOR_CHOICE] += 10000000;
+      state_data->pressure[SPIKE_SENSOR_CHOICE] += 10000000;
 #endif
 #ifdef SPIKE_IMU
-    state_data->acceleration[SPIKE_SENSOR_CHOICE] += 10000000;
+      state_data->acceleration[SPIKE_SENSOR_CHOICE] += 10000000;
 #endif
-  }
+    }
 #endif
-  /* Add Offset to one Sensor if asked to */
+    /* Add Offset to one Sensor if asked to */
 #ifdef INCLUDE_OFFSET
 #ifdef OFFSET_BARO
-  state_data->pressure[OFFSET_SENSOR_CHOICE] += OFFSET_P;
+    state_data->pressure[OFFSET_SENSOR_CHOICE] += OFFSET_P;
 #endif
 #ifdef OFFSET_IMU
-  state_data->acceleration[OFFSET_SENSOR_CHOICE] += OFFSET_ACC;
+    state_data->acceleration[OFFSET_SENSOR_CHOICE] += OFFSET_ACC;
 #endif
 #endif
+  }
 
   state_data->calculated_AGL[0] = calculate_height(
       filter->pressure_0, state_data->pressure[0], state_data->temperature[0]);
