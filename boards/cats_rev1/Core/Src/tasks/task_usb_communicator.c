@@ -157,9 +157,12 @@ void task_usb_communicator(void *argument) {
           }
           break;
         case CATS_USB_CMD_READ:
+          osDelay(2000);
           if (value > cs_get_num_recorded_flights() - 1)
             log_raw("Error: Value to big");
-          print_recording(value);
+          for (int i = 0; i < cs_get_num_recorded_flights(); i++) {
+            print_recording(i);
+          }
 
           break;
         case CATS_USB_CMD_HELP:

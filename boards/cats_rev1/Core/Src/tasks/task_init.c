@@ -425,6 +425,6 @@ static void init_baro() {
 }
 
 static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 4000);
-  buzzer_set_volume(&BUZZER, 1);
+  buzzer_set_freq(&BUZZER, 3500);
+  buzzer_set_volume(&BUZZER, 100);
 }
