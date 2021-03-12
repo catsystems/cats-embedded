@@ -28,6 +28,7 @@ typedef struct {
   int32_t temperature;
 } baro_data_t;
 
+/* Estimator Data */
 typedef struct {
   float pressure[3];
   float temperature[3];
@@ -36,6 +37,7 @@ typedef struct {
   timestamp_t ts;
 } state_estimation_data_t;
 
+/* Elimination Data */
 typedef struct {
   int32_t num_freeze[9];
   int32_t num_maj_vote[9];
@@ -73,6 +75,18 @@ typedef enum {
   TOUCHDOWN,
   HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } flight_fsm_e;
+
+typedef struct {
+  float measured_height[10][3];
+  float measured_acc[10][3];
+  float height_avg;
+  float acc_avg;
+  float height_noise_est;
+  float acc_noise_est;
+  /* future use */
+  float height_poly[3];
+  float accel_poly[3];
+} noise_estimator_t;
 
 typedef struct {
   flight_fsm_e flight_state;

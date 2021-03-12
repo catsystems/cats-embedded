@@ -11,6 +11,10 @@
 #include "util/log.h"
 #include "control/math_utils.h"
 
+#define STD_NOISE_BARO   4.0f
+#define STD_NOISE_IMU    0.01f
+#define STD_NOISE_OFFSET 0.00000001f
+
 #endif /* INC_CONTROL_KALMAN_FILTER_H_ */
 
 void initialize_matrices(kalman_filter_t *filter);
