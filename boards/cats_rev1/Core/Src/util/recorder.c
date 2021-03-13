@@ -12,7 +12,8 @@ const uint32_t REC_QUEUE_SIZE = 128;
 void record(rec_entry_type_e rec_type, const void *rec_value) {
 #ifdef FLASH_TESTING
   // TODO: remove this condition
-  if (osKernelGetTickCount() > 25000) {
+  if (global_flight_state.flight_state >= THRUSTING_1 &&
+      global_flight_state.flight_state < TOUCHDOWN) {
     rec_elem_t e = {.rec_type = rec_type};
     switch (rec_type) {
       case IMU0:

@@ -89,6 +89,14 @@ void task_usb_communicator(void *argument) {
                   cs_get_num_recorded_flights());
           log_raw("Number of recorded sectors: %hu",
                   cs_get_last_recorded_sector());
+          for (int i = 0; i < cs_get_num_recorded_flights(); i++) {
+            log_raw("Stats for Flight %d:", i);
+            log_raw(
+                "Max Altitude: %d m | Max Velocity: %d m/s | Max Acceleration "
+                "%d m/s^2",
+                (int)cs_get_max_altitude(i), (int)cs_get_max_velocity(i),
+                (int)(cs_get_max_acceleration(i) * 9.81f));
+          }
           break;
         case CATS_USB_CMD_VERSION:
           log_raw("still in beta");

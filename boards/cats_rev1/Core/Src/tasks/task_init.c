@@ -139,15 +139,15 @@ static void init_buzzer();
 /** Exported Function Definitions **/
 
 void task_init(void *argument) {
-  osDelay(2000);
+  osDelay(200);
   init_system();
   log_info("System initialization complete.");
 
-  osDelay(1000);
+  osDelay(100);
   init_devices();
   log_info("Device initialization complete.");
 
-  osDelay(1000);
+  osDelay(100);
   init_communication();
 
   /* After this point the cats config is either updated or the old config is
@@ -162,11 +162,6 @@ void task_init(void *argument) {
     cs_save();
   }
   osDelay(10);
-  if (cc_get_boot_state() == CATS_FLIGHT &&
-      usb_communication_complete != true) {
-    cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
-    cs_save();
-  }
 
   uint16_t num_flights = cs_get_num_recorded_flights();
   log_trace("Number of recorded flights: %hu", num_flights);
@@ -175,7 +170,7 @@ void task_init(void *argument) {
               cs_get_last_sector_of_flight(i));
   }
 
-  osDelay(1000);
+  osDelay(100);
   init_tasks();
   log_info("Task initialization complete.");
 
@@ -190,6 +185,8 @@ void task_init(void *argument) {
   adc_init();
   osDelay(100);
   battery_monitor_init();
+
+  uint32_t flights_increased = 0;
   /* Infinite loop */
   for (;;) {
     battery_level_e level = battery_level();
@@ -199,6 +196,15 @@ void task_init(void *argument) {
       error_buzzer(CATS_ERROR_BAT_LOW);
     else
       error_buzzer(CATS_ERROR_OK);
+
+    // Use flights increased due to asynchronisation of task fsm and init,
+    // sometimes not exectued sometimes executed twice
+    if (global_flight_state.flight_state >= THRUSTING_1 &&
+        flights_increased == 0) {
+      flights_increased = 1;
+      cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
+      cs_save();
+    }
 
     if (global_flight_state.flight_state == APOGEE) {
       buzzer_beep(&BUZZER, 1000);

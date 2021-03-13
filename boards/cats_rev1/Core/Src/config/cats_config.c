@@ -30,6 +30,12 @@ typedef struct {
   uint16_t num_recorded_flights;
   /* TODO: don't create a static array here */
   uint16_t last_sectors_of_flight_recordings[32];
+
+  flight_fsm_e last_fsm_state[32];
+  float max_altitude[32];
+  float max_velocity[32];
+  float max_acceleration[32];
+
 } cats_status_t;
 
 cats_config_t global_cats_config = {0};
@@ -126,6 +132,48 @@ uint16_t cs_get_num_recorded_flights() {
 }
 void cs_set_num_recorded_flights(uint16_t num_recorded_flights) {
   global_cats_status.num_recorded_flights = num_recorded_flights;
+}
+
+void cs_set_max_altitude(float altitude) {
+  global_cats_status.max_altitude[global_cats_status.num_recorded_flights - 1] =
+      altitude;
+}
+
+void cs_set_max_velocity(float velocity) {
+  global_cats_status.max_velocity[global_cats_status.num_recorded_flights - 1] =
+      velocity;
+}
+
+void cs_set_max_acceleration(float acceleration) {
+  global_cats_status
+      .max_acceleration[global_cats_status.num_recorded_flights - 1] =
+      acceleration;
+}
+
+float cs_get_max_acceleration(uint32_t flight) {
+  if (flight <= global_cats_status.num_recorded_flights)
+    return global_cats_status.max_acceleration[flight];
+  else
+    return 0;
+}
+
+float cs_get_max_altitude(uint32_t flight) {
+  if (flight <= global_cats_status.num_recorded_flights)
+    return global_cats_status.max_altitude[flight];
+  else
+    return 0;
+}
+
+float cs_get_max_velocity(uint32_t flight) {
+  if (flight <= global_cats_status.num_recorded_flights)
+    return global_cats_status.max_velocity[flight];
+  else
+    return 0;
+}
+
+void cs_set_flight_phase(flight_fsm_e state) {
+  global_cats_status
+      .last_fsm_state[global_cats_status.num_recorded_flights - 1] = state;
 }
 
 /** persistence functions **/

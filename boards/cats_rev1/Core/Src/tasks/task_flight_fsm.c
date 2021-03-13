@@ -10,6 +10,7 @@
 #include "util/log.h"
 #include "tasks/task_flight_fsm.h"
 #include "control/flight_phases.h"
+#include "config/cats_config.h"
 
 /** Private Constants **/
 
@@ -33,6 +34,10 @@ void task_flight_fsm(void *argument) {
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
+  float max_v = 0;
+  float max_a = 0;
+  float max_h = 0;
+
   // osDelay(1000);
 
   while (1) {
@@ -45,11 +50,30 @@ void task_flight_fsm(void *argument) {
 
     global_flight_state = fsm_state;
 
+    // Keep track of max speed, velocity and acceleration for flight stats
+    if (fsm_state.flight_state >= THRUSTING_1 &&
+        fsm_state.flight_state <= APOGEE) {
+      if (max_v < local_kf_data.velocity) max_v = local_kf_data.velocity;
+      if (max_a < local_kf_data.acceleration)
+        max_a = local_kf_data.acceleration;
+      if (max_h < local_kf_data.height) max_h = local_kf_data.height;
+    }
+
     if (fsm_state.state_changed == 1) {
       log_error("State Changed to %d", fsm_state.flight_state);
       flight_state_t flight_state = {.ts = osKernelGetTickCount(),
                                      .flight_state = fsm_state.flight_state};
       record(FLIGHT_STATE, &flight_state);
+
+      // When we are in any flight state update the flash sector with last
+      // flight phase
+      if (fsm_state.flight_state >= THRUSTING_1) {
+        cs_set_flight_phase(fsm_state.flight_state);
+        cs_set_max_altitude(max_h);
+        cs_set_max_velocity(max_v);
+        cs_set_max_acceleration(max_a);
+        cs_save();
+      }
     }
 
     osDelayUntil(tick_count);
