@@ -7,10 +7,12 @@
 
 #include "control\kalman_filter.h"
 #include "cmsis_os.h"
+#include "../DSP/Inc/arm_math.h"
 #include <string.h>
 
 void initialize_matrices(kalman_filter_t *const filter) {
   /* Initialize static values */
+  q15_t num = 0;
   kalman_filter_t temp_filter = {
       .Ad = {{1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
              {0, 1, filter->t_sampl},
@@ -24,11 +26,13 @@ void initialize_matrices(kalman_filter_t *const filter) {
       .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
       .P_hat = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
       .P_bar = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
-      .Q = {{0.01f, 0}, {0, 0.00000001f}},
+      .Q = {{STD_NOISE_IMU, 0}, {0, STD_NOISE_OFFSET}},
       .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
       .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
-      .R_full = {{4.0f, 0, 0}, {0, 4.0f, 0}, {0, 0, 4.0f}},
-      .R_eliminated = {{4.0f, 0}, {0, 4.0f}},
+      .R_full = {{STD_NOISE_BARO, 0, 0},
+                 {0, STD_NOISE_BARO, 0},
+                 {0, 0, STD_NOISE_BARO}},
+      .R_eliminated = {{STD_NOISE_BARO, 0}, {0, STD_NOISE_BARO}},
       .pressure_0 = filter->pressure_0,
       .t_sampl = filter->t_sampl};
 
