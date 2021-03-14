@@ -12,7 +12,17 @@
 
 void initialize_matrices(kalman_filter_t *const filter) {
   /* Initialize static values */
-  q15_t num = 0;
+  float32_t data[4] = {1, 2, 3, 4};
+  float32_t data2[4] = {1, 2, 3, 4};
+  float32_t data3[4] = {1, 2, 3, 4};
+  arm_matrix_instance_f32 matrix2 = {
+      .numCols = 2, .numRows = 2, .pData = data2};
+  arm_matrix_instance_f32 matrix1 = {.numCols = 2, .numRows = 2, .pData = data};
+  arm_matrix_instance_f32 matrix3 = {
+      .numCols = 2, .numRows = 2, .pData = data3};
+
+  arm_mat_mult_f32(&matrix1, &matrix2, &matrix3);
+
   kalman_filter_t temp_filter = {
       .Ad = {{1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
              {0, 1, filter->t_sampl},
