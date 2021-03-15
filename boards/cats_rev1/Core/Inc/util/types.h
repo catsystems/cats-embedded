@@ -6,6 +6,7 @@
 #define CATS_REV1_TYPES_H
 
 #include <stdint.h>
+#include "../DSP/Inc/arm_math.h"
 
 /** BASIC TYPES **/
 
@@ -117,24 +118,42 @@ typedef struct {
 } chute_type_t;
 
 typedef struct {
-  float Ad[3][3];
-  float Ad_T[3][3];
-  float Gd[3][2];
-  float Bd[3];
-  float Q[2][2];
-  float GdQGd_T[3][3];
-  float H_full[3][3];
-  float H_full_T[3][3];
-  float H_eliminated[2][3];
-  float H_eliminated_T[3][2];
-  float R_full[3][3];
-  float R_eliminated[2][2];
-  float K_full[3][3];
-  float K_eliminated[3][2];
-  float x_bar[3];
-  float P_bar[3][3];
-  float x_hat[3];
-  float P_hat[3][3];
+  float32_t Ad_data[9];
+  float32_t Ad_T_data[9];
+  float32_t Gd_data[6];
+  float32_t Bd_data[3];
+  float32_t Q_data[4];
+  float32_t GdQGd_T_data[9];
+  float32_t H_full_data[9];
+  float32_t H_full_T_data[9];
+  float32_t H_eliminated_data[6];
+  float32_t H_eliminated_T_data[6];
+  float32_t R_full_data[9];
+  float32_t R_eliminated_data[4];
+  float32_t K_full_data[9];
+  float32_t K_eliminated_data[6];
+  float32_t x_bar_data[3];
+  float32_t P_bar_data[9];
+  float32_t x_hat_data[3];
+  float32_t P_hat_data[9];
+  arm_matrix_instance_f32 Ad;
+  arm_matrix_instance_f32 Ad_T;
+  arm_matrix_instance_f32 Gd;
+  arm_matrix_instance_f32 Bd;
+  arm_matrix_instance_f32 Q;
+  arm_matrix_instance_f32 GdQGd_T;
+  arm_matrix_instance_f32 H_full;
+  arm_matrix_instance_f32 H_full_T;
+  arm_matrix_instance_f32 H_eliminated;
+  arm_matrix_instance_f32 H_eliminated_T;
+  arm_matrix_instance_f32 R_full;
+  arm_matrix_instance_f32 R_eliminated;
+  arm_matrix_instance_f32 K_full;
+  arm_matrix_instance_f32 K_eliminated;
+  arm_matrix_instance_f32 x_bar;
+  arm_matrix_instance_f32 P_bar;
+  arm_matrix_instance_f32 x_hat;
+  arm_matrix_instance_f32 P_hat;
   float pressure_0;
   float t_sampl;
 } kalman_filter_t;

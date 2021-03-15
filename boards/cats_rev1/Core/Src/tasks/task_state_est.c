@@ -68,6 +68,7 @@ void task_state_est(void *argument) {
   filter.pressure_0 = P_INITIAL;
   filter.t_sampl = 1 / (float)(CONTROL_SAMPLING_FREQ);
 
+  init_filter_struct(&filter);
   initialize_matrices(&filter);
   /* End Initialization */
 
@@ -95,7 +96,8 @@ void task_state_est(void *argument) {
     }
 
     if ((fsm_state.flight_state == APOGEE) && (fsm_state.state_changed == 1)) {
-      filter.Q[0][0] = 10;
+      float32_t Q_dash[4] = {10, 0, 0, STD_NOISE_OFFSET};
+      memcpy(filter.Q_data, Q_dash, sizeof(Q_dash));
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -175,8 +177,8 @@ void task_state_est(void *argument) {
     kalman_step(&filter, &state_data, &elimination);
 
     /* write the Data into the global variable */
-    global_kf_data.height = filter.x_bar[0];
-    global_kf_data.velocity = filter.x_bar[1];
+    global_kf_data.height = (float)filter.x_bar.pData[0];
+    global_kf_data.velocity = (float)filter.x_bar.pData[1];
     global_kf_data.acceleration = state_data.acceleration[1];
 
     uint32_t ts = osKernelGetTickCount();
@@ -191,23 +193,23 @@ void task_state_est(void *argument) {
     record(SENSOR_INFO, &sensor_info);
 
     covariance_info_t cov_info = {.ts = ts,
-                                  .height_cov = filter.P_bar[1][1],
-                                  .velocity_cov = filter.P_bar[2][2]};
+                                  .height_cov = filter.P_bar.pData[1],
+                                  .velocity_cov = filter.P_bar.pData[5]};
     record(COVARIANCE_INFO, &cov_info);
 
     flight_info_t flight_info = {
         .ts = ts,
-        .height = filter.x_bar[0],
-        .velocity = filter.x_bar[1],
+        .height = filter.x_bar.pData[0],
+        .velocity = filter.x_bar.pData[1],
         .acceleration = state_data.acceleration[1],
         .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
     log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
-              (int32_t)(filter.x_bar[0] * 1000),
-              (int32_t)(filter.x_bar[0] * 1000),
+              (int32_t)((float)filter.x_bar.pData[0] * 1000),
+              (int32_t)((float)filter.x_bar.pData[1] * 1000),
               (int32_t)(state_data.acceleration[1] * 1000),
-              (int32_t)(filter.x_bar[2] * 1000));
+              (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));

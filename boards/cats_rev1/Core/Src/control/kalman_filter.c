@@ -10,95 +10,217 @@
 #include "../DSP/Inc/arm_math.h"
 #include <string.h>
 
+void init_filter_struct(kalman_filter_t *const filter) {
+  arm_mat_init_f32(&filter->Ad, 3, 3, filter->Ad_data);
+  arm_mat_init_f32(&filter->Ad_T, 3, 3, filter->Ad_T_data);
+  arm_mat_init_f32(&filter->Gd, 3, 2, filter->Gd_data);
+  arm_mat_init_f32(&filter->Bd, 3, 1, filter->Bd_data);
+  arm_mat_init_f32(&filter->GdQGd_T, 3, 3, filter->GdQGd_T_data);
+  arm_mat_init_f32(&filter->Q, 2, 2, filter->Q_data);
+  arm_mat_init_f32(&filter->H_full, 3, 3, filter->H_full_data);
+  arm_mat_init_f32(&filter->H_full_T, 3, 3, filter->H_full_T_data);
+  arm_mat_init_f32(&filter->H_eliminated, 2, 3, filter->H_eliminated_data);
+  arm_mat_init_f32(&filter->H_eliminated_T, 3, 2, filter->H_eliminated_T_data);
+  arm_mat_init_f32(&filter->R_full, 3, 3, filter->R_full_data);
+  arm_mat_init_f32(&filter->R_eliminated, 2, 2, filter->R_eliminated_data);
+  arm_mat_init_f32(&filter->K_full, 3, 3, filter->K_full_data);
+  arm_mat_init_f32(&filter->K_eliminated, 3, 2, filter->K_eliminated_data);
+  arm_mat_init_f32(&filter->P_hat, 3, 3, filter->P_hat_data);
+  arm_mat_init_f32(&filter->P_bar, 3, 3, filter->P_bar_data);
+  arm_mat_init_f32(&filter->x_hat, 3, 1, filter->x_hat_data);
+  arm_mat_init_f32(&filter->x_bar, 3, 1, filter->x_bar_data);
+}
+
 void initialize_matrices(kalman_filter_t *const filter) {
   /* Initialize static values */
-  float32_t data[4] = {1, 2, 3, 4};
-  float32_t data2[4] = {1, 2, 3, 4};
-  float32_t data3[4] = {1, 2, 3, 4};
-  arm_matrix_instance_f32 matrix2 = {
-      .numCols = 2, .numRows = 2, .pData = data2};
-  arm_matrix_instance_f32 matrix1 = {.numCols = 2, .numRows = 2, .pData = data};
-  arm_matrix_instance_f32 matrix3 = {
-      .numCols = 2, .numRows = 2, .pData = data3};
+  float32_t Ad[9] = {1,
+                     filter->t_sampl,
+                     filter->t_sampl * filter->t_sampl / 2,
+                     0,
+                     1,
+                     filter->t_sampl,
+                     0,
+                     0,
+                     1};
+  arm_matrix_instance_f32 Ad_mat;
+  arm_mat_init_f32(&Ad_mat, 3, 3, Ad);
 
-  arm_mat_mult_f32(&matrix1, &matrix2, &matrix3);
+  float32_t Ad_T[9] = {1,
+                       filter->t_sampl,
+                       filter->t_sampl * filter->t_sampl / 2,
+                       0,
+                       1,
+                       filter->t_sampl,
+                       0,
+                       0,
+                       1};
+  arm_matrix_instance_f32 Ad_T_mat;
+  arm_mat_init_f32(&Ad_T_mat, 3, 3, Ad_T);
+  arm_mat_trans_f32(&Ad_mat, &Ad_T_mat);
 
-  kalman_filter_t temp_filter = {
-      .Ad = {{1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
-             {0, 1, filter->t_sampl},
-             {0, 0, 1}},
-      .Gd = {{filter->t_sampl, filter->t_sampl * filter->t_sampl / 2},
-             {1, filter->t_sampl},
-             {0, 1}},
-      //			       .Gd = {{filter->t_sampl, 0},
-      //			     		  {1, 0},
-      //			 			  {0, 0}},
-      .Bd = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0},
-      .P_hat = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
-      .P_bar = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}},
-      .Q = {{STD_NOISE_IMU, 0}, {0, STD_NOISE_OFFSET}},
-      .H_full = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}},
-      .H_eliminated = {{1, 0, 0}, {1, 0, 0}},
-      .R_full = {{STD_NOISE_BARO, 0, 0},
-                 {0, STD_NOISE_BARO, 0},
-                 {0, 0, STD_NOISE_BARO}},
-      .R_eliminated = {{STD_NOISE_BARO, 0}, {0, STD_NOISE_BARO}},
-      .pressure_0 = filter->pressure_0,
-      .t_sampl = filter->t_sampl};
+  float32_t Gd[6] = {filter->t_sampl,
+                     filter->t_sampl * filter->t_sampl / 2,
+                     1,
+                     filter->t_sampl,
+                     0,
+                     1};
+  arm_matrix_instance_f32 Gd_mat;
+  arm_mat_init_f32(&Gd_mat, 3, 2, Gd);
 
-  /* Transpose matrices */
-  transpose(3, 3, temp_filter.Ad, temp_filter.Ad_T);
-  transpose(3, 3, temp_filter.H_full, temp_filter.H_full_T);
-  transpose(2, 3, temp_filter.H_eliminated, temp_filter.H_eliminated_T);
+  float32_t Gd_T[6] = {0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 Gd_T_mat;
+  arm_mat_init_f32(&Gd_T_mat, 2, 3, Gd_T);
+  arm_mat_trans_f32(&Gd_mat, &Gd_T_mat);
 
-  /* Fill up GdQGd_T */
-  float placeholder[3][2] = {0};
-  placeholder[0][0] = temp_filter.Gd[0][0] * temp_filter.Q[0][0];
-  placeholder[0][1] = temp_filter.Gd[0][1] * temp_filter.Q[1][1];
-  placeholder[1][0] = temp_filter.Gd[1][0] * temp_filter.Q[0][0];
-  placeholder[1][1] = temp_filter.Gd[1][1] * temp_filter.Q[1][1];
-  placeholder[2][0] = temp_filter.Gd[2][0] * temp_filter.Q[0][0];
-  placeholder[2][1] = temp_filter.Gd[2][1] * temp_filter.Q[1][1];
-  float placeholder2[2][3] = {0};
-  transpose(3, 2, temp_filter.Gd, placeholder2);
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 2; k++) {
-        temp_filter.GdQGd_T[i][j] += placeholder[i][k] * placeholder2[k][j];
-      }
-    }
-  }
+  float32_t Bd[3] = {filter->t_sampl * filter->t_sampl / 2, filter->t_sampl, 0};
+  arm_matrix_instance_f32 Bd_mat;
+  arm_mat_init_f32(&Bd_mat, 3, 1, Bd);
 
-  /* Copy over the entire temp struct to filter */
-  memcpy(filter, &temp_filter, sizeof(kalman_filter_t));
+  float32_t P_hat[9] = {10.0f, 0, 0, 0, 10.0f, 0, 0, 0, 10.0f};
+  arm_matrix_instance_f32 P_hat_mat;
+  arm_mat_init_f32(&P_hat_mat, 3, 3, P_hat);
+
+  float32_t P_bar[9] = {10.0f, 0, 0, 0, 10.0f, 0, 0, 0, 10.0f};
+  arm_matrix_instance_f32 P_bar_mat;
+  arm_mat_init_f32(&P_bar_mat, 3, 3, P_bar);
+
+  float32_t H_full[9] = {1, 0, 0, 1, 0, 0, 1, 0, 0};
+  arm_matrix_instance_f32 H_full_mat;
+  arm_mat_init_f32(&H_full_mat, 3, 3, H_full);
+
+  float32_t H_eliminated[6] = {1, 0, 0, 1, 0, 0};
+  arm_matrix_instance_f32 H_eliminated_mat;
+  arm_mat_init_f32(&H_eliminated_mat, 2, 3, H_eliminated);
+
+  float32_t Q[4] = {STD_NOISE_IMU, 0, 0, STD_NOISE_OFFSET};
+  arm_matrix_instance_f32 Q_mat;
+  arm_mat_init_f32(&Q_mat, 2, 2, Q);
+
+  float32_t R_full[9] = {STD_NOISE_BARO, 0, 0, 0, STD_NOISE_BARO, 0, 0, 0,
+                         STD_NOISE_BARO};
+  arm_matrix_instance_f32 R_full_mat;
+  arm_mat_init_f32(&R_full_mat, 3, 3, R_full);
+
+  float32_t R_eliminated[4] = {STD_NOISE_BARO, 0, 0, STD_NOISE_BARO};
+  arm_matrix_instance_f32 R_eliminated_mat;
+  arm_mat_init_f32(&R_eliminated_mat, 2, 2, R_eliminated);
+
+  float32_t H_full_T[9] = {1,
+                           filter->t_sampl,
+                           filter->t_sampl * filter->t_sampl / 2,
+                           0,
+                           1,
+                           filter->t_sampl,
+                           0,
+                           0,
+                           1};
+  arm_matrix_instance_f32 H_full_T_mat;
+  arm_mat_init_f32(&H_full_T_mat, 3, 3, H_full_T);
+  arm_mat_trans_f32(&H_full_mat, &H_full_T_mat);
+
+  float32_t H_eliminated_T[9] = {1,
+                                 filter->t_sampl,
+                                 filter->t_sampl * filter->t_sampl / 2,
+                                 0,
+                                 1,
+                                 filter->t_sampl,
+                                 0,
+                                 0,
+                                 1};
+  arm_matrix_instance_f32 H_eliminated_T_mat;
+  arm_mat_init_f32(&H_eliminated_T_mat, 3, 2, H_eliminated_T);
+  arm_mat_trans_f32(&H_eliminated_mat, &H_eliminated_T_mat);
+
+  float32_t GdQGd_T[9] = {1,
+                          filter->t_sampl,
+                          filter->t_sampl * filter->t_sampl / 2,
+                          0,
+                          1,
+                          filter->t_sampl,
+                          0,
+                          0,
+                          1};
+  arm_matrix_instance_f32 GdQGd_T_mat;
+  arm_mat_init_f32(&GdQGd_T_mat, 3, 3, GdQGd_T);
+
+  float32_t holder[6] = {0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder_mat;
+  arm_mat_init_f32(&holder_mat, 3, 2, holder);
+
+  arm_mat_mult_f32(&Gd_mat, &Q_mat, &holder_mat);
+  arm_mat_mult_f32(&holder_mat, &Gd_T_mat, &GdQGd_T_mat);
+
+  float32_t K_full[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 K_full_mat;
+  arm_mat_init_f32(&K_full_mat, 3, 3, K_full);
+
+  float32_t K_eliminated[6] = {0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 K_eliminated_mat;
+  arm_mat_init_f32(&K_eliminated_mat, 3, 2, K_eliminated);
+
+  float32_t x_bar[3] = {0, 0, 0};
+  arm_matrix_instance_f32 x_bar_mat;
+  arm_mat_init_f32(&x_bar_mat, 3, 1, x_bar);
+
+  float32_t x_hat[3] = {0, 0, 0};
+  arm_matrix_instance_f32 x_hat_mat;
+  arm_mat_init_f32(&x_hat_mat, 3, 1, x_hat);
+
+  memcpy(filter->Ad_data, Ad, sizeof(Ad));
+  memcpy(filter->Ad_T_data, Ad_T, sizeof(Ad_T));
+  memcpy(filter->Gd_data, Gd, sizeof(Gd));
+  memcpy(filter->GdQGd_T_data, GdQGd_T, sizeof(GdQGd_T));
+  memcpy(filter->Bd_data, Bd, sizeof(Bd));
+  memcpy(filter->P_hat_data, P_hat, sizeof(P_hat));
+  memcpy(filter->P_bar_data, P_bar, sizeof(P_bar));
+  memcpy(filter->Q_data, Q, sizeof(Q));
+  memcpy(filter->H_full_data, H_full, sizeof(H_full));
+  memcpy(filter->H_full_T_data, H_full_T, sizeof(H_full_T));
+  memcpy(filter->H_eliminated_data, H_eliminated, sizeof(H_eliminated));
+  memcpy(filter->H_eliminated_T_data, H_eliminated_T, sizeof(H_eliminated_T));
+  memcpy(filter->R_full_data, R_full, sizeof(R_full));
+  memcpy(filter->R_eliminated_data, R_eliminated, sizeof(R_eliminated));
+  memcpy(filter->K_eliminated_data, K_eliminated, sizeof(K_eliminated));
+  memcpy(filter->K_full_data, K_full, sizeof(K_full));
+  memcpy(filter->x_bar_data, x_bar, sizeof(x_bar));
+  memcpy(filter->x_hat_data, x_hat, sizeof(x_hat));
 }
 
 void reset_kalman(kalman_filter_t *filter, int32_t initial_pressure) {
   log_debug("Resetting Kalman Filter...");
-  float x_dash[3] = {0, 0, 0};
-  float P_dash[3][3] = {{10.0f, 0, 0}, {0, 10.0f, 0}, {0, 0, 10.0f}};
+  float32_t x_dash[3] = {0, 10.0f, 0};
+  float32_t P_dash[9] = {10.0f, 0, 0, 0, 10.0f, 0, 0, 0, 10.0f};
 
   filter->pressure_0 = (float)initial_pressure;
-
-  const size_t flt_3x3_size = 9 * sizeof(float);
-  const size_t flt_3_size = 3 * sizeof(float);
-  memcpy(filter->P_hat, P_dash, flt_3x3_size);
-  memcpy(filter->P_bar, P_dash, flt_3x3_size);
-  memcpy(filter->x_hat, x_dash, flt_3_size);
-  memcpy(filter->x_bar, x_dash, flt_3_size);
+  memcpy(filter->P_bar_data, P_dash, sizeof(P_dash));
+  memcpy(filter->P_hat_data, P_dash, sizeof(P_dash));
+  memcpy(filter->x_bar_data, x_dash, sizeof(x_dash));
+  memcpy(filter->x_bar_data, x_dash, sizeof(x_dash));
 }
 
 /* This Function Implements the kalman Prediction as long as more than 0 IMU
  * work */
 void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
                        sensor_elimination_t *elimination) {
+  arm_status status = 0;
   float u = 0;
-  float placeholder_mat[3][3] = {0};
+  float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder_mat;
+  arm_mat_init_f32(&holder_mat, 3, 3, holder);
+
+  float32_t holder2[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder2_mat;
+  arm_mat_init_f32(&holder2_mat, 3, 3, holder2);
+
+  float32_t holder_data[3] = {0, 0, 0};
+  arm_matrix_instance_f32 holder_vec;
+  arm_mat_init_f32(&holder_vec, 3, 1, holder_data);
+
+  float32_t holder2_data[3] = {0, 0, 0};
+  arm_matrix_instance_f32 holder2_vec;
+  arm_mat_init_f32(&holder2_vec, 3, 1, holder2_data);
 
   /* Prediction Step */
-
-  memset(filter->x_hat, 0, sizeof(filter->x_hat));
-  memset(filter->P_hat, 0, sizeof(filter->P_hat));
 
   /* Average Acceleration */
   /* Check if we have ruled out an accelerometer */
@@ -111,31 +233,14 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
   u /= (float)(3 - elimination->num_faulty_imus);
 
   /* Calculate Prediction of the state: x_hat = A*x_bar + B*u */
-  for (int i = 0; i < 3; i++) {
-    filter->x_hat[i] = u * filter->Bd[i];
-
-    for (int j = 0; j < 3; j++) {
-      filter->x_hat[i] += filter->Ad[i][j] * filter->x_bar[j];
-    }
-  }
+  status = arm_mat_mult_f32(&filter->Ad, &filter->x_bar, &holder_vec);
+  status = arm_mat_scale_f32(&filter->Bd, (float32_t)(u), &holder2_vec);
+  status = arm_mat_add_f32(&holder_vec, &holder2_vec, &filter->x_hat);
 
   /* Update the Variance of the state P_hat = A*P_bar*A' + GQG' */
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat[i][j] += filter->Ad[i][k] * filter->P_bar[k][j];
-      }
-    }
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        filter->P_hat[i][j] += placeholder_mat[i][k] * filter->Ad_T[k][j];
-      }
-      filter->P_hat[i][j] += filter->GdQGd_T[i][j];
-    }
-  }
+  status = arm_mat_mult_f32(&filter->Ad, &filter->P_bar, &holder_mat);
+  status = arm_mat_mult_f32(&holder_mat, &filter->Ad_T, &holder2_mat);
+  status = arm_mat_add_f32(&holder2_mat, &filter->GdQGd_T, &filter->P_hat);
 
   /* Prediction Step finished */
 }
@@ -143,241 +248,212 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
 /* This function implements the Kalman update when no Barometer is faulty */
 cats_status_e kalman_update_full(kalman_filter_t *filter,
                                  state_estimation_data_t *data) {
-  float placeholder_vec[3] = {0};
-  float placeholder_mat[3][3] = {0};
-  float placeholder_mat2[3][3] = {0};
-  float placeholder_mat3[3][3] = {0};
+  float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder_mat;
+  arm_mat_init_f32(&holder_mat, 3, 3, holder);
+
+  float32_t holder2[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder2_mat;
+  arm_mat_init_f32(&holder2_mat, 3, 3, holder2);
+
+  float32_t holder3[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  arm_matrix_instance_f32 holder3_mat;
+  arm_mat_init_f32(&holder3_mat, 3, 3, holder3);
+
+  float32_t holder_data[3] = {0, 0, 0};
+  arm_matrix_instance_f32 holder_vec;
+  arm_mat_init_f32(&holder_vec, 3, 1, holder_data);
+
+  float32_t holder2_data[3] = {0, 0, 0};
+  arm_matrix_instance_f32 holder2_vec;
+  arm_mat_init_f32(&holder2_vec, 3, 1, holder2_data);
   cats_status_e status = CATS_OK;
 
   /* Update Step */
-  float old_K[3][3] = {0};
-
-  memcpy(old_K, filter->K_full, sizeof(old_K));
-
-  memset(filter->K_full, 0, sizeof(filter->K_full));
 
   /* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat[i][j] += filter->H_full[i][k] * filter->P_hat[k][j];
-        placeholder_mat3[i][j] += filter->P_hat[i][k] * filter->H_full_T[k][j];
-      }
-    }
-  }
+  arm_mat_mult_f32(&filter->H_full, &filter->P_hat, &holder_mat);
+  arm_mat_mult_f32(&holder_mat, &filter->H_full_T, &holder2_mat);
+  arm_mat_add_f32(&holder2_mat, &filter->R_full, &holder_mat);
+  arm_mat_inverse_f32(&holder_mat, &holder2_mat);
 
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat2[i][j] +=
-            placeholder_mat[i][k] * filter->H_full_T[k][j];
-      }
-      placeholder_mat2[i][j] += filter->R_full[i][j];
-    }
-  }
-
-  memset(placeholder_mat, 0, sizeof(placeholder_mat));
-
-  status = inverse(3, placeholder_mat2, placeholder_mat, 0);
+  arm_mat_mult_f32(&filter->P_hat, &filter->H_full_T, &holder_mat);
+  arm_mat_mult_f32(&holder_mat, &holder2_mat, &filter->K_full);
 
   /* if the matrix is singular, return an error and ignore this step */
-  if (status != CATS_OK) {
-    memcpy(filter->K_full, old_K, sizeof(old_K));
-    return CATS_FILTER_ERROR;
-  }
 
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        filter->K_full[i][j] += placeholder_mat3[i][k] * placeholder_mat[k][j];
-      }
-    }
-  }
+  /* TODO */
 
   /* Finished Calculating K */
 
   /* Calculate x_bar = x_hat+K*(y-Hx_hat); */
 
-  memset(filter->x_bar, 0, sizeof(filter->x_bar));
+  float32_t z[3] = {(float32_t)data->calculated_AGL[0],
+                    (float32_t)data->calculated_AGL[1],
+                    (float32_t)data->calculated_AGL[2]};
+  arm_matrix_instance_f32 z_vec;
+  arm_mat_init_f32(&z_vec, 3, 1, z);
 
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      placeholder_vec[i] += filter->H_full[i][j] * filter->x_hat[j];
-    }
-    placeholder_vec[i] = data->calculated_AGL[i] - placeholder_vec[i];
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      filter->x_bar[i] += filter->K_full[i][j] * placeholder_vec[j];
-    }
-    filter->x_bar[i] += filter->x_hat[i];
-  }
+  arm_mat_mult_f32(&filter->H_full, &filter->x_hat, &holder_vec);
+  arm_mat_sub_f32(&z_vec, &holder_vec, &holder2_vec);
+  arm_mat_mult_f32(&filter->K_full, &holder2_vec, &holder_vec);
+  arm_mat_add_f32(&holder_vec, &filter->x_hat, &filter->x_bar);
 
   /* Finished Calculating x_bar */
 
   /* Calculate P_bar = (eye-K*H)*P_hat */
+  float32_t eye[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+  arm_matrix_instance_f32 eye_mat;
+  arm_mat_init_f32(&eye_mat, 3, 3, eye);
 
-  memset(filter->P_bar, 0, sizeof(filter->P_bar));
-  memset(placeholder_mat, 0, sizeof(placeholder_mat));
-  memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
+  arm_mat_mult_f32(&filter->K_full, &filter->H_full, &holder_mat);
+  arm_mat_sub_f32(&eye_mat, &holder_mat, &holder2_mat);
+  arm_mat_mult_f32(&holder2_mat, &filter->P_hat, &filter->P_bar);
 
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat2[i][j] += filter->K_full[i][k] * filter->H_full[k][j];
-      }
-      if (i == j) {
-        placeholder_mat[i][j] = 1 - placeholder_mat2[i][j];
-      } else {
-        placeholder_mat[i][j] = -placeholder_mat2[i][j];
-      }
-    }
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        filter->P_bar[i][j] += placeholder_mat[i][k] * filter->P_hat[k][j];
-      }
-    }
-  }
   /* Finished Calculating P_bar */
 
   return status;
 }
 
 /* This function implements the Kalman update when one Barometer is faulty */
-cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
-                                       state_estimation_data_t *data,
-                                       sensor_elimination_t *elimination) {
-  float placeholder_vec[2] = {0};
-  float placeholder_mat[2][3] = {0};
-  float placeholder_mat2[2][2] = {0};
-  float placeholder_mat3[3][2] = {0};
-  float placeholder_mat4[2][2] = {0};
-  float placeholder_mat5[3][3] = {0};
-  float placeholder_mat6[3][3] = {0};
-  cats_status_e status = CATS_OK;
-
-  /* Update Step */
-  float old_K[3][2] = {0};
-
-  memcpy(old_K, filter->K_eliminated, sizeof(old_K));
-
-  memset(filter->K_eliminated, 0, sizeof(filter->K_eliminated));
-
-  /* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat[i][j] +=
-            filter->H_eliminated[i][k] * filter->P_hat[k][j];
-      }
-    }
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat3[i][j] +=
-            filter->P_hat[i][k] * filter->H_eliminated_T[k][j];
-      }
-    }
-  }
-
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 2; j++) {
-      for (int k = 0; k < 3; k++) {
-        placeholder_mat2[i][j] +=
-            placeholder_mat[i][k] * filter->H_eliminated_T[k][j];
-      }
-      placeholder_mat2[i][j] += filter->R_eliminated[i][j];
-    }
-  }
-
-  memset(placeholder_mat, 0, sizeof(placeholder_mat));
-
-  status = inverse(2, placeholder_mat2, placeholder_mat4, 0);
-
-  /* if the matrix is singular, return an error and ignore this step */
-  if (status != CATS_OK) {
-    memcpy(filter->K_eliminated, old_K, sizeof(old_K));
-    return CATS_FILTER_ERROR;
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2; j++) {
-      for (int k = 0; k < 2; k++) {
-        filter->K_eliminated[i][j] +=
-            placeholder_mat3[i][k] * placeholder_mat4[k][j];
-      }
-    }
-  }
-
-  /* Finished Calculating K */
-
-  /* Calculate x_bar = x_hat+K*(y-Hx_hat); */
-
-  memset(filter->x_bar, 0, sizeof(filter->x_bar));
-
-  /* prepare data vector with bad sensor reading */
-  float data_vec[2];
-  uint8_t counter = 0;
-  for (int i = 0; i < 3; i++) {
-    if (elimination->faulty_baro[i] == 0) {
-      data_vec[counter] = data->calculated_AGL[i];
-      counter++;
-    }
-  }
-
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 3; j++) {
-      placeholder_vec[i] += filter->H_eliminated[i][j] * filter->x_hat[j];
-    }
-    placeholder_vec[i] = data_vec[i] - placeholder_vec[i];
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2; j++) {
-      filter->x_bar[i] += filter->K_eliminated[i][j] * placeholder_vec[j];
-    }
-    filter->x_bar[i] += filter->x_hat[i];
-  }
-
-  /* Finished Calculating x_bar */
-
-  /* Calculate P_bar = (eye-K*H)*P_hat */
-
-  memset(filter->P_bar, 0, sizeof(filter->P_bar));
-  memset(placeholder_mat, 0, sizeof(placeholder_mat));
-  memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 2; k++) {
-        placeholder_mat5[i][j] +=
-            filter->K_eliminated[i][k] * filter->H_eliminated[k][j];
-      }
-      if (i == j) {
-        placeholder_mat6[i][j] = 1 - placeholder_mat5[i][j];
-      } else {
-        placeholder_mat6[i][j] = -placeholder_mat5[i][j];
-      }
-    }
-  }
-
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < 3; k++) {
-        filter->P_bar[i][j] += placeholder_mat6[i][k] * filter->P_hat[k][j];
-      }
-    }
-  }
-  /* Finished Calculating P_bar */
-
-  return status;
-}
+// cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
+//		state_estimation_data_t *data,
+//		sensor_elimination_t *elimination) {
+//	float placeholder_vec[2] = {0};
+//	float placeholder_mat[2][3] = {0};
+//	float placeholder_mat2[2][2] = {0};
+//	float placeholder_mat3[3][2] = {0};
+//	float placeholder_mat4[2][2] = {0};
+//	float placeholder_mat5[3][3] = {0};
+//	float placeholder_mat6[3][3] = {0};
+//	cats_status_e status = CATS_OK;
+//
+//	/* Update Step */
+//	float old_K[3][2] = {0};
+//
+//	memcpy(old_K, filter->K_eliminated, sizeof(old_K));
+//
+//	memset(filter->K_eliminated, 0, sizeof(filter->K_eliminated));
+//
+//	/* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
+//	for (int i = 0; i < 2; i++) {
+//		for (int j = 0; j < 3; j++) {
+//			for (int k = 0; k < 3; k++) {
+//				placeholder_mat[i][j] +=
+//						filter->H_eliminated[i][k] *
+//filter->P_hat[k][j];
+//			}
+//		}
+//	}
+//
+//	for (int i = 0; i < 3; i++) {
+//		for (int j = 0; j < 2; j++) {
+//			for (int k = 0; k < 3; k++) {
+//				placeholder_mat3[i][j] +=
+//						filter->P_hat[i][k] *
+//filter->H_eliminated_T[k][j];
+//			}
+//		}
+//	}
+//
+//	for (int i = 0; i < 2; i++) {
+//		for (int j = 0; j < 2; j++) {
+//			for (int k = 0; k < 3; k++) {
+//				placeholder_mat2[i][j] +=
+//						placeholder_mat[i][k] *
+//filter->H_eliminated_T[k][j];
+//			}
+//			placeholder_mat2[i][j] += filter->R_eliminated[i][j];
+//		}
+//	}
+//
+//	memset(placeholder_mat, 0, sizeof(placeholder_mat));
+//
+//	status = inverse(2, placeholder_mat2, placeholder_mat4, 0);
+//
+//	/* if the matrix is singular, return an error and ignore this step */
+//	if (status != CATS_OK) {
+//		memcpy(filter->K_eliminated, old_K, sizeof(old_K));
+//		return CATS_FILTER_ERROR;
+//	}
+//
+//	for (int i = 0; i < 3; i++) {
+//		for (int j = 0; j < 2; j++) {
+//			for (int k = 0; k < 2; k++) {
+//				filter->K_eliminated[i][j] +=
+//						placeholder_mat3[i][k] *
+//placeholder_mat4[k][j];
+//			}
+//		}
+//	}
+//
+//	/* Finished Calculating K */
+//
+//	/* Calculate x_bar = x_hat+K*(y-Hx_hat); */
+//
+//	memset(filter->x_bar, 0, sizeof(filter->x_bar));
+//
+//	/* prepare data vector with bad sensor reading */
+//	float data_vec[2];
+//	uint8_t counter = 0;
+//	for (int i = 0; i < 3; i++) {
+//		if (elimination->faulty_baro[i] == 0) {
+//			data_vec[counter] = data->calculated_AGL[i];
+//			counter++;
+//		}
+//	}
+//
+//	for (int i = 0; i < 2; i++) {
+//		for (int j = 0; j < 3; j++) {
+//			placeholder_vec[i] += filter->H_eliminated[i][j] *
+//filter->x_hat[j];
+//		}
+//		placeholder_vec[i] = data_vec[i] - placeholder_vec[i];
+//	}
+//
+//	for (int i = 0; i < 3; i++) {
+//		for (int j = 0; j < 2; j++) {
+//			filter->x_bar[i] += filter->K_eliminated[i][j] *
+//placeholder_vec[j];
+//		}
+//		filter->x_bar[i] += filter->x_hat[i];
+//	}
+//
+//	/* Finished Calculating x_bar */
+//
+//	/* Calculate P_bar = (eye-K*H)*P_hat */
+//
+//	memset(filter->P_bar, 0, sizeof(filter->P_bar));
+//	memset(placeholder_mat, 0, sizeof(placeholder_mat));
+//	memset(placeholder_mat2, 0, sizeof(placeholder_mat2));
+//
+//	for (int i = 0; i < 3; i++) {
+//		for (int j = 0; j < 3; j++) {
+//			for (int k = 0; k < 2; k++) {
+//				placeholder_mat5[i][j] +=
+//						filter->K_eliminated[i][k] *
+//filter->H_eliminated[k][j];
+//			}
+//			if (i == j) {
+//				placeholder_mat6[i][j] = 1 -
+//placeholder_mat5[i][j]; 			} else { 				placeholder_mat6[i][j] =
+//-placeholder_mat5[i][j];
+//			}
+//		}
+//	}
+//
+//	for (int i = 0; i < 3; i++) {
+//		for (int j = 0; j < 3; j++) {
+//			for (int k = 0; k < 3; k++) {
+//				filter->P_bar[i][j] += placeholder_mat6[i][k] *
+//filter->P_hat[k][j];
+//			}
+//		}
+//	}
+//	/* Finished Calculating P_bar */
+//
+//	return status;
+//}
 
 cats_status_e kalman_step(kalman_filter_t *filter,
                           state_estimation_data_t *data,
@@ -391,7 +467,8 @@ cats_status_e kalman_step(kalman_filter_t *filter,
       status = kalman_update_full(filter, data);
       break;
     case 1:
-      status = kalman_update_eliminated(filter, data, elimination);
+      //		status = kalman_update_eliminated(filter, data,
+      //elimination);
       break;
     case 2:
       status = CATS_FILTER_ERROR;
