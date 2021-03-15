@@ -6,8 +6,8 @@
 #include "util/types.h"
 #include <stdbool.h>
 
-static bool i2c1_busy = false;
-static bool i2c2_busy = false;
+volatile static bool i2c1_busy = false;
+volatile static bool i2c2_busy = false;
 
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;

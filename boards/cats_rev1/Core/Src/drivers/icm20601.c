@@ -101,8 +101,9 @@ static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData,
  * @return true if initialization successful
  */
 bool icm20601_init(const ICM20601 *dev) {
-  uint8_t tmp = 0;
-  uint8_t r[1] = {0};
+  // These need to be volatile otherwise it will break with optimizations
+  volatile uint8_t tmp = 0;
+  volatile uint8_t reg = 0;
 
   // General Procedure:
   //  1. reset chip
@@ -114,29 +115,36 @@ bool icm20601_init(const ICM20601 *dev) {
 
   // full reset of chip
   tmp = SENS_reset;  // 0x81
-  icm_write_bytes(dev, REG_PWR_MGMT_1, &tmp, 1);
+  reg = REG_PWR_MGMT_1;
+  icm_write_bytes(dev, reg, &tmp, 1);
   HAL_Delay(1);
 
   // set clock to internal PLL
   tmp = SENS_internalpll;  // 0x01
-  icm_write_bytes(dev, REG_PWR_MGMT_1, &tmp, 1);
+  reg = REG_PWR_MGMT_1;
+  icm_write_bytes(dev, reg, &tmp, 1);
   HAL_Delay(1);
 
   // verify we are able to read from the chip
-  icm_read_bytes(dev, REG_WHO_AM_I, r, 1);
-  if (r[0] != REG_WHO_AM_I_CONST) return false;
+  uint8_t buffer = 0;
+  reg = REG_WHO_AM_I;
+  icm_read_bytes(dev, reg, &buffer, 1);
+  if (buffer != REG_WHO_AM_I_CONST) return false;
 
   // place accel and gyro on standby
   tmp = SENS_standby;  // 0x3F
-  icm_write_bytes(dev, REG_PWR_MGMT_2, &tmp, 1);
+  reg = REG_PWR_MGMT_2;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   // disable fifo
   tmp = SENS_nofifo;  // 0x00
-  icm_write_bytes(dev, REG_USER_CTRL, &tmp, 1);
+  reg = REG_USER_CTRL;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   // disable chip I2C communications
   tmp = SENS_disablei2c;  // 0x41;
-  icm_write_bytes(dev, REG_USER_CTRL, &tmp, 1);
+  reg = REG_USER_CTRL;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   // Accelerometer filtering
   if (dev->accel_dlpf == ICM20601_ACCEL_DLPF_BYPASS_1046_HZ) {
@@ -144,11 +152,13 @@ bool icm20601_init(const ICM20601 *dev) {
   } else {
     tmp = dev->accel_dlpf;
   }
-  icm_write_bytes(dev, REG_ACCEL_CONFIG_2, &tmp, 1);
+  reg = REG_ACCEL_CONFIG_2;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   // Accelerometer range
   tmp = (dev->accel_g) << 3;
-  icm_write_bytes(dev, REG_ACCEL_CONFIG_1, &tmp, 1);
+  reg = REG_ACCEL_CONFIG_1;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   // Gyro filtering
   // tmp = ((dev->gyro_dps) << 3) | SENS_gyrofilter; // filter: 0x02
@@ -157,28 +167,35 @@ bool icm20601_init(const ICM20601 *dev) {
   if (ICM20601_GYRO_DLPF_BYPASS_3281_HZ == dev->gyro_dlpf) {
     // bypass dpf and set dps
     tmp = 0x00;
-    icm_write_bytes(dev, REG_CONFIG, &tmp, 1);
+    reg = REG_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
 
     tmp = (dev->gyro_dps << 3) | 0x02;
-    icm_write_bytes(dev, REG_GYRO_CONFIG, &tmp, 1);
+    reg = REG_GYRO_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
   } else if (ICM20601_GYRO_DLPF_BYPASS_8173_HZ == dev->gyro_dlpf) {
     // bypass dpf and set dps
     tmp = 0x00;
-    icm_write_bytes(dev, REG_CONFIG, &tmp, 1);
+    reg = REG_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
 
     tmp = (dev->gyro_dps << 3) | 0x01;
-    icm_write_bytes(dev, REG_GYRO_CONFIG, &tmp, 1);
+    reg = REG_GYRO_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
   } else {
     // configure dpf and set dps
     tmp = dev->gyro_dlpf;
-    icm_write_bytes(dev, REG_CONFIG, &tmp, 1);
+    reg = REG_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
 
     tmp = dev->gyro_dps << 3;
-    icm_write_bytes(dev, REG_GYRO_CONFIG, &tmp, 1);
+    reg = REG_GYRO_CONFIG;
+    icm_write_bytes(dev, reg, &tmp, 1);
   }
 
   tmp = 0x00;
-  icm_write_bytes(dev, REG_PWR_MGMT_2, &tmp, 1);
+  reg = REG_PWR_MGMT_2;
+  icm_write_bytes(dev, reg, &tmp, 1);
 
   return true;
 }
@@ -186,7 +203,8 @@ bool icm20601_init(const ICM20601 *dev) {
 // Read out raw acceleration data
 void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel) {
   uint8_t accel_8bit[6] = {0};
-  icm_read_bytes(dev, REG_ACCEL_XOUT_H, accel_8bit, 6);
+  uint8_t reg = REG_ACCEL_XOUT_H;
+  icm_read_bytes(dev, reg, accel_8bit, 6);
 
   accel[0] = uint8_to_int16(accel_8bit[0], accel_8bit[1]);
   accel[1] = uint8_to_int16(accel_8bit[2], accel_8bit[3]);
@@ -210,7 +228,8 @@ void icm20601_read_accel(const ICM20601 *dev, float *accel) {
 // Read out raw gyro data
 void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro) {
   uint8_t gyro_8bit[6] = {0};
-  icm_read_bytes(dev, REG_GYRO_XOUT_H, gyro_8bit, 6);
+  uint8_t reg = REG_GYRO_XOUT_H;
+  icm_read_bytes(dev, reg, gyro_8bit, 6);
 
   gyro[0] = uint8_to_int16(gyro_8bit[0], gyro_8bit[1]);
   gyro[1] = uint8_to_int16(gyro_8bit[2], gyro_8bit[3]);
@@ -234,7 +253,9 @@ void icm20601_read_gyro(const ICM20601 *dev, float *gyro) {
 // Read out raw temperature data
 void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp) {
   uint8_t temp_8bit[2] = {0};
-  icm_read_bytes(dev, REG_TEMP_OUT_H, temp_8bit, 2);
+  uint8_t reg = 0;
+  reg = REG_TEMP_OUT_H;
+  icm_read_bytes(dev, reg, temp_8bit, 2);
 
   *temp = uint8_to_int16(temp_8bit[0], temp_8bit[1]);
 }
@@ -249,45 +270,16 @@ void icm20601_read_temp(const ICM20601 *dev, float *temp) {
                   // + 25degC
 }
 
-void icm20601_accel_z_calib(const ICM20601 *dev) {
-  uint8_t accel_offset_8bit[2] = {0};
-  int16_t accel_offset = 0;
-  int16_t accel_real[3] = {0};
-
-  // Read current offset
-  icm_read_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
-  accel_offset = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
-
-  // Remove first bit as it is reserved and not used
-  accel_offset = accel_offset >> 1;
-
-  // Read acceleration from device
-  icm20601_read_accel_raw(dev, accel_real);
-
-  // Do some calculations, the offset register is +- 16g
-  float diff = get_accel_sensitivity(dev->accel_g) - (float)accel_real[2];
-  float scale = get_accel_sensitivity(dev->accel_g) / 2048.0f;
-  accel_offset += (int16_t)(diff * scale);
-
-  // Add the reserved bit back before setting the register
-  accel_offset = accel_offset << 1;
-
-  accel_offset_8bit[0] = ((accel_offset & 0xFF00) >> 8);
-  accel_offset_8bit[1] = (accel_offset & 0xFF);
-
-  // Write to offset register
-  icm_write_bytes(dev, REG_ZA_OFFSET_H, accel_offset_8bit, 2);
-}
-
 void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis) {
   if (axis > 2) return;
-  HAL_Delay(100);
   uint8_t accel_offset_8bit[2] = {0};
   int16_t accel_offset = 0;
   int16_t accel_real[3] = {0};
+  uint8_t reg = 0;
 
   // Read current offset
-  icm_read_bytes(dev, REG_XA_OFFSET_H + (3 * axis), accel_offset_8bit, 2);
+  reg = REG_XA_OFFSET_H + (3 * axis);
+  icm_read_bytes(dev, reg, accel_offset_8bit, 2);
   accel_offset = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
 
   // Remove first bit as it is reserved and not used
@@ -308,7 +300,8 @@ void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis) {
   accel_offset_8bit[1] = (accel_offset & 0xFF);
 
   // Write to offset register
-  icm_write_bytes(dev, REG_XA_OFFSET_H + (3 * axis), accel_offset_8bit, 2);
+  reg = REG_XA_OFFSET_H + (3 * axis);
+  icm_write_bytes(dev, reg, accel_offset_8bit, 2);
 }
 
 void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data) {

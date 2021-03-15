@@ -14,6 +14,8 @@ extern TIM_HandleTypeDef htim15;
 
 /** Device Handles **/
 
+bool global_usb_detection = false;
+
 const ICM20601 ICM1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,

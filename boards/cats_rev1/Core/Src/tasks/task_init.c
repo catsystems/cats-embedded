@@ -303,6 +303,16 @@ static void init_communication() {
    *     Else:
    *        continue by reading the setup from config
    */
+
+  //#define AUTO_USB_CONFIG
+
+#ifdef AUTO_USB_CONFIG
+  if (global_usb_detection) {
+    usb_communication_complete = true;
+    cc_load();
+    osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+  }
+#else
   log_raw("Waiting 10s for usb connection");
   uint32_t comm_start_time = osKernelGetTickCount();
   while (osKernelGetTickCount() - comm_start_time < 10000 &&
@@ -328,6 +338,7 @@ static void init_communication() {
     }
     osDelay(100);
   }
+#endif
 
   cc_load();
   //  uint32_t comm_start_time = osKernelGetTickCount();

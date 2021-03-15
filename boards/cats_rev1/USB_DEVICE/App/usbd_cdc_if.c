@@ -177,7 +177,8 @@ static int8_t CDC_DeInit_FS(void) {
  * USBD_FAIL
  */
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
-  /* USER CODE BEGIN 5 */
+  /* USER CODE00 BEGIN 5 */
+  global_usb_detection = true;
   switch (cmd) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
 
