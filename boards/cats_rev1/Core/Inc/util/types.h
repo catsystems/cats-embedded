@@ -78,6 +78,26 @@ typedef enum {
 } flight_fsm_e;
 
 typedef struct {
+  flight_fsm_e flight_state;
+  imu_data_t old_imu_data;
+  float old_height;
+  float angular_movement[3];
+  uint32_t clock_memory;
+  uint32_t memory[3];
+  uint8_t state_changed;
+} flight_fsm_t;
+
+typedef enum {
+  DT_INVALID = 0,
+  DT_IDLE,
+  DT_ARMED,
+  DT_PARACHUTE_1,
+  DT_PARACHUTE_2,
+  DT_TOUCHDOWN,
+  HEHE3 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
+} drop_test_fsm_e;
+
+typedef struct {
   float measured_height[10][3];
   float measured_acc[10][3];
   float height_avg;
@@ -88,16 +108,6 @@ typedef struct {
   float height_poly[3];
   float accel_poly[3];
 } noise_estimator_t;
-
-typedef struct {
-  flight_fsm_e flight_state;
-  imu_data_t old_imu_data;
-  float old_height;
-  float angular_movement[3];
-  uint32_t clock_memory;
-  uint32_t memory[3];
-  uint8_t state_changed;
-} flight_fsm_t;
 
 typedef enum {
   SERVO_1_TRIGGER = 0,

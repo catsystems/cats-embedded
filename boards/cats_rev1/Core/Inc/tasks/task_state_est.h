@@ -11,7 +11,7 @@
 void task_state_est(void *argument);
 
 //#define INCLUDE_NOISE
-#define INCLUDE_SPIKES
+//#define INCLUDE_SPIKES
 //#define INCLUDE_OFFSET
 
 /* Offset Settings */

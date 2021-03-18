@@ -14,6 +14,7 @@
 #include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
+#include "tasks/task_drop_test_fsm.h"
 #include "tasks/task_imu_read.h"
 #include "tasks/task_init.h"
 #include "tasks/task_recorder.h"
@@ -73,6 +74,18 @@ const osThreadAttr_t task_flight_fsm_attributes = {
     .stack_size = sizeof(task_flight_fsm_buffer),
     .cb_mem = &task_flight_fsm_control_block,
     .cb_size = sizeof(task_flight_fsm_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+/* Definitions for task_drop_test_fsm */
+uint32_t task_drop_test_fsm_buffer[256];
+StaticTask_t task_drop_test_fsm_control_block;
+const osThreadAttr_t task_drop_test_fsm_attributes = {
+    .name = "task_drop_test_fsm",
+    .stack_mem = &task_drop_test_fsm_buffer[0],
+    .stack_size = sizeof(task_drop_test_fsm_buffer),
+    .cb_mem = &task_drop_test_fsm_control_block,
+    .cb_size = sizeof(task_drop_test_fsm_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
 

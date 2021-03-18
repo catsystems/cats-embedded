@@ -105,6 +105,7 @@ void task_state_est(void *argument) {
 
     /* Check Sensor Readings */
     check_sensors(&state_data, &elimination);
+    global_elimination_data = elimination;
 
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */

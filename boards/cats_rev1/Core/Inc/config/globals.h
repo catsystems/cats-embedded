@@ -39,6 +39,7 @@ extern SERVO SERVO2;
 extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];
 extern flight_fsm_t global_flight_state;
+extern sensor_elimination_t global_elimination_data;
 extern estimation_output_t global_kf_data;
 
 /** Initialization End Time **/

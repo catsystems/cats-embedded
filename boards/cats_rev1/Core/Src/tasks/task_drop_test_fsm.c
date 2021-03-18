@@ -8,8 +8,8 @@
 #include "cmsis_os.h"
 #include "config/globals.h"
 #include "util/log.h"
-#include "tasks/task_flight_fsm.h"
-#include "control/flight_phases.h"
+#include "control/drop_test_phases.h"
+#include "tasks/task_drop_test_fsm.h"
 #include "config/cats_config.h"
 
 /** Private Constants **/
@@ -23,7 +23,7 @@
  * @param argument: Not used
  * @retval None
  */
-void task_flight_fsm(void *argument) {
+void task_drop_test_fsm(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
@@ -42,22 +42,12 @@ void task_flight_fsm(void *argument) {
 
   while (1) {
     tick_count += tick_update;
-
-    /* Update KF data */
+    /* Todo: Do not take that IMU*/
+    local_imu = global_imu[1];
     local_kf_data = global_kf_data;
 
-    /* Update Imu data depending on the sensor elimination data */
-    for (int i = 0; i < 3; i++) {
-      if (global_elimination_data.faulty_imu[i] == 0) {
-        local_imu = global_imu[i];
-        break;
-      }
-    }
+    //    check_flight_phase(&fsm_state, &local_imu, &local_kf_data);
 
-    /* Check Flight Phases */
-    check_flight_phase(&fsm_state, &local_imu, &local_kf_data);
-
-    /* Update Global Flight phase */
     global_flight_state = fsm_state;
 
     // Keep track of max speed, velocity and acceleration for flight stats
