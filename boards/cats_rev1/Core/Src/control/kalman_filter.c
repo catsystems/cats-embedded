@@ -32,6 +32,8 @@ void init_filter_struct(kalman_filter_t *const filter) {
 }
 
 void initialize_matrices(kalman_filter_t *const filter) {
+  /* Matrix -> mat[9] = [0, 1, 2; 3, 4 , 5; 6, 7, 8];*/
+
   /* Initialize static values */
   float32_t Ad[9] = {1,
                      filter->t_sampl,
