@@ -54,7 +54,7 @@ const osThreadAttr_t task_imu_read_attributes = {
 };
 
 /* Definitions for task_state_est */
-uint32_t task_state_est_buffer[1024];
+uint32_t task_state_est_buffer[2048];
 StaticTask_t task_state_est_control_block;
 const osThreadAttr_t task_state_est_attributes = {
     .name = "task_state_est",

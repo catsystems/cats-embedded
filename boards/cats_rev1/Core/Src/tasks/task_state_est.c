@@ -13,6 +13,7 @@
 #include "util/types.h"
 #include "util/recorder.h"
 #include "config/globals.h"
+#include "control/orientation_kf.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -66,10 +67,16 @@ void task_state_est(void *argument) {
   sensor_elimination_t elimination = {0};
   kalman_filter_t filter = {0};
   filter.pressure_0 = P_INITIAL;
-  filter.t_sampl = 1 / (float)(CONTROL_SAMPLING_FREQ);
-
+  filter.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ);
   init_filter_struct(&filter);
   initialize_matrices(&filter);
+
+  /* initialize Orientation State Estimation */
+  orientation_filter_t orientation_filter = {0};
+  orientation_filter.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ);
+  init_orientation_filter_struct(&orientation_filter);
+  initialize_orientation_matrices(&orientation_filter);
+
   /* End Initialization */
 
   /* TODO: why is this needed? Without it We get num_faulty_baros = 3... */
@@ -182,6 +189,15 @@ void task_state_est(void *argument) {
     global_kf_data.velocity = (float)filter.x_bar.pData[1];
     global_kf_data.acceleration = state_data.acceleration[1];
 
+    /* DO ORIENTATION KALMAN */
+    orientation_prediction_step(&orientation_filter, &global_imu[1]);
+    orientation_update_step(&orientation_filter, &global_imu[1]);
+    log_trace("ORIENTATION %ld; q0 %ld; q1 %ld; q2 %ld; q3",
+              (int32_t)((float)orientation_filter.x_bar_data[0] * 1000),
+              (int32_t)((float)orientation_filter.x_bar_data[1] * 1000),
+              (int32_t)((float)orientation_filter.x_bar_data[2] * 1000),
+              (int32_t)((float)orientation_filter.x_bar_data[3] * 1000));
+
     uint32_t ts = osKernelGetTickCount();
 
     sensor_info_t sensor_info = {.ts = ts,
@@ -206,11 +222,11 @@ void task_state_est(void *argument) {
         .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
-              (int32_t)((float)filter.x_bar.pData[0] * 1000),
-              (int32_t)((float)filter.x_bar.pData[1] * 1000),
-              (int32_t)(state_data.acceleration[1] * 1000),
-              (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    //    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
+    //              (int32_t)((float)filter.x_bar.pData[0] * 1000),
+    //              (int32_t)((float)filter.x_bar.pData[1] * 1000),
+    //              (int32_t)(state_data.acceleration[1] * 1000),
+    //              (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //        log_trace("Calibrated IMU 1: Z: %ld",
     //        (int32_t)(1000*state_data.acceleration[0])); log_trace("Calibrated
     //        IMU 2: Z: %ld", (int32_t)(1000*state_data.acceleration[1]));
