@@ -21,8 +21,8 @@ const char usb_config_command_list[USB_COMMAND_NR][15] = {
     "flash_erase", "set",  "get",    "read",    "help"};
 
 const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
-    "lf_timer1",  "lf_timer2", "apo_timer1",
-    "apo_timer2", "stages",    "boot_state"};
+    "lf_acc_th",  "conf_fil", "apo_timer1",
+    "stag_2_tim", "stages",   "boot_state"};
 
 cats_usb_commands parse_usb_cmd();
 cats_usb_commands parse_usb_var(uint16_t *value);
@@ -112,13 +112,37 @@ void task_usb_communicator(void *argument) {
         case CATS_USB_CMD_SET:
           variable = parse_usb_var(&value);
           switch (variable) {
-            case CATS_USB_VAR_LIFTOFF_TIMER1:
+            case CATS_USB_VAR_LIFTOFF_ACC_THRESH:
+              if (value >= 1500) {
+                cc_set_liftoff_acc_threshold(value);
+                log_raw("%s set to %d/1000 G",
+                        usb_config_variable_list[variable], (int)value);
+              } else {
+                log_raw(
+                    "Acceleration Threshold needs to be larger than 1500 -> "
+                    "1.5 G");
+              }
               break;
-            case CATS_USB_VAR_LIFTOFF_TIMER2:
+            case CATS_USB_VAR_FILTER_CONF:
               break;
             case CATS_USB_VAR_APOGEE_TIMER1:
+              if (value >= 3) {
+                cc_set_apogee_timer(value);
+                log_raw("%s set to %d seconds",
+                        usb_config_variable_list[variable], (int)value);
+              } else {
+                log_raw("Apogee cannot be Reached in less than 3 Seconds!");
+              }
               break;
             case CATS_USB_VAR_APOGEE_TIMER2:
+              if (value >= 5) {
+                cc_set_second_stage_timer(value);
+                log_raw("%s set to %d seconds",
+                        usb_config_variable_list[variable], (int)value);
+              } else {
+                log_raw(
+                    "Second Stage Chute cannot be set to less than 5 seconds!");
+              }
               break;
             case CATS_USB_VAR_STAGES:
               break;
@@ -143,13 +167,19 @@ void task_usb_communicator(void *argument) {
           variable = parse_usb_var(&value);
           uint16_t number = 0;
           switch (variable) {
-            case CATS_USB_VAR_LIFTOFF_TIMER1:
+            case CATS_USB_VAR_LIFTOFF_ACC_THRESH:
+              log_raw("Thrust Threshold is set to %d/1000 G",
+                      (int)cc_get_liftoff_acc_threshold());
               break;
-            case CATS_USB_VAR_LIFTOFF_TIMER2:
+            case CATS_USB_VAR_FILTER_CONF:
               break;
             case CATS_USB_VAR_APOGEE_TIMER1:
+              log_raw("Apogee Timer is set to %d s",
+                      (int)cc_get_apogee_timer());
               break;
             case CATS_USB_VAR_APOGEE_TIMER2:
+              log_raw("Second Stage Timer is set to %d s",
+                      (int)cc_get_second_stage_timer());
               break;
             case CATS_USB_VAR_STAGES:
               break;

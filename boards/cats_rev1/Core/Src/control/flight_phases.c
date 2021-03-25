@@ -11,7 +11,8 @@
 #include "config/globals.h"
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
+void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
+                      control_settings_t *settings);
 void check_thrusting_1_phase(flight_fsm_t *fsm_state,
                              estimation_output_t *state_data);
 void check_coasting_phase(flight_fsm_t *fsm_state,
@@ -22,7 +23,8 @@ void check_descent_phase(flight_fsm_t *fsm_state,
                          estimation_output_t *state_data);
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
-                        estimation_output_t *state_data) {
+                        estimation_output_t *state_data,
+                        control_settings_t *settings) {
   /* Save old FSM state */
   flight_fsm_t old_fsm_state = *fsm_state;
 
@@ -31,7 +33,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
       check_moving_phase(fsm_state, imu_data);
       break;
     case IDLE:
-      check_idle_phase(fsm_state, imu_data);
+      check_idle_phase(fsm_state, imu_data, settings);
       break;
     case THRUSTING_1:
       check_thrusting_1_phase(fsm_state, state_data);
@@ -100,7 +102,8 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   }
 }
 
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
+void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
+                      control_settings_t *settings) {
   /* Check if we move from IDLE Back to MOVING */
 
   /* Check if the IMU moved between two timesteps */
@@ -181,7 +184,8 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
                          imu_data->acc_y * imu_data->acc_y +
                          imu_data->acc_z * imu_data->acc_z;
 
-  if (acceleration > LIFTOFF_ACC_THRESHOLD_SQUARED) {
+  if (acceleration >
+      settings->liftoff_acc_threshold * settings->liftoff_acc_threshold) {
     fsm_state->memory[2]++;
   } else {
     fsm_state->memory[2] = 0;

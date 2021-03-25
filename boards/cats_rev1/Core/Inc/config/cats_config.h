@@ -36,6 +36,15 @@ void cc_set_boot_state(cats_boot_state boot_state);
 bool cc_get_clear_flash();
 void cc_set_clear_flash(bool clear_flash);
 
+/* Control Settings accessor */
+control_settings_t cc_get_control_settings();
+void cc_set_apogee_timer(float apogee_timer);
+void cc_set_second_stage_timer(float second_stage_timer);
+void cc_set_liftoff_acc_threshold(float liftoff_acc_threshold);
+float cc_get_apogee_timer();
+float cc_get_second_stage_timer();
+float cc_get_liftoff_acc_threshold();
+
 /** persistence functions **/
 void cc_load();
 void cc_save();

@@ -183,6 +183,18 @@ void task_init(void *argument) {
               cs_get_last_sector_of_flight(i));
   }
 
+  /* Check if the FSM configurations make sense */
+  if (cc_get_apogee_timer() < 3) {
+    log_error("Apogee Timer is not configured Properly!");
+  }
+  if (cc_get_second_stage_timer() < 5) {
+    log_error("Second Stage Timer is not configured Properly!");
+  }
+  if (cc_get_liftoff_acc_threshold() < 1500) {
+    log_error("Acceleration Threshold is not configured Properly!");
+    cc_set_liftoff_acc_threshold(1499.0f);
+  }
+
   osDelay(100);
   init_tasks();
   log_info("Task initialization complete.");

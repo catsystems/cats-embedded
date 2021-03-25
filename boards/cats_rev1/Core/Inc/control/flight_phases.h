@@ -43,6 +43,7 @@
 #define TOUCHDOWN_SAFETY_COUNTER 1000
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
-                        estimation_output_t *state_data);
+                        estimation_output_t *state_data,
+                        control_settings_t *settings);
 
 #endif /* INC_CONTROL_FLIGHT_PHASES_H_ */

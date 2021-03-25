@@ -168,6 +168,22 @@ typedef struct {
   float t_sampl;
 } kalman_filter_t;
 
+typedef struct {
+  float std_noise_accel;
+  float std_noise_accel_apogee;
+  float std_noise_height;
+  float std_noise_bias;
+  float init_height;
+  float init_velocity;
+  float init_cov;
+} kf_settings_t;
+
+typedef struct {
+  float liftoff_acc_threshold;
+  float apogee_timer;
+  float second_stage_timer;
+} control_settings_t;
+
 typedef enum {
   CATS_OK = 0,
   CATS_BARO_ERROR,

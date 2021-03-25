@@ -48,6 +48,8 @@ void task_state_est(void *argument) {
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   /* end local flight phase */
 
+  /* Read Control Settings from Flash chip */
+
   /* calibration data */
   calibration_data_t calibration;
   calibration.angle = 1;
@@ -192,7 +194,7 @@ void task_state_est(void *argument) {
     /* DO ORIENTATION KALMAN */
     orientation_prediction_step(&orientation_filter, &global_imu[1]);
     orientation_update_step(&orientation_filter, &global_imu[1]);
-    log_trace("ORIENTATION %ld; q0 %ld; q1 %ld; q2 %ld; q3",
+    log_trace("%ld; %ld; %ld; %ld",
               (int32_t)((float)orientation_filter.x_bar_data[0] * 1000),
               (int32_t)((float)orientation_filter.x_bar_data[1] * 1000),
               (int32_t)((float)orientation_filter.x_bar_data[2] * 1000),

@@ -172,6 +172,15 @@ void compute_angle(imu_data_t* data, orientation_filter_t* filter) {
   float32_t quat_meas[4] = {(float32_t)(data->acc_z) / 1024.0f,
                             -(float32_t)(data->acc_y) / 1024.0f,
                             (float32_t)(data->acc_x) / 1024.0f, 0};
+  float32_t abs_sq = quat_meas[0] * quat_meas[0] + quat_meas[1] * quat_meas[1] +
+                     quat_meas[2] * quat_meas[2];
+  float32_t abs = 0;
+  arm_sqrt_f32(abs_sq, &abs);
+
+  quat_meas[0] /= abs;
+  quat_meas[1] /= abs;
+  quat_meas[2] /= abs;
+
   arm_matrix_instance_f32 quat_meas_mat;
   arm_mat_init_f32(&quat_meas_mat, 4, 1, quat_meas);
 

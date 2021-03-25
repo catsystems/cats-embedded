@@ -15,6 +15,7 @@
 typedef struct {
   /* state according to /concepts/v1/cats_fsm.jpg */
   cats_boot_state boot_state;
+  control_settings_t control_settings;
   chute_type_t chute_type;
   bool clear_flash;
 } cats_config_t;
@@ -64,6 +65,29 @@ void cc_set_boot_state(cats_boot_state boot_state) {
 bool cc_get_clear_flash() { return global_cats_config.clear_flash; }
 void cc_set_clear_flash(bool clear_flash) {
   global_cats_config.clear_flash = clear_flash;
+}
+
+control_settings_t cc_get_control_settings() {
+  return global_cats_config.control_settings;
+}
+float cc_get_apogee_timer() {
+  return global_cats_config.control_settings.apogee_timer;
+}
+float cc_get_second_stage_timer() {
+  return global_cats_config.control_settings.second_stage_timer;
+}
+float cc_get_liftoff_acc_threshold() {
+  return global_cats_config.control_settings.liftoff_acc_threshold;
+}
+void cc_set_apogee_timer(float apogee_timer) {
+  global_cats_config.control_settings.apogee_timer = apogee_timer;
+}
+void cc_set_second_stage_timer(float second_stage_timer) {
+  global_cats_config.control_settings.second_stage_timer = second_stage_timer;
+}
+void cc_set_liftoff_acc_threshold(float liftoff_acc_threshold) {
+  global_cats_config.control_settings.liftoff_acc_threshold =
+      liftoff_acc_threshold;
 }
 
 /** persistence functions **/
