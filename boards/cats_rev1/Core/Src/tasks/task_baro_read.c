@@ -63,7 +63,7 @@ void task_baro_read(void *argument) {
       global_baro[i].temperature = temperature[i];
       global_baro[i].ts = tick_count;
 
-      record(BARO0 + i, &(global_baro[i]));
+      record(BARO0 << i, &(global_baro[i]));
     }
 
     osDelayUntil(tick_count);

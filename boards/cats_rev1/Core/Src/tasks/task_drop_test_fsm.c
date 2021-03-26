@@ -60,7 +60,7 @@ void task_drop_test_fsm(void *argument) {
     }
 
     if (fsm_state.state_changed == 1) {
-      log_error("State Changed to %d", fsm_state.flight_state);
+      log_error("State Changed to %s", flight_fsm_map[fsm_state.flight_state]);
       flight_state_t flight_state = {.ts = osKernelGetTickCount(),
                                      .flight_state = fsm_state.flight_state};
       record(FLIGHT_STATE, &flight_state);

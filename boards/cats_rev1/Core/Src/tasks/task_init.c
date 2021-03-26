@@ -162,6 +162,15 @@ void task_init(void *argument) {
 
   osDelay(100);
   init_communication();
+  /* In order to change what is logged just remove it from the following OR:
+   * In the given example, BARO1 and FLIGHT_STATE ARE MISSING */
+  //  uint32_t selected_entry_types = IMU0 | IMU1 | IMU2 | BARO0 | BARO2 |
+  //                                  FLIGHT_INFO | COVARIANCE_INFO |
+  //                                  SENSOR_INFO;
+  //  cc_set_recorder_mask(selected_entry_types);
+  cc_set_recorder_mask(UINT32_MAX);
+  cc_set_boot_state(CATS_FLIGHT);
+  cc_set_clear_flash(false);
 
   /* After this point the cats config is either updated or the old config is
    * loaded from the flash. */

@@ -81,20 +81,36 @@ void task_recorder(void *argument) {
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
 #ifdef FLASH_TESTING
-      if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
-          osOK) {
-        //#ifdef FLASH_READ_TEST
-        //        print_elem(&curr_log_elem, '-');
-        //#endif
-        uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
-        if (max_elem_count < curr_elem_count) {
-          max_elem_count = curr_elem_count;
-          log_warn("max_queued_elems: %lu", max_elem_count);
+      uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
+      if (max_elem_count < curr_elem_count) {
+        max_elem_count = curr_elem_count;
+        log_warn("max_queued_elems: %lu", max_elem_count);
+      }
+      /* We should write to flash only in [THRUSTING_1, TOUCHDOWN) */
+      if (global_flight_state.flight_state >= THRUSTING_1 &&
+          global_flight_state.flight_state < TOUCHDOWN) {
+        if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
+            osOK) {
+          //#ifdef FLASH_READ_TEST
+          //        print_elem(&curr_log_elem, '-');
+          //#endif
+
+          write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx,
+                      &curr_log_elem_size);
+        } else {
+          log_error("Something wrong with the recording queue!");
         }
-        write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx,
-                    &curr_log_elem_size);
+      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
+                 global_flight_state.flight_state < THRUSTING_1) {
+        /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we
+         * start to empty it. When thrusting is detected we will have around
+         * REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the
+         * next loop iteration we will start to write the elements to the flash
+         */
+        osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever);
       } else {
-        log_error("Something wrong with the recording queue!");
+        /* TODO: see if this is needed */
+        osDelay(1);
       }
 #endif
     }

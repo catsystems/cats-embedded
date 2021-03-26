@@ -24,21 +24,22 @@
 /** Exported Consts **/
 
 extern const uint32_t REC_QUEUE_SIZE;
+extern const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT;
 
 /** Exported Types **/
 
 typedef enum {
-  IMU0 = 1,
-  IMU1,
-  IMU2,
-  BARO0,
-  BARO1,
-  BARO2,
-  FLIGHT_INFO,
-  FLIGHT_STATE,
-  COVARIANCE_INFO,
-  SENSOR_INFO,
-  HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
+  IMU0 = 0x01,
+  IMU1 = 0x02,
+  IMU2 = 0x04,
+  BARO0 = 0x08,
+  BARO1 = 0x10,
+  BARO2 = 0x20,
+  FLIGHT_INFO = 0x40,
+  FLIGHT_STATE = 0x80,
+  COVARIANCE_INFO = 0x100,
+  SENSOR_INFO = 0x200,
+  HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
 typedef struct {

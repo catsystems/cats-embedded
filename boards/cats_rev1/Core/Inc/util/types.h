@@ -60,6 +60,8 @@ typedef struct {
   uint8_t axis;
 } calibration_data_t;
 
+extern const char *flight_fsm_map[14];
+
 typedef enum {
   INVALID = 0,
   MOVING = 1,

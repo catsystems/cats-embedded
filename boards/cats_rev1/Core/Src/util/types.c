@@ -9,3 +9,8 @@
  */
 extern inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low);
 extern inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low);
+
+const char *flight_fsm_map[14] = {
+    "INVALID",   "MOVING",      "IDLE",       "THRUSTING_1", "THRUSTING_2",
+    "COASTING",  "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
+    "PARACHUTE", "BALLISTIC",   "TOUCHDOWN",  "HEHE"};

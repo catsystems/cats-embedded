@@ -25,7 +25,8 @@ extern const uint32_t CATS_CONFIG_SECTOR;
 extern const uint32_t CATS_STATUS_SECTOR;
 
 /** cats config initialization **/
-void cc_init(cats_boot_state boot_state, bool clear_flash);
+void cc_init(cats_boot_state boot_state, bool clear_flash,
+             uint32_t recorder_mask);
 void cc_clear();
 
 /** accessor functions **/
@@ -44,6 +45,9 @@ void cc_set_liftoff_acc_threshold(float liftoff_acc_threshold);
 float cc_get_apogee_timer();
 float cc_get_second_stage_timer();
 float cc_get_liftoff_acc_threshold();
+
+uint32_t cc_get_recorder_mask();
+void cc_set_recorder_mask(uint32_t recorder_mask);
 
 /** persistence functions **/
 void cc_load();

@@ -44,7 +44,7 @@ static bool update_config() {
   //  }
 
   if (rcv_boot_state != CATS_INVALID) {
-    cc_init(rcv_boot_state, rcv_clear_flash);
+    cc_init(rcv_boot_state, rcv_clear_flash, UINT32_MAX);
     cc_save();
     return true;
   }
