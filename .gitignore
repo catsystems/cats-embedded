@@ -158,3 +158,77 @@ Release/
 
 # CLion
 cmake-build-*
+
+## Electron
+
+.DS_Store
+.env
+.gclient_done
+**/.npmrc
+.tags*
+.vs/
+.vscode/
+/desktop_app/*.log
+*.pyc
+*.sln
+*.swp
+*.VC.db
+*.VC.VC.opendb
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.xcodeproj
+/desktop_app/.idea/
+/desktop_app/dist/
+/desktop_app/external_binaries/
+/desktop_app/out/
+/desktop_app/vendor/.gclient
+/desktop_app/vendor/debian_jessie_mips64-sysroot/
+/desktop_app/vendor/debian_stretch_amd64-sysroot/
+/desktop_app/vendor/debian_stretch_arm-sysroot/
+/desktop_app/vendor/debian_stretch_arm64-sysroot/
+/desktop_app/vendor/debian_stretch_i386-sysroot/
+/desktop_app/vendor/gcc-4.8.3-d197-n64-loongson/
+/desktop_app/vendor/readme-gcc483-loongson.txt
+/desktop_app/vendor/download/
+/desktop_app/vendor/llvm-build/
+/desktop_app/vendor/llvm/
+/desktop_app/vendor/npm/
+/desktop_app/vendor/python_26/
+/desktop_app/vendor/native_mksnapshot
+/desktop_app/vendor/LICENSES.chromium.html
+/desktop_app/vendor/pyyaml
+node_modules/
+SHASUMS256.txt
+**/package-lock.json
+compile_commands.json
+.envrc
+
+# npm package
+/desktop_app/npm/dist
+/desktop_app/npm/path.txt
+
+.npmrc
+
+# Generated API definitions
+electron-api.json
+electron.d.ts
+
+# Spec hash calculation
+spec/.hash
+
+# Eslint Cache
+.eslintcache*
+
+# Generated native addon files
+/desktop_app/spec-main/fixtures/native-addon/echo/build/
+
+# If someone runs tsc this is where stuff will end up
+ts-gen
+
+# Used to accelerate CI builds
+.depshash
+.depshash-target
+
+# Used to accelerate builds after sync
+patches/mtime-cache.json
