@@ -61,6 +61,7 @@ typedef struct {
 } calibration_data_t;
 
 extern const char *flight_fsm_map[14];
+extern const char *drop_test_fsm_map[7];
 
 typedef enum {
   INVALID = 0,
@@ -92,12 +93,25 @@ typedef struct {
 typedef enum {
   DT_INVALID = 0,
   DT_IDLE,
-  DT_ARMED,
-  DT_PARACHUTE_1,
-  DT_PARACHUTE_2,
+  DT_WAITING,
+  DT_DROGUE,
+  DT_MAIN,
   DT_TOUCHDOWN,
   HEHE3 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } drop_test_fsm_e;
+
+typedef struct {
+  drop_test_fsm_e flight_state;
+  uint32_t timer_start;
+  uint32_t memory;
+  uint8_t state_changed;
+} drop_test_fsm_t;
+
+typedef struct {
+  uint8_t set_waiting;
+  uint8_t set_drogue;
+  uint8_t set_main;
+} dt_telemetry_trigger_t;
 
 typedef struct {
   float measured_height[10][3];

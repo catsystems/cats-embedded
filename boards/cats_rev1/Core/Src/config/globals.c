@@ -91,6 +91,8 @@ imu_data_t global_imu[3] = {0};
 estimation_output_t global_kf_data = {0};
 sensor_elimination_t global_elimination_data = {0};
 flight_fsm_t global_flight_state = {.flight_state = INVALID};
+drop_test_fsm_t global_drop_test_state = {.flight_state = DT_IDLE};
+dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
 /** Initialization End Time **/
 

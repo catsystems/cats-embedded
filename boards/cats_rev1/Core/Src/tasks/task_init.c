@@ -421,7 +421,9 @@ static void init_tasks() {
         /* creation of task_flight_fsm */
         osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
-        /* creation of task_flight_fsm */
+        /* creation of task_drop_test_fsm */
+        osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
+        /* creation of task_peripherals */
         osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
         /* creation of task_state_est */
