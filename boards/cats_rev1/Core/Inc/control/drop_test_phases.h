@@ -11,7 +11,7 @@
 #endif /* INC_CONTROL_DROP_TEST_PHASES_H_ */
 #include "util/types.h"
 
-#define FREE_FALL_DET_ACC        0.2f
+#define FREE_FALL_DET_ACC        200
 #define FREE_FALL_DET_ACC_SQ     (FREE_FALL_DET_ACC * FREE_FALL_DET_ACC)
 #define FREE_FALL_SAFETY_COUNTER 10
 #define DROGUE_TIMER             5000 /* Is in ms */
