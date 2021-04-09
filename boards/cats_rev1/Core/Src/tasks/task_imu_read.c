@@ -7,7 +7,7 @@
 
 #include "cmsis_os.h"
 #include "tasks/task_imu_read.h"
-#include "drivers/icm20601.h"
+#include "sensors/icm20601.h"
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "util/log.h"

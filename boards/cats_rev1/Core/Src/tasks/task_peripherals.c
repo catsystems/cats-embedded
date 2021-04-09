@@ -18,6 +18,7 @@ static const int_fast8_t PERIPHERALS_SAMPLING_FREQ = 10;
 /** Private Function Declarations **/
 
 /** Exported Function Definitions **/
+extern UART_HandleTypeDef huart1;
 
 /**
  * @brief Function implementing the task_state_est thread.
@@ -32,7 +33,6 @@ void task_peripherals(void *argument) {
 
   uint8_t parachute_fired = 0;
   uint8_t trigger_parachute = 0;
-
   chute_type_t chute_type;
 
   /* Read from Config the Chute Type */
@@ -47,6 +47,11 @@ void task_peripherals(void *argument) {
   while (1) {
     tick_count += tick_update;
     fsm_state = global_flight_state;
+
+    if (receiver_data.ch[5] > 2000)
+      HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_SET);
+    else
+      HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_RESET);
 
     /* Check If we need to Trigger Parachute */
     if (fsm_state.flight_state == APOGEE && fsm_state.state_changed) {

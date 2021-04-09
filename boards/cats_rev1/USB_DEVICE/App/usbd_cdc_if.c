@@ -177,8 +177,7 @@ static int8_t CDC_DeInit_FS(void) {
  * USBD_FAIL
  */
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
-  /* USER CODE00 BEGIN 5 */
-  global_usb_detection = true;
+  /* USER CODE BEGIN 5 */
   switch (cmd) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
 
@@ -222,14 +221,9 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
 
       break;
 
-    case CDC_GET_LINE_CODING: {
-      uint32_t speed = 115200;
-      length = 7;
-      memcpy(pbuf, &speed, 4);
-      pbuf[4] = 0;
-      pbuf[5] = 0;
-      pbuf[6] = 8;
-    } break;
+    case CDC_GET_LINE_CODING:
+
+      break;
 
     case CDC_SET_CONTROL_LINE_STATE:
 

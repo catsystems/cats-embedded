@@ -16,10 +16,19 @@ extern TIM_HandleTypeDef htim15;
 
 bool global_usb_detection = false;
 
+SPI_BUS SPI1_CS1 = {
+    .cs_port = GPIOB,
+    .cs_pin = GPIO_PIN_0,
+    .spi_handle = &hspi1,
+    .cs_type = LOW_ACTIVE,
+    .spi_type = SPI_IT,
+};
+
 const ICM20601 ICM1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,
     .spi_bus = &hspi1,
+    .spi = &SPI1_CS1,
     .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
     .accel_g = ICM20601_ACCEL_RANGE_32G,
     .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,

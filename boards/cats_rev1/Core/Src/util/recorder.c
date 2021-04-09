@@ -11,8 +11,9 @@
 /* TODO: set this queue to 256 at least */
 const uint32_t REC_QUEUE_SIZE = 256;
 const float REC_QUEUE_PRE_THRUSTING_FILL_RATIO = 0.75f;
-const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT =
-    REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE;
+const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 192;
+// TODO Element is not constant error
+// REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE;
 
 /**
  * Checks whether the given rec_type should be recorded.
@@ -45,7 +46,7 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
       case BARO0:
       case BARO1:
       case BARO2:
-        //log_warn("logging BARO %d", rec_type);
+        // log_warn("logging BARO %d", rec_type);
         e.u.baro = *((baro_data_t *)rec_value);
         break;
       case FLIGHT_INFO:
@@ -53,7 +54,7 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
         e.u.flight_info = *((flight_info_t *)rec_value);
         break;
       case FLIGHT_STATE:
-        //log_warn("logging FLIGHT_STATE");
+        // log_warn("logging FLIGHT_STATE");
         e.u.flight_state = *((flight_state_t *)rec_value);
         break;
       case COVARIANCE_INFO:

@@ -7,8 +7,9 @@
 
 #include "util/types.h"
 #include "util/recorder.h"
-#include "drivers/icm20601.h"
-#include "drivers/ms5607.h"
+#include "sensors/icm20601.h"
+#include "sensors/ms5607.h"
+#include "drivers/spi.h"
 #include "drivers/buzzer.h"
 #include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
