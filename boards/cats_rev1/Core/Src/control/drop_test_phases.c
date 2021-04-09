@@ -71,6 +71,8 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
                          imu_data->acc_z * imu_data->acc_z;
   if (acceleration < FREE_FALL_DET_ACC_SQ) {
     fsm_state->memory++;
+  } else {
+    fsm_state->memory = 0;
   }
 
   if (fsm_state->memory < FREE_FALL_SAFETY_COUNTER) {
