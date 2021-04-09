@@ -113,6 +113,13 @@ typedef struct {
   uint8_t set_main;
 } dt_telemetry_trigger_t;
 
+/* Receiver data */
+typedef struct {
+  int16_t ch[16];
+  uint8_t failsafe;
+  uint8_t framelost;
+} receiver_data_t;
+
 typedef struct {
   float measured_height[10][3];
   float measured_acc[10][3];

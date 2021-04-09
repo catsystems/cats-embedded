@@ -16,6 +16,8 @@ extern TIM_HandleTypeDef htim15;
 
 bool global_usb_detection = false;
 
+receiver_data_t global_receiver_data = {0};
+
 SPI_BUS SPI1_CS1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,

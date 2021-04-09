@@ -10,6 +10,7 @@
 #include "sensors/icm20601.h"
 #include "sensors/ms5607.h"
 #include "drivers/spi.h"
+#include "drivers/sbus.h"
 #include "drivers/buzzer.h"
 #include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
@@ -21,6 +22,8 @@
 /** Device Handles **/
 
 extern bool global_usb_detection;
+
+extern receiver_data_t global_receiver_data;
 
 extern const ICM20601 ICM1;
 extern const ICM20601 ICM2;

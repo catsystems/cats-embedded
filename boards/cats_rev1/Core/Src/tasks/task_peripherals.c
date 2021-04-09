@@ -7,6 +7,7 @@
 
 #include "cmsis_os.h"
 #include "config/globals.h"
+#include "util/types.h"
 #include "util/log.h"
 #include "tasks/task_peripherals.h"
 #include "main.h"
@@ -18,7 +19,6 @@ static const int_fast8_t PERIPHERALS_SAMPLING_FREQ = 10;
 /** Private Function Declarations **/
 
 /** Exported Function Definitions **/
-extern UART_HandleTypeDef huart1;
 
 /**
  * @brief Function implementing the task_state_est thread.
@@ -48,7 +48,7 @@ void task_peripherals(void *argument) {
     tick_count += tick_update;
     fsm_state = global_flight_state;
 
-    if (receiver_data.ch[5] > 2000)
+    if (global_receiver_data.ch[5] > 2000)
       HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_SET);
     else
       HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_RESET);
@@ -58,67 +58,67 @@ void task_peripherals(void *argument) {
       trigger_parachute = 1;
     }
 
-    if (trigger_parachute == 1) {
-      if (chute_type.stages == 1) {
-        switch (chute_type.stage_type_1) {
-          case SERVO_1_TRIGGER:
-            servo_set_position(&SERVO1, chute_type.servo_angle_1);
-            break;
-          case SERVO_2_TRIGGER:
-            servo_set_position(&SERVO2, chute_type.servo_angle_2);
-            break;
-          case SERVO_1_2_TRIGGER:
-            servo_set_position(&SERVO1, chute_type.servo_angle_1);
-            servo_set_position(&SERVO2, chute_type.servo_angle_2);
-            break;
-          case PYRO_1_TRIGGER:
-            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
-            break;
-          case PYRO_2_TRIGGER:
-            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
-            break;
-          case PYRO_3_TRIGGER:
-            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
-            break;
-          case ALL_PYROS_TRIGGER:
-            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
-            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
-            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
-            break;
-          default:
-            break;
-        }
-      }
-    }
-
-    /* Check if we have actually triggered the Parachute */
-    if (chute_type.stages == 1) {
-      switch (chute_type.stage_type_1) {
-        case SERVO_1_TRIGGER:
-          /* Can we Read the Servo Angle?*/
-          break;
-        case SERVO_2_TRIGGER:
-          /* Can we Read the Servo Angle?*/
-          break;
-        case SERVO_1_2_TRIGGER:
-          /* Can we Read the Servo Angle?*/
-          break;
-        case PYRO_1_TRIGGER:
-          /* Read Pyro Voltage */
-          break;
-        case PYRO_2_TRIGGER:
-          /* Read Pyro Voltage */
-          break;
-        case PYRO_3_TRIGGER:
-          /* Read Pyro Voltage */
-          break;
-        case ALL_PYROS_TRIGGER:
-          /* Read Pyro Voltage */
-          break;
-        default:
-          break;
-      }
-    }
+    //    if (trigger_parachute == 1) {
+    //      if (chute_type.stages == 1) {
+    //        switch (chute_type.stage_type_1) {
+    //          case SERVO_1_TRIGGER:
+    //            servo_set_position(&SERVO1, chute_type.servo_angle_1);
+    //            break;
+    //          case SERVO_2_TRIGGER:
+    //            servo_set_position(&SERVO2, chute_type.servo_angle_2);
+    //            break;
+    //          case SERVO_1_2_TRIGGER:
+    //            servo_set_position(&SERVO1, chute_type.servo_angle_1);
+    //            servo_set_position(&SERVO2, chute_type.servo_angle_2);
+    //            break;
+    //          case PYRO_1_TRIGGER:
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
+    //            break;
+    //          case PYRO_2_TRIGGER:
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
+    //            break;
+    //          case PYRO_3_TRIGGER:
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
+    //            break;
+    //          case ALL_PYROS_TRIGGER:
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
+    //            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
+    //            break;
+    //          default:
+    //            break;
+    //        }
+    //      }
+    //    }
+    //
+    //    /* Check if we have actually triggered the Parachute */
+    //    if (chute_type.stages == 1) {
+    //      switch (chute_type.stage_type_1) {
+    //        case SERVO_1_TRIGGER:
+    //          /* Can we Read the Servo Angle?*/
+    //          break;
+    //        case SERVO_2_TRIGGER:
+    //          /* Can we Read the Servo Angle?*/
+    //          break;
+    //        case SERVO_1_2_TRIGGER:
+    //          /* Can we Read the Servo Angle?*/
+    //          break;
+    //        case PYRO_1_TRIGGER:
+    //          /* Read Pyro Voltage */
+    //          break;
+    //        case PYRO_2_TRIGGER:
+    //          /* Read Pyro Voltage */
+    //          break;
+    //        case PYRO_3_TRIGGER:
+    //          /* Read Pyro Voltage */
+    //          break;
+    //        case ALL_PYROS_TRIGGER:
+    //          /* Read Pyro Voltage */
+    //          break;
+    //        default:
+    //          break;
+    //      }
+    //    }
 
     osDelayUntil(tick_count);
   }
