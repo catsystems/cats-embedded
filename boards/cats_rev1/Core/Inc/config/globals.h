@@ -19,11 +19,11 @@
 /** Sampling Frequencies **/
 #define CONTROL_SAMPLING_FREQ 100
 
+#define RECEIVER_SAMPLING_FREQ 50
+
 /** Device Handles **/
 
 extern bool global_usb_detection;
-
-extern receiver_data_t global_receiver_data;
 
 extern const ICM20601 ICM1;
 extern const ICM20601 ICM2;

@@ -14,8 +14,8 @@
 #define FREE_FALL_DET_ACC        200
 #define FREE_FALL_DET_ACC_SQ     (FREE_FALL_DET_ACC * FREE_FALL_DET_ACC)
 #define FREE_FALL_SAFETY_COUNTER 10
-#define DROGUE_TIMER             5000 /* Is in ms */
-#define MAIN_TIMER               5000 /* Is in ms */
+#define DROGUE_TIMER             20000 /* Is in ms */
+#define MAIN_TIMER               20000 /* Is in ms */
 
 void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
                            dt_telemetry_trigger_t *dt_telemetry_trigger);

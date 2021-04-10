@@ -22,6 +22,7 @@
 #include "tasks/task_peripherals.h"
 #include "tasks/task_flash_reader.h"
 #include "tasks/task_usb_communicator.h"
+#include "tasks/task_receiver.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
@@ -50,6 +51,18 @@ const osThreadAttr_t task_imu_read_attributes = {
     .stack_size = sizeof(task_imu_read_buffer),
     .cb_mem = &task_imu_read_control_block,
     .cb_size = sizeof(task_imu_read_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+/* Definitions for task_receiver */
+uint32_t task_receiver_buffer[256];
+StaticTask_t task_receiver_control_block;
+const osThreadAttr_t task_receiver_attributes = {
+    .name = "task_receiver",
+    .stack_mem = &task_receiver_buffer[0],
+    .stack_size = sizeof(task_receiver_buffer),
+    .cb_mem = &task_receiver_control_block,
+    .cb_size = sizeof(task_receiver_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -414,6 +427,9 @@ static void init_tasks() {
 
         /* creation of task_baro_read */
         osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
+
+        /* creation of task_baro_read */
+        osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
         /* creation of task_imu_read */
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);

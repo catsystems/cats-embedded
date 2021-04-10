@@ -48,11 +48,6 @@ void task_peripherals(void *argument) {
     tick_count += tick_update;
     fsm_state = global_flight_state;
 
-    if (global_receiver_data.ch[5] > 2000)
-      HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_SET);
-    else
-      HAL_GPIO_WritePin(GPIOB, PYRO_2_Pin, GPIO_PIN_RESET);
-
     /* Check If we need to Trigger Parachute */
     if (fsm_state.flight_state == APOGEE && fsm_state.state_changed) {
       trigger_parachute = 1;
