@@ -102,7 +102,8 @@ typedef enum {
 
 typedef struct {
   drop_test_fsm_e flight_state;
-  uint32_t timer_start;
+  uint32_t timer_start_drogue;
+  uint32_t timer_start_main;
   uint32_t memory;
   uint8_t state_changed;
 } drop_test_fsm_t;
