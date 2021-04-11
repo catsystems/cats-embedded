@@ -37,11 +37,6 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
       case IMU2:
         // log_warn("logging IMU %d", rec_type);
         e.u.imu = *((imu_data_t *)rec_value);
-        //        log_info("IMU %u: RAW Gx: %hd, Gy:%hd, Gz:%hd; Ax: %hd,
-        //        Ay:%hd, Az:%hd",
-        //                 rec_type, e.u.imu.gyro_x, e.u.imu.gyro_y,
-        //                 e.u.imu.gyro_z, e.u.imu.acc_x, e.u.imu.acc_y,
-        //                 e.u.imu.acc_z);
         break;
       case BARO0:
       case BARO1:
@@ -64,6 +59,10 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
       case SENSOR_INFO:
         // log_warn("logging SENSOR_INFO");
         e.u.sensor_info = *((sensor_info_t *)rec_value);
+        break;
+      case EVENT_INFO:
+        // log_warn("logging EVENT_INFO");
+        e.u.event_info = *((event_info_t *)rec_value);
         break;
       default:
         log_fatal("Impossible recorder entry type %d!", rec_type);

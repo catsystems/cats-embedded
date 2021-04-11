@@ -102,6 +102,7 @@ timestamp_t init_end_time = {0};
 /** Recorder Queue **/
 
 osMessageQueueId_t rec_queue;
+osMessageQueueId_t event_queue;
 #endif
 
 /** Tracing Channels **/
@@ -115,3 +116,5 @@ traceString flash_channel;
 uint8_t usb_receive_buffer[APP_RX_DATA_SIZE] = {0};
 volatile bool usb_msg_received = false;
 volatile bool usb_communication_complete = false;
+
+event_output_map_elem_t *event_output_map = NULL;

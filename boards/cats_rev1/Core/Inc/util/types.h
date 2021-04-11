@@ -6,6 +6,7 @@
 #define CATS_REV1_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "../DSP/Inc/arm_math.h"
 
 /** BASIC TYPES **/
@@ -222,6 +223,32 @@ typedef enum {
   CATS_ERROR_FILTER_ERROR,
   CATS_ERROR_HARD_FAULT
 } cats_error_e;
+
+typedef bool (*peripheral_out_fp)(void);
+
+typedef struct {
+  /* Output function pointer */
+  peripheral_out_fp func_ptr;
+  /* Time to wait before executing the next output */
+  uint32_t delay_ms;
+} peripheral_out_t;
+
+typedef enum {
+  EV_READY = 1,
+  EV_LIFTOFF,
+  EV_MAX_V,
+  EV_APOGEE,
+  EV_POST_APOGEE,
+  EV_TOUCHDOWN,
+  EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
+} cats_event_e;
+
+typedef struct {
+  /* Number of outputs tied to an event */
+  uint8_t num_outputs;
+  /* List of outputs tied to an event */
+  peripheral_out_t *output_list;
+} event_output_map_elem_t;
 
 /** CONVERSION FUNCTIONS **/
 

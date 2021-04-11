@@ -56,6 +56,7 @@ extern timestamp_t init_end_time;
 /** Recorder Queue **/
 
 extern osMessageQueueId_t rec_queue;
+extern osMessageQueueId_t event_queue;
 #endif
 
 /** Tracing Channels **/
@@ -69,5 +70,7 @@ extern traceString flash_channel;
 extern uint8_t usb_receive_buffer[APP_RX_DATA_SIZE];
 extern volatile bool usb_msg_received;
 extern volatile bool usb_communication_complete;
+
+extern event_output_map_elem_t *event_output_map;
 
 #endif  // CATS_REV1_GLOBALS_H

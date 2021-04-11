@@ -161,6 +161,7 @@ static void init_tasks();
 static void init_imu();
 static void init_baro();
 static void init_buzzer();
+static void create_event_map();
 
 /** Exported Function Definitions **/
 
@@ -218,6 +219,9 @@ void task_init(void *argument) {
   }
 
   osDelay(100);
+
+  create_event_map();
+
   init_tasks();
   log_info("Task initialization complete.");
 
@@ -233,7 +237,7 @@ void task_init(void *argument) {
   osDelay(100);
   battery_monitor_init();
 
-  uint32_t flights_increased = 0;
+  bool flights_increased = false;
   /* Infinite loop */
   for (;;) {
     battery_level_e level = battery_level();
@@ -245,10 +249,10 @@ void task_init(void *argument) {
       error_buzzer(CATS_ERROR_OK);
 
     // Use flights increased due to asynchronisation of task fsm and init,
-    // sometimes not exectued sometimes executed twice
+    // sometimes not executed sometimes executed twice
     if (global_flight_state.flight_state >= THRUSTING_1 &&
-        flights_increased == 0) {
-      flights_increased = 1;
+        flights_increased == false) {
+      flights_increased = true;
       cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
       cs_save();
     }
@@ -262,6 +266,15 @@ void task_init(void *argument) {
 
     buzzer_update(&BUZZER);
 
+    if (osKernelGetTickCount() > 25000 && osKernelGetTickCount() <= 25012) {
+      trigger_event(EV_READY);
+    } else if (osKernelGetTickCount() > 32000 &&
+               osKernelGetTickCount() <= 32012) {
+      trigger_event(EV_LIFTOFF);
+    } else if (osKernelGetTickCount() > 47000 &&
+               osKernelGetTickCount() <= 47012) {
+      trigger_event(EV_APOGEE);
+    }
     osDelay(10);
   }
   /* USER CODE END 5 */
@@ -418,6 +431,8 @@ static void init_tasks() {
 #ifdef FLASH_TESTING
         // TODO: Check rec_queue for validity here
         rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+        event_queue =
+            osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
         vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
@@ -496,4 +511,40 @@ static void init_baro() {
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 3500);
   buzzer_set_volume(&BUZZER, 100);
+}
+
+bool dummy_func_1() {
+  log_warn("dummy 1");
+  return true;
+};
+
+bool dummy_func_2() {
+  log_warn("dummy 2");
+  return true;
+};
+
+bool dummy_func_3() {
+  log_warn("dummy 3");
+  return true;
+};
+
+static void create_event_map() {
+  /* number of event types + 0th element */
+  /* TODO: move number of events to a constant */
+  /* TODO: where to free this? */
+  event_output_map = calloc(7, sizeof(event_output_map_elem_t));
+
+  event_output_map[EV_READY].num_outputs = 2;
+  event_output_map[EV_READY].output_list = calloc(2, sizeof(peripheral_out_t));
+  event_output_map[EV_READY].output_list[0].func_ptr = dummy_func_1;
+  event_output_map[EV_READY].output_list[0].delay_ms = 1000;
+  event_output_map[EV_READY].output_list[1].func_ptr = dummy_func_2;
+  event_output_map[EV_READY].output_list[1].delay_ms = 0;
+
+  event_output_map[EV_LIFTOFF].num_outputs = 1;
+  event_output_map[EV_LIFTOFF].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = dummy_func_3;
+  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 500;
+  /* ................ */
 }

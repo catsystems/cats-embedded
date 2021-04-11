@@ -39,6 +39,7 @@ typedef enum {
   FLIGHT_STATE = 0x80,
   COVARIANCE_INFO = 0x100,
   SENSOR_INFO = 0x200,
+  EVENT_INFO = 0x400,
   HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
@@ -67,6 +68,12 @@ typedef struct {
   uint8_t faulty_baro[3];
 } sensor_info_t;
 
+typedef struct {
+  timestamp_t ts;
+  cats_event_e event;
+  uint8_t output_idx;
+} event_info_t;
+
 typedef union {
   imu_data_t imu;
   baro_data_t baro;
@@ -74,6 +81,7 @@ typedef union {
   flight_state_t flight_state;
   covariance_info_t covariance_info;
   sensor_info_t sensor_info;
+  event_info_t event_info;
 } rec_elem_u;
 
 typedef struct {
