@@ -510,7 +510,7 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 3500);
-  buzzer_set_volume(&BUZZER, 100);
+  buzzer_set_volume(&BUZZER, 20);
 }
 
 bool dummy_func_1() {

@@ -12,11 +12,14 @@
 
 #include <string.h>
 
+#define FAILSAFE_TIME 250
+
 void task_receiver(void *argument) {
   uint32_t tick_count, tick_update;
 
   static receiver_data_t receiver_data = {0};
   uint8_t armed = 0;
+  uint32_t failsafe_timer = 0;
 
   /* initialize data variables */
   sbus_init();
@@ -28,11 +31,19 @@ void task_receiver(void *argument) {
     tick_count += tick_update;
     sbus_update(&receiver_data);
 
+    if (!receiver_data.failsafe) {
+      failsafe_timer = 0;
+    } else if (failsafe_timer < FAILSAFE_TIME) {
+      failsafe_timer++;
+    }
+
     if (receiver_data.ch[4] > 2000 && receiver_data.ch[7] > 2000 &&
         !receiver_data.failsafe) {
       dt_telemetry_trigger.set_waiting = 1;
       armed = 1;
-    } else {
+    } else if (((receiver_data.ch[4] < 2000 || receiver_data.ch[7] < 2000) &&
+                !receiver_data.failsafe) ||
+               (receiver_data.failsafe && failsafe_timer >= FAILSAFE_TIME)) {
       dt_telemetry_trigger.set_waiting = 0;
       armed = 0;
     }

@@ -51,7 +51,7 @@ void task_peripherals(void* argument) {
         if (curr_fp != NULL) {
           log_warn("EXECUTING EVENT: %d, output_idx: %lu", curr_event, i);
           /* call the actuator function */
-          curr_fp();
+          curr_fp(output_list[i].func_arg);
           event_info_t event_info = {
               .ts = curr_ts, .event = curr_event, .output_idx = i};
           record(EVENT_INFO, &event_info);

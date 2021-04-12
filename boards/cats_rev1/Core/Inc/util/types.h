@@ -224,11 +224,13 @@ typedef enum {
   CATS_ERROR_HARD_FAULT
 } cats_error_e;
 
-typedef bool (*peripheral_out_fp)(void);
+typedef bool (*peripheral_out_fp)(int16_t);
 
 typedef struct {
   /* Output function pointer */
   peripheral_out_fp func_ptr;
+  /* Output function argument */
+  int16_t func_arg;
   /* Time to wait before executing the next output */
   uint32_t delay_ms;
 } peripheral_out_t;

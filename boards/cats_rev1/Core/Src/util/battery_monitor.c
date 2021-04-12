@@ -15,7 +15,7 @@
 
 typedef enum { LIION = 0, LIPO, ALKALINE } battery_type_e;
 
-battery_type_e battery_type = LIION;
+battery_type_e battery_type = LIPO;
 
 /*Supported batteries
  * ------------------------------------
