@@ -40,6 +40,8 @@ typedef struct spi_bus {
 
 uint8_t spi_transmit_receive(SPI_BUS* bus, uint8_t* transmit, uint16_t tsize,
                              uint8_t* receive, uint16_t rsize);
+uint8_t spi_transmit(SPI_BUS* bus, uint8_t* transmit, uint16_t tsize);
+uint8_t spi_receive(SPI_BUS* bus, uint8_t* recevie, uint16_t rsize);
 
 #define MAX_INSTANCES 10
 #define SPI_TIMEOUT   20

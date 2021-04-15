@@ -7,6 +7,7 @@
 /** Protocol Handles **/
 
 extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern TIM_HandleTypeDef htim2;
@@ -20,6 +21,14 @@ SPI_BUS SPI1_CS1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,
     .spi_handle = &hspi1,
+    .cs_type = LOW_ACTIVE,
+    .spi_type = SPI_IT,
+};
+
+SPI_BUS SPI2_FLASH = {
+    .cs_port = SPI2_CS_GPIO_Port,
+    .cs_pin = SPI2_CS_Pin,
+    .spi_handle = &hspi2,
     .cs_type = LOW_ACTIVE,
     .spi_type = SPI_IT,
 };

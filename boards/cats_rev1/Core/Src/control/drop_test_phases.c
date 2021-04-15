@@ -6,6 +6,7 @@
  */
 
 #include "control/drop_test_phases.h"
+#include "tasks/task_peripherals.h"
 #include "util/types.h"
 #include "cmsis_os.h"
 
@@ -70,18 +71,21 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 
   if (fsm_state->memory > FREE_FALL_SAFETY_COUNTER) {
+    trigger_event(EV_APOGEE);
     fsm_state->flight_state = DT_DROGUE;
     fsm_state->timer_start_main = osKernelGetTickCount();
   }
 
   /* Check Timer */
   if (DROGUE_TIMER < (osKernelGetTickCount() - fsm_state->timer_start_drogue)) {
+    trigger_event(EV_APOGEE);
     fsm_state->flight_state = DT_DROGUE;
     fsm_state->timer_start_main = osKernelGetTickCount();
   }
 
   /* Check Remote Signal */
   if (dt_telemetry_trigger->set_drogue == 1) {
+    trigger_event(EV_APOGEE);
     fsm_state->flight_state = DT_DROGUE;
     fsm_state->timer_start_main = osKernelGetTickCount();
   }
@@ -96,11 +100,13 @@ void check_dt_drogue_phase(drop_test_fsm_t *fsm_state,
                            dt_telemetry_trigger_t *dt_telemetry_trigger) {
   /* Check if Timer */
   if (MAIN_TIMER < (osKernelGetTickCount() - fsm_state->timer_start_main)) {
+    trigger_event(EV_POST_APOGEE);
     fsm_state->flight_state = DT_MAIN;
   }
 
   /* Check Remote Signal */
   if (dt_telemetry_trigger->set_main == 1) {
+    trigger_event(EV_POST_APOGEE);
     fsm_state->flight_state = DT_MAIN;
   }
 }

@@ -11,6 +11,7 @@
 #include "drivers/adc.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
+#include "util/outputs.h"
 #include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
@@ -227,10 +228,8 @@ void task_init(void *argument) {
 
   init_end_time = osKernelGetTickCount();
 
-  servo_set_position(&SERVO1, 90);
-  servo_set_position(&SERVO2, 180);
-  servo_start(&SERVO1);
-  servo_start(&SERVO2);
+  // servo_set_onoff(&SERVO1, 0);
+  // servo_set_onoff(&SERVO2, 1);
 
   // adc test
   adc_init();
@@ -266,15 +265,6 @@ void task_init(void *argument) {
 
     buzzer_update(&BUZZER);
 
-    if (osKernelGetTickCount() > 25000 && osKernelGetTickCount() <= 25012) {
-      trigger_event(EV_READY);
-    } else if (osKernelGetTickCount() > 32000 &&
-               osKernelGetTickCount() <= 32012) {
-      trigger_event(EV_LIFTOFF);
-    } else if (osKernelGetTickCount() > 47000 &&
-               osKernelGetTickCount() <= 47012) {
-      trigger_event(EV_APOGEE);
-    }
     osDelay(10);
   }
   /* USER CODE END 5 */
@@ -364,7 +354,7 @@ static void init_communication() {
    *        continue by reading the setup from config
    */
 
-  //#define AUTO_USB_CONFIG
+#define AUTO_USB_CONFIG
 
 #ifdef AUTO_USB_CONFIG
   if (global_usb_detection) {
@@ -450,7 +440,7 @@ static void init_tasks() {
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
         /* creation of task_flight_fsm */
-        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+        // osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
         /* creation of task_drop_test_fsm */
         osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
@@ -513,38 +503,41 @@ static void init_buzzer() {
   buzzer_set_volume(&BUZZER, 20);
 }
 
-bool dummy_func_1() {
-  log_warn("dummy 1");
-  return true;
-};
-
-bool dummy_func_2() {
-  log_warn("dummy 2");
-  return true;
-};
-
-bool dummy_func_3() {
-  log_warn("dummy 3");
-  return true;
-};
-
 static void create_event_map() {
   /* number of event types + 0th element */
   /* TODO: move number of events to a constant */
   /* TODO: where to free this? */
   event_output_map = calloc(7, sizeof(event_output_map_elem_t));
 
-  event_output_map[EV_READY].num_outputs = 2;
-  event_output_map[EV_READY].output_list = calloc(2, sizeof(peripheral_out_t));
-  event_output_map[EV_READY].output_list[0].func_ptr = dummy_func_1;
-  event_output_map[EV_READY].output_list[0].delay_ms = 1000;
-  event_output_map[EV_READY].output_list[1].func_ptr = dummy_func_2;
-  event_output_map[EV_READY].output_list[1].delay_ms = 0;
+  event_output_map[EV_APOGEE].num_outputs = 4;
+  event_output_map[EV_APOGEE].output_list = calloc(4, sizeof(peripheral_out_t));
+  event_output_map[EV_APOGEE].output_list[0].func_ptr =
+      output_table[OUT_LOW_LEVEL_ONE];                      // IO1
+  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
+  event_output_map[EV_APOGEE].output_list[1].func_ptr =
+      output_table[OUT_LOW_LEVEL_TWO];                      // IO2
+  event_output_map[EV_APOGEE].output_list[1].func_arg = 1;  // Set HIGH
+  event_output_map[EV_APOGEE].output_list[1].delay_ms = 0;
+  event_output_map[EV_APOGEE].output_list[2].func_ptr =
+      output_table[OUT_HIGH_CURRENT_TWO];                   // PY2
+  event_output_map[EV_APOGEE].output_list[2].func_arg = 1;  // Turn ON
+  event_output_map[EV_APOGEE].output_list[2].delay_ms = 0;
+  event_output_map[EV_APOGEE].output_list[3].func_ptr =
+      output_table[OUT_LOW_LEVEL_FOUR];                     // S2
+  event_output_map[EV_APOGEE].output_list[3].func_arg = 0;  // Set LOW
+  event_output_map[EV_APOGEE].output_list[3].delay_ms = 0;
 
-  event_output_map[EV_LIFTOFF].num_outputs = 1;
-  event_output_map[EV_LIFTOFF].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = dummy_func_3;
-  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 500;
+  event_output_map[EV_POST_APOGEE].num_outputs = 2;
+  event_output_map[EV_POST_APOGEE].output_list =
+      calloc(2, sizeof(peripheral_out_t));
+  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
+      output_table[OUT_LOW_LEVEL_THREE];                         // S1
+  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
+  event_output_map[EV_POST_APOGEE].output_list[1].func_ptr =
+      output_table[OUT_HIGH_CURRENT_ONE];                        // PY1
+  event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  // Turn ON
+  event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
   /* ................ */
 }

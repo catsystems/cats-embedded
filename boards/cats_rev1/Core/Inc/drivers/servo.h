@@ -14,11 +14,12 @@ typedef struct servo_dev {
   // Hardware Configuration
   TIM_HandleTypeDef *timer;
   uint32_t channel;
-  uint16_t pulse;
+  uint32_t pulse;
   int8_t started;
 } SERVO;
 
 void servo_set_position(SERVO *dev, uint16_t angle);
+void servo_set_onoff(SERVO *dev, uint16_t status);
 void servo_start(SERVO *dev);
 void servo_stop(SERVO *dev);
 

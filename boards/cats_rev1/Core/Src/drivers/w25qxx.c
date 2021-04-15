@@ -3,6 +3,7 @@
 #include "drivers/w25qxxConf.h"
 #include "stm32l4xx_hal.h"
 #include "util/log.h"
+#include "config/globals.h"
 
 #define W25QXX_DUMMY_BYTE 0xA5
 
@@ -438,6 +439,7 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   w25qxx_spi_transmit(0x12);
   w25qxx_send_address(page_num);
   HAL_SPI_Transmit(&CATS_W25QXX_SPI, buf, bytes_to_write_up_to_page_size, 100);
+  // spi_transmit(&SPI2_FLASH, buf, bytes_to_write_up_to_page_size);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 #if (CATS_W25QXX_DEBUG == 1)

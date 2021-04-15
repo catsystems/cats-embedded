@@ -77,7 +77,69 @@ uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
   return 1;
 }
 
-void spi_transmit(const SPI_BUS *bus, uint8_t *transmit, uint16_t tsize) {}
+uint8_t spi_transmit(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize) {
+  if (!bus->initialized) _spi_init(bus);
+  bus->origin->xTaskToNotify = xTaskGetCurrentTaskHandle();
+  // Toggle CS to make device active
+  // HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
+  if (bus->spi_type == SPI_NORMAL) {
+    HAL_SPI_Transmit(bus->spi_handle, transmit, tsize, SPI_TIMEOUT);
+    HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+  } else if (bus->spi_type == SPI_IT) {
+    bus->origin->busy = 1;
+    HAL_SPI_Transmit_IT(bus->spi_handle, transmit, tsize);
+    // Wait for transmission to end without blocking
+    uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
+    if (!notification) {
+      // Timed out
+      bus->origin->busy = 0;
+      // HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+      return 0;
+    }
+  } else if (bus->spi_type == SPI_DMA) {
+    bus->origin->busy = 1;
+    HAL_SPI_Transmit_DMA(bus->spi_handle, transmit, tsize);
+    // Wait for transmission to end without blocking
+    uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
+    if (!notification) {
+      // Timed out
+      bus->origin->busy = 0;
+      // HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+      return 0;
+    }
+  }
+  return 1;
+}
+
+uint8_t spi_receive(SPI_BUS *bus, uint8_t *receive, uint16_t rsize) {
+  if (!bus->initialized) _spi_init(bus);
+  bus->origin->xTaskToNotify = xTaskGetCurrentTaskHandle();
+  // Toggle CS to make device active
+  HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
+  if (bus->spi_type == SPI_NORMAL) {
+    HAL_SPI_Receive(bus->spi_handle, receive, rsize, SPI_TIMEOUT);
+    HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+  } else if (bus->spi_type == SPI_IT) {
+    bus->origin->busy = 1;
+    HAL_SPI_Receive_IT(bus->spi_handle, receive, rsize);
+    uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
+    HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+    if (!notification) {
+      bus->origin->busy = 0;
+      return 0;  // Timed out
+    }
+  } else if (bus->spi_type == SPI_DMA) {
+    bus->origin->busy = 1;
+    HAL_SPI_Receive_DMA(bus->spi_handle, receive, rsize);
+    uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
+    HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
+    if (!notification) {
+      bus->origin->busy = 0;
+      return 0;  // Timed out
+    }
+  }
+  return 1;
+}
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;

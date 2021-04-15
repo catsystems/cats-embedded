@@ -6,10 +6,11 @@
  */
 
 #include "util/outputs.h"
-#include "config/globals.h"
+
 #include "drivers/servo.h"
 
 bool no_output_function(int16_t bummer);
+
 bool high_current_channel_one(int16_t state);
 bool high_current_channel_two(int16_t state);
 bool high_current_channel_three(int16_t state);
@@ -41,6 +42,7 @@ const bool (*output_table[15])(int16_t) = {
 bool no_output_function(int16_t bummer) {
   // Sucks to be here...
   // it seems like someone didn't configure the outputs right
+  return 0;
 }
 
 // High current outputs for pyros, valves etc.
@@ -111,17 +113,19 @@ bool low_level_channel_two(int16_t state) {
     return false;
 }
 
+// Same as servo 1 but digital output
 bool low_level_channel_three(int16_t state) {
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(GPIO_1_GPIO_Port, GPIO_1_Pin, state);
+    servo_set_onoff(&SERVO1, state);
     return true;
   } else
     return false;
 }
 
+// Same as servo 2 but digital output
 bool low_level_channel_four(int16_t state) {
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(GPIO_1_GPIO_Port, GPIO_1_Pin, state);
+    servo_set_onoff(&SERVO2, state);
     return true;
   } else
     return false;

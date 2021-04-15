@@ -25,6 +25,8 @@
 
 extern bool global_usb_detection;
 
+extern SPI_BUS SPI2_FLASH;
+
 extern const ICM20601 ICM1;
 extern const ICM20601 ICM2;
 extern const ICM20601 ICM3;
