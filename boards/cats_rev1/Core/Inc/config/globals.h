@@ -73,6 +73,9 @@ extern uint8_t usb_receive_buffer[APP_RX_DATA_SIZE];
 extern volatile bool usb_msg_received;
 extern volatile bool usb_communication_complete;
 
+/* recorder status is controlled by output functions, do not set manually! */
+extern volatile recorder_status_e global_recorder_status;
+
 extern event_output_map_elem_t *event_output_map;
 
 #endif  // CATS_REV1_GLOBALS_H

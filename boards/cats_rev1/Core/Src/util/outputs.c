@@ -28,7 +28,9 @@ bool servo_channel_two(int16_t angle);
 bool servo_channel_three(int16_t angle);  // reserved for later use
 bool servo_channel_four(int16_t angle);   // reserved for later use
 
-const bool (*output_table[15])(int16_t) = {
+bool set_recorder_state(int16_t state);
+
+const peripheral_out_fp output_table[NUM_OUTPUT_FUNCTIONS] = {
     no_output_function,        high_current_channel_one,
     high_current_channel_two,  high_current_channel_three,
     high_current_channel_four, high_current_channel_five,
@@ -36,8 +38,7 @@ const bool (*output_table[15])(int16_t) = {
     low_level_channel_two,     low_level_channel_three,
     low_level_channel_four,    servo_channel_one,
     servo_channel_two,         servo_channel_three,
-    servo_channel_four,
-};
+    servo_channel_four,        set_recorder_state};
 
 bool no_output_function(int16_t bummer) {
   // Sucks to be here...
@@ -163,4 +164,15 @@ bool servo_channel_four(int16_t angle) {
     return true;
   } else
     return false;
+}
+
+/* TODO check if mutex should be used here */
+bool set_recorder_state(int16_t state) {
+  recorder_status_e rec_status = (recorder_status_e)state;
+  /* TODO: add a boundary value for rec_status_e enum -> REC_END = 0xfff..*/
+  if (rec_status >= REC_OFF && rec_status <= REC_WRITE_TO_FLASH) {
+    global_recorder_status = rec_status;
+    return true;
+  }
+  return false;
 }

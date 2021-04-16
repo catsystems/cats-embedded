@@ -87,8 +87,9 @@ void task_recorder(void *argument) {
         log_warn("max_queued_elems: %lu", max_elem_count);
       }
       /* We should write to flash only in [THRUSTING_1, TOUCHDOWN) */
-      if (global_flight_state.flight_state >= THRUSTING_1 &&
-          global_flight_state.flight_state < TOUCHDOWN) {
+      //      if (global_flight_state.flight_state >= THRUSTING_1 &&
+      //          global_flight_state.flight_state < TOUCHDOWN) {
+      if (global_recorder_status >= REC_WRITE_TO_FLASH) {
         if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
             osOK) {
           //#ifdef FLASH_READ_TEST
@@ -100,8 +101,10 @@ void task_recorder(void *argument) {
         } else {
           log_error("Something wrong with the recording queue!");
         }
+        //      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
+        //                 global_flight_state.flight_state < THRUSTING_1) {
       } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
-                 global_flight_state.flight_state < THRUSTING_1) {
+               global_recorder_status == REC_FILL_QUEUE) {
         /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we
          * start to empty it. When thrusting is detected we will have around
          * REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the

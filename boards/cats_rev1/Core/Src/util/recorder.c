@@ -28,8 +28,10 @@ static inline bool should_record(rec_entry_type_e rec_type) {
 void record(rec_entry_type_e rec_type, const void *rec_value) {
 #ifdef FLASH_TESTING
   /* We should fill the logging queue only in [IDLE, TOUCHDOWN) */
-  if (global_flight_state.flight_state >= IDLE &&
-      global_flight_state.flight_state < TOUCHDOWN && should_record(rec_type)) {
+  //  if (global_flight_state.flight_state >= IDLE &&
+  //      global_flight_state.flight_state < TOUCHDOWN &&
+  //      should_record(rec_type)) {
+  if (global_recorder_status >= REC_FILL_QUEUE && should_record(rec_type)) {
     rec_elem_t e = {.rec_type = rec_type};
     switch (rec_type) {
       case IMU0:

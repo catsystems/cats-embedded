@@ -245,6 +245,12 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
+typedef enum {
+  REC_OFF = 0,
+  REC_FILL_QUEUE,
+  REC_WRITE_TO_FLASH
+} recorder_status_e;
+
 typedef struct {
   /* Number of outputs tied to an event */
   uint8_t num_outputs;

@@ -10,7 +10,9 @@
 
 #include "config/globals.h"
 
-extern const bool (*output_table[15])(int16_t);
+#define NUM_OUTPUT_FUNCTIONS 16
+
+extern const peripheral_out_fp output_table[NUM_OUTPUT_FUNCTIONS];
 
 typedef enum {
   OUT_NO_OP = 0,
@@ -28,6 +30,6 @@ typedef enum {
   OUT_SERVO_TWO,
   OUT_SERVO_THREE,
   OUT_SERVO_FOUR,
-} output_function_list;
+} output_function_list_e;
 
 #endif /* INC_UTIL_OUTPUTS_H_ */
