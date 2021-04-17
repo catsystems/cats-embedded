@@ -225,9 +225,16 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
 
       break;
 
-    case CDC_SET_CONTROL_LINE_STATE:
+    case CDC_SET_CONTROL_LINE_STATE: {
+      USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
 
-      break;
+      if ((req->wValue & 0x0001) != 0)
+        global_usb_detection = true;
+      else
+        global_usb_detection = false;
+    }
+
+    break;
 
     case CDC_SEND_BREAK:
 

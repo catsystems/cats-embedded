@@ -30,6 +30,7 @@ typedef enum {
   OUT_SERVO_TWO,
   OUT_SERVO_THREE,
   OUT_SERVO_FOUR,
+  RECORDER_STATE,
 } output_function_list_e;
 
 #endif /* INC_UTIL_OUTPUTS_H_ */

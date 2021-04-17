@@ -236,7 +236,6 @@ void task_init(void *argument) {
   osDelay(100);
   battery_monitor_init();
 
-  bool flights_increased = false;
   /* Infinite loop */
   for (;;) {
     battery_level_e level = battery_level();
@@ -246,15 +245,6 @@ void task_init(void *argument) {
       error_buzzer(CATS_ERROR_BAT_LOW);
     else
       error_buzzer(CATS_ERROR_OK);
-
-    // Use flights increased due to asynchronisation of task fsm and init,
-    // sometimes not executed sometimes executed twice
-    if (global_flight_state.flight_state >= THRUSTING_1 &&
-        flights_increased == false) {
-      flights_increased = true;
-      cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
-      cs_save();
-    }
 
     if (global_flight_state.flight_state == APOGEE) {
       buzzer_beep(&BUZZER, 1000);
@@ -354,7 +344,7 @@ static void init_communication() {
    *        continue by reading the setup from config
    */
 
-#define AUTO_USB_CONFIG
+  //#define AUTO_USB_CONFIG
 
 #ifdef AUTO_USB_CONFIG
   if (global_usb_detection) {
@@ -509,8 +499,15 @@ static void create_event_map() {
   /* TODO: where to free this? */
   event_output_map = calloc(7, sizeof(event_output_map_elem_t));
 
-  event_output_map[EV_APOGEE].num_outputs = 4;
-  event_output_map[EV_APOGEE].output_list = calloc(4, sizeof(peripheral_out_t));
+  event_output_map[EV_READY].num_outputs = 1;
+  event_output_map[EV_READY].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_READY].output_list[0].func_ptr =
+      output_table[RECORDER_STATE];
+  event_output_map[EV_READY].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_output_map[EV_READY].output_list[0].delay_ms = 0;
+
+  event_output_map[EV_APOGEE].num_outputs = 5;
+  event_output_map[EV_APOGEE].output_list = calloc(5, sizeof(peripheral_out_t));
   event_output_map[EV_APOGEE].output_list[0].func_ptr =
       output_table[OUT_LOW_LEVEL_ONE];                      // IO1
   event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
@@ -527,6 +524,10 @@ static void create_event_map() {
       output_table[OUT_LOW_LEVEL_FOUR];                     // S2
   event_output_map[EV_APOGEE].output_list[3].func_arg = 0;  // Set LOW
   event_output_map[EV_APOGEE].output_list[3].delay_ms = 0;
+  event_output_map[EV_APOGEE].output_list[4].func_ptr =
+      output_table[OUT_HIGH_CURRENT_THREE];                 // PY3
+  event_output_map[EV_APOGEE].output_list[4].func_arg = 1;  // Turn ON
+  event_output_map[EV_APOGEE].output_list[4].delay_ms = 0;
 
   event_output_map[EV_POST_APOGEE].num_outputs = 2;
   event_output_map[EV_POST_APOGEE].output_list =
@@ -539,5 +540,13 @@ static void create_event_map() {
       output_table[OUT_HIGH_CURRENT_ONE];                        // PY1
   event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  // Turn ON
   event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
+
+  event_output_map[EV_TOUCHDOWN].num_outputs = 1;
+  event_output_map[EV_TOUCHDOWN].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
+      output_table[RECORDER_STATE];
+  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
+  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
   /* ................ */
 }

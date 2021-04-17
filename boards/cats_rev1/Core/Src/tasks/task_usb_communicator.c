@@ -27,29 +27,29 @@ const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
 cats_usb_commands parse_usb_cmd();
 cats_usb_commands parse_usb_var(uint16_t *value);
 
-static bool update_config() {
-  /* Start from "CFG:" onwards */
-  char *token = strtok((char *)(&usb_receive_buffer[4]), ";");
-  cats_boot_state rcv_boot_state = strtol(token, NULL, 10);
-
-  token = strtok(NULL, ";");
-  bool rcv_clear_flash = strtol(token, NULL, 10);
-
-  //  bool clear_log_info = strtol(token, NULL, 10);
-  //
-  //  if (clear_log_info) {
-  //    log_info("Clear log info received");
-  //    cs_init(CATS_STATUS_SECTOR, 0);
-  //    cs_save();
-  //  }
-
-  if (rcv_boot_state != CATS_INVALID) {
-    cc_init(rcv_boot_state, rcv_clear_flash, UINT32_MAX);
-    cc_save();
-    return true;
-  }
-  return false;
-}
+// static bool update_config() {
+//  /* Start from "CFG:" onwards */
+//  char *token = strtok((char *)(&usb_receive_buffer[4]), ";");
+//  cats_boot_state rcv_boot_state = strtol(token, NULL, 10);
+//
+//  token = strtok(NULL, ";");
+//  bool rcv_clear_flash = strtol(token, NULL, 10);
+//
+//  //  bool clear_log_info = strtol(token, NULL, 10);
+//  //
+//  //  if (clear_log_info) {
+//  //    log_info("Clear log info received");
+//  //    cs_init(CATS_STATUS_SECTOR, 0);
+//  //    cs_save();
+//  //  }
+//
+//  if (rcv_boot_state != CATS_INVALID) {
+//    cc_init(rcv_boot_state, rcv_clear_flash, UINT32_MAX);
+//    cc_save();
+//    return true;
+//  }
+//  return false;
+//}
 
 void task_usb_communicator(void *argument) {
   log_raw("USB config started");
@@ -165,7 +165,6 @@ void task_usb_communicator(void *argument) {
           break;
         case CATS_USB_CMD_GET:
           variable = parse_usb_var(&value);
-          uint16_t number = 0;
           switch (variable) {
             case CATS_USB_VAR_LIFTOFF_ACC_THRESH:
               log_raw("Thrust Threshold is set to %d/1000 G",

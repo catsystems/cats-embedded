@@ -53,6 +53,7 @@ void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
 void check_dt_idle_phase(drop_test_fsm_t *fsm_state,
                          dt_telemetry_trigger_t *dt_telemetry_trigger) {
   if (dt_telemetry_trigger->set_waiting == 1) {
+    trigger_event(EV_READY);
     fsm_state->flight_state = DT_WAITING;
     fsm_state->timer_start_drogue = osKernelGetTickCount();
     fsm_state->memory = 0;
@@ -92,6 +93,7 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
 
   /* Check if Disarming */
   if (dt_telemetry_trigger->set_waiting == 0) {
+    trigger_event(EV_TOUCHDOWN);
     fsm_state->flight_state = DT_IDLE;
   }
 }

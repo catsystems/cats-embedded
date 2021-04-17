@@ -6,6 +6,7 @@
  */
 
 #include "util/outputs.h"
+#include "config/cats_config.h"
 
 #include "drivers/servo.h"
 
@@ -171,6 +172,10 @@ bool set_recorder_state(int16_t state) {
   recorder_status_e rec_status = (recorder_status_e)state;
   /* TODO: add a boundary value for rec_status_e enum -> REC_END = 0xfff..*/
   if (rec_status >= REC_OFF && rec_status <= REC_WRITE_TO_FLASH) {
+    if (global_recorder_status == REC_OFF && state > REC_OFF) {
+      cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
+      cs_save();
+    }
     global_recorder_status = rec_status;
     return true;
   }
