@@ -6,6 +6,7 @@
  */
 
 #include "control/flight_phases.h"
+#include "tasks/task_peripherals.h"
 #include <stdlib.h>
 #include <math.h>
 #include "config/globals.h"
@@ -19,8 +20,9 @@ void check_coasting_phase(flight_fsm_t *fsm_state,
                           estimation_output_t *state_data);
 void check_apogee_phase(flight_fsm_t *fsm_state,
                         estimation_output_t *state_data);
-void check_descent_phase(flight_fsm_t *fsm_state,
-                         estimation_output_t *state_data);
+void check_drogue_phase(flight_fsm_t *fsm_state,
+                        estimation_output_t *state_data);
+void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
                         estimation_output_t *state_data,
@@ -50,11 +52,11 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
     case APOGEE:
       check_apogee_phase(fsm_state, state_data);
       break;
-    case PARACHUTE:
-      check_descent_phase(fsm_state, state_data);
+    case DROGUE:
+      check_drogue_phase(fsm_state, state_data);
       break;
-    case BALLISTIC:
-      check_descent_phase(fsm_state, state_data);
+    case MAIN:
+      check_main_phase(fsm_state, state_data);
     case TOUCHDOWN:
       break;
     default:
@@ -92,6 +94,7 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
 
   /* Check if we reached the threshold */
   if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_IDLE) {
+    trigger_event(EV_IDLE);
     fsm_state->flight_state = IDLE;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
@@ -140,6 +143,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
 
   /* Check if we reached the threshold */
   if (fsm_state->memory[1] > TIME_THRESHOLD_IDLE_TO_MOV) {
+    trigger_event(EV_MOVING);
     fsm_state->flight_state = MOVING;
     fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
@@ -168,6 +172,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
   if ((abs(fsm_state->angular_movement[0]) +
        abs(fsm_state->angular_movement[1]) +
        abs(fsm_state->angular_movement[2])) > ANGLE_MOVE_MAX) {
+    trigger_event(EV_MOVING);
     fsm_state->flight_state = MOVING;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
@@ -192,6 +197,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 
   if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER) {
+    trigger_event(EV_LIFTOFF);
     fsm_state->flight_state = THRUSTING_1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
@@ -228,6 +234,7 @@ void check_coasting_phase(flight_fsm_t *fsm_state,
   }
 
   if (fsm_state->memory[1] > APOGEE_SAFETY_COUNTER) {
+    trigger_event(EV_APOGEE);
     fsm_state->flight_state = APOGEE;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
@@ -242,37 +249,56 @@ void check_apogee_phase(flight_fsm_t *fsm_state,
     fsm_state->memory[1]++;
   } else {
     /* Parachute Not deployed */
-    fsm_state->memory[2]++;
+    fsm_state->memory[1] = 0;
   }
 
   if (fsm_state->memory[1] > PARACHUTE_SAFETY_COUNTER) {
-    fsm_state->flight_state = PARACHUTE;
+    fsm_state->flight_state = DROGUE;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
   }
 
-  if (fsm_state->memory[2] > BALISTIC_SAFETY_COUNTER) {
-    fsm_state->flight_state = BALLISTIC;
+  //  if (fsm_state->memory[2] > BALISTIC_SAFETY_COUNTER) {
+  //    fsm_state->flight_state = BALLISTIC;
+  //    fsm_state->clock_memory = 0;
+  //    fsm_state->memory[1] = 0;
+  //    fsm_state->memory[2] = 0;
+  //  }
+}
+
+void check_drogue_phase(flight_fsm_t *fsm_state,
+                        estimation_output_t *state_data) {
+  if (state_data->height < HEIGHT_AGL_MAIN) {
+    /* Achieved Height to deploy Main */
+    fsm_state->memory[1]++;
+  } else {
+    /* Did Not Achieve */
+    fsm_state->memory[1] = 0;
+  }
+
+  if (fsm_state->memory[1] > MAIN_SAFETY_COUNTER) {
+    trigger_event(EV_POST_APOGEE);
+    fsm_state->flight_state = MAIN;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
   }
 }
 
-void check_descent_phase(flight_fsm_t *fsm_state,
-                         estimation_output_t *state_data) {
-  /* If the position doesnt change we have touchdown */
-  float error = abs(state_data->height - fsm_state->old_height);
-  if (error < HEIGHT_ERROR_BOUND) {
-    /* Parachute Deployed */
+void check_main_phase(flight_fsm_t *fsm_state,
+                      estimation_output_t *state_data) {
+  /* If the velocity is very small we have touchdown */
+  if (abs(state_data->velocity) < VELOCITY_BOUND_TOUCHDOWN) {
+    /* Touchdown achieved */
     fsm_state->memory[1]++;
   } else {
-    /* Parachute Not deployed */
+    /* Touchdown not achieved */
     fsm_state->memory[1] = 0;
   }
 
   if (fsm_state->memory[1] > TOUCHDOWN_SAFETY_COUNTER) {
+    trigger_event(EV_TOUCHDOWN);
     fsm_state->flight_state = TOUCHDOWN;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;

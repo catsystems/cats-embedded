@@ -430,10 +430,11 @@ static void init_tasks() {
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
         /* creation of task_flight_fsm */
-        // osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
         /* creation of task_drop_test_fsm */
-        osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
+        //        osThreadNew(task_drop_test_fsm, NULL,
+        //        &task_drop_test_fsm_attributes);
         /* creation of task_peripherals */
         osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
@@ -499,12 +500,12 @@ static void create_event_map() {
   /* TODO: where to free this? */
   event_output_map = calloc(7, sizeof(event_output_map_elem_t));
 
-  event_output_map[EV_READY].num_outputs = 1;
-  event_output_map[EV_READY].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_READY].output_list[0].func_ptr =
+  event_output_map[EV_IDLE].num_outputs = 1;
+  event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_IDLE].output_list[0].func_ptr =
       output_table[RECORDER_STATE];
-  event_output_map[EV_READY].output_list[0].func_arg = REC_WRITE_TO_FLASH;
-  event_output_map[EV_READY].output_list[0].delay_ms = 0;
+  event_output_map[EV_IDLE].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
   event_output_map[EV_APOGEE].num_outputs = 5;
   event_output_map[EV_APOGEE].output_list = calloc(5, sizeof(peripheral_out_t));

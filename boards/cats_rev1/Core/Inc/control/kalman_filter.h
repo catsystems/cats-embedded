@@ -13,7 +13,7 @@
 
 #define STD_NOISE_BARO   4.0f
 #define STD_NOISE_IMU    0.01f
-#define STD_NOISE_OFFSET 0.00000001f
+#define STD_NOISE_OFFSET 0.0f
 
 #endif /* INC_CONTROL_KALMAN_FILTER_H_ */
 

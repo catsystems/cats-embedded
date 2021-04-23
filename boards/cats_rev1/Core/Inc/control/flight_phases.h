@@ -34,13 +34,17 @@
 #define APOGEE_SAFETY_COUNTER 10
 
 /* APOGEE */
-#define PARACHUTE_DESCENT_SPEED  -10
+#define PARACHUTE_DESCENT_SPEED  -100.0f
 #define PARACHUTE_SAFETY_COUNTER 300
 #define BALISTIC_SAFETY_COUNTER  300
 
-/* BALLISTIC AND PARACHUTE */
-#define HEIGHT_ERROR_BOUND       3
-#define TOUCHDOWN_SAFETY_COUNTER 1000
+/* DROGUE */
+#define HEIGHT_AGL_MAIN     50.0f
+#define MAIN_SAFETY_COUNTER 10
+
+/* MAIN */
+#define VELOCITY_BOUND_TOUCHDOWN 4.0f
+#define TOUCHDOWN_SAFETY_COUNTER 100
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
                         estimation_output_t *state_data,

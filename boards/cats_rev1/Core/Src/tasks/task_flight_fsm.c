@@ -35,7 +35,7 @@ void task_flight_fsm(void *argument) {
   settings = cc_get_control_settings();
 
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  tick_update = osKernelGetTickFreq() * 2 / CONTROL_SAMPLING_FREQ;
 
   float max_v = 0;
   float max_a = 0;

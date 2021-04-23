@@ -75,8 +75,8 @@ typedef enum {
   SUPERSONIC,
   TRANSONIC_2,
   APOGEE,
-  PARACHUTE,
-  BALLISTIC,
+  DROGUE,
+  MAIN,
   TOUCHDOWN,
   HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } flight_fsm_e;
@@ -236,7 +236,8 @@ typedef struct {
 } peripheral_out_t;
 
 typedef enum {
-  EV_READY = 1,
+  EV_IDLE = 1,
+  EV_MOVING,
   EV_LIFTOFF,
   EV_MAX_V,
   EV_APOGEE,
