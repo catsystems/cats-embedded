@@ -8,15 +8,16 @@
 #ifndef INC_UTIL_BUZZER_HANDLER_H_
 #define INC_UTIL_BUZZER_HANDLER_H_
 
-#define BUZZER_COMMAND_MAX_LENGTH 7
+#define BUZZER_COMMAND_MAX_LENGTH 9
 
 extern const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH];
 
 #define BUZZER_SHORT_BEEP  100
 #define BUZZER_LONG_BEEP   400
-#define BUZZER_SHORT_PAUSE 300
+#define BUZZER_SHORT_PAUSE 200
 #define BUZZER_LONG_PAUSE  1000
 
-void error_buzzer(cats_error_e error);
+void buzzer_handler_update();
+bool buzzer_queue_status(buzzer_status_e status);
 
 #endif /* INC_UTIL_BUZZER_HANDLER_H_ */

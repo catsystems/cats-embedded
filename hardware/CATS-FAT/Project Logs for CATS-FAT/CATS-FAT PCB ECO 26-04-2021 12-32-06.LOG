@@ -1,0 +1,9 @@
+Added Component: Designator=X4(THT Stiftleiste 6-Pol (2x3) 90°)
+Add component. Clean all parameters for all variants
+Added Pin To Net: NetName=GND Pin=X4-1
+Added Pin To Net: NetName=GND Pin=X4-2
+Added Pin To Net: NetName=5V Pin=X4-3
+Added Pin To Net: NetName=5V Pin=X4-4
+Added Pin To Net: NetName=SERVO1 Pin=X4-5
+Added Pin To Net: NetName=SERVO2 Pin=X4-6
+Added Member To Class: ClassName=CATS-FAT-Overview Member=Component X4 Servo Connector

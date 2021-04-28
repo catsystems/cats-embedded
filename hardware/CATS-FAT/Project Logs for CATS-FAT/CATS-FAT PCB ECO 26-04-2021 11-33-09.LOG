@@ -1,0 +1,41 @@
+Change Component Footprint: Designator=LS1 Old Footprint=THT BUZZER IP303012 New Footprint=SMD BUZZER CMT-8504
+Added Component: Designator=U9_U_CATS-FAT-IMU1(SMD IC LGA-16 5/3)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.invensense.com/wp-content/uploads/2015/12/DS-000184-ICM-20600-v1.0.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = "1428-1058-1-ND"; VariantName = "[No Variations]"
+Added Component: Designator=U9_U_CATS-FAT-IMU2(SMD IC LGA-16 5/3)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.invensense.com/wp-content/uploads/2015/12/DS-000184-ICM-20600-v1.0.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = "1428-1058-1-ND"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=3V3 Pin=U9_U_CATS-FAT-IMU1-1
+Added Pin To Net: NetName=SPI1_SCK Pin=U9_U_CATS-FAT-IMU1-2
+Added Pin To Net: NetName=SPI1_MOSI Pin=U9_U_CATS-FAT-IMU1-3
+Added Pin To Net: NetName=SPI1_MISO Pin=U9_U_CATS-FAT-IMU1-4
+Added Pin To Net: NetName=CS_IMU1 Pin=U9_U_CATS-FAT-IMU1-5
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-8
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-9
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-10
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-11
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-12
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-13
+Added Pin To Net: NetName=NetC43_U_CATS-FAT-IMU1_2 Pin=U9_U_CATS-FAT-IMU1-14
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU1-15
+Added Pin To Net: NetName=3V3 Pin=U9_U_CATS-FAT-IMU1-16
+Added Pin To Net: NetName=3V3 Pin=U9_U_CATS-FAT-IMU2-1
+Added Pin To Net: NetName=SPI1_SCK Pin=U9_U_CATS-FAT-IMU2-2
+Added Pin To Net: NetName=SPI1_MOSI Pin=U9_U_CATS-FAT-IMU2-3
+Added Pin To Net: NetName=SPI1_MISO Pin=U9_U_CATS-FAT-IMU2-4
+Added Pin To Net: NetName=CS_IMU2 Pin=U9_U_CATS-FAT-IMU2-5
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-8
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-9
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-10
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-11
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-12
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-13
+Added Pin To Net: NetName=NetC43_U_CATS-FAT-IMU2_2 Pin=U9_U_CATS-FAT-IMU2-14
+Added Pin To Net: NetName=GND Pin=U9_U_CATS-FAT-IMU2-15
+Added Pin To Net: NetName=3V3 Pin=U9_U_CATS-FAT-IMU2-16
+Added Member To Class: ClassName=U_CATS-FAT-IMU1 Member=Component U9_U_CATS-FAT-IMU1 (U9) ICM-20601
+Added Member To Class: ClassName=U_CATS-FAT-IMU2 Member=Component U9_U_CATS-FAT-IMU2 (U9) ICM-20601

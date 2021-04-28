@@ -224,6 +224,14 @@ typedef enum {
   CATS_ERROR_HARD_FAULT
 } cats_error_e;
 
+typedef enum {
+  CATS_STATUS_NONE = 0,
+  CATS_STATUS_BOOTUP,
+  CATS_STATUS_READY,
+  CATS_STATUS_CHANGED_MOVING,
+  CATS_STATUS_CHANGED_READY,
+} buzzer_status_e;
+
 typedef bool (*peripheral_out_fp)(int16_t);
 
 typedef struct {

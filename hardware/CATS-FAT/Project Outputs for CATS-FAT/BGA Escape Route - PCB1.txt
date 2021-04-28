@@ -1,0 +1,64 @@
+BGA Escape Route
+Filename     : PCB1.PcbDoc
+Date         : 25/04/2021
+Time         : 13:05:20
+Time Elapsed : 00:00:00
+
+Designator2
+    Pad Designator2-B11(117.312mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-B2(112.812mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-L11(117.312mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-L2(112.812mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-B10(116.812mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-B3(113.312mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-C11(117.312mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-C2(112.812mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-K11(117.312mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-K2(112.812mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-L10(116.812mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-L3(113.312mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-B9(116.312mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-B4(113.812mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-D11(117.312mm,76.942mm) on Top Layer on Net NET
+    Pad Designator2-D2(112.812mm,76.942mm) on Top Layer on Net NET
+    Pad Designator2-J11(117.312mm,74.442mm) on Top Layer on Net NET
+    Pad Designator2-J2(112.812mm,74.442mm) on Top Layer on Net NET
+    Pad Designator2-L9(116.312mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-L4(113.812mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-C10(116.812mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-C3(113.312mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-K10(116.812mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-K3(113.312mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-B8(115.812mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-B5(114.312mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-E11(117.312mm,76.442mm) on Top Layer on Net NET
+    Pad Designator2-E2(112.812mm,76.442mm) on Top Layer on Net NET
+    Pad Designator2-H11(117.312mm,74.942mm) on Top Layer on Net NET
+    Pad Designator2-H2(112.812mm,74.942mm) on Top Layer on Net NET
+    Pad Designator2-L8(115.812mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-L5(114.312mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-B7(115.312mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-B6(114.812mm,77.942mm) on Top Layer on Net NET
+    Pad Designator2-F11(117.312mm,75.942mm) on Top Layer on Net NET
+    Pad Designator2-F2(112.812mm,75.942mm) on Top Layer on Net NET
+    Pad Designator2-G11(117.312mm,75.442mm) on Top Layer on Net NET
+    Pad Designator2-G2(112.812mm,75.442mm) on Top Layer on Net NET
+    Pad Designator2-L7(115.312mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-L6(114.812mm,73.442mm) on Top Layer on Net NET
+    Pad Designator2-C9(116.312mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-C4(113.812mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-D10(116.812mm,76.942mm) on Top Layer on Net NET
+    Pad Designator2-D3(113.312mm,76.942mm) on Top Layer on Net NET
+    Pad Designator2-J10(116.812mm,74.442mm) on Top Layer on Net NET
+    Pad Designator2-J3(113.312mm,74.442mm) on Top Layer on Net NET
+    Pad Designator2-K9(116.312mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-K4(113.812mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-C8(115.812mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-C5(114.312mm,77.442mm) on Top Layer on Net NET
+    Pad Designator2-E10(116.812mm,76.442mm) on Top Layer on Net NET
+    Pad Designator2-E3(113.312mm,76.442mm) on Top Layer on Net NET
+    Pad Designator2-H10(116.812mm,74.942mm) on Top Layer on Net NET
+    Pad Designator2-H3(113.312mm,74.942mm) on Top Layer on Net NET
+    Pad Designator2-K8(115.812mm,73.942mm) on Top Layer on Net NET
+    Pad Designator2-K5(114.312mm,73.942mm) on Top Layer on Net NET
+count : 56

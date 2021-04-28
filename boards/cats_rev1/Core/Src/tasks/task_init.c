@@ -24,6 +24,7 @@
 #include "tasks/task_flash_reader.h"
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_receiver.h"
+#include "tasks/task_health_monitor.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
@@ -64,6 +65,18 @@ const osThreadAttr_t task_receiver_attributes = {
     .stack_size = sizeof(task_receiver_buffer),
     .cb_mem = &task_receiver_control_block,
     .cb_size = sizeof(task_receiver_control_block),
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+/* Definitions for health_monitor_receiver */
+uint32_t task_health_monitor_buffer[256];
+StaticTask_t task_health_monitor_control_block;
+const osThreadAttr_t task_health_monitor_attributes = {
+    .name = "task_health_monitor",
+    .stack_mem = &task_health_monitor_buffer[0],
+    .stack_size = sizeof(task_health_monitor_buffer),
+    .cb_mem = &task_health_monitor_control_block,
+    .cb_size = sizeof(task_health_monitor_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -235,26 +248,10 @@ void task_init(void *argument) {
   adc_init();
   osDelay(100);
   battery_monitor_init();
+  buzzer_queue_status(CATS_STATUS_BOOTUP);
 
   /* Infinite loop */
   for (;;) {
-    battery_level_e level = battery_level();
-    if (level == BATTERY_CRIT)
-      error_buzzer(CATS_ERROR_BAT_CRIT);
-    else if (level == BATTERY_LOW)
-      error_buzzer(CATS_ERROR_BAT_LOW);
-    else
-      error_buzzer(CATS_ERROR_OK);
-
-    if (global_flight_state.flight_state == APOGEE) {
-      buzzer_beep(&BUZZER, 1000);
-    } else if (global_flight_state.flight_state == IDLE &&
-               global_flight_state.state_changed) {
-      buzzer_beep(&BUZZER, 1000);
-    }
-
-    buzzer_update(&BUZZER);
-
     osDelay(10);
   }
   /* USER CODE END 5 */
@@ -353,31 +350,32 @@ static void init_communication() {
     osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
   }
 #else
-  log_raw("Waiting 10s for usb connection");
-  uint32_t comm_start_time = osKernelGetTickCount();
-  while (osKernelGetTickCount() - comm_start_time < 10000 &&
-         usb_communication_complete != true) {
-    if (usb_msg_received) {
-      usb_msg_received = false;
-      uint8_t buffer[20];
-      for (int i = 0; i < 20; i++) buffer[i] = 0;
-      int i = 0;
-      while (i < 20 &&
-             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
-               usb_receive_buffer[i] == '\n')) {
-        buffer[i] = usb_receive_buffer[i];
-        i++;
-      }
-
-      if (!strcmp((const char *)buffer, "config")) {
-        usb_communication_complete = true;
-        cc_load();
-        osThreadNew(task_usb_communicator, NULL,
-                    &task_usb_communicator_attributes);
-      }
-    }
-    osDelay(100);
-  }
+//  log_raw("Waiting 10s for usb connection");
+//  uint32_t comm_start_time = osKernelGetTickCount();
+//  while (osKernelGetTickCount() - comm_start_time < 10000 &&
+//         usb_communication_complete != true) {
+//    if (usb_msg_received) {
+//      usb_msg_received = false;
+//      uint8_t buffer[20];
+//      for (int i = 0; i < 20; i++) buffer[i] = 0;
+//      int i = 0;
+//      while (i < 20 &&
+//             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r'
+//             ||
+//               usb_receive_buffer[i] == '\n')) {
+//        buffer[i] = usb_receive_buffer[i];
+//        i++;
+//      }
+//
+//      if (!strcmp((const char *)buffer, "config")) {
+//        usb_communication_complete = true;
+//        cc_load();
+//        osThreadNew(task_usb_communicator, NULL,
+//                    &task_usb_communicator_attributes);
+//      }
+//    }
+//    osDelay(100);
+//  }
 #endif
 
   cc_load();
@@ -440,6 +438,9 @@ static void init_tasks() {
 
         /* creation of task_state_est */
         osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+
+        /* creation of task_health_monitor */
+        osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
       } break;
       case CATS_CONFIG:
         /* creation of task_flash_reader */
@@ -491,7 +492,7 @@ static void init_baro() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 3500);
-  buzzer_set_volume(&BUZZER, 20);
+  buzzer_set_volume(&BUZZER, 60);
 }
 
 static void create_event_map() {
@@ -500,54 +501,56 @@ static void create_event_map() {
   /* TODO: where to free this? */
   event_output_map = calloc(7, sizeof(event_output_map_elem_t));
 
-  event_output_map[EV_IDLE].num_outputs = 1;
-  event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_IDLE].output_list[0].func_ptr =
-      output_table[RECORDER_STATE];
-  event_output_map[EV_IDLE].output_list[0].func_arg = REC_WRITE_TO_FLASH;
-  event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
-
-  event_output_map[EV_APOGEE].num_outputs = 5;
-  event_output_map[EV_APOGEE].output_list = calloc(5, sizeof(peripheral_out_t));
-  event_output_map[EV_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_LOW_LEVEL_ONE];                      // IO1
-  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
-  event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
-  event_output_map[EV_APOGEE].output_list[1].func_ptr =
-      output_table[OUT_LOW_LEVEL_TWO];                      // IO2
-  event_output_map[EV_APOGEE].output_list[1].func_arg = 1;  // Set HIGH
-  event_output_map[EV_APOGEE].output_list[1].delay_ms = 0;
-  event_output_map[EV_APOGEE].output_list[2].func_ptr =
-      output_table[OUT_HIGH_CURRENT_TWO];                   // PY2
-  event_output_map[EV_APOGEE].output_list[2].func_arg = 1;  // Turn ON
-  event_output_map[EV_APOGEE].output_list[2].delay_ms = 0;
-  event_output_map[EV_APOGEE].output_list[3].func_ptr =
-      output_table[OUT_LOW_LEVEL_FOUR];                     // S2
-  event_output_map[EV_APOGEE].output_list[3].func_arg = 0;  // Set LOW
-  event_output_map[EV_APOGEE].output_list[3].delay_ms = 0;
-  event_output_map[EV_APOGEE].output_list[4].func_ptr =
-      output_table[OUT_HIGH_CURRENT_THREE];                 // PY3
-  event_output_map[EV_APOGEE].output_list[4].func_arg = 1;  // Turn ON
-  event_output_map[EV_APOGEE].output_list[4].delay_ms = 0;
-
-  event_output_map[EV_POST_APOGEE].num_outputs = 2;
-  event_output_map[EV_POST_APOGEE].output_list =
-      calloc(2, sizeof(peripheral_out_t));
-  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_LOW_LEVEL_THREE];                         // S1
-  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
-  event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
-  event_output_map[EV_POST_APOGEE].output_list[1].func_ptr =
-      output_table[OUT_HIGH_CURRENT_ONE];                        // PY1
-  event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  // Turn ON
-  event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
-
-  event_output_map[EV_TOUCHDOWN].num_outputs = 1;
-  event_output_map[EV_TOUCHDOWN].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
-      output_table[RECORDER_STATE];
-  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
-  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
+  //  event_output_map[EV_IDLE].num_outputs = 1;
+  //  event_output_map[EV_IDLE].output_list = calloc(1,
+  //  sizeof(peripheral_out_t));
+  //  event_output_map[EV_IDLE].output_list[0].func_ptr =
+  //      output_table[RECORDER_STATE];
+  //  event_output_map[EV_IDLE].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  //  event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
+  //
+  //  event_output_map[EV_APOGEE].num_outputs = 5;
+  //  event_output_map[EV_APOGEE].output_list = calloc(5,
+  //  sizeof(peripheral_out_t));
+  //  event_output_map[EV_APOGEE].output_list[0].func_ptr =
+  //      output_table[OUT_LOW_LEVEL_ONE];                      // IO1
+  //  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  //  event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
+  //  event_output_map[EV_APOGEE].output_list[1].func_ptr =
+  //      output_table[OUT_LOW_LEVEL_TWO];                      // IO2
+  //  event_output_map[EV_APOGEE].output_list[1].func_arg = 1;  // Set HIGH
+  //  event_output_map[EV_APOGEE].output_list[1].delay_ms = 0;
+  //  event_output_map[EV_APOGEE].output_list[2].func_ptr =
+  //      output_table[OUT_HIGH_CURRENT_TWO];                   // PY2
+  //  event_output_map[EV_APOGEE].output_list[2].func_arg = 1;  // Turn ON
+  //  event_output_map[EV_APOGEE].output_list[2].delay_ms = 0;
+  //  event_output_map[EV_APOGEE].output_list[3].func_ptr =
+  //      output_table[OUT_LOW_LEVEL_FOUR];                     // S2
+  //  event_output_map[EV_APOGEE].output_list[3].func_arg = 0;  // Set LOW
+  //  event_output_map[EV_APOGEE].output_list[3].delay_ms = 0;
+  //  event_output_map[EV_APOGEE].output_list[4].func_ptr =
+  //      output_table[OUT_HIGH_CURRENT_THREE];                 // PY3
+  //  event_output_map[EV_APOGEE].output_list[4].func_arg = 1;  // Turn ON
+  //  event_output_map[EV_APOGEE].output_list[4].delay_ms = 0;
+  //
+  //  event_output_map[EV_POST_APOGEE].num_outputs = 2;
+  //  event_output_map[EV_POST_APOGEE].output_list =
+  //      calloc(2, sizeof(peripheral_out_t));
+  //  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
+  //      output_table[OUT_LOW_LEVEL_THREE];                         // S1
+  //  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  //  event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
+  //  event_output_map[EV_POST_APOGEE].output_list[1].func_ptr =
+  //      output_table[OUT_HIGH_CURRENT_ONE];                        // PY1
+  //  event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  // Turn ON
+  //  event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
+  //
+  //  event_output_map[EV_TOUCHDOWN].num_outputs = 1;
+  //  event_output_map[EV_TOUCHDOWN].output_list =
+  //      calloc(1, sizeof(peripheral_out_t));
+  //  event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
+  //      output_table[RECORDER_STATE];
+  //  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
+  //  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
   /* ................ */
 }
