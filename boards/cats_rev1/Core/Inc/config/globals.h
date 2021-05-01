@@ -50,6 +50,10 @@ extern sensor_elimination_t global_elimination_data;
 extern estimation_output_t global_kf_data;
 extern dt_telemetry_trigger_t dt_telemetry_trigger;
 
+/** Timers **/
+extern uint32_t num_timers;
+extern cats_timer_t *ev_timers;
+
 /** Initialization End Time **/
 
 extern timestamp_t init_end_time;

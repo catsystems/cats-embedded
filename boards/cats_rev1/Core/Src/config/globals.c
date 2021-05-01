@@ -103,6 +103,10 @@ flight_fsm_t global_flight_state = {.flight_state = INVALID};
 drop_test_fsm_t global_drop_test_state = {.flight_state = DT_IDLE};
 dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
+/** Timers **/
+uint32_t num_timers = 2;
+cats_timer_t *ev_timers = NULL;
+
 /** Initialization End Time **/
 
 timestamp_t init_end_time = {0};

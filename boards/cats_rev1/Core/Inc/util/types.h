@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../DSP/Inc/arm_math.h"
+#include "cmsis_os2.h"
 
 /** BASIC TYPES **/
 
@@ -187,16 +188,6 @@ typedef struct {
 } kalman_filter_t;
 
 typedef struct {
-  float std_noise_accel;
-  float std_noise_accel_apogee;
-  float std_noise_height;
-  float std_noise_bias;
-  float init_height;
-  float init_velocity;
-  float init_cov;
-} kf_settings_t;
-
-typedef struct {
   float liftoff_acc_threshold;
   float apogee_timer;
   float second_stage_timer;
@@ -259,6 +250,13 @@ typedef enum {
   REC_FILL_QUEUE,
   REC_WRITE_TO_FLASH
 } recorder_status_e;
+
+typedef struct {
+  cats_event_e timer_init_event;
+  cats_event_e execute_event;
+  osTimerId_t timer_id;
+  uint32_t timer_duration;
+} cats_timer_t;
 
 typedef struct {
   /* Number of outputs tied to an event */

@@ -31,8 +31,7 @@ void task_flight_fsm(void *argument) {
   imu_data_t local_imu = {0};
   estimation_output_t local_kf_data = {0};
 
-  control_settings_t settings = {0};
-  settings = cc_get_control_settings();
+  control_settings_t settings = cc_get_control_settings();
 
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() * 2 / CONTROL_SAMPLING_FREQ;

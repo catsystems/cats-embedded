@@ -27,22 +27,23 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
  * @retval None
  */
 void task_peripherals(void* argument) {
-  //  flight_fsm_t fsm_state = {.flight_state = MOVING};
-  //
-  //  uint8_t parachute_fired = 0;
-  //  uint8_t trigger_parachute = 0;
-  //  chute_type_t chute_type;
-  //
-  //  /* Read from Config the Chute Type */
-  //  chute_type.stages = 1;
-  //  chute_type.stage_type_1 = SERVO_1_TRIGGER;
-  //  chute_type.servo_angle_1 = 0;
-  //  chute_type.servo_angle_2 = 0;
-
   cats_event_e curr_event;
+
+  /* Create Timers */
+  for (uint32_t i = 0; i < num_timers; i++) {
+    ev_timers[i].timer_id = osTimerNew((void*)trigger_event, osTimerOnce,
+                                       (void*)ev_timers[i].execute_event, NULL);
+  }
+
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, NULL, osWaitForever) ==
         osOK) {
+      /* Start Timer if the Config says so */
+      for (uint32_t i = 0; i < num_timers; i++) {
+        if (curr_event == ev_timers[i].timer_init_event) {
+          osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration);
+        }
+      }
       peripheral_out_t* output_list = event_output_map[curr_event].output_list;
       for (uint32_t i = 0; i < event_output_map[curr_event].num_outputs; ++i) {
         timestamp_t curr_ts = osKernelGetTickCount();
@@ -73,80 +74,6 @@ void task_peripherals(void* argument) {
       }
     }
   }
-
-  //  while (1) {
-  //    tick_count += tick_update;
-  //    fsm_state = global_flight_state;
-  //
-  //    /* Check If we need to Trigger Parachute */
-  //    if (fsm_state.flight_state == APOGEE && fsm_state.state_changed) {
-  //      trigger_parachute = 1;
-  //    }
-
-  //    if (trigger_parachute == 1) {
-  //      if (chute_type.stages == 1) {
-  //        switch (chute_type.stage_type_1) {
-  //          case SERVO_1_TRIGGER:
-  //            servo_set_position(&SERVO1, chute_type.servo_angle_1);
-  //            break;
-  //          case SERVO_2_TRIGGER:
-  //            servo_set_position(&SERVO2, chute_type.servo_angle_2);
-  //            break;
-  //          case SERVO_1_2_TRIGGER:
-  //            servo_set_position(&SERVO1, chute_type.servo_angle_1);
-  //            servo_set_position(&SERVO2, chute_type.servo_angle_2);
-  //            break;
-  //          case PYRO_1_TRIGGER:
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
-  //            break;
-  //          case PYRO_2_TRIGGER:
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
-  //            break;
-  //          case PYRO_3_TRIGGER:
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
-  //            break;
-  //          case ALL_PYROS_TRIGGER:
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_1_Pin, GPIO_PIN_SET);
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_2_Pin, GPIO_PIN_SET);
-  //            HAL_GPIO_WritePin(GPIOC, PYRO_3_Pin, GPIO_PIN_SET);
-  //            break;
-  //          default:
-  //            break;
-  //        }
-  //      }
-  //    }
-  //
-  //    /* Check if we have actually triggered the Parachute */
-  //    if (chute_type.stages == 1) {
-  //      switch (chute_type.stage_type_1) {
-  //        case SERVO_1_TRIGGER:
-  //          /* Can we Read the Servo Angle?*/
-  //          break;
-  //        case SERVO_2_TRIGGER:
-  //          /* Can we Read the Servo Angle?*/
-  //          break;
-  //        case SERVO_1_2_TRIGGER:
-  //          /* Can we Read the Servo Angle?*/
-  //          break;
-  //        case PYRO_1_TRIGGER:
-  //          /* Read Pyro Voltage */
-  //          break;
-  //        case PYRO_2_TRIGGER:
-  //          /* Read Pyro Voltage */
-  //          break;
-  //        case PYRO_3_TRIGGER:
-  //          /* Read Pyro Voltage */
-  //          break;
-  //        case ALL_PYROS_TRIGGER:
-  //          /* Read Pyro Voltage */
-  //          break;
-  //        default:
-  //          break;
-  //      }
-  //    }
-
-  // osDelayUntil(tick_count);
-  //  }
 }
 
 osStatus_t trigger_event(cats_event_e ev) {

@@ -175,6 +175,7 @@ static void init_tasks();
 static void init_imu();
 static void init_baro();
 static void init_buzzer();
+static void init_timers();
 static void create_event_map();
 
 /** Exported Function Definitions **/
@@ -235,6 +236,7 @@ void task_init(void *argument) {
   osDelay(100);
 
   create_event_map();
+  init_timers();
 
   init_tasks();
   log_info("Task initialization complete.");
@@ -553,4 +555,22 @@ static void create_event_map() {
   //  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
   //  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
   /* ................ */
+}
+
+static void init_timers() {
+  ev_timers = calloc(num_timers, sizeof(cats_timer_t));
+  /* Timer 1 */
+  ev_timers[0].timer_init_event = EV_LIFTOFF;
+  ev_timers[0].execute_event = EV_APOGEE;
+  //	ev_timers[0].timer_duration = cc_get_apogee_timer()*1000;
+  ev_timers[0].timer_duration = 2000;
+  //	ev_timers[0].timer_id = osTimerNew(timer_callback, osTimerOnce, (void
+  //*)ev_timers[0].execute_event, NULL);
+  /* Timer 1 */
+  ev_timers[1].timer_init_event = EV_LIFTOFF;
+  ev_timers[1].execute_event = EV_POST_APOGEE;
+  //	ev_timers[1].timer_duration = cc_get_second_stage_timer()*1000;
+  ev_timers[1].timer_duration = 5000;
+  //	ev_timers[1].timer_id = osTimerNew(timer_callback, osTimerOnce, (void
+  //*)ev_timers[1].execute_event, NULL);
 }
