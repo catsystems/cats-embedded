@@ -352,32 +352,31 @@ static void init_communication() {
     osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
   }
 #else
-//  log_raw("Waiting 10s for usb connection");
-//  uint32_t comm_start_time = osKernelGetTickCount();
-//  while (osKernelGetTickCount() - comm_start_time < 10000 &&
-//         usb_communication_complete != true) {
-//    if (usb_msg_received) {
-//      usb_msg_received = false;
-//      uint8_t buffer[20];
-//      for (int i = 0; i < 20; i++) buffer[i] = 0;
-//      int i = 0;
-//      while (i < 20 &&
-//             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r'
-//             ||
-//               usb_receive_buffer[i] == '\n')) {
-//        buffer[i] = usb_receive_buffer[i];
-//        i++;
-//      }
-//
-//      if (!strcmp((const char *)buffer, "config")) {
-//        usb_communication_complete = true;
-//        cc_load();
-//        osThreadNew(task_usb_communicator, NULL,
-//                    &task_usb_communicator_attributes);
-//      }
-//    }
-//    osDelay(100);
-//  }
+  log_raw("Waiting 10s for usb connection");
+  uint32_t comm_start_time = osKernelGetTickCount();
+  while (osKernelGetTickCount() - comm_start_time < 10000 &&
+         usb_communication_complete != true) {
+    if (usb_msg_received) {
+      usb_msg_received = false;
+      uint8_t buffer[20];
+      for (int i = 0; i < 20; i++) buffer[i] = 0;
+      int i = 0;
+      while (i < 20 &&
+             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
+               usb_receive_buffer[i] == '\n')) {
+        buffer[i] = usb_receive_buffer[i];
+        i++;
+      }
+
+      if (!strcmp((const char *)buffer, "config")) {
+        usb_communication_complete = true;
+        cc_load();
+        osThreadNew(task_usb_communicator, NULL,
+                    &task_usb_communicator_attributes);
+      }
+    }
+    osDelay(100);
+  }
 #endif
 
   cc_load();
@@ -562,15 +561,18 @@ static void init_timers() {
   /* Timer 1 */
   ev_timers[0].timer_init_event = EV_LIFTOFF;
   ev_timers[0].execute_event = EV_APOGEE;
-  //	ev_timers[0].timer_duration = cc_get_apogee_timer()*1000;
-  ev_timers[0].timer_duration = 2000;
-  //	ev_timers[0].timer_id = osTimerNew(timer_callback, osTimerOnce, (void
-  //*)ev_timers[0].execute_event, NULL);
-  /* Timer 1 */
+  if (cc_get_apogee_timer() < 3) {
+    ev_timers[0].timer_duration = 10000;
+  } else {
+    ev_timers[0].timer_duration = (uint32_t)cc_get_apogee_timer() * 1000;
+  }
+
+  /* Timer 2 */
   ev_timers[1].timer_init_event = EV_LIFTOFF;
   ev_timers[1].execute_event = EV_POST_APOGEE;
-  //	ev_timers[1].timer_duration = cc_get_second_stage_timer()*1000;
-  ev_timers[1].timer_duration = 5000;
-  //	ev_timers[1].timer_id = osTimerNew(timer_callback, osTimerOnce, (void
-  //*)ev_timers[1].execute_event, NULL);
+  if (cc_get_apogee_timer() < 5) {
+    ev_timers[1].timer_duration = 20000;
+  } else {
+    ev_timers[1].timer_duration = (uint32_t)cc_get_second_stage_timer() * 1000;
+  }
 }
