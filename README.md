@@ -1,6 +1,6 @@
 # The C.A.T.S. Computer
 
-<img src="logo/PNG/logo_with_smile.png" alt = "CATS Logo" width="300" height="300">
+<img src="https://github.com/catsystems/cats-docs/blob/main/logo/PNG/logo_with_smile.png" alt = "CATS Logo" width="300" height="300">
 
 *Always land on your ~~feet~~ paws...*
 
