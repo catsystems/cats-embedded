@@ -4,6 +4,16 @@
 
 *Always land on your paws*
 
+## Features
+* Kalman filter altitude and velocity estimation
+* Triple sensor redundancy
+* Highly configurable events
+* Backup timers
+* High speed logging
+
+## Configuration Tool
+Currently the configuration tool is still under development.
+
 ## Open Source
 All CATS code is open source and can be used free of charge without warranty. 
 
