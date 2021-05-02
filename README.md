@@ -5,7 +5,7 @@
 *Always land on your paws*
 
 ## Open Source
-All CATS code is open source and can be used free of charge without warrenty. 
+All CATS code is open source and can be used free of charge without warranty. 
 
 ## Pushing to Remote Repository
 
