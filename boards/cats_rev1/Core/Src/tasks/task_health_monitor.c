@@ -25,6 +25,7 @@ void task_health_monitor(void *argument) {
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   uint32_t alive_timer = 0;
+  flight_fsm_e old_fsm_state = MOVING;
 
   while (1) {
     tick_count += tick_update;
@@ -45,13 +46,14 @@ void task_health_monitor(void *argument) {
     }
 
     if (global_flight_state.flight_state == IDLE &&
-        global_flight_state.state_changed)
+    	(global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_STATUS_CHANGED_READY);
     if (global_flight_state.flight_state == MOVING &&
-        global_flight_state.state_changed)
+        (global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_STATUS_CHANGED_MOVING);
 
     buzzer_handler_update();
+    old_fsm_state = global_flight_state.flight_state;
 
     osDelayUntil(tick_count);
   }

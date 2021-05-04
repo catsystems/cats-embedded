@@ -34,7 +34,7 @@ void task_flight_fsm(void *argument) {
   control_settings_t settings = cc_get_control_settings();
 
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() * 2 / CONTROL_SAMPLING_FREQ;
+  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   float max_v = 0;
   float max_a = 0;
@@ -79,7 +79,7 @@ void task_flight_fsm(void *argument) {
 
       // When we are in any flight state update the flash sector with last
       // flight phase
-      if (fsm_state.flight_state >= THRUSTING_1) {
+      if (fsm_state.flight_state == DROGUE) {
         cs_set_flight_phase(fsm_state.flight_state);
         cs_set_max_altitude(max_h);
         cs_set_max_velocity(max_v);

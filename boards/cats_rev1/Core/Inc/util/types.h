@@ -242,6 +242,8 @@ typedef enum {
   EV_APOGEE,
   EV_POST_APOGEE,
   EV_TOUCHDOWN,
+  EV_TIMER_1,
+  EV_TIMER_2,
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 

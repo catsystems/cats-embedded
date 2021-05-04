@@ -11,8 +11,8 @@
 #include "util/log.h"
 #include "control/math_utils.h"
 
-#define STD_NOISE_BARO   4.0f
-#define STD_NOISE_IMU    0.01f
+#define STD_NOISE_BARO   9.0f			// From data analysis: 2.6f
+#define STD_NOISE_IMU    0.004f			// From data analysis: 0.004f
 #define STD_NOISE_OFFSET 0.0f
 
 #endif /* INC_CONTROL_KALMAN_FILTER_H_ */

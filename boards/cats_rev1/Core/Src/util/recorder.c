@@ -9,9 +9,9 @@
 #include "cmsis_os.h"
 
 /* TODO: set this queue to 256 at least */
-const uint32_t REC_QUEUE_SIZE = 256;
+const uint32_t REC_QUEUE_SIZE = 512;
 const float REC_QUEUE_PRE_THRUSTING_FILL_RATIO = 0.75f;
-const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 192;
+const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 384;
 // TODO Element is not constant error
 // REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE;
 
