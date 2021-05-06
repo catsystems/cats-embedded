@@ -17,7 +17,6 @@ typedef struct buzzer_dev {
   TIM_HandleTypeDef *timer;
   uint32_t channel;
   uint16_t arr;
-
   uint8_t started;
   uint8_t start;
   uint16_t volume;

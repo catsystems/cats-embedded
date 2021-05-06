@@ -13,7 +13,7 @@ static uint16_t instance_count = 0;
 // TODO dynamically allocate the origin array pointers
 static task_origin *origin_parray[MAX_INSTANCES];
 
-void _spi_init(SPI_BUS *bus) {
+static void spi_init(SPI_BUS *bus) {
   // Allocate the task origin struct
   origin_parray[instance_count] = (task_origin *)malloc(sizeof(task_origin));
 
@@ -23,21 +23,21 @@ void _spi_init(SPI_BUS *bus) {
   bus->initialized = 1;
 }
 
-// A task blocking, but non blocking freertos spi transmit receive function
+// A task blocking, but non blocking freertos spi tx_buf rx_buf function
 // Dropin replacement for HAL_SPI_TransmitReceive
-uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
-                             uint8_t *receive, uint16_t rsize) {
-  if (!bus->initialized) _spi_init(bus);
+uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size,
+                             uint8_t *rx_buf, uint16_t rx_size) {
+  if (!bus->initialized) spi_init(bus);
   bus->origin->xTaskToNotify = xTaskGetCurrentTaskHandle();
   // Toggle CS to make device active
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   if (bus->spi_type == SPI_NORMAL) {
-    HAL_SPI_Transmit(bus->spi_handle, transmit, tsize, SPI_TIMEOUT);
-    HAL_SPI_Receive(bus->spi_handle, receive, rsize, SPI_TIMEOUT);
+    HAL_SPI_Transmit(bus->spi_handle, tx_buf, tx_size, SPI_TIMEOUT);
+    HAL_SPI_Receive(bus->spi_handle, rx_buf, rx_size, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
   } else if (bus->spi_type == SPI_IT) {
     bus->origin->busy = 1;
-    HAL_SPI_Transmit_IT(bus->spi_handle, transmit, tsize);
+    HAL_SPI_Transmit_IT(bus->spi_handle, tx_buf, tx_size);
     // Wait for transmission to end without blocking
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     if (!notification) {
@@ -47,7 +47,7 @@ uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
       return 0;
     }
     bus->origin->busy = 1;
-    HAL_SPI_Receive_IT(bus->spi_handle, receive, rsize);
+    HAL_SPI_Receive_IT(bus->spi_handle, rx_buf, rx_size);
     notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
     if (!notification) {
@@ -56,7 +56,7 @@ uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
     }
   } else if (bus->spi_type == SPI_DMA) {
     bus->origin->busy = 1;
-    HAL_SPI_Transmit_DMA(bus->spi_handle, transmit, tsize);
+    HAL_SPI_Transmit_DMA(bus->spi_handle, tx_buf, tx_size);
     // Wait for transmission to end without blocking
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     if (!notification) {
@@ -66,7 +66,7 @@ uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
       return 0;
     }
     bus->origin->busy = 1;
-    HAL_SPI_Receive_DMA(bus->spi_handle, receive, rsize);
+    HAL_SPI_Receive_DMA(bus->spi_handle, rx_buf, rx_size);
     notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
     if (!notification) {
@@ -77,17 +77,17 @@ uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize,
   return 1;
 }
 
-uint8_t spi_transmit(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize) {
-  if (!bus->initialized) _spi_init(bus);
+uint8_t spi_transmit(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size) {
+  if (!bus->initialized) spi_init(bus);
   bus->origin->xTaskToNotify = xTaskGetCurrentTaskHandle();
   // Toggle CS to make device active
   // HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   if (bus->spi_type == SPI_NORMAL) {
-    HAL_SPI_Transmit(bus->spi_handle, transmit, tsize, SPI_TIMEOUT);
+    HAL_SPI_Transmit(bus->spi_handle, tx_buf, tx_size, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
   } else if (bus->spi_type == SPI_IT) {
     bus->origin->busy = 1;
-    HAL_SPI_Transmit_IT(bus->spi_handle, transmit, tsize);
+    HAL_SPI_Transmit_IT(bus->spi_handle, tx_buf, tx_size);
     // Wait for transmission to end without blocking
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     if (!notification) {
@@ -98,7 +98,7 @@ uint8_t spi_transmit(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize) {
     }
   } else if (bus->spi_type == SPI_DMA) {
     bus->origin->busy = 1;
-    HAL_SPI_Transmit_DMA(bus->spi_handle, transmit, tsize);
+    HAL_SPI_Transmit_DMA(bus->spi_handle, tx_buf, tx_size);
     // Wait for transmission to end without blocking
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     if (!notification) {
@@ -111,17 +111,17 @@ uint8_t spi_transmit(SPI_BUS *bus, uint8_t *transmit, uint16_t tsize) {
   return 1;
 }
 
-uint8_t spi_receive(SPI_BUS *bus, uint8_t *receive, uint16_t rsize) {
-  if (!bus->initialized) _spi_init(bus);
+uint8_t spi_receive(SPI_BUS *bus, uint8_t *rx_buf, uint16_t rx_size) {
+  if (!bus->initialized) spi_init(bus);
   bus->origin->xTaskToNotify = xTaskGetCurrentTaskHandle();
   // Toggle CS to make device active
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   if (bus->spi_type == SPI_NORMAL) {
-    HAL_SPI_Receive(bus->spi_handle, receive, rsize, SPI_TIMEOUT);
+    HAL_SPI_Receive(bus->spi_handle, rx_buf, rx_size, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
   } else if (bus->spi_type == SPI_IT) {
     bus->origin->busy = 1;
-    HAL_SPI_Receive_IT(bus->spi_handle, receive, rsize);
+    HAL_SPI_Receive_IT(bus->spi_handle, rx_buf, rx_size);
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
     if (!notification) {
@@ -130,7 +130,7 @@ uint8_t spi_receive(SPI_BUS *bus, uint8_t *receive, uint16_t rsize) {
     }
   } else if (bus->spi_type == SPI_DMA) {
     bus->origin->busy = 1;
-    HAL_SPI_Receive_DMA(bus->spi_handle, receive, rsize);
+    HAL_SPI_Receive_DMA(bus->spi_handle, rx_buf, rx_size);
     uint32_t notification = ulTaskNotifyTake(pdTRUE, SPI_TIMEOUT);
     HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
     if (!notification) {

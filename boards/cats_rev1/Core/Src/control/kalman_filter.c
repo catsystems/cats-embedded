@@ -164,12 +164,12 @@ void initialize_matrices(kalman_filter_t *const filter) {
   memcpy(filter->x_hat_data, x_hat, sizeof(x_hat));
 }
 
-void reset_kalman(kalman_filter_t *filter, int32_t initial_pressure) {
+void reset_kalman(kalman_filter_t *filter, float initial_pressure) {
   log_debug("Resetting Kalman Filter...");
   float32_t x_dash[3] = {0, 10.0f, 0};
   float32_t P_dash[9] = {10.0f, 0, 0, 0, 10.0f, 0, 0, 0, 10.0f};
 
-  filter->pressure_0 = (float)initial_pressure;
+  filter->pressure_0 = initial_pressure;
   memcpy(filter->P_bar_data, P_dash, sizeof(P_dash));
   memcpy(filter->P_hat_data, P_dash, sizeof(P_dash));
   memcpy(filter->x_bar_data, x_dash, sizeof(x_dash));
@@ -223,8 +223,8 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
 }
 
 /* This function implements the Kalman update when no Barometer is faulty */
-cats_status_e kalman_update_full(kalman_filter_t *filter,
-                                 state_estimation_data_t *data) {
+cats_error_e kalman_update_full(kalman_filter_t *filter,
+                                state_estimation_data_t *data) {
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
   arm_mat_init_f32(&holder_mat, 3, 3, holder);
@@ -244,7 +244,7 @@ cats_status_e kalman_update_full(kalman_filter_t *filter,
   float32_t holder2_data[3] = {0, 0, 0};
   arm_matrix_instance_f32 holder2_vec;
   arm_mat_init_f32(&holder2_vec, 3, 1, holder2_data);
-  cats_status_e status = CATS_OK;
+  cats_error_e status = CATS_ERR_OK;
 
   /* Update Step */
 
@@ -293,9 +293,9 @@ cats_status_e kalman_update_full(kalman_filter_t *filter,
 }
 
 /* This function implements the Kalman update when one Barometer is faulty */
-cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
-                                       state_estimation_data_t *data,
-                                       sensor_elimination_t *elimination) {
+cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
+                                      state_estimation_data_t *data,
+                                      sensor_elimination_t *elimination) {
   /* Placeholder Matrices */
 
   float32_t holder_0_3x3[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -336,7 +336,7 @@ cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
   float32_t holder3_data[3] = {0, 0, 0};
   arm_matrix_instance_f32 holder3_vec;
   arm_mat_init_f32(&holder3_vec, 3, 1, holder3_data);
-  cats_status_e status = CATS_OK;
+  cats_error_e status = CATS_ERR_OK;
 
   /* Update Step */
 
@@ -388,10 +388,9 @@ cats_status_e kalman_update_eliminated(kalman_filter_t *filter,
   return status;
 }
 
-cats_status_e kalman_step(kalman_filter_t *filter,
-                          state_estimation_data_t *data,
-                          sensor_elimination_t *elimination) {
-  cats_status_e status = CATS_OK;
+cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data,
+                         sensor_elimination_t *elimination) {
+  cats_error_e status = CATS_ERR_OK;
 
   kalman_prediction(filter, data, elimination);
 
@@ -403,13 +402,13 @@ cats_status_e kalman_step(kalman_filter_t *filter,
       status = kalman_update_eliminated(filter, data, elimination);
       break;
     case 2:
-      status = CATS_FILTER_ERROR;
+      status = CATS_ERR_FILTER;
       break;
     case 3:
-      status = CATS_FILTER_ERROR;
+      status = CATS_ERR_FILTER;
       break;
     default:
-      status = CATS_FILTER_ERROR;
+      status = CATS_ERR_FILTER;
       break;
   }
   if (elimination->num_faulty_baros > 1) {

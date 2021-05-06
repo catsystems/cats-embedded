@@ -194,14 +194,6 @@ typedef struct {
 } control_settings_t;
 
 typedef enum {
-  CATS_OK = 0,
-  CATS_BARO_ERROR,
-  CATS_IMU_ERROR,
-  CATS_FILTER_ERROR,
-  CATS_HARD_FAULT
-} cats_status_e;
-
-typedef enum {
   CATS_ERR_OK = 0,
   CATS_ERR_NO_CONFIG = 0x01,
   CATS_ERR_NO_PYRO = 0x02,

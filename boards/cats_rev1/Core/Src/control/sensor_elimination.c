@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-cats_status_e check_sensors(state_estimation_data_t *data,
-                            sensor_elimination_t *elimination) {
-  cats_status_e status = CATS_OK;
+cats_error_e check_sensors(state_estimation_data_t *data,
+                           sensor_elimination_t *elimination) {
+  cats_error_e status = CATS_ERR_OK;
 
   switch (elimination->num_faulty_imus) {
     case 0:
@@ -42,8 +42,8 @@ cats_status_e check_sensors(state_estimation_data_t *data,
   return status;
 }
 
-cats_status_e check_imus_no_faults(state_estimation_data_t *data,
-                                   sensor_elimination_t *elimination) {
+cats_error_e check_imus_no_faults(state_estimation_data_t *data,
+                                  sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
     if ((data->acceleration[i] > UPPER_BOUND_ACC) ||
@@ -111,19 +111,18 @@ cats_status_e check_imus_no_faults(state_estimation_data_t *data,
 
   switch (elimination->num_faulty_imus) {
     case 0:
-      return CATS_OK;
+      return CATS_ERR_OK;
     case 1:
-      return CATS_IMU_ERROR;
-
+      return CATS_ERR_IMU;
     case 2:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
     default:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
   }
 }
 
-cats_status_e check_baros_no_faults(state_estimation_data_t *data,
-                                    sensor_elimination_t *elimination) {
+cats_error_e check_baros_no_faults(state_estimation_data_t *data,
+                                   sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
     if ((data->pressure[i] > UPPER_BOUND_PRESSURE) ||
@@ -241,18 +240,18 @@ cats_status_e check_baros_no_faults(state_estimation_data_t *data,
 
   switch (elimination->num_faulty_baros) {
     case 0:
-      return CATS_OK;
+      return CATS_ERR_OK;
     case 1:
-      return CATS_BARO_ERROR;
+      return CATS_ERR_BARO;
     case 2:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
     default:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
   }
 }
 
-cats_status_e check_imus_1_fault(state_estimation_data_t *data,
-                                 sensor_elimination_t *elimination) {
+cats_error_e check_imus_1_fault(state_estimation_data_t *data,
+                                sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
     if ((data->acceleration[i] > UPPER_BOUND_ACC) ||
@@ -287,18 +286,18 @@ cats_status_e check_imus_1_fault(state_estimation_data_t *data,
 
   switch (elimination->num_faulty_imus) {
     case 0:
-      return CATS_OK;
+      return CATS_ERR_OK;
     case 1:
-      return CATS_IMU_ERROR;
+      return CATS_ERR_IMU;
     case 2:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
     default:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
   }
 }
 
-cats_status_e check_baros_1_fault(state_estimation_data_t *data,
-                                  sensor_elimination_t *elimination) {
+cats_error_e check_baros_1_fault(state_estimation_data_t *data,
+                                 sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
     if ((data->pressure[i] > UPPER_BOUND_PRESSURE) ||
@@ -345,12 +344,12 @@ cats_status_e check_baros_1_fault(state_estimation_data_t *data,
 
   switch (elimination->num_faulty_baros) {
     case 0:
-      return CATS_OK;
+      return CATS_ERR_OK;
     case 1:
-      return CATS_BARO_ERROR;
+      return CATS_ERR_BARO;
     case 2:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
     default:
-      return CATS_FILTER_ERROR;
+      return CATS_ERR_FILTER;
   }
 }

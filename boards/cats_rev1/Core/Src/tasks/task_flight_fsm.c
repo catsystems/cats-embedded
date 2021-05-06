@@ -73,8 +73,9 @@ _Noreturn void task_flight_fsm(void *argument) {
 
     if (fsm_state.state_changed == 1) {
       log_error("State Changed to %s", flight_fsm_map[fsm_state.flight_state]);
-      flight_state_t flight_state = {.ts = osKernelGetTickCount(),
-                                     .flight_state = fsm_state.flight_state};
+      flight_state_t flight_state = {
+          .ts = osKernelGetTickCount(),
+          .flight_or_drop_state.flight_state = fsm_state.flight_state};
       record(FLIGHT_STATE, &flight_state);
 
       // When we are in any flight state update the flash sector with last

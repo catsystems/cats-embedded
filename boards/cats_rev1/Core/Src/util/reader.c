@@ -60,10 +60,10 @@ void print_recording(uint16_t number) {
 }
 
 void erase_recordings() {
-  for (int i = CATS_STATUS_SECTOR + 1; i < cs_get_last_recorded_sector() + 1;
-       i++) {
+  for (uint32_t i = CATS_STATUS_SECTOR + 1;
+       i < cs_get_last_recorded_sector() + 1; i++) {
     w25qxx_erase_sector(i);
-    log_raw("Erased Sector %d out of %d", i, cs_get_last_recorded_sector());
+    log_raw("Erased Sector %lu out of %d", i, cs_get_last_recorded_sector());
   }
   cs_clear();
   cs_save();

@@ -58,8 +58,13 @@ typedef struct {
 } flight_info_t;
 
 typedef struct {
-  timestamp_t ts;
   flight_fsm_e flight_state;
+  drop_test_fsm_e drop_state;
+} flight_state_u;
+
+typedef struct {
+  timestamp_t ts;
+  flight_state_u flight_or_drop_state;
 } flight_state_t;
 
 typedef struct {

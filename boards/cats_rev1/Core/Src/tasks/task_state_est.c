@@ -62,7 +62,7 @@ void task_state_est(void *argument) {
   uint8_t pressure_counter = 0;
   int32_t rolling_pressure[10];
   int32_t global_average_pressure;
-  int32_t average_pressure = P_INITIAL;
+  float average_pressure = P_INITIAL;
   /* end calibration data */
 
   /* Initialize State Estimation */
@@ -227,11 +227,12 @@ void task_state_est(void *argument) {
         .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    //    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
-    //              (int32_t)((float)filter.x_bar.pData[0] * 1000),
-    //              (int32_t)((float)filter.x_bar.pData[1] * 1000),
-    //              (int32_t)(state_data.acceleration[1] * 1000),
-    //              (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    //        log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset
+    //        %ld",
+    //                  (int32_t)((float)filter.x_bar.pData[0] * 1000),
+    //                  (int32_t)((float)filter.x_bar.pData[1] * 1000),
+    //                  (int32_t)(state_data.acceleration[1] * 1000),
+    //                  (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
     //            log_trace("Calibrated IMU 2: Z: %ld",

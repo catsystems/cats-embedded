@@ -30,5 +30,5 @@ void adjoint(int dim, const float A[dim][dim], float adj[dim][dim]);
 
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
-cats_status_e inverse(int dim, const float A[dim][dim], float inverse[dim][dim],
-                      float lambda);
+cats_error_e inverse(int dim, const float A[dim][dim], float inverse[dim][dim],
+                     float lambda);

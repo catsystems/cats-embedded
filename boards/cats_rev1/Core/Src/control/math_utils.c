@@ -99,8 +99,8 @@ void adjoint(int dim, const float A[dim][dim], float adj[dim][dim]) {
 /* Function to calculate and store inverse, returns false if matrix is singular
  */
 /* https://www.geeksforgeeks.org/adjoint-inverse-matrix/ */
-cats_status_e inverse(int dim, const float A[dim][dim], float A_inv[dim][dim],
-                      float lambda) {
+cats_error_e inverse(int dim, const float A[dim][dim], float A_inv[dim][dim],
+                     float lambda) {
   /* add damping factor to avoid singularities. */
   /* if no damping is required set lambda to 0.0 */
   float A_dash[dim][dim];
@@ -114,7 +114,7 @@ cats_status_e inverse(int dim, const float A[dim][dim], float A_inv[dim][dim],
 
   if (det == 0) {
     log_fatal("Determinant is zero!");
-    return CATS_FILTER_ERROR;
+    return CATS_ERR_FILTER;
   }
 
   // Find adjoint
@@ -128,5 +128,5 @@ cats_status_e inverse(int dim, const float A[dim][dim], float A_inv[dim][dim],
     }
   }
 
-  return CATS_OK;
+  return CATS_ERR_OK;
 }
