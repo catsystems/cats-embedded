@@ -23,7 +23,7 @@
  * @param argument: Not used
  * @retval None
  */
-void task_flight_fsm(void *argument) {
+_Noreturn void task_flight_fsm(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 

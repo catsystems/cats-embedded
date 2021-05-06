@@ -25,7 +25,7 @@ const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
     "stag_2_tim", "stages",   "boot_state"};
 
 cats_usb_commands parse_usb_cmd();
-cats_usb_commands parse_usb_var(uint16_t *value);
+cats_usb_variables parse_usb_var(uint16_t *value);
 
 // static bool update_config() {
 //  /* Start from "CFG:" onwards */
@@ -183,7 +183,7 @@ void task_usb_communicator(void *argument) {
             case CATS_USB_VAR_STAGES:
               break;
             case CATS_USB_VAR_BOOT_STATE:
-              log_raw("boot_state is %hu", cc_get_boot_state());
+              log_raw("boot_state is %u", cc_get_boot_state());
               break;
             case CATS_USB_VAR_UNKNOWN:
               for (int i = 0; i < USB_VARIABLE_NR; i++)
@@ -238,7 +238,7 @@ cats_usb_commands parse_usb_cmd() {
   return CATS_USB_CMD_UNKNOWN;
 }
 
-cats_usb_commands parse_usb_var(uint16_t *value) {
+cats_usb_variables parse_usb_var(uint16_t *value) {
   uint8_t var_buffer[20];
   for (int i = 0; i < 20; i++) var_buffer[i] = 0;
   int i = 0;
@@ -263,7 +263,7 @@ cats_usb_commands parse_usb_var(uint16_t *value) {
 
   for (int j = 0; j < USB_VARIABLE_NR; j++) {
     if (!strcmp((const char *)var_buffer, usb_config_variable_list[j])) {
-      uint8_t num_buffer[10];
+      char num_buffer[10];
       for (int j1 = 0; j1 < 10; j1++) num_buffer[j1] = 0;
       for (int j1 = 0; j1 < 9; j1++)
         num_buffer[j1] = usb_receive_buffer[i + j1];

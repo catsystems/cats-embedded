@@ -88,7 +88,7 @@ static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM15_Init(void);
-void task_init(void *argument);
+_Noreturn void task_init(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -703,7 +703,7 @@ static void MX_GPIO_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_task_init */
-__weak void task_init(void *argument) {
+_Noreturn __weak void task_init(void *argument) {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */

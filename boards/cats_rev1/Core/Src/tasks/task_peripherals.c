@@ -26,7 +26,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
  * @param argument: Not used
  * @retval None
  */
-void task_peripherals(void* argument) {
+_Noreturn void task_peripherals(void* argument) {
   cats_event_e curr_event;
 
   /* Create Timers */

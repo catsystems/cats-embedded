@@ -169,18 +169,26 @@ const osThreadAttr_t task_usb_communicator_attributes = {
 /** Private Function Declarations **/
 
 static void init_system();
+
 static void init_devices();
+
 static void init_communication();
+
 static void init_tasks();
+
 static void init_imu();
+
 static void init_baro();
+
 static void init_buzzer();
+
 static void init_timers();
+
 static void create_event_map();
 
 /** Exported Function Definitions **/
 
-void task_init(void *argument) {
+_Noreturn void task_init(void *argument) {
   osDelay(200);
   init_system();
   log_info("System initialization complete.");
@@ -250,7 +258,7 @@ void task_init(void *argument) {
   adc_init();
   osDelay(100);
   battery_monitor_init();
-  buzzer_queue_status(CATS_STATUS_BOOTUP);
+  buzzer_queue_status(CATS_BUZZ_BOOTUP);
 
   /* Infinite loop */
   for (;;) {
@@ -354,8 +362,8 @@ static void init_communication() {
 #else
   log_raw("Waiting 10s for usb connection");
   uint32_t comm_start_time = osKernelGetTickCount();
-  while (osKernelGetTickCount() - comm_start_time < 10000 &&
-         usb_communication_complete != true) {
+  while ((osKernelGetTickCount() - comm_start_time < 10000) &&
+         (usb_communication_complete != true)) {
     if (usb_msg_received) {
       usb_msg_received = false;
       uint8_t buffer[20];
@@ -502,62 +510,59 @@ static void create_event_map() {
   /* TODO: where to free this? */
   event_output_map = calloc(9, sizeof(event_output_map_elem_t));
 
-    event_output_map[EV_IDLE].num_outputs = 1;
-    event_output_map[EV_IDLE].output_list = calloc(1,
-    sizeof(peripheral_out_t));
-    event_output_map[EV_IDLE].output_list[0].func_ptr =
-        output_table[RECORDER_STATE];
-    event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
-    event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
+  event_output_map[EV_IDLE].num_outputs = 1;
+  event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_IDLE].output_list[0].func_ptr =
+      output_table[RECORDER_STATE];
+  event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
+  event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
-    event_output_map[EV_LIFTOFF].num_outputs = 1;
-	event_output_map[EV_LIFTOFF].output_list = calloc(1,
-	sizeof(peripheral_out_t));
-	event_output_map[EV_LIFTOFF].output_list[0].func_ptr =
-		output_table[RECORDER_STATE];
-	event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
-	event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
+  event_output_map[EV_LIFTOFF].num_outputs = 1;
+  event_output_map[EV_LIFTOFF].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_LIFTOFF].output_list[0].func_ptr =
+      output_table[RECORDER_STATE];
+  event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
 
-    event_output_map[EV_APOGEE].num_outputs = 1;
-    event_output_map[EV_APOGEE].output_list = calloc(1,
-    sizeof(peripheral_out_t));
-    event_output_map[EV_APOGEE].output_list[0].func_ptr =
-        output_table[OUT_LOW_LEVEL_ONE];                      // IO1
-    event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
-    event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
+  event_output_map[EV_APOGEE].num_outputs = 1;
+  event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_APOGEE].output_list[0].func_ptr =
+      output_table[OUT_LOW_LEVEL_ONE];                      // IO1
+  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
 
+  event_output_map[EV_POST_APOGEE].num_outputs = 1;
+  event_output_map[EV_POST_APOGEE].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
+      output_table[OUT_LOW_LEVEL_TWO];                           // IO2
+  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+  event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
 
-    event_output_map[EV_POST_APOGEE].num_outputs = 1;
-    event_output_map[EV_POST_APOGEE].output_list =
-        calloc(1, sizeof(peripheral_out_t));
-    event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
-        output_table[OUT_LOW_LEVEL_TWO];                         // IO2
-    event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
-    event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
+  event_output_map[EV_TOUCHDOWN].num_outputs = 1;
+  event_output_map[EV_TOUCHDOWN].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
+      output_table[RECORDER_STATE];
+  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
+  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
 
-    event_output_map[EV_TOUCHDOWN].num_outputs = 1;
-    event_output_map[EV_TOUCHDOWN].output_list =
-        calloc(1, sizeof(peripheral_out_t));
-    event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
-        output_table[RECORDER_STATE];
-    event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
-    event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
+  event_output_map[EV_TIMER_1].num_outputs = 1;
+  event_output_map[EV_TIMER_1].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TIMER_1].output_list[0].func_ptr =
+      output_table[OUT_HIGH_CURRENT_ONE];
+  event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
+  event_output_map[EV_TIMER_1].output_list[0].delay_ms = 0;
 
-    event_output_map[EV_TIMER_1].num_outputs = 1;
-	event_output_map[EV_TIMER_1].output_list =
-		calloc(1, sizeof(peripheral_out_t));
-	event_output_map[EV_TIMER_1].output_list[0].func_ptr =
-		output_table[OUT_HIGH_CURRENT_ONE];
-	event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
-	event_output_map[EV_TIMER_1].output_list[0].delay_ms = 0;
-
-	event_output_map[EV_TIMER_2].num_outputs = 1;
-	event_output_map[EV_TIMER_2].output_list =
-		calloc(1, sizeof(peripheral_out_t));
-	event_output_map[EV_TIMER_2].output_list[0].func_ptr =
-		output_table[OUT_HIGH_CURRENT_TWO];
-	event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
-	event_output_map[EV_TIMER_2].output_list[0].delay_ms = 0;
+  event_output_map[EV_TIMER_2].num_outputs = 1;
+  event_output_map[EV_TIMER_2].output_list =
+      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TIMER_2].output_list[0].func_ptr =
+      output_table[OUT_HIGH_CURRENT_TWO];
+  event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
+  event_output_map[EV_TIMER_2].output_list[0].delay_ms = 0;
   /* ................ */
 }
 

@@ -13,7 +13,7 @@
 
 extern const uint32_t EVENT_QUEUE_SIZE;
 
-void task_peripherals(void *argument);
+_Noreturn void task_peripherals(void *argument);
 
 osStatus_t trigger_event(cats_event_e ev);
 

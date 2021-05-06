@@ -100,12 +100,14 @@ void task_state_est(void *argument) {
     }
 
     /* Reset IMU when we go from moving to IDLE */
-    if ((fsm_state.flight_state == IDLE) && (fsm_state.flight_state != old_fsm_enum)) {
+    if ((fsm_state.flight_state == IDLE) &&
+        (fsm_state.flight_state != old_fsm_enum)) {
       reset_kalman(&filter, average_pressure);
       calibrate_imu(&average_imu, &calibration, &elimination);
     }
 
-    if ((fsm_state.flight_state == APOGEE) && (fsm_state.flight_state != old_fsm_enum)) {
+    if ((fsm_state.flight_state == APOGEE) &&
+        (fsm_state.flight_state != old_fsm_enum)) {
       float32_t Q_dash[4] = {10.0f, 0, 0, STD_NOISE_OFFSET};
       memcpy(filter.Q_data, Q_dash, sizeof(Q_dash));
     }
@@ -225,11 +227,11 @@ void task_state_est(void *argument) {
         .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-//        log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
-//                  (int32_t)((float)filter.x_bar.pData[0] * 1000),
-//                  (int32_t)((float)filter.x_bar.pData[1] * 1000),
-//                  (int32_t)(state_data.acceleration[1] * 1000),
-//                  (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    //    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
+    //              (int32_t)((float)filter.x_bar.pData[0] * 1000),
+    //              (int32_t)((float)filter.x_bar.pData[1] * 1000),
+    //              (int32_t)(state_data.acceleration[1] * 1000),
+    //              (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
     //            log_trace("Calibrated IMU 2: Z: %ld",
@@ -237,7 +239,6 @@ void task_state_est(void *argument) {
     //            log_trace("Calibrated IMU 3: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[2]));
     /* END DEBUGGING */
-
 
     old_fsm_enum = fsm_state.flight_state;
 

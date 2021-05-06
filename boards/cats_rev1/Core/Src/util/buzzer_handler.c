@@ -52,7 +52,7 @@ static uint32_t status_queue[BUZZER_MAX_STATUS_QUEUE];
 bool buzzer_queue_status(buzzer_status_e status) {
   if (status_queue_elements < BUZZER_MAX_STATUS_QUEUE) {
     status_queue[(status_queue_index + status_queue_elements) % 5] = status;
-    status_queue_elements++;
+    ++status_queue_elements;
     return true;
   }
   return false;
@@ -61,7 +61,7 @@ bool buzzer_queue_status(buzzer_status_e status) {
 void buzzer_handler_update() {
   if (status_queue_elements > 0) {
     if (status_buzzer(status_queue[status_queue_index]) == 0) {
-      status_queue_index = ++status_queue_index % BUZZER_MAX_STATUS_QUEUE;
+      status_queue_index = (status_queue_index + 1) % BUZZER_MAX_STATUS_QUEUE;
       status_queue_elements--;
     }
   }
@@ -72,17 +72,19 @@ uint8_t status_buzzer(buzzer_status_e status) {
   static uint32_t timeout = 0;
   static int32_t i = 0;
   static uint8_t started = 0;
-  static buzzer_status_e static_status = CATS_ERROR_OK;
+  static buzzer_status_e static_status = CATS_BUZZ_NONE;
 
   // In case of wrong input return
-  if ((status > CATS_STATUS_CHANGED_READY) || (status < 0)) return 0;
+  if ((status > CATS_BUZZ_CHANGED_READY) || (status < 0)) return 0;
 
   // Only load new status state when old one is finished
   if ((status != static_status) && (started == 0)) {
     static_status = status;
   }
 
-  if (status) started = 1;
+  if (status) {
+    started = 1;
+  }
 
   if ((timeout < osKernelGetTickCount()) && started) {
     uint32_t duration = 0;
@@ -114,11 +116,10 @@ uint8_t error_buzzer(cats_error_e error) {
   static int32_t i = 0;
   static uint8_t stage = 0;
   static uint8_t error_started = 0;
-  static cats_error_e static_error = CATS_ERROR_OK;
+  static cats_error_e static_error = CATS_ERR_OK;
 
   // In case of wrong input/corruption throw hard fault error
-  if ((error > CATS_ERROR_HARD_FAULT) || (error < 0))
-    error = CATS_ERROR_HARD_FAULT;
+  if ((error > CATS_ERR_HARD_FAULT) || (error < 0)) error = CATS_ERR_HARD_FAULT;
 
   // Only load new error state when old one is finished
   if ((error != static_error) && (error_started == 0)) {

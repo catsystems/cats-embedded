@@ -8,7 +8,7 @@
 #ifndef INC_TASK_STATE_EST_H_
 #define INC_TASK_STATE_EST_H_
 
-void task_state_est(void *argument);
+_Noreturn void task_state_est(void *argument);
 
 //#define INCLUDE_NOISE
 //#define INCLUDE_SPIKES

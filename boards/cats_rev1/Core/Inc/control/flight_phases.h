@@ -11,7 +11,7 @@
 #include "util/types.h"
 
 /* Config */
-#define SAMPLING_FREQUENCY 100;
+#define SAMPLING_FREQUENCY 100
 
 /* MOVING */
 #define TIME_THRESHOLD_MOV_TO_IDLE 1000

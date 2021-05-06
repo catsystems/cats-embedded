@@ -18,7 +18,7 @@
 
 /** Exported Function Definitions **/
 
-void task_health_monitor(void *argument) {
+_Noreturn void task_health_monitor(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
@@ -39,7 +39,7 @@ void task_health_monitor(void *argument) {
       ;  // TODO clear error
 
     if (global_flight_state.flight_state == IDLE && alive_timer >= 600) {
-      buzzer_queue_status(CATS_STATUS_READY);
+      buzzer_queue_status(CATS_BUZZ_READY);
       alive_timer = 0;
     } else if (global_flight_state.flight_state == IDLE) {
       alive_timer++;
@@ -47,10 +47,10 @@ void task_health_monitor(void *argument) {
 
     if (global_flight_state.flight_state == IDLE &&
     	(global_flight_state.flight_state != old_fsm_state))
-      buzzer_queue_status(CATS_STATUS_CHANGED_READY);
+      buzzer_queue_status(CATS_BUZZ_CHANGED_READY);
     if (global_flight_state.flight_state == MOVING &&
         (global_flight_state.flight_state != old_fsm_state))
-      buzzer_queue_status(CATS_STATUS_CHANGED_MOVING);
+      buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
 
     buzzer_handler_update();
     old_fsm_state = global_flight_state.flight_state;

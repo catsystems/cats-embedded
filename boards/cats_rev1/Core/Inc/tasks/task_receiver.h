@@ -8,6 +8,6 @@
 #ifndef INC_TASKS_TASK_RECEIVER_H_
 #define INC_TASKS_TASK_RECEIVER_H_
 
-void task_receiver(void *argument);
+_Noreturn void task_receiver(void *argument);
 
 #endif /* INC_TASKS_TASK_RECEIVER_H_ */
