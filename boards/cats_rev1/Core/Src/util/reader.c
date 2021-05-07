@@ -5,13 +5,11 @@
  *      Author: Luca
  */
 #include "util/reader.h"
-#include "util/recorder.h"
 #include "util/log.h"
 #include "config/globals.h"
-#include "cmsis_os.h"
-#include "util/log.h"
 #include "config/cats_config.h"
 #include "drivers/w25qxx.h"
+
 #include "main.h"
 
 void print_recording(uint16_t number) {

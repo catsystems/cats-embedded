@@ -6,13 +6,11 @@
  */
 
 #include "drivers/sbus.h"
-#include "config/globals.h"
 #include "stm32l4xx_hal.h"
-#include "util/types.h"
 
 extern UART_HandleTypeDef huart1;
 
-void _reset_buffer(uint8_t* buffer, uint32_t length);
+void reset_buffer(uint8_t* buffer, uint32_t length);
 void map_channels(receiver_data_t* data, uint8_t* _payload);
 void receiver_reorder();
 

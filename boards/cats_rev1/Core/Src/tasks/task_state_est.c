@@ -52,9 +52,7 @@ void task_state_est(void *argument) {
   /* Read Control Settings from Flash chip */
 
   /* calibration data */
-  calibration_data_t calibration;
-  calibration.angle = 1;
-  calibration.axis = 2;
+  calibration_data_t calibration = {.angle = 1, .axis = 2};
   uint8_t imu_counter = 0;
   imu_data_t rolling_imu[10];
   imu_data_t global_average_imu;
@@ -68,15 +66,14 @@ void task_state_est(void *argument) {
   /* Initialize State Estimation */
   state_estimation_data_t state_data = {0};
   sensor_elimination_t elimination = {0};
-  kalman_filter_t filter = {0};
-  filter.pressure_0 = P_INITIAL;
-  filter.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ);
+  kalman_filter_t filter = {.pressure_0 = P_INITIAL,
+                            .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   init_filter_struct(&filter);
   initialize_matrices(&filter);
 
   /* initialize Orientation State Estimation */
-  orientation_filter_t orientation_filter = {0};
-  orientation_filter.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ);
+  orientation_filter_t orientation_filter = {
+      .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   init_orientation_filter_struct(&orientation_filter);
   initialize_orientation_matrices(&orientation_filter);
 
@@ -122,8 +119,7 @@ void task_state_est(void *argument) {
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
     if (fsm_state.flight_state == MOVING) {
-      /* First average the 3 IMU measurements if no IMU's have been eliminated
-       */
+      /* First average the 3 IMU measurements if no IMUs have been eliminated */
       global_average_imu.acc_x = 0;
       global_average_imu.acc_y = 0;
       global_average_imu.acc_z = 0;
@@ -160,7 +156,7 @@ void task_state_est(void *argument) {
       }
 
       /* Do the Baro */
-      /* First average the 3 Baro measurements if no Baro's have been eliminated
+      /* First average the 3 Baro measurements if no Baros have been eliminated
        */
       global_average_pressure = 0;
       for (int i = 0; i < 3; i++) {

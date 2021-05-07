@@ -7,9 +7,8 @@
 
 #include "control/flight_phases.h"
 #include "tasks/task_peripherals.h"
+
 #include <stdlib.h>
-#include <math.h>
-#include "config/globals.h"
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
 void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,

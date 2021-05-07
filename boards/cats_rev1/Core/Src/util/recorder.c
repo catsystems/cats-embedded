@@ -6,7 +6,6 @@
 #include "util/log.h"
 #include "config/globals.h"
 #include "config/cats_config.h"
-#include "cmsis_os.h"
 
 /* TODO: set this queue to 256 at least */
 const uint32_t REC_QUEUE_SIZE = 512;

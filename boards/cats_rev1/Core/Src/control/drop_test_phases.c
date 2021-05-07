@@ -7,7 +7,6 @@
 
 #include "control/drop_test_phases.h"
 #include "tasks/task_peripherals.h"
-#include "util/types.h"
 #include "cmsis_os.h"
 
 void check_dt_idle_phase(drop_test_fsm_t *fsm_state,

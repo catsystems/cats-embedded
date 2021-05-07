@@ -5,7 +5,6 @@
  *      Author: Luca
  */
 
-#include "config/globals.h"
 #include "drivers/adc.h"
 
 static uint32_t adc_value[ADC_NUM_CHANNELS];

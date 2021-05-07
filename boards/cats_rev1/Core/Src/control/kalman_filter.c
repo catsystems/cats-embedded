@@ -7,7 +7,7 @@
 
 #include "control/kalman_filter.h"
 #include "cmsis_os.h"
-#include "../DSP/Inc/arm_math.h"
+
 #include <string.h>
 
 void init_filter_struct(kalman_filter_t *const filter) {

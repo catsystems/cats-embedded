@@ -9,7 +9,6 @@
 #include "util/reader.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 /**
  *

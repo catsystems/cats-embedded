@@ -5,7 +5,6 @@
 // *** Includes *** //
 
 #include "sensors/icm20601.h"
-#include "util/types.h"
 
 /** Private Defines **/
 

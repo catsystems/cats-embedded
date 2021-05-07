@@ -19,9 +19,9 @@ battery_type_e battery_type = LIPO;
 
 /*Supported batteries
  * ------------------------------------
- * BATTERY			MIN		LOW		MAX
- * Li-Ion			3.2		3.4		4.3
- * Li-Po			3.4		3.6		4.3
+ * BATTERY		MIN		LOW		MAX
+ * Li-Ion		3.2		3.4		4.3
+ * Li-Po		3.4		3.6		4.3
  * Alkaline (9V)	7.0		7.5		9.5
  * ------------------------------------
  */
