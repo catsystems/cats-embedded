@@ -23,7 +23,7 @@
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_drop_test_fsm(void *argument) {
+void task_drop_test_fsm(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 

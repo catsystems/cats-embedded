@@ -244,15 +244,15 @@ _Noreturn void task_init(void *argument) {
   osDelay(100);
 
   create_event_map();
-  init_timers();
+  //init_timers();
 
   init_tasks();
   log_info("Task initialization complete.");
 
   init_end_time = osKernelGetTickCount();
 
-  // servo_set_onoff(&SERVO1, 0);
-  // servo_set_onoff(&SERVO2, 1);
+  servo_set_position(&SERVO1, 0);
+  servo_set_position(&SERVO2, 1);
 
   // adc test
   adc_init();
@@ -351,7 +351,8 @@ static void init_communication() {
    *        continue by reading the setup from config
    */
 
-  //#define AUTO_USB_CONFIG
+//#define AUTO_USB_CONFIG
+//#define SLOW_USB_CONFIG
 
 #ifdef AUTO_USB_CONFIG
   if (global_usb_detection) {
@@ -359,7 +360,8 @@ static void init_communication() {
     cc_load();
     osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
   }
-#else
+#endif
+#ifdef SLOW_USB_CONFIG
   log_raw("Waiting 10s for usb connection");
   uint32_t comm_start_time = osKernelGetTickCount();
   while ((osKernelGetTickCount() - comm_start_time < 10000) &&
@@ -386,6 +388,7 @@ static void init_communication() {
     osDelay(100);
   }
 #endif
+
 
   cc_load();
   //  uint32_t comm_start_time = osKernelGetTickCount();
@@ -430,18 +433,18 @@ static void init_tasks() {
         /* creation of task_baro_read */
         osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
-        /* creation of task_baro_read */
+        /* creation of receiver */
         osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
         /* creation of task_imu_read */
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
         /* creation of task_flight_fsm */
-        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+        //osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
         /* creation of task_drop_test_fsm */
-        //        osThreadNew(task_drop_test_fsm, NULL,
-        //        &task_drop_test_fsm_attributes);
+        osThreadNew(task_drop_test_fsm, NULL,
+                &task_drop_test_fsm_attributes);
         /* creation of task_peripherals */
         osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
@@ -514,55 +517,38 @@ static void create_event_map() {
   event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_IDLE].output_list[0].func_ptr =
       output_table[RECORDER_STATE];
-  event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
+  event_output_map[EV_IDLE].output_list[0].func_arg = REC_WRITE_TO_FLASH;
   event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
-  event_output_map[EV_LIFTOFF].num_outputs = 1;
-  event_output_map[EV_LIFTOFF].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_LIFTOFF].output_list[0].func_ptr =
-      output_table[RECORDER_STATE];
-  event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
-  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
-
-  event_output_map[EV_APOGEE].num_outputs = 1;
-  event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_APOGEE].num_outputs = 2;
+  event_output_map[EV_APOGEE].output_list = calloc(2, sizeof(peripheral_out_t));
   event_output_map[EV_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_LOW_LEVEL_ONE];                      // IO1
-  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+      output_table[OUT_SERVO_ONE];                      			// Servo 1
+  event_output_map[EV_APOGEE].output_list[0].func_arg = 180;  		// Set 10% duty cycle
   event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
 
-  event_output_map[EV_POST_APOGEE].num_outputs = 1;
-  event_output_map[EV_POST_APOGEE].output_list =
-      calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_APOGEE].output_list[1].func_ptr =
+		  output_table[OUT_HIGH_CURRENT_ONE];                       // PYRO 1
+  event_output_map[EV_APOGEE].output_list[1].func_arg = 1;  		// Set HIGH
+  event_output_map[EV_APOGEE].output_list[1].delay_ms = 0;
+
+  event_output_map[EV_POST_APOGEE].num_outputs = 3;
+  event_output_map[EV_POST_APOGEE].output_list = calloc(3, sizeof(peripheral_out_t));
   event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_LOW_LEVEL_TWO];                           // IO2
-  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  // Set HIGH
+      output_table[OUT_HIGH_CURRENT_TWO];                           // PYRO 2
+  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  	// Set HIGH
   event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
 
-  event_output_map[EV_TOUCHDOWN].num_outputs = 1;
-  event_output_map[EV_TOUCHDOWN].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TOUCHDOWN].output_list[0].func_ptr =
-      output_table[RECORDER_STATE];
-  event_output_map[EV_TOUCHDOWN].output_list[0].func_arg = REC_OFF;
-  event_output_map[EV_TOUCHDOWN].output_list[0].delay_ms = 0;
+  event_output_map[EV_POST_APOGEE].output_list[1].func_ptr =
+      output_table[OUT_HIGH_CURRENT_THREE];                         // PYRO 3
+  event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  	// Set HIGH
+  event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
 
-  event_output_map[EV_TIMER_1].num_outputs = 1;
-  event_output_map[EV_TIMER_1].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TIMER_1].output_list[0].func_ptr =
-      output_table[OUT_HIGH_CURRENT_ONE];
-  event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
-  event_output_map[EV_TIMER_1].output_list[0].delay_ms = 0;
+  event_output_map[EV_POST_APOGEE].output_list[2].func_ptr =
+      output_table[OUT_SERVO_TWO];                           		// Sero 2
+  event_output_map[EV_POST_APOGEE].output_list[2].func_arg = 180;   // Set 10% duty cycle
+  event_output_map[EV_POST_APOGEE].output_list[2].delay_ms = 0;
 
-  event_output_map[EV_TIMER_2].num_outputs = 1;
-  event_output_map[EV_TIMER_2].output_list =
-      calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TIMER_2].output_list[0].func_ptr =
-      output_table[OUT_HIGH_CURRENT_TWO];
-  event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
-  event_output_map[EV_TIMER_2].output_list[0].delay_ms = 0;
   /* ................ */
 }
 
