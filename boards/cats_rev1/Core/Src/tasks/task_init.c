@@ -252,8 +252,10 @@ _Noreturn void task_init(void *argument) {
   init_end_time = osKernelGetTickCount();
 
   servo_set_position(&SERVO1, 0);
-  servo_set_position(&SERVO2, 1);
+  servo_set_position(&SERVO2, 0);
 
+  servo_start(&SERVO1);
+  servo_start(&SERVO2);
   // adc test
   adc_init();
   osDelay(100);
