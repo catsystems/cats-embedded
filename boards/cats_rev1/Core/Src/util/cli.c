@@ -15,6 +15,7 @@
 //static osMessageQueueId_t *cli_in;
 //static osMessageQueueId_t *cli_out;
 //
+//typedef void cliCommandFn(const char* name, char *cmdline);
 //
 //#define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 //
@@ -37,6 +38,7 @@
 //{
 //    return (string == NULL || *string == '\0') ? true : false;
 //}
+//
 //
 //const clicmd_t cmdTable[] = {
 //    //CLI_COMMAND_DEF("bl", "reboot into bootloader", "[rom]", cliBootloader),

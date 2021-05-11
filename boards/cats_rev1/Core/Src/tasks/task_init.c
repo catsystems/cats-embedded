@@ -225,8 +225,7 @@ _Noreturn void task_init(void *argument) {
   uint16_t num_flights = cs_get_num_recorded_flights();
   log_trace("Number of recorded flights: %hu", num_flights);
   for (uint16_t i = 0; i < num_flights; i++) {
-    log_trace("Last sectors of flight %hu: %hu", i,
-              cs_get_last_sector_of_flight(i));
+    log_trace("Last sectors of flight %hu: %hu", i, cs_get_last_sector_of_flight(i));
   }
 
   /* Check if the FSM configurations make sense */
@@ -244,7 +243,7 @@ _Noreturn void task_init(void *argument) {
   osDelay(100);
 
   create_event_map();
-  //init_timers();
+  init_timers();
 
   init_tasks();
   log_info("Task initialization complete.");
@@ -307,9 +306,8 @@ static void init_devices() {
   uint16_t first_writable_sector = cs_get_last_recorded_sector() + 1;
   /* increment the first writable sector as long as the current sector is not
    * empty */
-  while (
-      first_writable_sector < w25qxx.sector_count &&
-      !w25qxx_is_empty_sector(first_writable_sector, 0, w25qxx.sector_size)) {
+  while (first_writable_sector < w25qxx.sector_count &&
+         !w25qxx_is_empty_sector(first_writable_sector, 0, w25qxx.sector_size)) {
     ++first_writable_sector;
   }
 
@@ -321,8 +319,7 @@ static void init_devices() {
         "%hu!",
         cs_get_last_recorded_sector(), first_writable_sector);
     uint16_t actual_last_recorded_sector = first_writable_sector - 1;
-    log_info("Updating last recorded sector to %hu",
-             actual_last_recorded_sector);
+    log_info("Updating last recorded sector to %hu", actual_last_recorded_sector);
     cs_set_last_recorded_sector(actual_last_recorded_sector);
     cs_save();
   }
@@ -353,8 +350,8 @@ static void init_communication() {
    *        continue by reading the setup from config
    */
 
-//#define AUTO_USB_CONFIG
-//#define SLOW_USB_CONFIG
+  //#define AUTO_USB_CONFIG
+  #define SLOW_USB_CONFIG
 
 #ifdef AUTO_USB_CONFIG
   if (global_usb_detection) {
@@ -366,16 +363,14 @@ static void init_communication() {
 #ifdef SLOW_USB_CONFIG
   log_raw("Waiting 10s for usb connection");
   uint32_t comm_start_time = osKernelGetTickCount();
-  while ((osKernelGetTickCount() - comm_start_time < 10000) &&
-         (usb_communication_complete != true)) {
+  while ((osKernelGetTickCount() - comm_start_time < 10000) && (usb_communication_complete != true)) {
     if (usb_msg_received) {
       usb_msg_received = false;
       uint8_t buffer[20];
       for (int i = 0; i < 20; i++) buffer[i] = 0;
       int i = 0;
       while (i < 20 &&
-             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' ||
-               usb_receive_buffer[i] == '\n')) {
+             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' || usb_receive_buffer[i] == '\n')) {
         buffer[i] = usb_receive_buffer[i];
         i++;
       }
@@ -383,14 +378,12 @@ static void init_communication() {
       if (!strcmp((const char *)buffer, "config")) {
         usb_communication_complete = true;
         cc_load();
-        osThreadNew(task_usb_communicator, NULL,
-                    &task_usb_communicator_attributes);
+        osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
       }
     }
     osDelay(100);
   }
 #endif
-
 
   cc_load();
   //  uint32_t comm_start_time = osKernelGetTickCount();
@@ -423,8 +416,7 @@ static void init_tasks() {
 #ifdef FLASH_TESTING
         // TODO: Check rec_queue for validity here
         rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
-        event_queue =
-            osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
+        event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
         vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
@@ -436,17 +428,16 @@ static void init_tasks() {
         osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
         /* creation of receiver */
-        osThreadNew(task_receiver, NULL, &task_receiver_attributes);
+        //osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
         /* creation of task_imu_read */
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
         /* creation of task_flight_fsm */
-        //osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
         /* creation of task_drop_test_fsm */
-        osThreadNew(task_drop_test_fsm, NULL,
-                &task_drop_test_fsm_attributes);
+        //osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
         /* creation of task_peripherals */
         osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
@@ -517,40 +508,27 @@ static void create_event_map() {
 
   event_output_map[EV_IDLE].num_outputs = 1;
   event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_IDLE].output_list[0].func_ptr =
-      output_table[RECORDER_STATE];
-  event_output_map[EV_IDLE].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_output_map[EV_IDLE].output_list[0].func_ptr = output_table[RECORDER_STATE];
+  event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
   event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
-  event_output_map[EV_APOGEE].num_outputs = 2;
-  event_output_map[EV_APOGEE].output_list = calloc(2, sizeof(peripheral_out_t));
-  event_output_map[EV_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_SERVO_ONE];                      			// Servo 1
-  event_output_map[EV_APOGEE].output_list[0].func_arg = 180;  		// Set 10% duty cycle
+  event_output_map[EV_LIFTOFF].num_outputs = 1;
+  event_output_map[EV_LIFTOFF].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = output_table[RECORDER_STATE];
+  event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
+
+  event_output_map[EV_APOGEE].num_outputs = 1;
+  event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
+  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;
   event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
 
-  event_output_map[EV_APOGEE].output_list[1].func_ptr =
-		  output_table[OUT_HIGH_CURRENT_ONE];                       // PYRO 1
-  event_output_map[EV_APOGEE].output_list[1].func_arg = 1;  		// Set HIGH
-  event_output_map[EV_APOGEE].output_list[1].delay_ms = 0;
-
-  event_output_map[EV_POST_APOGEE].num_outputs = 3;
-  event_output_map[EV_POST_APOGEE].output_list = calloc(3, sizeof(peripheral_out_t));
-  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr =
-      output_table[OUT_HIGH_CURRENT_TWO];                           // PYRO 2
-  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;  	// Set HIGH
+  event_output_map[EV_POST_APOGEE].num_outputs = 1;
+  event_output_map[EV_POST_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
+  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;
   event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
-
-  event_output_map[EV_POST_APOGEE].output_list[1].func_ptr =
-      output_table[OUT_HIGH_CURRENT_THREE];                         // PYRO 3
-  event_output_map[EV_POST_APOGEE].output_list[1].func_arg = 1;  	// Set HIGH
-  event_output_map[EV_POST_APOGEE].output_list[1].delay_ms = 0;
-
-  event_output_map[EV_POST_APOGEE].output_list[2].func_ptr =
-      output_table[OUT_SERVO_TWO];                           		// Sero 2
-  event_output_map[EV_POST_APOGEE].output_list[2].func_arg = 180;   // Set 10% duty cycle
-  event_output_map[EV_POST_APOGEE].output_list[2].delay_ms = 0;
-
   /* ................ */
 }
 
