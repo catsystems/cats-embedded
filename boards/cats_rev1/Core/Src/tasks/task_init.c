@@ -512,23 +512,40 @@ static void create_event_map() {
   event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
   event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
+  // Liftoff
   event_output_map[EV_LIFTOFF].num_outputs = 1;
   event_output_map[EV_LIFTOFF].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_LIFTOFF].output_list[0].func_ptr = output_table[RECORDER_STATE];
   event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
   event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
 
+  // Apogee / Drogue
   event_output_map[EV_APOGEE].num_outputs = 1;
   event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
   event_output_map[EV_APOGEE].output_list[0].func_arg = 1;
   event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
 
+  // Low Altitude / Main
   event_output_map[EV_POST_APOGEE].num_outputs = 1;
   event_output_map[EV_POST_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_POST_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
   event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;
   event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
+
+  // Timer 1 / Drogue
+  event_output_map[EV_TIMER_1].num_outputs = 1;
+  event_output_map[EV_TIMER_1].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TIMER_1].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
+  event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
+  event_output_map[EV_TIMER_1].output_list[0].delay_ms = 0;
+
+  // Timer 2 / Main
+  event_output_map[EV_TIMER_2].num_outputs = 1;
+  event_output_map[EV_TIMER_2].output_list = calloc(1, sizeof(peripheral_out_t));
+  event_output_map[EV_TIMER_2].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
+  event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
+  event_output_map[EV_TIMER_2].output_list[0].delay_ms = 0;
   /* ................ */
 }
 
