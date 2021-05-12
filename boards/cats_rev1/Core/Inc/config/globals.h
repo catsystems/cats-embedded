@@ -79,4 +79,4 @@ extern volatile bool usb_communication_complete;
 /* recorder status is controlled by output functions, do not set manually! */
 extern volatile recorder_status_e global_recorder_status;
 
-extern event_output_map_elem_t *event_output_map;
+extern event_action_map_elem_t *event_action_map;

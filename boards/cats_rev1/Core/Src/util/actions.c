@@ -1,16 +1,16 @@
 /*
- * outputs.c
+ * actions.c
  *
  *  Created on: 12 Apr 2021
  *      Author: Luca
  */
 
-#include "util/outputs.h"
+#include "util/actions.h"
 #include "config/cats_config.h"
 
 #include "drivers/servo.h"
 
-bool no_output_function(int16_t bummer);
+bool no_action_function(int16_t bummer);
 
 bool os_delay(int16_t centiseconds);
 
@@ -33,7 +33,7 @@ bool servo_channel_four(int16_t angle);   // reserved for later use
 
 bool set_recorder_state(int16_t state);
 
-const peripheral_out_fp output_table[NUM_OUTPUT_FUNCTIONS] = {no_output_function,         os_delay,
+const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {no_action_function,         os_delay,
                                                               high_current_channel_one,   high_current_channel_two,
                                                               high_current_channel_three, high_current_channel_four,
                                                               high_current_channel_five,  high_current_channel_six,
@@ -43,9 +43,9 @@ const peripheral_out_fp output_table[NUM_OUTPUT_FUNCTIONS] = {no_output_function
                                                               servo_channel_three,        servo_channel_four,
                                                               set_recorder_state};
 
-bool no_output_function(int16_t bummer) {
+bool no_action_function(int16_t bummer) {
   // Sucks to be here...
-  // it seems like someone didn't configure the outputs right
+  // it seems like someone didn't configure the actions right
   return false;
 }
 

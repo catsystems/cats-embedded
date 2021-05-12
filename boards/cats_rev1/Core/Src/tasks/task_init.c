@@ -11,7 +11,7 @@
 #include "drivers/adc.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
-#include "util/outputs.h"
+#include "util/actions.h"
 #include "drivers/servo.h"
 #include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
@@ -504,42 +504,42 @@ static void create_event_map() {
   /* number of event types + 0th element */
   /* TODO: move number of events to a constant */
   /* TODO: where to free this? */
-  event_output_map = calloc(9, sizeof(event_output_map_elem_t));
+  event_action_map = calloc(9, sizeof(event_action_map_elem_t));
 
-  event_output_map[EV_IDLE].num_outputs = 1;
-  event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_IDLE].output_list[0].func_ptr = output_table[OUT_RECORDER_STATE];
-  event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
+  event_action_map[EV_IDLE].num_actions = 1;
+  event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_RECORDER_STATE];
+  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Liftoff
-  event_output_map[EV_LIFTOFF].num_outputs = 1;
-  event_output_map[EV_LIFTOFF].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = output_table[OUT_RECORDER_STATE];
-  event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_action_map[EV_LIFTOFF].num_actions = 1;
+  event_action_map[EV_LIFTOFF].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_LIFTOFF].action_list[0].func_ptr = action_table[ACT_RECORDER_STATE];
+  event_action_map[EV_LIFTOFF].action_list[0].func_arg = REC_WRITE_TO_FLASH;
 
   // Apogee / Drogue
-  event_output_map[EV_APOGEE].num_outputs = 1;
-  event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
-  event_output_map[EV_APOGEE].output_list[0].func_arg = 1;
+  event_action_map[EV_APOGEE].num_actions = 1;
+  event_action_map[EV_APOGEE].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
+  event_action_map[EV_APOGEE].action_list[0].func_arg = 1;
 
   // Low Altitude / Main
-  event_output_map[EV_POST_APOGEE].num_outputs = 1;
-  event_output_map[EV_POST_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_POST_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
-  event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;
+  event_action_map[EV_POST_APOGEE].num_actions = 1;
+  event_action_map[EV_POST_APOGEE].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_POST_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_TWO];
+  event_action_map[EV_POST_APOGEE].action_list[0].func_arg = 1;
 
   // Timer 1 / Drogue
-  event_output_map[EV_TIMER_1].num_outputs = 1;
-  event_output_map[EV_TIMER_1].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TIMER_1].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
-  event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
+  event_action_map[EV_TIMER_1].num_actions = 1;
+  event_action_map[EV_TIMER_1].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
+  event_action_map[EV_TIMER_1].action_list[0].func_arg = 1;
 
   // Timer 2 / Main
-  event_output_map[EV_TIMER_2].num_outputs = 1;
-  event_output_map[EV_TIMER_2].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_TIMER_2].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
-  event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
+  event_action_map[EV_TIMER_2].num_actions = 1;
+  event_action_map[EV_TIMER_2].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_TWO];
+  event_action_map[EV_TIMER_2].action_list[0].func_arg = 1;
   /* ................ */
 }
 

@@ -75,7 +75,7 @@ typedef struct {
 typedef struct {
   timestamp_t ts;
   cats_event_e event;
-  uint8_t output_idx;
+  uint8_t action_idx;
 } event_info_t;
 
 typedef union {

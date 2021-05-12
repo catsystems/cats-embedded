@@ -42,16 +42,16 @@ _Noreturn void task_peripherals(void* argument) {
           osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks);
         }
       }
-      peripheral_out_t* output_list = event_output_map[curr_event].output_list;
-      for (uint32_t i = 0; i < event_output_map[curr_event].num_outputs; ++i) {
+      peripheral_act_t* action_list = event_action_map[curr_event].action_list;
+      for (uint32_t i = 0; i < event_action_map[curr_event].num_actions; ++i) {
         timestamp_t curr_ts = osKernelGetTickCount();
         /* get the actuator function */
-        peripheral_out_fp curr_fp = output_list[i].func_ptr;
+        peripheral_act_fp curr_fp = action_list[i].func_ptr;
         if (curr_fp != NULL) {
-          log_warn("EXECUTING EVENT: %d, output_idx: %lu", curr_event, i);
+          log_warn("EXECUTING EVENT: %d, action_idx: %lu", curr_event, i);
           /* call the actuator function */
-          curr_fp(output_list[i].func_arg);
-          event_info_t event_info = {.ts = curr_ts, .event = curr_event, .output_idx = i};
+          curr_fp(action_list[i].func_arg);
+          event_info_t event_info = {.ts = curr_ts, .event = curr_event, .action_idx = i};
           record(EVENT_INFO, &event_info);
         }
       }

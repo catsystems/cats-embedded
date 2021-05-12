@@ -214,14 +214,21 @@ typedef enum {
   CATS_BUZZ_CHANGED_READY,
 } buzzer_status_e;
 
-typedef bool (*peripheral_out_fp)(int16_t);
+typedef bool (*peripheral_act_fp)(int16_t);
 
 typedef struct {
-  /* Output function pointer */
-  peripheral_out_fp func_ptr;
-  /* Output function argument */
+  /* Action function pointer */
+  peripheral_act_fp func_ptr;
+  /* Action function argument */
   int16_t func_arg;
-} peripheral_out_t;
+} peripheral_act_t;
+
+typedef struct {
+  /* Number of actions tied to an event */
+  uint8_t num_actions;
+  /* List of actions tied to an event */
+  peripheral_act_t *action_list;
+} event_action_map_elem_t;
 
 typedef enum {
   EV_IDLE = 1,
@@ -244,13 +251,6 @@ typedef struct {
   osTimerId_t timer_id;
   uint32_t timer_duration_ticks;
 } cats_timer_t;
-
-typedef struct {
-  /* Number of outputs tied to an event */
-  uint8_t num_outputs;
-  /* List of outputs tied to an event */
-  peripheral_out_t *output_list;
-} event_output_map_elem_t;
 
 /** CONVERSION FUNCTIONS **/
 
