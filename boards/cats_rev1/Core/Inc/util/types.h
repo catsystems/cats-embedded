@@ -221,8 +221,6 @@ typedef struct {
   peripheral_out_fp func_ptr;
   /* Output function argument */
   int16_t func_arg;
-  /* Time to wait before executing the next output */
-  uint32_t delay_ms;
 } peripheral_out_t;
 
 typedef enum {
@@ -244,7 +242,7 @@ typedef struct {
   cats_event_e timer_init_event;
   cats_event_e execute_event;
   osTimerId_t timer_id;
-  uint32_t timer_duration;
+  uint32_t timer_duration_ticks;
 } cats_timer_t;
 
 typedef struct {

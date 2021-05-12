@@ -9,12 +9,13 @@
 
 #include "config/globals.h"
 
-#define NUM_OUTPUT_FUNCTIONS 16
+#define NUM_OUTPUT_FUNCTIONS 17
 
 extern const peripheral_out_fp output_table[NUM_OUTPUT_FUNCTIONS];
 
 typedef enum {
   OUT_NO_OP = 0,
+  OUT_OS_DELAY,
   OUT_HIGH_CURRENT_ONE,
   OUT_HIGH_CURRENT_TWO,
   OUT_HIGH_CURRENT_THREE,
@@ -29,5 +30,5 @@ typedef enum {
   OUT_SERVO_TWO,
   OUT_SERVO_THREE,
   OUT_SERVO_FOUR,
-  RECORDER_STATE,
+  OUT_RECORDER_STATE,
 } output_function_list_e;

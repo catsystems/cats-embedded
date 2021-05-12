@@ -338,20 +338,20 @@ static void init_devices() {
 }
 
 static void init_communication() {
-  /**
-   * Comm steps:
-   *  1) While response_received == true or 30 seconds passed:
-   *        Write "hello" to USB every second
-   *  2) If response received == true:
-   *        parse config_buffer (this should be enough for now...)
-   *        update in-memory config
-   *        update flash config
-   *     Else:
-   *        continue by reading the setup from config
-   */
+/**
+ * Comm steps:
+ *  1) While response_received == true or 30 seconds passed:
+ *        Write "hello" to USB every second
+ *  2) If response received == true:
+ *        parse config_buffer (this should be enough for now...)
+ *        update in-memory config
+ *        update flash config
+ *     Else:
+ *        continue by reading the setup from config
+ */
 
-  //#define AUTO_USB_CONFIG
-  #define SLOW_USB_CONFIG
+//#define AUTO_USB_CONFIG
+#define SLOW_USB_CONFIG
 
 #ifdef AUTO_USB_CONFIG
   if (global_usb_detection) {
@@ -428,7 +428,7 @@ static void init_tasks() {
         osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
         /* creation of receiver */
-        //osThreadNew(task_receiver, NULL, &task_receiver_attributes);
+        // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
         /* creation of task_imu_read */
         osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
@@ -437,7 +437,7 @@ static void init_tasks() {
         osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
         /* creation of task_drop_test_fsm */
-        //osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
+        // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
         /* creation of task_peripherals */
         osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
@@ -508,44 +508,38 @@ static void create_event_map() {
 
   event_output_map[EV_IDLE].num_outputs = 1;
   event_output_map[EV_IDLE].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_IDLE].output_list[0].func_ptr = output_table[RECORDER_STATE];
+  event_output_map[EV_IDLE].output_list[0].func_ptr = output_table[OUT_RECORDER_STATE];
   event_output_map[EV_IDLE].output_list[0].func_arg = REC_FILL_QUEUE;
-  event_output_map[EV_IDLE].output_list[0].delay_ms = 0;
 
   // Liftoff
   event_output_map[EV_LIFTOFF].num_outputs = 1;
   event_output_map[EV_LIFTOFF].output_list = calloc(1, sizeof(peripheral_out_t));
-  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = output_table[RECORDER_STATE];
+  event_output_map[EV_LIFTOFF].output_list[0].func_ptr = output_table[OUT_RECORDER_STATE];
   event_output_map[EV_LIFTOFF].output_list[0].func_arg = REC_WRITE_TO_FLASH;
-  event_output_map[EV_LIFTOFF].output_list[0].delay_ms = 0;
 
   // Apogee / Drogue
   event_output_map[EV_APOGEE].num_outputs = 1;
   event_output_map[EV_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
   event_output_map[EV_APOGEE].output_list[0].func_arg = 1;
-  event_output_map[EV_APOGEE].output_list[0].delay_ms = 0;
 
   // Low Altitude / Main
   event_output_map[EV_POST_APOGEE].num_outputs = 1;
   event_output_map[EV_POST_APOGEE].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_POST_APOGEE].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
   event_output_map[EV_POST_APOGEE].output_list[0].func_arg = 1;
-  event_output_map[EV_POST_APOGEE].output_list[0].delay_ms = 0;
 
   // Timer 1 / Drogue
   event_output_map[EV_TIMER_1].num_outputs = 1;
   event_output_map[EV_TIMER_1].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_TIMER_1].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_ONE];
   event_output_map[EV_TIMER_1].output_list[0].func_arg = 1;
-  event_output_map[EV_TIMER_1].output_list[0].delay_ms = 0;
 
   // Timer 2 / Main
   event_output_map[EV_TIMER_2].num_outputs = 1;
   event_output_map[EV_TIMER_2].output_list = calloc(1, sizeof(peripheral_out_t));
   event_output_map[EV_TIMER_2].output_list[0].func_ptr = output_table[OUT_HIGH_CURRENT_TWO];
   event_output_map[EV_TIMER_2].output_list[0].func_arg = 1;
-  event_output_map[EV_TIMER_2].output_list[0].delay_ms = 0;
   /* ................ */
 }
 
@@ -555,17 +549,17 @@ static void init_timers() {
   ev_timers[0].timer_init_event = EV_LIFTOFF;
   ev_timers[0].execute_event = EV_TIMER_1;
   if (cc_get_apogee_timer() < 3) {
-    ev_timers[0].timer_duration = 10000;
+    ev_timers[0].timer_duration_ticks = 10000;
   } else {
-    ev_timers[0].timer_duration = (uint32_t)cc_get_apogee_timer() * 1000;
+    ev_timers[0].timer_duration_ticks = (uint32_t)(cc_get_apogee_timer() * 1000);
   }
 
   /* Timer 2 */
   ev_timers[1].timer_init_event = EV_LIFTOFF;
   ev_timers[1].execute_event = EV_TIMER_2;
   if (cc_get_apogee_timer() < 5) {
-    ev_timers[1].timer_duration = 20000;
+    ev_timers[1].timer_duration_ticks = 20000;
   } else {
-    ev_timers[1].timer_duration = (uint32_t)cc_get_second_stage_timer() * 1000;
+    ev_timers[1].timer_duration_ticks = (uint32_t)(cc_get_second_stage_timer() * 1000);
   }
 }
