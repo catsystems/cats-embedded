@@ -2,8 +2,7 @@
 // Author: Luca Jost
 // 11.06.2020
 
-#ifndef CATS_ICM20602_H
-#define CATS_ICM20602_H
+#pragma once
 
 #include "stm32l4xx_hal.h"
 #include "drivers/spi.h"
@@ -83,5 +82,3 @@ void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro);
 void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp);
 void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis);
 void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data);
-
-#endif

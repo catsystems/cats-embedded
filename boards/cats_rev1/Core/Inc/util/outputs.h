@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_UTIL_OUTPUTS_H_
-#define INC_UTIL_OUTPUTS_H_
+#pragma once
 
 #include "config/globals.h"
 
@@ -32,5 +31,3 @@ typedef enum {
   OUT_SERVO_FOUR,
   RECORDER_STATE,
 } output_function_list_e;
-
-#endif /* INC_UTIL_OUTPUTS_H_ */

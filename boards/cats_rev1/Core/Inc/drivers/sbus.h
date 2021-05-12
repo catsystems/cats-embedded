@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_DRIVERS_SBUS_H_
-#define INC_DRIVERS_SBUS_H_
+#pragma once
 
 #include "util/types.h"
 
@@ -18,5 +17,3 @@ typedef struct {
 
 void sbus_init();
 void sbus_update(receiver_data_t* data);
-
-#endif /* INC_DRIVERS_SBUS_H_ */

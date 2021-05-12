@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_UTIL_BUZZER_HANDLER_H_
-#define INC_UTIL_BUZZER_HANDLER_H_
+#pragma once
 
 #define BUZZER_COMMAND_MAX_LENGTH 9
 
@@ -19,5 +18,3 @@ extern const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH];
 
 void buzzer_handler_update();
 bool buzzer_queue_status(buzzer_status_e status);
-
-#endif /* INC_UTIL_BUZZER_HANDLER_H_ */

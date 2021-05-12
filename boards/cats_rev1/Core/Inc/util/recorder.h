@@ -2,8 +2,7 @@
 // Created by stoja on 26.12.20.
 //
 
-#ifndef CATS_REV1_RECORDER_H
-#define CATS_REV1_RECORDER_H
+#pragma once
 
 #include "util/types.h"
 #include "cmsis_os.h"
@@ -97,5 +96,3 @@ typedef struct {
 /** Exported Functions **/
 
 void record(rec_entry_type_e rec_type, const void *rec_value);
-
-#endif  // CATS_REV1_RECORDER_H

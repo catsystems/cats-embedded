@@ -5,9 +5,6 @@
  *      Author: Jonas
  */
 
-#ifndef INC_TASK_IMU_READ_H_
-#define INC_TASK_IMU_READ_H_
+#pragma once
 
 _Noreturn void task_imu_read(void *argument);
-
-#endif /* INC_TASK_IMU_READ_H_ */

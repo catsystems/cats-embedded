@@ -19,8 +19,7 @@
   First release.
 */
 
-#ifndef CATS_W25QXX_H
-#define CATS_W25QXX_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -72,38 +71,27 @@ uint32_t w25qxx_sector_to_block(uint32_t sector_num);
 uint32_t w25qxx_sector_to_page(uint32_t sector_num);
 uint32_t w25qxx_block_to_page(uint32_t block_num);
 
-bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes,
-                          uint32_t bytes_to_check_up_to_page_size);
-bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes,
-                            uint32_t bytes_to_check_up_to_sector_size);
-bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes,
-                           uint32_t bytes_to_check_up_to_block_size);
+bool w25qxx_is_empty_page(uint32_t page_num, uint32_t offset_in_bytes, uint32_t bytes_to_check_up_to_page_size);
+bool w25qxx_is_empty_sector(uint32_t sector_num, uint32_t offset_in_bytes, uint32_t bytes_to_check_up_to_sector_size);
+bool w25qxx_is_empty_block(uint32_t block_num, uint32_t offset_in_bytes, uint32_t bytes_to_check_up_to_block_size);
 
 void w25qxx_write_byte(uint8_t byte, uint32_t byte_address);
-void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
-                       uint32_t offset_in_bytes,
+void w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                        uint32_t bytes_to_write_up_to_page_size);
-void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num,
-                         uint32_t offset_in_bytes,
+void w25qxx_write_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
                          uint32_t bytes_to_write_up_to_sector_size);
-void w25qxx_write_block(uint8_t *buf, uint32_t block_num,
-                        uint32_t offset_in_bytes,
+void w25qxx_write_block(uint8_t *buf, uint32_t block_num, uint32_t offset_in_bytes,
                         uint32_t bytes_to_write_up_to_block_size);
 
 void w25qxx_read_byte(uint8_t *buf, uint32_t byte_address);
-void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address,
-                       uint32_t bytes_to_read);
+void w25qxx_read_bytes(uint8_t *buf, uint32_t read_address, uint32_t bytes_to_read);
 void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                       uint32_t bytes_to_read_up_to_page_size);
-void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num,
-                        uint32_t offset_in_bytes,
+void w25qxx_read_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
                         uint32_t bytes_to_read_up_to_sector_size);
-void w25qxx_read_block(uint8_t *buf, uint32_t block_num,
-                       uint32_t offset_in_bytes,
+void w25qxx_read_block(uint8_t *buf, uint32_t block_num, uint32_t offset_in_bytes,
                        uint32_t bytes_to_read_up_to_block_size);
 
 /** Externs **/
 
 extern w25qxx_t w25qxx;
-
-#endif

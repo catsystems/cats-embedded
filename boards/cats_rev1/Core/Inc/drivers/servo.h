@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_DRIVERS_SERVO_H_
-#define INC_DRIVERS_SERVO_H_
+#pragma once
 
 #include "stm32l4xx_hal.h"
 
@@ -22,5 +21,3 @@ void servo_set_position(SERVO *dev, uint16_t angle);
 void servo_set_onoff(SERVO *dev, uint16_t status);
 void servo_start(SERVO *dev);
 void servo_stop(SERVO *dev);
-
-#endif /* INC_DRIVERS_SERVO_H_ */

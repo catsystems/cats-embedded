@@ -2,8 +2,7 @@
 // Created by stoja on 31.01.21.
 //
 
-#ifndef CATS_REV1_TASK_USB_COMMUNICATOR_H
-#define CATS_REV1_TASK_USB_COMMUNICATOR_H
+#pragma once
 
 void task_usb_communicator(void *argument);
 
@@ -34,5 +33,3 @@ typedef enum {
   CATS_USB_VAR_BOOT_STATE,
   CATS_USB_VAR_UNKNOWN
 } cats_usb_variables;
-
-#endif  // CATS_REV1_TASK_FLASH_READER_H

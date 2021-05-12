@@ -2,8 +2,7 @@
 // Created by stoja on 21.12.20.
 //
 
-#ifndef CATS_CONFIG_H_
-#define CATS_CONFIG_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,8 +24,7 @@ extern const uint32_t CATS_CONFIG_SECTOR;
 extern const uint32_t CATS_STATUS_SECTOR;
 
 /** cats config initialization **/
-void cc_init(cats_boot_state boot_state, bool clear_flash,
-             uint32_t recorder_mask);
+void cc_init(cats_boot_state boot_state, bool clear_flash, uint32_t recorder_mask);
 void cc_clear();
 
 /** accessor functions **/
@@ -85,5 +83,3 @@ void cs_save();
 
 /** debug functions **/
 void cs_print();
-
-#endif  // CATS_CONFIG_H_

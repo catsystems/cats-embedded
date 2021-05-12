@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_DRIVERS_BUZZER_H_
-#define INC_DRIVERS_BUZZER_H_
+#pragma once
 
 #include "stm32l4xx_hal.h"
 
@@ -31,5 +30,3 @@ void buzzer_set_freq(BUZ *dev, float frequency);
 void buzzer_start(BUZ *dev);
 void buzzer_stop(BUZ *dev);
 uint8_t buzzer_update(BUZ *dev);
-
-#endif /* INC_DRIVERS_BUZZER_H_ */

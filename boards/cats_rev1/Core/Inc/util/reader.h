@@ -5,13 +5,10 @@
  *      Author: Luca
  */
 
-#ifndef INC_UTIL_READER_H_
-#define INC_UTIL_READER_H_
+#pragma once
 
 #include "util/types.h"
 #include "cmsis_os.h"
 
 void print_recording(uint16_t number);
 void erase_recordings();
-
-#endif /* INC_UTIL_READER_H_ */

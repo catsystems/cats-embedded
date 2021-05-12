@@ -2,8 +2,7 @@
 // Created by stoja on 28.12.20.
 //
 
-#ifndef CATS_REV1_GLOBALS_H
-#define CATS_REV1_GLOBALS_H
+#pragma once
 
 #include "util/types.h"
 #include "util/recorder.h"
@@ -81,5 +80,3 @@ extern volatile bool usb_communication_complete;
 extern volatile recorder_status_e global_recorder_status;
 
 extern event_output_map_elem_t *event_output_map;
-
-#endif  // CATS_REV1_GLOBALS_H

@@ -2,8 +2,7 @@
 // Created by stoja on 23.12.20.
 //
 
-#ifndef CATS_REV1_TYPES_H
-#define CATS_REV1_TYPES_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -239,11 +238,7 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
-typedef enum {
-  REC_OFF = 0,
-  REC_FILL_QUEUE,
-  REC_WRITE_TO_FLASH
-} recorder_status_e;
+typedef enum { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH } recorder_status_e;
 
 typedef struct {
   cats_event_e timer_init_event;
@@ -261,13 +256,7 @@ typedef struct {
 
 /** CONVERSION FUNCTIONS **/
 
-inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) {
-  return (src_high << 8 | src_low);
-}
+inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) { return (src_high << 8 | src_low); }
 
 /* TODO: is this really the same? It's taken from the macros.. */
-inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) {
-  return uint8_to_uint16(src_high, src_low);
-}
-
-#endif  // CATS_REV1_TYPES_H
+inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) { return uint8_to_uint16(src_high, src_low); }

@@ -5,10 +5,8 @@
  *      Author: jonas
  */
 
-#ifndef INC_CONTROL_DROP_TEST_PHASES_H_
-#define INC_CONTROL_DROP_TEST_PHASES_H_
+#pragma once
 
-#endif /* INC_CONTROL_DROP_TEST_PHASES_H_ */
 #include "util/types.h"
 
 #define FREE_FALL_DET_ACC        500

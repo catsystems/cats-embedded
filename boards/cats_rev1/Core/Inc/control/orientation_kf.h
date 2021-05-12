@@ -5,10 +5,7 @@
  *      Author: jonas
  */
 
-#ifndef INC_CONTROL_ORIENTATION_KF_H_
-#define INC_CONTROL_ORIENTATION_KF_H_
-
-#endif /* INC_CONTROL_ORIENTATION_KF_H_ */
+#pragma once
 
 #include "../DSP/Inc/arm_math.h"
 #include "util/types.h"
@@ -62,6 +59,5 @@ typedef struct {
 
 void init_orientation_filter_struct(orientation_filter_t* filter);
 void initialize_orientation_matrices(orientation_filter_t* filter);
-void orientation_prediction_step(orientation_filter_t* filter,
-                                 imu_data_t* data);
+void orientation_prediction_step(orientation_filter_t* filter, imu_data_t* data);
 void orientation_update_step(orientation_filter_t* filter, imu_data_t* data);

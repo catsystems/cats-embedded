@@ -2,8 +2,7 @@
 // Author: Luca Jost
 // 11.06.2020
 
-#ifndef CATS_MS5607_H
-#define CATS_MS5607_H
+#pragma once
 
 #include "stm32l4xx_hal.h"
 #include "cmsis_os.h"
@@ -70,5 +69,3 @@ void ms5607_prepare_pres(MS5607 *dev);
 bool ms5607_busy();
 bool ms5607_try_readout(MS5607 *dev);
 bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature, int32_t *pressure);
-
-#endif

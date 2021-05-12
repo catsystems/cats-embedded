@@ -5,8 +5,7 @@
  *      Author: Luca
  */
 
-#ifndef INC_DRIVERS_SPI_H_
-#define INC_DRIVERS_SPI_H_
+#pragma once
 
 #include "cmsis_os.h"
 #include "util/types.h"
@@ -38,12 +37,9 @@ typedef struct spi_bus {
   uint8_t initialized;
 } SPI_BUS;
 
-uint8_t spi_transmit_receive(SPI_BUS* bus, uint8_t* tx_buf, uint16_t tx_size,
-                             uint8_t* rx_buf, uint16_t rx_size);
+uint8_t spi_transmit_receive(SPI_BUS* bus, uint8_t* tx_buf, uint16_t tx_size, uint8_t* rx_buf, uint16_t rx_size);
 uint8_t spi_transmit(SPI_BUS* bus, uint8_t* tx_buf, uint16_t tx_size);
 uint8_t spi_receive(SPI_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
 
 #define MAX_INSTANCES 10
 #define SPI_TIMEOUT   20
-
-#endif /* INC_DRIVERS_SPI_H_ */
