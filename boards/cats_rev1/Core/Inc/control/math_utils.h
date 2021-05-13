@@ -8,7 +8,7 @@
 #pragma once
 
 #include "string.h"
-#include "util/types.h"
+#include "util/error_handler.h"
 
 /* Calculates the transpose of a Matrix */
 void transpose(int m, int n, const float A[m][n], float A_T[n][m]);

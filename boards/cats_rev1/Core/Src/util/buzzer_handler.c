@@ -5,9 +5,11 @@
  *      Author: Luca
  */
 
+#include "util/buzzer_handler.h"
+
 #include "util/types.h"
 #include "config/globals.h"
-#include "util/buzzer_handler.h"
+#include "util/error_handler.h"
 
 // TODO right now this file only supports errors, should be updated to support
 // all buzzer things
@@ -89,8 +91,7 @@ uint8_t status_buzzer(buzzer_status_e status) {
   if ((timeout < osKernelGetTickCount()) && started) {
     uint32_t duration = 0;
 
-    if (cats_status_codes[static_status][i] &&
-        (i < BUZZER_COMMAND_MAX_LENGTH)) {
+    if (cats_status_codes[static_status][i] && (i < BUZZER_COMMAND_MAX_LENGTH)) {
       char pitch = cats_status_codes[static_status][i];
       if (pitch >= 'A' && pitch <= 'H') {
         buzzer_set_freq(&BUZZER, pitch_lookup[pitch - 'A']);
@@ -146,8 +147,7 @@ uint8_t error_buzzer(cats_error_e error) {
         i = 0;
       }
     } else {  // Beep error code
-      if (cats_error_codes[static_error][i] &&
-          (i < BUZZER_COMMAND_MAX_LENGTH)) {
+      if (cats_error_codes[static_error][i] && (i < BUZZER_COMMAND_MAX_LENGTH)) {
         if (cats_error_codes[static_error][i] == 'g')
           duration = BUZZER_SHORT_BEEP;
         else

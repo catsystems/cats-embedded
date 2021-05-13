@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include "util/types.h"
+
+#include <stdbool.h>
+
 #define BUZZER_COMMAND_MAX_LENGTH 9
 
 extern const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH];

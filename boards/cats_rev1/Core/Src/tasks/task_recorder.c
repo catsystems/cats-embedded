@@ -208,6 +208,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case EVENT_INFO:
       rec_elem_size += sizeof(rec_elem->u.event_info);
       break;
+    case ERROR_INFO:
+      rec_elem_size += sizeof(rec_elem->u.error_info);
+      break;
     default:
       log_fatal("Impossible recorder entry type!");
       break;

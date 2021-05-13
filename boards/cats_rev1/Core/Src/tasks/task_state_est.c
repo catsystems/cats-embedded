@@ -43,7 +43,6 @@ static void get_data_float(state_estimation_data_t *state_data,
 void task_state_est(void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
-
   /* local flight phase */
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   flight_fsm_e old_fsm_enum = MOVING;
@@ -87,6 +86,7 @@ void task_state_est(void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
+    cats_error_e err = CATS_ERR_OK;
     tick_count += tick_update;
 
     /* Update Flight Phase */
@@ -113,7 +113,7 @@ void task_state_est(void *argument) {
     get_data_float(&state_data, &filter, &calibration, &fsm_state);
 
     /* Check Sensor Readings */
-    check_sensors(&state_data, &elimination);
+    err |= check_sensors(&state_data, &elimination);
     global_elimination_data = elimination;
 
     /* Do the preprocessing on the IMU and BARO for calibration */
@@ -239,6 +239,7 @@ void task_state_est(void *argument) {
 
     old_fsm_enum = fsm_state.flight_state;
 
+    error_handler(err);
     osDelayUntil(tick_count);
   }
 }

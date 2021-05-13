@@ -65,6 +65,10 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
         // log_warn("logging EVENT_INFO");
         e.u.event_info = *((event_info_t *)rec_value);
         break;
+      case ERROR_INFO:
+        // log_warn("logging EVENT_INFO");
+        e.u.error_info = *((error_info_t *)rec_value);
+        break;
       default:
         log_fatal("Impossible recorder entry type %d!", rec_type);
         break;

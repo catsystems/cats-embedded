@@ -5,6 +5,8 @@
 #pragma once
 
 #include "util/types.h"
+#include "util/error_handler.h"
+
 #include "cmsis_os.h"
 
 /** Exported Defines **/
@@ -39,6 +41,7 @@ typedef enum {
   COVARIANCE_INFO = 0x100,
   SENSOR_INFO = 0x200,
   EVENT_INFO = 0x400,
+  ERROR_INFO = 0x800,
   HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } rec_entry_type_e;
 
@@ -78,6 +81,11 @@ typedef struct {
   uint8_t action_idx;
 } event_info_t;
 
+typedef struct {
+  timestamp_t ts;
+  cats_error_e error;
+} error_info_t;
+
 typedef union {
   imu_data_t imu;
   baro_data_t baro;
@@ -86,6 +94,7 @@ typedef union {
   covariance_info_t covariance_info;
   sensor_info_t sensor_info;
   event_info_t event_info;
+  error_info_t error_info;
 } rec_elem_u;
 
 typedef struct {

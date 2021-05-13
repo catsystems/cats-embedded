@@ -8,6 +8,7 @@
 #pragma once
 
 #include "util/types.h"
+#include "util/error_handler.h"
 
 /* in m/s^2 */
 #define UPPER_BOUND_ACC 320

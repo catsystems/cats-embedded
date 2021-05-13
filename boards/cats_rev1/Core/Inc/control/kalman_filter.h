@@ -9,6 +9,7 @@
 
 #include "util/log.h"
 #include "control/math_utils.h"
+#include "util/types.h"
 
 #define STD_NOISE_BARO   9.0f    // From data analysis: 2.6f
 #define STD_NOISE_IMU    0.004f  // From data analysis: 0.004f
