@@ -9,6 +9,8 @@
 
 #include "stm32l4xx_hal.h"
 
+#include <stdbool.h>
+
 typedef struct servo_dev {
   // Hardware Configuration
   TIM_HandleTypeDef *timer;
@@ -18,6 +20,6 @@ typedef struct servo_dev {
 } SERVO;
 
 void servo_set_position(SERVO *dev, uint16_t angle);
-void servo_set_onoff(SERVO *dev, uint16_t status);
+void servo_set_onoff(SERVO *dev, bool status);
 void servo_start(SERVO *dev);
 void servo_stop(SERVO *dev);

@@ -37,7 +37,7 @@ void servo_set_position(SERVO *dev, uint16_t angle) {
   if (dev->started) set_pwm(dev->timer, dev->channel, dev->pulse);
 }
 
-void servo_set_onoff(SERVO *dev, uint16_t status) {
+void servo_set_onoff(SERVO *dev, bool status) {
   if (status) {
     dev->pulse = 199999;
   } else {

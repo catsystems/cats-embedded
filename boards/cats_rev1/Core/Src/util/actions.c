@@ -147,7 +147,7 @@ bool low_level_channel_three(int32_t state) {
 // Same as servo 2 but digital output
 bool low_level_channel_four(int32_t state) {
   if (state == 0 || state == 1) {
-    servo_set_onoff(&SERVO2, state);
+    servo_set_onoff(&SERVO2, (bool)state);
     return true;
   }
   return false;
