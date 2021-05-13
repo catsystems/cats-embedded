@@ -15,7 +15,6 @@ typedef struct {
   /* State according to /concepts/v1/cats_fsm.jpg */
   cats_boot_state boot_state;
   control_settings_t control_settings;
-  chute_type_t chute_type;
   bool clear_flash;
   /* A bit mask that specifies which readings to log to the flash */
   uint32_t recorder_mask;
@@ -52,7 +51,6 @@ void cc_init(cats_boot_state boot_state, bool clear_flash,
   global_cats_config.boot_state = boot_state;
   global_cats_config.clear_flash = clear_flash;
   global_cats_config.recorder_mask = recorder_mask;
-  //  chute_type_t chute_type;
 }
 
 void cc_clear() { memset(&global_cats_config, 0, sizeof(global_cats_config)); }
