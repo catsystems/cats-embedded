@@ -5,7 +5,4 @@
  *      Author: jonas
  */
 
-#ifndef INC_CONTROL_NOISE_ESTIMATOR_H_
-#define INC_CONTROL_NOISE_ESTIMATOR_H_
-
-#endif /* INC_CONTROL_NOISE_ESTIMATOR_H_ */
+#pragma once
