@@ -214,13 +214,13 @@ typedef enum {
   CATS_BUZZ_CHANGED_READY,
 } buzzer_status_e;
 
-typedef bool (*peripheral_act_fp)(int16_t);
+typedef bool (*peripheral_act_fp)(int32_t);
 
 typedef struct {
   /* Action function pointer */
   peripheral_act_fp func_ptr;
   /* Action function argument */
-  int16_t func_arg;
+  int32_t func_arg;
 } peripheral_act_t;
 
 typedef struct {
