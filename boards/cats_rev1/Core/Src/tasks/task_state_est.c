@@ -25,13 +25,10 @@ static const float GRAVITY = 9.81f;
 
 /** Private Function Declarations **/
 
-inline static float calculate_height(float pressure_initial, float pressure,
-                                     float temperature);
+inline static float calculate_height(float pressure_initial, float pressure, float temperature);
 
-static void get_data_float(state_estimation_data_t *state_data,
-                           kalman_filter_t *filter,
-                           calibration_data_t *calibration,
-                           flight_fsm_t *fsm_state);
+static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t *filter,
+                           calibration_data_t *calibration, flight_fsm_t *fsm_state);
 
 /** Exported Function Definitions **/
 
@@ -65,14 +62,12 @@ void task_state_est(void *argument) {
   /* Initialize State Estimation */
   state_estimation_data_t state_data = {0};
   sensor_elimination_t elimination = {0};
-  kalman_filter_t filter = {.pressure_0 = P_INITIAL,
-                            .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  kalman_filter_t filter = {.pressure_0 = P_INITIAL, .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   init_filter_struct(&filter);
   initialize_matrices(&filter);
 
   /* initialize Orientation State Estimation */
-  orientation_filter_t orientation_filter = {
-      .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  orientation_filter_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   init_orientation_filter_struct(&orientation_filter);
   initialize_orientation_matrices(&orientation_filter);
 
@@ -87,7 +82,6 @@ void task_state_est(void *argument) {
 
   while (1) {
     cats_error_e err = CATS_ERR_OK;
-    tick_count += tick_update;
 
     /* Update Flight Phase */
     fsm_state = global_flight_state;
@@ -97,14 +91,12 @@ void task_state_est(void *argument) {
     }
 
     /* Reset IMU when we go from moving to IDLE */
-    if ((fsm_state.flight_state == IDLE) &&
-        (fsm_state.flight_state != old_fsm_enum)) {
+    if ((fsm_state.flight_state == IDLE) && (fsm_state.flight_state != old_fsm_enum)) {
       reset_kalman(&filter, average_pressure);
       calibrate_imu(&average_imu, &calibration, &elimination);
     }
 
-    if ((fsm_state.flight_state == APOGEE) &&
-        (fsm_state.flight_state != old_fsm_enum)) {
+    if ((fsm_state.flight_state == APOGEE) && (fsm_state.flight_state != old_fsm_enum)) {
       float32_t Q_dash[4] = {10.0f, 0, 0, STD_NOISE_OFFSET};
       memcpy(filter.Q_data, Q_dash, sizeof(Q_dash));
     }
@@ -125,12 +117,9 @@ void task_state_est(void *argument) {
       global_average_imu.acc_z = 0;
       for (int i = 0; i < 3; i++) {
         if (elimination.faulty_imu[i] == 0)
-          global_average_imu.acc_x +=
-              global_imu[i].acc_x / (3 - elimination.num_faulty_imus);
-        global_average_imu.acc_y +=
-            global_imu[i].acc_y / (3 - elimination.num_faulty_imus);
-        global_average_imu.acc_z +=
-            global_imu[i].acc_z / (3 - elimination.num_faulty_imus);
+          global_average_imu.acc_x += global_imu[i].acc_x / (3 - elimination.num_faulty_imus);
+        global_average_imu.acc_y += global_imu[i].acc_y / (3 - elimination.num_faulty_imus);
+        global_average_imu.acc_z += global_imu[i].acc_z / (3 - elimination.num_faulty_imus);
       }
 
       /* Write this into the rolling IMU array */
@@ -161,8 +150,7 @@ void task_state_est(void *argument) {
       global_average_pressure = 0;
       for (int i = 0; i < 3; i++) {
         if (elimination.faulty_baro[i] == 0)
-          global_average_pressure +=
-              global_baro[i].pressure / (3 - elimination.num_faulty_baros);
+          global_average_pressure += global_baro[i].pressure / (3 - elimination.num_faulty_baros);
       }
 
       /* Write this into the rolling Baro array */
@@ -210,17 +198,14 @@ void task_state_est(void *argument) {
                                  .faulty_imu[2] = elimination.faulty_imu[2]};
     record(SENSOR_INFO, &sensor_info);
 
-    covariance_info_t cov_info = {.ts = ts,
-                                  .height_cov = filter.P_bar.pData[1],
-                                  .velocity_cov = filter.P_bar.pData[5]};
+    covariance_info_t cov_info = {.ts = ts, .height_cov = filter.P_bar.pData[1], .velocity_cov = filter.P_bar.pData[5]};
     record(COVARIANCE_INFO, &cov_info);
 
-    flight_info_t flight_info = {
-        .ts = ts,
-        .height = filter.x_bar.pData[0],
-        .velocity = filter.x_bar.pData[1],
-        .acceleration = state_data.acceleration[1],
-        .measured_altitude_AGL = state_data.calculated_AGL[1]};
+    flight_info_t flight_info = {.ts = ts,
+                                 .height = filter.x_bar.pData[0],
+                                 .velocity = filter.x_bar.pData[1],
+                                 .acceleration = state_data.acceleration[1],
+                                 .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
     //        log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset
@@ -240,60 +225,39 @@ void task_state_est(void *argument) {
     old_fsm_enum = fsm_state.flight_state;
 
     error_handler(err);
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
 /** Private Function Definitions **/
 
-inline static float calculate_height(float pressure_initial, float pressure,
-                                     float temperature) {
-  return ((powf(pressure_initial / pressure, (1 / 5.257f)) - 1) *
-          (temperature + 273.15f) / 0.0065f);
+inline static float calculate_height(float pressure_initial, float pressure, float temperature) {
+  return ((powf(pressure_initial / pressure, (1 / 5.257f)) - 1) * (temperature + 273.15f) / 0.0065f);
 }
 
-static void get_data_float(state_estimation_data_t *state_data,
-                           kalman_filter_t *filter,
-                           calibration_data_t *calibration,
-                           flight_fsm_t *fsm_state) {
+static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t *filter,
+                           calibration_data_t *calibration, flight_fsm_t *fsm_state) {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (calibration->axis) {
     case 0:
       /* Choose X Axis */
-      state_data->acceleration[0] =
-          (float)(global_imu[0].acc_x) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[1] =
-          (float)(global_imu[1].acc_x) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[2] =
-          (float)(global_imu[2].acc_x) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
+      state_data->acceleration[0] = (float)(global_imu[0].acc_x) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[1] = (float)(global_imu[1].acc_x) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[2] = (float)(global_imu[2].acc_x) / (1024) * GRAVITY / calibration->angle - GRAVITY;
       break;
     case 1:
       /* Choose Y Axis */
-      state_data->acceleration[0] =
-          (float)(global_imu[0].acc_y) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[1] =
-          (float)(global_imu[1].acc_y) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[2] =
-          (float)(global_imu[2].acc_y) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
+      state_data->acceleration[0] = (float)(global_imu[0].acc_y) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[1] = (float)(global_imu[1].acc_y) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[2] = (float)(global_imu[2].acc_y) / (1024) * GRAVITY / calibration->angle - GRAVITY;
       break;
     case 2:
       /* Choose Z Axis */
-      state_data->acceleration[0] =
-          (float)(global_imu[0].acc_z) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[1] =
-          (float)(global_imu[1].acc_z) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
-      state_data->acceleration[2] =
-          (float)(global_imu[2].acc_z) / (1024) * GRAVITY / calibration->angle -
-          GRAVITY;
+      state_data->acceleration[0] = (float)(global_imu[0].acc_z) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[1] = (float)(global_imu[1].acc_z) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+      state_data->acceleration[2] = (float)(global_imu[2].acc_z) / (1024) * GRAVITY / calibration->angle - GRAVITY;
       break;
     default:
       break;
@@ -312,18 +276,12 @@ static void get_data_float(state_estimation_data_t *state_data,
 #ifdef INCLUDE_NOISE
     float rand_pressure[3] = {0};
     float rand_acc[3] = {0};
-    rand_pressure[0] = PRESSURE_NOISE_MAX_AMPL *
-                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-    rand_pressure[1] = PRESSURE_NOISE_MAX_AMPL *
-                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-    rand_pressure[2] = PRESSURE_NOISE_MAX_AMPL *
-                       ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
-    rand_acc[0] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
-                  (2147483648 / 2);
-    rand_acc[1] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
-                  (2147483648 / 2);
-    rand_acc[2] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) /
-                  (2147483648 / 2);
+    rand_pressure[0] = PRESSURE_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_pressure[1] = PRESSURE_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_pressure[2] = PRESSURE_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_acc[0] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_acc[1] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
+    rand_acc[2] = ACC_NOISE_MAX_AMPL * ((float)rand() - 2147483648 / 2) / (2147483648 / 2);
 
     state_data->pressure[0] += rand_pressure[0];
     state_data->pressure[1] += rand_pressure[1];
@@ -355,10 +313,10 @@ static void get_data_float(state_estimation_data_t *state_data,
 #endif
   }
 
-  state_data->calculated_AGL[0] = calculate_height(
-      filter->pressure_0, state_data->pressure[0], state_data->temperature[0]);
-  state_data->calculated_AGL[1] = calculate_height(
-      filter->pressure_0, state_data->pressure[1], state_data->temperature[1]);
-  state_data->calculated_AGL[2] = calculate_height(
-      filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
+  state_data->calculated_AGL[0] =
+      calculate_height(filter->pressure_0, state_data->pressure[0], state_data->temperature[0]);
+  state_data->calculated_AGL[1] =
+      calculate_height(filter->pressure_0, state_data->pressure[1], state_data->temperature[1]);
+  state_data->calculated_AGL[2] =
+      calculate_height(filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
 }

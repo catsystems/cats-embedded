@@ -40,7 +40,6 @@ _Noreturn void task_baro_read(void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
-    tick_count += tick_update;
     // Phase 1, get the temperature
     prepare_temp();
     osDelay(1);
@@ -66,6 +65,7 @@ _Noreturn void task_baro_read(void *argument) {
       record(BARO0 << i, &(global_baro[i]));
     }
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

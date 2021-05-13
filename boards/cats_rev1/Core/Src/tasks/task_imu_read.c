@@ -46,8 +46,6 @@ _Noreturn void task_imu_read(void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
-    tick_count += tick_update;
-
     /* Debugging */
 
     //    log_info(
@@ -73,6 +71,7 @@ _Noreturn void task_imu_read(void *argument) {
       record(IMU0 << i, &(global_imu[i]));
     }
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

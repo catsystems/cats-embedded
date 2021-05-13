@@ -28,8 +28,6 @@ _Noreturn void task_health_monitor(void *argument) {
   flight_fsm_e old_fsm_state = MOVING;
 
   while (1) {
-    tick_count += tick_update;
-
     battery_level_e level = battery_level();
     if (level == BATTERY_CRIT)
       ;  // TODO add the error
@@ -45,16 +43,15 @@ _Noreturn void task_health_monitor(void *argument) {
       alive_timer++;
     }
 
-    if (global_flight_state.flight_state == IDLE &&
-    	(global_flight_state.flight_state != old_fsm_state))
+    if (global_flight_state.flight_state == IDLE && (global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_BUZZ_CHANGED_READY);
-    if (global_flight_state.flight_state == MOVING &&
-        (global_flight_state.flight_state != old_fsm_state))
+    if (global_flight_state.flight_state == MOVING && (global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
 
     buzzer_handler_update();
     old_fsm_state = global_flight_state.flight_state;
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

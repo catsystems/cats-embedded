@@ -34,8 +34,7 @@ void task_drop_test_fsm(void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
-    tick_count += tick_update;
-    /* Todo: Do not take that IMU*/
+    /* Todo: Do not take that IMU */
     local_imu = global_imu[1];
 
     check_drop_test_phase(&fsm_state, &local_imu, &dt_telemetry_trigger);
@@ -43,14 +42,13 @@ void task_drop_test_fsm(void *argument) {
     global_drop_test_state = fsm_state;
 
     if (fsm_state.state_changed == 1) {
-      log_error("State Changed to %s",
-                drop_test_fsm_map[fsm_state.flight_state]);
-      flight_state_t flight_state = {
-          .ts = osKernelGetTickCount(),
-          .flight_or_drop_state.drop_state = fsm_state.flight_state};
+      log_error("State Changed to %s", drop_test_fsm_map[fsm_state.flight_state]);
+      flight_state_t flight_state = {.ts = osKernelGetTickCount(),
+                                     .flight_or_drop_state.drop_state = fsm_state.flight_state};
       record(FLIGHT_STATE, &flight_state);
     }
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
