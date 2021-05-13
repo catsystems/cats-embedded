@@ -508,13 +508,13 @@ static void create_event_map() {
 
   event_action_map[EV_IDLE].num_actions = 1;
   event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_RECORDER_STATE];
+  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
   event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Liftoff
   event_action_map[EV_LIFTOFF].num_actions = 1;
   event_action_map[EV_LIFTOFF].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_LIFTOFF].action_list[0].func_ptr = action_table[ACT_RECORDER_STATE];
+  event_action_map[EV_LIFTOFF].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
   event_action_map[EV_LIFTOFF].action_list[0].func_arg = REC_WRITE_TO_FLASH;
 
   // Apogee / Drogue

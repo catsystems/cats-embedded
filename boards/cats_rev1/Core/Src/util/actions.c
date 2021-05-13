@@ -6,8 +6,9 @@
  */
 
 #include "util/actions.h"
-#include "config/cats_config.h"
 
+#include "config/cats_config.h"
+#include "config/globals.h"
 #include "drivers/servo.h"
 
 bool no_action_function(int32_t bummer);

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "config/globals.h"
+#include "util/types.h"
 
 #define NUM_ACTION_FUNCTIONS 17
 
@@ -30,5 +30,5 @@ typedef enum {
   ACT_SERVO_TWO,
   ACT_SERVO_THREE,
   ACT_SERVO_FOUR,
-  ACT_RECORDER_STATE,
+  ACT_SET_RECORDER_STATE,
 } action_function_list_e;
