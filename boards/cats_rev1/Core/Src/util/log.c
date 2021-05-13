@@ -20,11 +20,9 @@ static struct {
   bool enabled;
 } L;
 
-static const char *level_strings[] = {"TRACE", "DEBUG", "INFO",
-                                      "WARN",  "ERROR", "FATAL"};
+static const char *level_strings[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
 #ifdef CATS_RAINBOW_LOG
-static const char *level_colors[] = {"\x1b[94m", "\x1b[36m", "\x1b[32m",
-                                     "\x1b[33m", "\x1b[31m", "\x1b[35m"};
+static const char *level_colors[] = {"\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"};
 #endif
 
 osMutexId_t print_mutex;
@@ -51,22 +49,18 @@ void log_disable() {
 
 void log_log(int level, const char *file, int line, const char *format, ...) {
 #ifdef CATS_DEBUG
-  if (L.enabled && level >= L.level &&
-      osMutexAcquire(print_mutex, 0U) == osOK) {
+  if (L.enabled && level >= L.level && osMutexAcquire(print_mutex, 0U) == osOK) {
     /* fill buffer with metadata */
     static char buf_ts[16];
-    buf_ts[snprintf(buf_ts, sizeof(buf_ts), "%lu", osKernelGetTickCount())] =
-        '\0';
+    buf_ts[snprintf(buf_ts, sizeof(buf_ts), "%lu", osKernelGetTickCount())] = '\0';
     static char buf_loc[30];
     buf_loc[snprintf(buf_loc, sizeof(buf_loc), "%s:%d:", file, line)] = '\0';
     int len;
 #ifdef CATS_RAINBOW_LOG
-    len = snprintf(print_buffer, PRINT_BUFFER_LEN,
-                   "%6s %s%5s\x1b[0m \x1b[90m%30s\x1b[0m ", buf_ts,
-                   level_colors[level], level_strings[level], buf_loc);
-#else
-    len = snprintf(print_buffer, PRINT_BUFFER_LEN, "%6s %5s %30s ", buf_ts,
+    len = snprintf(print_buffer, PRINT_BUFFER_LEN, "%6s %s%5s\x1b[0m \x1b[90m%30s\x1b[0m ", buf_ts, level_colors[level],
                    level_strings[level], buf_loc);
+#else
+    len = snprintf(print_buffer, PRINT_BUFFER_LEN, "%6s %5s %30s ", buf_ts, level_strings[level], buf_loc);
 #endif
     va_list argptr;
     va_start(argptr, format);
@@ -75,7 +69,7 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
     snprintf(print_buffer + strlen(print_buffer), PRINT_BUFFER_LEN, "\n");
     CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
     osMutexRelease(print_mutex);
-    osDelay(2);
+    // osDelay(2);
   }
 #endif
 }
@@ -104,7 +98,7 @@ void log_rawr(const char *format, ...) {
     va_end(argptr);
     CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
     osMutexRelease(print_mutex);
-    osDelay(2);
+    // osDelay(2);
   }
 #endif
 }
