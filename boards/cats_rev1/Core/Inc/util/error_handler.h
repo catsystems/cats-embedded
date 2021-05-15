@@ -17,7 +17,8 @@ typedef enum {
   CATS_ERR_IMU = 0x40,
   CATS_ERR_BARO = 0x80,
   CATS_ERR_FILTER = 0x100,
-  CATS_ERR_HARD_FAULT = 0x200
+  CATS_ERR_HARD_FAULT = 0x200,
+  CATS_ERR_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_error_e;
 
 void error_handler(cats_error_e err);

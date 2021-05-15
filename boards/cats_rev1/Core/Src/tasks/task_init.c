@@ -260,7 +260,12 @@ _Noreturn void task_init(void *argument) {
 
   /* Infinite loop */
   for (;;) {
-    osDelay(10);
+    osDelay(1000);
+//    cats_error_e err = CATS_ERR_BAT_CRITICAL;
+//    error_handler(err);
+//    osDelay(1000);
+//    err = CATS_ERR_NO_CONFIG;
+//    error_handler(err);
   }
   /* USER CODE END 5 */
 }
