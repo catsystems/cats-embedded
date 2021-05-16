@@ -181,7 +181,7 @@ void W25qxx_EraseBlock(uint32_t block_num) {
   block_num = block_num * w25qxx.sector_size * 16;
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi_transmit(0xD8);
+  w25qxx_spi_transmit(0xDC);
   w25qxx_send_address(block_num);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
@@ -402,7 +402,7 @@ void w25qxx_write_byte(uint8_t byte, uint32_t byte_address) {
   w25qxx_wait_for_write_end();
   w25qxx_write_enable();
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_RESET);
-  w25qxx_spi_transmit(0x02);
+  w25qxx_spi_transmit(0x12);
   w25qxx_send_address(byte_address);
   w25qxx_spi_transmit(byte);
   HAL_GPIO_WritePin(CATS_W25QXX_CS_GPIO, CATS_W25QXX_CS_PIN, GPIO_PIN_SET);
