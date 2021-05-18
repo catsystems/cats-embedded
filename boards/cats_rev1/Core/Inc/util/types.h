@@ -30,6 +30,12 @@ typedef struct {
   int32_t temperature;
 } baro_data_t;
 
+/* Magnetometer data */
+typedef struct {
+    timestamp_t ts;
+    float magneto_x, magneto_y, magneto_z;
+}magneto_data_t;
+
 /* Estimator Data */
 typedef struct {
   float pressure[3];
@@ -60,6 +66,11 @@ typedef struct {
   float angle;
   uint8_t axis;
 } calibration_data_t;
+
+typedef struct {
+    float magneto_beta[3];
+    float magneto_radius;
+} magneto_calibration_data_t;
 
 extern const char *flight_fsm_map[14];
 extern const char *drop_test_fsm_map[7];
