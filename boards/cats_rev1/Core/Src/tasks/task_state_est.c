@@ -29,6 +29,7 @@ inline static float calculate_height(float pressure_initial, float pressure, flo
 
 static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t *filter,
                            calibration_data_t *calibration, flight_fsm_t *fsm_state);
+static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure, uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu, float *average_pressure);
 
 /** Exported Function Definitions **/
 
@@ -51,11 +52,9 @@ void task_state_est(void *argument) {
   calibration_data_t calibration = {.angle = 1, .axis = 2};
   uint8_t imu_counter = 0;
   imu_data_t rolling_imu[10];
-  imu_data_t global_average_imu;
-  imu_data_t average_imu;
+  imu_data_t average_imu = { 0 };
   uint8_t pressure_counter = 0;
   int32_t rolling_pressure[10];
-  int32_t global_average_pressure;
   float average_pressure = P_INITIAL;
   /* end calibration data */
 
@@ -96,8 +95,9 @@ void task_state_est(void *argument) {
       calibrate_imu(&average_imu, &calibration, &elimination);
     }
 
+    /* Remove Accel Data when we enter apogee for the KF */
     if ((fsm_state.flight_state == APOGEE) && (fsm_state.flight_state != old_fsm_enum)) {
-      float32_t Q_dash[4] = {10.0f, 0, 0, STD_NOISE_OFFSET};
+      float32_t Q_dash[4] = {0, 0, 0, 10.0f};
       memcpy(filter.Q_data, Q_dash, sizeof(Q_dash));
     }
 
@@ -106,72 +106,18 @@ void task_state_est(void *argument) {
 
     /* Check Sensor Readings */
     err |= check_sensors(&state_data, &elimination);
+
+    /* Write the elimination Data into the global variable */
     global_elimination_data = elimination;
 
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
     if (fsm_state.flight_state == MOVING) {
-      /* First average the 3 IMU measurements if no IMUs have been eliminated */
-      global_average_imu.acc_x = 0;
-      global_average_imu.acc_y = 0;
-      global_average_imu.acc_z = 0;
-      for (int i = 0; i < 3; i++) {
-        if (elimination.faulty_imu[i] == 0)
-          global_average_imu.acc_x += global_imu[i].acc_x / (3 - elimination.num_faulty_imus);
-        global_average_imu.acc_y += global_imu[i].acc_y / (3 - elimination.num_faulty_imus);
-        global_average_imu.acc_z += global_imu[i].acc_z / (3 - elimination.num_faulty_imus);
-      }
-
-      /* Write this into the rolling IMU array */
-      rolling_imu[imu_counter] = global_average_imu;
-
-      /* Average the rolling IMU Array */
-      average_imu.acc_x = 0;
-      average_imu.acc_y = 0;
-      average_imu.acc_z = 0;
-      for (int i = 0; i < 10; i++) {
-        average_imu.acc_x += rolling_imu[i].acc_x;
-        average_imu.acc_y += rolling_imu[i].acc_y;
-        average_imu.acc_z += rolling_imu[i].acc_z;
-      }
-      average_imu.acc_x /= 10;
-      average_imu.acc_y /= 10;
-      average_imu.acc_z /= 10;
-
-      /* Increase the counter for the rolling IMU array */
-      imu_counter++;
-      if (imu_counter > 9) {
-        imu_counter = 0;
-      }
-
-      /* Do the Baro */
-      /* First average the 3 Baro measurements if no Baros have been eliminated
-       */
-      global_average_pressure = 0;
-      for (int i = 0; i < 3; i++) {
-        if (elimination.faulty_baro[i] == 0)
-          global_average_pressure += global_baro[i].pressure / (3 - elimination.num_faulty_baros);
-      }
-
-      /* Write this into the rolling Baro array */
-      rolling_pressure[pressure_counter] = global_average_pressure;
-
-      /* Average the rolling IMU Array */
-      average_pressure = 0;
-      for (int i = 0; i < 10; i++) {
-        average_pressure += rolling_pressure[i];
-      }
-      average_pressure /= 10;
-
-      /* Increase the counter for the rolling Baro array */
-      pressure_counter++;
-      if (pressure_counter > 9) {
-        pressure_counter = 0;
-      }
+        average_data(rolling_imu, &imu_counter, rolling_pressure, &pressure_counter, &elimination, &average_imu, &average_pressure);
     }
 
     /* Do a Kalman Step */
-    kalman_step(&filter, &state_data, &elimination);
+    kalman_step(&filter, &state_data, &elimination, &fsm_state.flight_state);
 
     /* write the Data into the global variable */
     global_kf_data.height = (float)filter.x_bar.pData[0];
@@ -189,6 +135,7 @@ void task_state_est(void *argument) {
 
     uint32_t ts = osKernelGetTickCount();
 
+    /* Log if Sensor is faulty */
     sensor_info_t sensor_info = {.ts = ts,
                                  .faulty_baro[0] = elimination.faulty_baro[0],
                                  .faulty_baro[1] = elimination.faulty_baro[1],
@@ -198,9 +145,11 @@ void task_state_est(void *argument) {
                                  .faulty_imu[2] = elimination.faulty_imu[2]};
     record(SENSOR_INFO, &sensor_info);
 
+    /* Log Covariance Data of KF */
     covariance_info_t cov_info = {.ts = ts, .height_cov = filter.P_bar.pData[1], .velocity_cov = filter.P_bar.pData[5]};
     record(COVARIANCE_INFO, &cov_info);
 
+    /* Log KF outputs */
     flight_info_t flight_info = {.ts = ts,
                                  .height = filter.x_bar.pData[0],
                                  .velocity = filter.x_bar.pData[1],
@@ -208,12 +157,11 @@ void task_state_est(void *argument) {
                                  .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-    //        log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset
-    //        %ld",
-    //                  (int32_t)((float)filter.x_bar.pData[0] * 1000),
-    //                  (int32_t)((float)filter.x_bar.pData[1] * 1000),
-    //                  (int32_t)(state_data.acceleration[1] * 1000),
-    //                  (int32_t)((float)filter.x_bar.pData[2] * 1000));
+            log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
+                      (int32_t)((float)filter.x_bar.pData[0] * 1000),
+                      (int32_t)((float)filter.x_bar.pData[1] * 1000),
+                      (int32_t)(state_data.acceleration[1] * 1000),
+                      (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
     //            log_trace("Calibrated IMU 2: Z: %ld",
@@ -319,4 +267,65 @@ static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t 
       calculate_height(filter->pressure_0, state_data->pressure[1], state_data->temperature[1]);
   state_data->calculated_AGL[2] =
       calculate_height(filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
+}
+
+static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure, uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu, float *average_pressure){
+    imu_data_t average_imu_from_global = { 0 };
+    /* First average the 3 IMU measurements if no IMUs have been eliminated */
+    average_imu_from_global.acc_x = 0;
+    average_imu_from_global.acc_y = 0;
+    average_imu_from_global.acc_z = 0;
+    for (int i = 0; i < 3; i++) {
+        if (elimination->faulty_imu[i] == 0)
+            average_imu_from_global.acc_x += global_imu[i].acc_x / (3 - elimination->num_faulty_imus);
+        average_imu_from_global.acc_y += global_imu[i].acc_y / (3 - elimination->num_faulty_imus);
+        average_imu_from_global.acc_z += global_imu[i].acc_z / (3 - elimination->num_faulty_imus);
+    }
+
+    /* Write this into the rolling IMU array */
+    rolling_imu[*imu_counter] = average_imu_from_global;
+
+    /* Average the rolling IMU Array */
+    average_imu->acc_x = 0;
+    average_imu->acc_y = 0;
+    average_imu->acc_z = 0;
+    for (int i = 0; i < 10; i++) {
+        average_imu->acc_x += rolling_imu[i].acc_x;
+        average_imu->acc_y += rolling_imu[i].acc_y;
+        average_imu->acc_z += rolling_imu[i].acc_z;
+    }
+    average_imu->acc_x /= 10;
+    average_imu->acc_y /= 10;
+    average_imu->acc_z /= 10;
+
+    /* Increase the counter for the rolling IMU array */
+    (*imu_counter)++;
+    if ((*imu_counter) > 9) {
+        (*imu_counter) = 0;
+    }
+
+    /* Do the Baro */
+    /* First average the 3 Baro measurements if no Baros have been eliminated
+     */
+    int32_t global_average_pressure = 0;
+    for (int i = 0; i < 3; i++) {
+        if (elimination->faulty_baro[i] == 0)
+            global_average_pressure += global_baro[i].pressure / (3 - elimination->num_faulty_baros);
+    }
+
+    /* Write this into the rolling Baro array */
+    rolling_pressure[*pressure_counter] = global_average_pressure;
+
+    /* Average the rolling IMU Array */
+    *average_pressure = 0;
+    for (int i = 0; i < 10; i++) {
+        *average_pressure += (float)rolling_pressure[i];
+    }
+    *average_pressure /= 10.0f;
+
+    /* Increase the counter for the rolling Baro array */
+    (*pressure_counter)++;
+    if ((*pressure_counter) > 9) {
+        (*pressure_counter) = 0;
+    }
 }

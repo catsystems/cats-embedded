@@ -179,7 +179,7 @@ void reset_kalman(kalman_filter_t *filter, float initial_pressure) {
 /* This Function Implements the kalman Prediction as long as more than 0 IMU
  * work */
 void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
-                       sensor_elimination_t *elimination) {
+                       sensor_elimination_t *elimination, flight_fsm_e *fsm_state) {
   float u = 0;
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
@@ -207,7 +207,13 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
     }
   }
 
-  u /= (float)(3 - elimination->num_faulty_imus);
+  if(*fsm_state > APOGEE){
+      u = 0;
+  }
+  else{
+      u /= (float)(3 - elimination->num_faulty_imus);
+  }
+
 
   /* Calculate Prediction of the state: x_hat = A*x_bar + B*u */
   arm_mat_mult_f32(&filter->Ad, &filter->x_bar, &holder_vec);
@@ -225,6 +231,7 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
 /* This function implements the Kalman update when no Barometer is faulty */
 cats_error_e kalman_update_full(kalman_filter_t *filter,
                                 state_estimation_data_t *data) {
+
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
   arm_mat_init_f32(&holder_mat, 3, 3, holder);
@@ -252,16 +259,17 @@ cats_error_e kalman_update_full(kalman_filter_t *filter,
   arm_mat_mult_f32(&filter->H_full, &filter->P_hat, &holder_mat);
   arm_mat_mult_f32(&holder_mat, &filter->H_full_T, &holder2_mat);
   arm_mat_add_f32(&holder2_mat, &filter->R_full, &holder_mat);
-  arm_mat_inverse_f32(&holder_mat, &holder2_mat);
+  arm_status inv_status = ARM_MATH_SUCCESS;
+  inv_status = arm_mat_inverse_f32(&holder_mat, &holder2_mat);
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_full_T, &holder_mat);
   arm_mat_mult_f32(&holder_mat, &holder2_mat, &filter->K_full);
 
-  /* if the matrix is singular, return an error and ignore this step */
+  /* if the matrix is singular, return an error */
+  if(inv_status == ARM_MATH_SINGULAR){
+      status = CATS_ERR_FILTER;
+  }
 
-  /* TODO */
-
-  /* Finished Calculating K */
 
   /* Calculate x_bar = x_hat+K*(y-Hx_hat); */
 
@@ -345,14 +353,16 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
   arm_mat_mult_f32(&holder_0_2x3_mat, &filter->H_eliminated_T,
                    &holder_0_2x2_mat);
   arm_mat_add_f32(&holder_0_2x2_mat, &filter->R_eliminated, &holder_1_2x2_mat);
-  arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
+  arm_status inv_status = ARM_MATH_SUCCESS;
+    inv_status = arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_eliminated_T, &holder_0_3x2_mat);
   arm_mat_mult_f32(&holder_0_3x2_mat, &holder_0_2x2_mat, &filter->K_eliminated);
 
-  /* if the matrix is singular, return an error and ignore this step */
-
-  /* TODO */
+    /* if the matrix is singular, return an error */
+    if(inv_status == ARM_MATH_SINGULAR){
+        status = CATS_ERR_FILTER;
+    }
 
   /* Finished Calculating K */
 
@@ -389,10 +399,10 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
 }
 
 cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data,
-                         sensor_elimination_t *elimination) {
+                         sensor_elimination_t *elimination, flight_fsm_e *fsm_state) {
   cats_error_e status = CATS_ERR_OK;
 
-  kalman_prediction(filter, data, elimination);
+  kalman_prediction(filter, data, elimination, fsm_state);
 
   switch (elimination->num_faulty_baros) {
     case 0:
