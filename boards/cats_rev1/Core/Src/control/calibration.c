@@ -51,8 +51,8 @@ void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration,
 
 void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t *calibration_data){
 
-    float test_radii[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f, 3.0f};
-    float test_bias[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f, 3.0f};
+    float test_radii[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
+    float test_bias[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
     int32_t smallest_indices[4] = { 0 };
     float smallest_value = 10000;
     float value;

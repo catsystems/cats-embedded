@@ -4,3 +4,4 @@
 
 #pragma once
 
+float median(float array[], int array_size);

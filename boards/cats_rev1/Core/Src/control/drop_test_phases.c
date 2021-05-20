@@ -10,28 +10,28 @@
 #include "cmsis_os.h"
 
 void check_dt_idle_phase(drop_test_fsm_t *fsm_state,
-                         dt_telemetry_trigger_t *dt_telemetry_trigger);
+                         dt_telemetry_trigger_t *telemetry_trigger);
 void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
-                            dt_telemetry_trigger_t *dt_telemetry_trigger);
+                            dt_telemetry_trigger_t *telemetry_trigger);
 void check_dt_drogue_phase(drop_test_fsm_t *fsm_state,
-                           dt_telemetry_trigger_t *dt_telemetry_trigger);
+                           dt_telemetry_trigger_t *telemetry_trigger);
 // void check_dt_main_phase(drop_test_fsm_t *fsm_state,
 //		dt_telemetry_trigger_t *dt_telemetry_trigger);
 
 void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
-                           dt_telemetry_trigger_t *dt_telemetry_trigger) {
+                           dt_telemetry_trigger_t *telemetry_trigger) {
   /* Save old FSM state */
   drop_test_fsm_t old_fsm_state = *fsm_state;
 
   switch (fsm_state->flight_state) {
     case DT_IDLE:
-      check_dt_idle_phase(fsm_state, dt_telemetry_trigger);
+      check_dt_idle_phase(fsm_state, telemetry_trigger);
       break;
     case DT_WAITING:
-      check_dt_waiting_phase(fsm_state, imu_data, dt_telemetry_trigger);
+      check_dt_waiting_phase(fsm_state, imu_data, telemetry_trigger);
       break;
     case DT_DROGUE:
-      check_dt_drogue_phase(fsm_state, dt_telemetry_trigger);
+      check_dt_drogue_phase(fsm_state, telemetry_trigger);
       break;
     case DT_MAIN:
       //		check_dt_main_phase(fsm_state, dt_telemetry_trigger);
@@ -50,8 +50,8 @@ void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
 }
 
 void check_dt_idle_phase(drop_test_fsm_t *fsm_state,
-                         dt_telemetry_trigger_t *dt_telemetry_trigger) {
-  if (dt_telemetry_trigger->set_waiting == 1) {
+                         dt_telemetry_trigger_t *telemetry_trigger) {
+  if (telemetry_trigger->set_waiting == 1) {
     trigger_event(EV_IDLE);
     fsm_state->flight_state = DT_WAITING;
     fsm_state->timer_start_drogue = osKernelGetTickCount();
@@ -59,7 +59,7 @@ void check_dt_idle_phase(drop_test_fsm_t *fsm_state,
   }
 }
 void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
-                            dt_telemetry_trigger_t *dt_telemetry_trigger) {
+                            dt_telemetry_trigger_t *telemetry_trigger) {
   /* Check IMU */
   int32_t acceleration = imu_data->acc_x * imu_data->acc_x +
                          imu_data->acc_y * imu_data->acc_y +
@@ -84,21 +84,21 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 
   /* Check Remote Signal */
-  if (dt_telemetry_trigger->set_drogue == 1) {
+  if (telemetry_trigger->set_drogue == 1) {
     trigger_event(EV_APOGEE);
     fsm_state->flight_state = DT_DROGUE;
     fsm_state->timer_start_main = osKernelGetTickCount();
   }
 
   /* Check if Disarming */
-  if (dt_telemetry_trigger->set_waiting == 0) {
+  if (telemetry_trigger->set_waiting == 0) {
     trigger_event(EV_TOUCHDOWN);
     fsm_state->flight_state = DT_IDLE;
   }
 }
 
 void check_dt_drogue_phase(drop_test_fsm_t *fsm_state,
-                           dt_telemetry_trigger_t *dt_telemetry_trigger) {
+                           dt_telemetry_trigger_t *telemetry_trigger) {
   /* Check if Timer */
   if (MAIN_TIMER < (osKernelGetTickCount() - fsm_state->timer_start_main)) {
     trigger_event(EV_POST_APOGEE);
@@ -106,7 +106,7 @@ void check_dt_drogue_phase(drop_test_fsm_t *fsm_state,
   }
 
   /* Check Remote Signal */
-  if (dt_telemetry_trigger->set_main == 1) {
+  if (telemetry_trigger->set_main == 1) {
     trigger_event(EV_POST_APOGEE);
     fsm_state->flight_state = DT_MAIN;
   }

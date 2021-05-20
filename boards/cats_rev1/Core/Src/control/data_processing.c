@@ -5,9 +5,10 @@
 #include "control/data_processing.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Helper function for the merge sort algorithm */
-void merge(int arr[], int l, int m, int r)
+void merge(float arr[], int l, int m, int r)
 {
     int i, j, k;
     int n1 = m - l + 1;
@@ -57,7 +58,7 @@ void merge(int arr[], int l, int m, int r)
 
 /* l is for left index and r is right index of the
 sub-array of arr to be sorted */
-void mergeSort(int arr[], int l, int r)
+void mergeSort(float arr[], int l, int r)
 {
     if (l < r) {
         // Same as (l+r)/2, but avoids overflow for
@@ -72,6 +73,9 @@ void mergeSort(int arr[], int l, int r)
     }
 }
 
-void median(int *array, int array_size){
-    mergeSort(array, 0, array_size - 1);
+float median(float array[], int array_size){
+    float dummy_array[array_size];
+    memcpy(dummy_array, array, array_size);
+    mergeSort(dummy_array, 0, array_size - 1);
+    return array[(int)(array_size/2)];
 }

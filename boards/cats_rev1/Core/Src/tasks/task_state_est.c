@@ -14,6 +14,7 @@
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "control/orientation_kf.h"
+#include "control/data_processing.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -27,9 +28,12 @@ static const float GRAVITY = 9.81f;
 
 inline static float calculate_height(float pressure_initial, float pressure, float temperature);
 
-static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t *filter,
+static void transform_data(state_estimation_data_t *state_data, kalman_filter_t *filter,
                            calibration_data_t *calibration, flight_fsm_t *fsm_state);
 static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure, uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu, float *average_pressure);
+#ifdef FILTER_DATA
+static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data);
+#endif
 
 /** Exported Function Definitions **/
 
@@ -46,7 +50,6 @@ void task_state_est(void *argument) {
   flight_fsm_e old_fsm_enum = MOVING;
   /* end local flight phase */
 
-  /* Read Control Settings from Flash chip */
 
   /* calibration data */
   calibration_data_t calibration = {.angle = 1, .axis = 2};
@@ -70,9 +73,12 @@ void task_state_est(void *argument) {
   init_orientation_filter_struct(&orientation_filter);
   initialize_orientation_matrices(&orientation_filter);
 
-  /* End Initialization */
+#ifdef FILTER_DATA
+  /* Arrays for median Filtering */
+  median_filter_t filter_data = {0};
+#endif
 
-  /* TODO: why is this needed? Without it We get num_faulty_baros = 3... */
+  /* End Initialization */
   osDelay(1000);
 
   /* Infinite loop */
@@ -102,7 +108,13 @@ void task_state_est(void *argument) {
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    get_data_float(&state_data, &filter, &calibration, &fsm_state);
+    transform_data(&state_data, &filter, &calibration, &fsm_state);
+
+    /* Filter Data */
+#ifdef FILTER_DATA
+      median_filter(&filter_data, &state_data);
+#endif
+
 
     /* Check Sensor Readings */
     err |= check_sensors(&state_data, &elimination);
@@ -184,7 +196,7 @@ inline static float calculate_height(float pressure_initial, float pressure, flo
   return ((powf(pressure_initial / pressure, (1 / 5.257f)) - 1) * (temperature + 273.15f) / 0.0065f);
 }
 
-static void get_data_float(state_estimation_data_t *state_data, kalman_filter_t *filter,
+static void transform_data(state_estimation_data_t *state_data, kalman_filter_t *filter,
                            calibration_data_t *calibration, flight_fsm_t *fsm_state) {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
@@ -329,3 +341,22 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
         (*pressure_counter) = 0;
     }
 }
+#ifdef FILTER_DATA
+static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data){
+    filter_data->data[0][filter_data->counter] = state_data->acceleration[0];
+    filter_data->data[1][filter_data->counter] = state_data->acceleration[1];
+    filter_data->data[2][filter_data->counter] = state_data->acceleration[2];
+    filter_data->data[3][filter_data->counter] = state_data->pressure[0];
+    filter_data->data[4][filter_data->counter] = state_data->pressure[1];
+    filter_data->data[5][filter_data->counter] = state_data->pressure[2];
+    filter_data->counter = filter_data->counter % 10;
+
+    state_data->acceleration[0] = median(&filter_data->data[0][0], 10);
+    state_data->acceleration[1] = median(&filter_data->data[1][0], 10);
+    state_data->acceleration[2] = median(&filter_data->data[2][0], 10);
+    state_data->pressure[0] = median(&filter_data->data[3][0], 10);
+    state_data->pressure[1] = median(&filter_data->data[4][0], 10);
+    state_data->pressure[2] = median(&filter_data->data[5][0], 10);
+}
+#endif
+

@@ -57,6 +57,12 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
+    float data[6][10];
+    float estimate[6];
+    uint8_t counter;
+} median_filter_t;
+
+typedef struct {
   float height;
   float velocity;
   float acceleration;
@@ -125,18 +131,6 @@ typedef struct {
   uint8_t set_drogue;
   uint8_t set_main;
 } dt_telemetry_trigger_t;
-
-typedef struct {
-  float measured_height[10][3];
-  float measured_acc[10][3];
-  float height_avg;
-  float acc_avg;
-  float height_noise_est;
-  float acc_noise_est;
-  /* future use */
-  float height_poly[3];
-  float accel_poly[3];
-} noise_estimator_t;
 
 typedef struct {
   float32_t Ad_data[9];
