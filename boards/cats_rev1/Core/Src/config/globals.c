@@ -15,29 +15,11 @@ extern TIM_HandleTypeDef htim15;
 
 /** Device Handles **/
 
-bool global_usb_detection = false;
-
-SPI_BUS SPI1_CS1 = {
-    .cs_port = GPIOB,
-    .cs_pin = GPIO_PIN_0,
-    .spi_handle = &hspi1,
-    .cs_type = LOW_ACTIVE,
-    .spi_type = SPI_IT,
-};
-
-SPI_BUS SPI2_FLASH = {
-    .cs_port = SPI2_CS_GPIO_Port,
-    .cs_pin = SPI2_CS_Pin,
-    .spi_handle = &hspi2,
-    .cs_type = LOW_ACTIVE,
-    .spi_type = SPI_IT,
-};
 
 const ICM20601 ICM1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,
     .spi_bus = &hspi1,
-    .spi = &SPI1_CS1,
     .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
     .accel_g = ICM20601_ACCEL_RANGE_32G,
     .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
@@ -79,6 +61,8 @@ MS5607 MS3 = {
     .i2c_bus = &hi2c2,
     .osr = MS5607_OSR_256,
 };
+
+fifo_t usb_input_fifo;
 
 BUZ BUZZER = {.timer = &htim15,
               .channel = TIM_CHANNEL_2,
@@ -126,8 +110,7 @@ traceString baro_channel;
 traceString flash_channel;
 #endif
 
-uint8_t usb_receive_buffer[APP_RX_DATA_SIZE] = {0};
-volatile bool usb_msg_received = false;
+volatile bool global_usb_detection = false;
 volatile bool usb_communication_complete = false;
 
 volatile recorder_status_e global_recorder_status = REC_OFF;

@@ -26,6 +26,7 @@
 #include "cmsis_os.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <util/fifo.h>
 
 /** Task Definitions **/
 
@@ -150,7 +151,7 @@ const osThreadAttr_t task_flash_reader_attributes = {
 };
 
 /* Definitions for task_usb_communicator */
-uint32_t task_usb_communicator_buffer[256];
+uint32_t task_usb_communicator_buffer[1024];
 StaticTask_t task_usb_communicator_control_block;
 const osThreadAttr_t task_usb_communicator_attributes = {
     .name = "task_usb_communicator",
@@ -195,7 +196,6 @@ _Noreturn void task_init(void *argument) {
   log_info("Device initialization complete.");
 
   osDelay(100);
-  init_communication();
   /* In order to change what is logged just remove it from the following OR:
    * In the given example, BARO1 and FLIGHT_STATE ARE MISSING */
   //  uint32_t selected_entry_types = IMU0 | IMU1 | IMU2 | BARO0 | BARO2 |
@@ -260,7 +260,10 @@ _Noreturn void task_init(void *argument) {
 
   /* Infinite loop */
   for (;;) {
-    osDelay(1000);
+    if(global_usb_detection == true && usb_communication_complete == false){
+      init_communication();
+    }
+    osDelay(100);
 //    cats_error_e err = CATS_ERR_BAT_CRITICAL;
 //    error_handler(err);
 //    osDelay(1000);
@@ -340,74 +343,12 @@ static void init_devices() {
 }
 
 static void init_communication() {
-/**
- * Comm steps:
- *  1) While response_received == true or 30 seconds passed:
- *        Write "hello" to USB every second
- *  2) If response received == true:
- *        parse config_buffer (this should be enough for now...)
- *        update in-memory config
- *        update flash config
- *     Else:
- *        continue by reading the setup from config
- */
-
-//#define AUTO_USB_CONFIG
-#define SLOW_USB_CONFIG
-
-#ifdef AUTO_USB_CONFIG
-  if (global_usb_detection) {
-    usb_communication_complete = true;
-    cc_load();
-    osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
-  }
-#endif
-#ifdef SLOW_USB_CONFIG
-  log_raw("Waiting 10s for usb connection");
-  uint32_t comm_start_time = osKernelGetTickCount();
-  while ((osKernelGetTickCount() - comm_start_time < 10000) && (usb_communication_complete != true)) {
-    if (usb_msg_received) {
-      usb_msg_received = false;
-      uint8_t buffer[20];
-      for (int i = 0; i < 20; i++) buffer[i] = 0;
-      int i = 0;
-      while (i < 20 &&
-             !(usb_receive_buffer[i] == ' ' || usb_receive_buffer[i] == '\r' || usb_receive_buffer[i] == '\n')) {
-        buffer[i] = usb_receive_buffer[i];
-        i++;
-      }
-
-      if (!strcmp((const char *)buffer, "config")) {
-        usb_communication_complete = true;
-        cc_load();
-        osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
-      }
-    }
-    osDelay(100);
-  }
-#endif
-
-  cc_load();
-  //  uint32_t comm_start_time = osKernelGetTickCount();
-  //  while (usb_communication_complete != true &&
-  //         (osKernelGetTickCount() - comm_start_time < 10000)) {
-  //    log_raw("What is my purpose?");
-  //    osDelay(1000);
-  //  }
-  //  if (usb_communication_complete == true) {
-  //    log_raw("USB communication complete, config updated.");
-  //  } else {
-  //    log_raw("No USB communication detected, reusing old config");
-  //    /* Load old config from the flash. */
-  //    cc_load();
-  //  }
-  //  cc_print();
+  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+  usb_communication_complete = true;
 }
 
 static void init_tasks() {
-  if (usb_communication_complete == true) {
-    // osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
-  } else {
+
     switch (cc_get_boot_state()) {
       case CATS_FLIGHT: {
 #if (configUSE_TRACE_FACILITY == 1)
@@ -459,7 +400,6 @@ static void init_tasks() {
       default:
         log_fatal("Wrong boot state!");
     }
-  }
 }
 
 static void init_imu() {

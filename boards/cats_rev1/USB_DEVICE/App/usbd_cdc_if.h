@@ -54,8 +54,6 @@ extern "C" {
 #define APP_RX_DATA_SIZE 64
 #define APP_TX_DATA_SIZE 512
 
-// command buffer size
-#define BUFSIZE 64
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
@@ -68,10 +66,7 @@ extern "C" {
  */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
-typedef struct {
-  uint32_t idx;
-  uint8_t data[BUFSIZE];
-} recBuf;
+
 /* USER CODE END EXPORTED_TYPES */
 
 /**
@@ -100,7 +95,7 @@ typedef struct {
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern recBuf commandBuffer;
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**

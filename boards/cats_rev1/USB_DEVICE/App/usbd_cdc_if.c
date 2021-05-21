@@ -20,6 +20,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <util/fifo.h>
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
@@ -34,7 +35,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-recBuf commandBuffer;
+
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -152,7 +153,7 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = {CDC_Init_FS, CDC_DeInit_FS,
 static int8_t CDC_Init_FS(void) {
   /* USER CODE BEGIN 3 */
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 512);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
   return (USBD_OK);
   /* USER CODE END 3 */
@@ -178,6 +179,7 @@ static int8_t CDC_DeInit_FS(void) {
  */
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
   /* USER CODE BEGIN 5 */
+  uint32_t speed = 115200;
   switch (cmd) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
 
@@ -223,16 +225,15 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
 
     case CDC_GET_LINE_CODING:
 
+	  length = 7;
+	  memcpy(pbuf, &speed, 4);
+	  pbuf[4] = 0;
+	  pbuf[5] = 0;
+	  pbuf[6] = 8;
+
       break;
 
-    case CDC_SET_CONTROL_LINE_STATE: {
-      USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
-
-      if ((req->wValue & 0x0001) != 0)
-        global_usb_detection = true;
-      else
-        global_usb_detection = false;
-    }
+    case CDC_SET_CONTROL_LINE_STATE:
 
     break;
 
@@ -272,14 +273,10 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
     commandBuffer.idx++;
   }
 #else
-  // TODO: Fix this length calculation
+  global_usb_detection = true;
   uint32_t buf_length = *Len;
   if (buf_length != 0) {
-    memcpy(usb_receive_buffer, Buf,
-           buf_length < APP_RX_DATA_SIZE ? buf_length : APP_RX_DATA_SIZE);
-    usb_receive_buffer[buf_length < APP_RX_DATA_SIZE ? buf_length
-                                                     : buf_length - 1] = 0;
-    usb_msg_received = true;
+    fifo_write_bytes(&usb_input_fifo, Buf, buf_length);
   }
 #endif
 

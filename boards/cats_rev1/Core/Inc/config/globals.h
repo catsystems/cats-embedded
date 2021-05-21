@@ -6,6 +6,7 @@
 
 #include "util/types.h"
 #include "util/recorder.h"
+#include "util/fifo.h"
 #include "sensors/icm20601.h"
 #include "sensors/ms5607.h"
 #include "drivers/spi.h"
@@ -22,7 +23,7 @@
 
 /** Device Handles **/
 
-extern bool global_usb_detection;
+
 
 extern SPI_BUS SPI2_FLASH;
 
@@ -38,6 +39,10 @@ extern BUZ BUZZER;
 
 extern SERVO SERVO1;
 extern SERVO SERVO2;
+
+/** Data streams **/
+
+extern fifo_t usb_input_fifo;
 
 /** State Estimation **/
 
@@ -72,8 +77,7 @@ extern traceString baro_channel;
 extern traceString flash_channel;
 #endif
 
-extern uint8_t usb_receive_buffer[APP_RX_DATA_SIZE];
-extern volatile bool usb_msg_received;
+extern volatile bool global_usb_detection;
 extern volatile bool usb_communication_complete;
 
 /* recorder status is controlled by output functions, do not set manually! */
