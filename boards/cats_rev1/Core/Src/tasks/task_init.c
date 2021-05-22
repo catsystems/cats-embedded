@@ -22,145 +22,37 @@
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_receiver.h"
 #include "tasks/task_health_monitor.h"
+#include "util/fifo.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdlib.h>
 #include <stdbool.h>
-#include <util/fifo.h>
 
 /** Task Definitions **/
 
-/* Definitions for task_baro_read */
-uint32_t task_baro_read_buffer[256];
-StaticTask_t task_baro_read_control_block;
-const osThreadAttr_t task_baro_read_attributes = {
-    .name = "task_baro_read",
-    .stack_mem = &task_baro_read_buffer[0],
-    .stack_size = sizeof(task_baro_read_buffer),
-    .cb_mem = &task_baro_read_control_block,
-    .cb_size = sizeof(task_baro_read_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
+#define SET_TASK_PARAMS(task, stack_sz)           \
+  uint32_t task##_buffer[stack_sz];               \
+  StaticTask_t task##_control_block;              \
+  const osThreadAttr_t task##_attributes = {      \
+      .name = #task,                              \
+      .stack_mem = &task##_buffer[0],             \
+      .stack_size = sizeof(task##_buffer),        \
+      .cb_mem = &task##_control_block,            \
+      .cb_size = sizeof(task##_control_block),    \
+      .priority = (osPriority_t)osPriorityNormal, \
+  };
 
-/* Definitions for task_imu_read */
-uint32_t task_imu_read_buffer[256];
-StaticTask_t task_imu_read_control_block;
-const osThreadAttr_t task_imu_read_attributes = {
-    .name = "task_imu_read",
-    .stack_mem = &task_imu_read_buffer[0],
-    .stack_size = sizeof(task_imu_read_buffer),
-    .cb_mem = &task_imu_read_control_block,
-    .cb_size = sizeof(task_imu_read_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_receiver */
-uint32_t task_receiver_buffer[256];
-StaticTask_t task_receiver_control_block;
-const osThreadAttr_t task_receiver_attributes = {
-    .name = "task_receiver",
-    .stack_mem = &task_receiver_buffer[0],
-    .stack_size = sizeof(task_receiver_buffer),
-    .cb_mem = &task_receiver_control_block,
-    .cb_size = sizeof(task_receiver_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for health_monitor_receiver */
-uint32_t task_health_monitor_buffer[256];
-StaticTask_t task_health_monitor_control_block;
-const osThreadAttr_t task_health_monitor_attributes = {
-    .name = "task_health_monitor",
-    .stack_mem = &task_health_monitor_buffer[0],
-    .stack_size = sizeof(task_health_monitor_buffer),
-    .cb_mem = &task_health_monitor_control_block,
-    .cb_size = sizeof(task_health_monitor_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_state_est */
-uint32_t task_state_est_buffer[2048];
-StaticTask_t task_state_est_control_block;
-const osThreadAttr_t task_state_est_attributes = {
-    .name = "task_state_est",
-    .stack_mem = &task_state_est_buffer[0],
-    .stack_size = sizeof(task_state_est_buffer),
-    .cb_mem = &task_state_est_control_block,
-    .cb_size = sizeof(task_state_est_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_flight_fsm */
-uint32_t task_flight_fsm_buffer[256];
-StaticTask_t task_flight_fsm_control_block;
-const osThreadAttr_t task_flight_fsm_attributes = {
-    .name = "task_flight_fsm",
-    .stack_mem = &task_flight_fsm_buffer[0],
-    .stack_size = sizeof(task_flight_fsm_buffer),
-    .cb_mem = &task_flight_fsm_control_block,
-    .cb_size = sizeof(task_flight_fsm_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_drop_test_fsm */
-uint32_t task_drop_test_fsm_buffer[256];
-StaticTask_t task_drop_test_fsm_control_block;
-const osThreadAttr_t task_drop_test_fsm_attributes = {
-    .name = "task_drop_test_fsm",
-    .stack_mem = &task_drop_test_fsm_buffer[0],
-    .stack_size = sizeof(task_drop_test_fsm_buffer),
-    .cb_mem = &task_drop_test_fsm_control_block,
-    .cb_size = sizeof(task_drop_test_fsm_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_peripherals */
-uint32_t task_peripherals_buffer[256];
-StaticTask_t task_peripherals_control_block;
-const osThreadAttr_t task_peripherals_attributes = {
-    .name = "task_peripherals",
-    .stack_mem = &task_peripherals_buffer[0],
-    .stack_size = sizeof(task_peripherals_buffer),
-    .cb_mem = &task_peripherals_control_block,
-    .cb_size = sizeof(task_peripherals_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_recorder */
-uint32_t task_recorder_buffer[256];
-StaticTask_t task_recorder_control_block;
-const osThreadAttr_t task_recorder_attributes = {
-    .name = "task_recorder",
-    .stack_mem = &task_recorder_buffer[0],
-    .stack_size = sizeof(task_recorder_buffer),
-    .cb_mem = &task_recorder_control_block,
-    .cb_size = sizeof(task_recorder_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_flash_reader */
-uint32_t task_flash_reader_buffer[256];
-StaticTask_t task_flash_reader_control_block;
-const osThreadAttr_t task_flash_reader_attributes = {
-    .name = "task_flash_reader",
-    .stack_mem = &task_flash_reader_buffer[0],
-    .stack_size = sizeof(task_flash_reader_buffer),
-    .cb_mem = &task_flash_reader_control_block,
-    .cb_size = sizeof(task_flash_reader_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_usb_communicator */
-uint32_t task_usb_communicator_buffer[1024];
-StaticTask_t task_usb_communicator_control_block;
-const osThreadAttr_t task_usb_communicator_attributes = {
-    .name = "task_usb_communicator",
-    .stack_mem = &task_usb_communicator_buffer[0],
-    .stack_size = sizeof(task_usb_communicator_buffer),
-    .cb_mem = &task_usb_communicator_control_block,
-    .cb_size = sizeof(task_usb_communicator_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
+SET_TASK_PARAMS(task_baro_read, 256)
+SET_TASK_PARAMS(task_imu_read, 256)
+SET_TASK_PARAMS(task_receiver, 256)
+SET_TASK_PARAMS(task_health_monitor, 256)
+SET_TASK_PARAMS(task_state_est, 2048)
+SET_TASK_PARAMS(task_flight_fsm, 256)
+SET_TASK_PARAMS(task_drop_test_fsm, 256)
+SET_TASK_PARAMS(task_peripherals, 256)
+SET_TASK_PARAMS(task_recorder, 256)
+SET_TASK_PARAMS(task_flash_reader, 256)
+SET_TASK_PARAMS(task_usb_communicator, 1024)
 
 /** Private Constants **/
 
