@@ -15,7 +15,6 @@ extern TIM_HandleTypeDef htim15;
 
 /** Device Handles **/
 
-
 const ICM20601 ICM1 = {
     .cs_port = GPIOB,
     .cs_pin = GPIO_PIN_0,
@@ -64,18 +63,11 @@ MS5607 MS3 = {
 
 fifo_t usb_input_fifo;
 
-BUZ BUZZER = {.timer = &htim15,
-              .channel = TIM_CHANNEL_2,
-              .arr = 4000,
-              .start = 0,
-              .started = 0,
-              .volume = 100};
+BUZ BUZZER = {.timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .start = 0, .started = 0, .volume = 100};
 
-SERVO SERVO1 = {
-    .timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .started = 0};
+SERVO SERVO1 = {.timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .started = 0};
 
-SERVO SERVO2 = {
-    .timer = &htim2, .channel = TIM_CHANNEL_2, .pulse = 15000, .started = 0};
+SERVO SERVO2 = {.timer = &htim2, .channel = TIM_CHANNEL_2, .pulse = 15000, .started = 0};
 
 /** State Estimation **/
 
@@ -95,12 +87,9 @@ cats_timer_t *ev_timers = NULL;
 
 timestamp_t init_end_time = {0};
 
-#ifdef FLASH_TESTING
 /** Recorder Queue **/
-
 osMessageQueueId_t rec_queue;
 osMessageQueueId_t event_queue;
-#endif
 
 /** Tracing Channels **/
 

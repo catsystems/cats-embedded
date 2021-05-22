@@ -298,7 +298,6 @@ static void init_devices() {
 
   /* FLASH */
   w25qxx_init();
-#ifdef FLASH_TESTING
   osDelay(10);
   cs_load();
 
@@ -334,12 +333,6 @@ static void init_devices() {
   } else if (first_writable_sector >= w25qxx.sector_count - 256) {
     log_warn("Less than 256 sectors left!");
   }
-#else
-  if (cc_get_boot_state() == CATS_CONFIG) {
-    // TODO This makes no sense
-    w25qxx_init();
-  }
-#endif
 }
 
 static void init_communication() {
@@ -355,7 +348,6 @@ static void init_tasks() {
       flash_channel = xTraceRegisterString("Flash Channel");
 #endif
       /* creation of task_recorder */
-#ifdef FLASH_TESTING
       // TODO: Check rec_queue for validity here
       rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
       event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
@@ -364,7 +356,6 @@ static void init_tasks() {
 #endif
 
       osThreadNew(task_recorder, NULL, &task_recorder_attributes);
-#endif
 
       /* creation of task_baro_read */
       osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);

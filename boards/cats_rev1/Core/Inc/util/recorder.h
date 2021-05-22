@@ -11,12 +11,6 @@
 
 /** Exported Defines **/
 
-/* TODO: remove this when flash logging is working */
-#ifdef FLASH_TESTING
-#undef FLASH_TESTING
-#endif
-#define FLASH_TESTING
-
 #ifdef FLASH_READ_TEST
 #undef FLASH_READ_TEST
 #endif

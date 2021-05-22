@@ -23,8 +23,6 @@
 
 /** Device Handles **/
 
-
-
 extern SPI_BUS SPI2_FLASH;
 
 extern const ICM20601 ICM1;
@@ -62,12 +60,9 @@ extern cats_timer_t *ev_timers;
 
 extern timestamp_t init_end_time;
 
-#ifdef FLASH_TESTING
 /** Recorder Queue **/
-
 extern osMessageQueueId_t rec_queue;
 extern osMessageQueueId_t event_queue;
-#endif
 
 /** Tracing Channels **/
 

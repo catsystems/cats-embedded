@@ -22,18 +22,15 @@ static const uint32_t REC_BUFFER_LEN = 256;
 /** Private Function Declarations **/
 
 static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
-static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer,
-                               uint16_t *rec_buffer_idx,
+static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
                                uint_fast8_t *rec_elem_size);
 
 #ifdef FLASH_READ_TEST
 static inline void print_elem(const rec_elem_t *rec_elem, char prefix);
-uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
-                   const rec_elem_t *break_elem);
+uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix, const rec_elem_t *break_elem);
 
-static const char *rec_type_map[9] = {"ERROR", "IMU0",        "IMU1",
-                                      "IMU2",  "BARO0",       "BARO1",
-                                      "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
+static const char *rec_type_map[9] = {"ERROR", "IMU0",  "IMU1",        "IMU2",        "BARO0",
+                                      "BARO1", "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
 #endif
 
 /** Exported Function Definitions **/
@@ -72,15 +69,13 @@ void task_recorder(void *argument) {
 
 #ifdef FLASH_READ_TEST
     if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_mem)) + print_bytes_remaining_mem,
-             &rec_buffer[0], bytes_remaining);
+      memcpy(((uint8_t *)(&break_elem_mem)) + print_bytes_remaining_mem, &rec_buffer[0], bytes_remaining);
       print_elem(&break_elem_mem, '~');
     }
 #endif
 
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
-#ifdef FLASH_TESTING
       uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
       if (max_elem_count < curr_elem_count) {
         max_elem_count = curr_elem_count;
@@ -90,21 +85,18 @@ void task_recorder(void *argument) {
       //      if (global_flight_state.flight_state >= THRUSTING_1 &&
       //          global_flight_state.flight_state < TOUCHDOWN) {
       if (global_recorder_status >= REC_WRITE_TO_FLASH) {
-        if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) ==
-            osOK) {
+        if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
           //#ifdef FLASH_READ_TEST
           //        print_elem(&curr_log_elem, '-');
           //#endif
 
-          write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx,
-                      &curr_log_elem_size);
+          write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
         } else {
           log_error("Something wrong with the recording queue!");
         }
         //      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
         //                 global_flight_state.flight_state < THRUSTING_1) {
-      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
-               global_recorder_status == REC_FILL_QUEUE) {
+      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT && global_recorder_status == REC_FILL_QUEUE) {
         /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we
          * start to empty it. When thrusting is detected we will have around
          * REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the
@@ -115,12 +107,10 @@ void task_recorder(void *argument) {
         /* TODO: see if this is needed */
         osDelay(1);
       }
-#endif
     }
 
 #ifdef FLASH_READ_TEST
-    print_bytes_remaining_mem =
-        print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
+    print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
 #endif
     w25qxx_write_page(rec_buffer, page_id, 0, 256);
 
@@ -128,13 +118,11 @@ void task_recorder(void *argument) {
     w25qxx_read_page(read_buf, page_id, 0, 256);
 
     if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_flash)) + print_bytes_remaining_flash,
-             &rec_buffer[0], bytes_remaining);
+      memcpy(((uint8_t *)(&break_elem_flash)) + print_bytes_remaining_flash, &rec_buffer[0], bytes_remaining);
       print_elem(&break_elem_flash, '*');
     }
 
-    print_bytes_remaining_flash =
-        print_page(read_buf, bytes_remaining, '$', &break_elem_flash);
+    print_bytes_remaining_flash = print_page(read_buf, bytes_remaining, '$', &break_elem_flash);
 #endif
 
     /* reset log buffer index */
@@ -149,9 +137,7 @@ void task_recorder(void *argument) {
     }
 
     if (rec_buffer_idx > 0) {
-      memcpy(rec_buffer,
-             (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining,
-             bytes_remaining);
+      memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
 
     if (page_id == w25qxx.page_count) {
@@ -160,13 +146,12 @@ void task_recorder(void *argument) {
       /* TODO: this task should actually be killed somehow */
       break; /* end the task */
     } else {
-      uint32_t last_page_of_last_recorded_sector =
-          w25qxx_sector_to_page(last_recorded_sector) + 15;
+      uint32_t last_page_of_last_recorded_sector = w25qxx_sector_to_page(last_recorded_sector) + 15;
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
         cs_set_last_recorded_sector(++last_recorded_sector);
-        log_debug("Updating last recorded sector to %d; num_flights: %hu",
-                  last_recorded_sector, cs_get_num_recorded_flights());
+        log_debug("Updating last recorded sector to %d; num_flights: %hu", last_recorded_sector,
+                  cs_get_num_recorded_flights());
         HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
         // cs_save();
       } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
@@ -218,14 +203,11 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
   return rec_elem_size;
 }
 
-static inline void write_value(const rec_elem_t *const rec_elem,
-                               uint8_t *const rec_buffer,
-                               uint16_t *rec_buffer_idx,
+static inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const rec_buffer, uint16_t *rec_buffer_idx,
                                uint_fast8_t *const rec_elem_size) {
   *rec_elem_size = get_rec_elem_size(rec_elem);
   if (*rec_buffer_idx + *rec_elem_size > REC_BUFFER_LEN) {
-    memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem,
-           (REC_BUFFER_LEN - *rec_buffer_idx));
+    memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem, (REC_BUFFER_LEN - *rec_buffer_idx));
   } else {
     memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem, *rec_elem_size);
   }
@@ -233,14 +215,12 @@ static inline void write_value(const rec_elem_t *const rec_elem,
 }
 
 #ifdef FLASH_READ_TEST
-uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
-                   const rec_elem_t *const break_elem) {
+uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix, const rec_elem_t *const break_elem) {
   uint8_t bytes_remaining = 0;
   uint32_t i = print_offset;
   rec_elem_t curr_elem;
   if (i > 0) {
-    memcpy(((uint8_t *)(break_elem)) + bytes_remaining, &rec_buffer[0],
-           print_offset);
+    memcpy(((uint8_t *)(break_elem)) + bytes_remaining, &rec_buffer[0], print_offset);
   }
   while (i <= (REC_BUFFER_LEN - sizeof(curr_elem))) {
     curr_elem.rec_type = rec_buffer[i];
@@ -252,55 +232,40 @@ uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
       case IMU2:
         memcpy(&(curr_elem.u.imu), &(rec_buffer[i]), sizeof(curr_elem.u.imu));
         i += sizeof(curr_elem.u.imu);
-        log_raw("TS: %lu, %d, %d, %d, %d, %d, %d", curr_elem.u.imu.ts,
-                curr_elem.u.imu.gyro_x, curr_elem.u.imu.gyro_y,
-                curr_elem.u.imu.gyro_z, curr_elem.u.imu.acc_x,
-                curr_elem.u.imu.acc_y, curr_elem.u.imu.acc_z);
+        log_raw("TS: %lu, %d, %d, %d, %d, %d, %d", curr_elem.u.imu.ts, curr_elem.u.imu.gyro_x, curr_elem.u.imu.gyro_y,
+                curr_elem.u.imu.gyro_z, curr_elem.u.imu.acc_x, curr_elem.u.imu.acc_y, curr_elem.u.imu.acc_z);
         break;
       case BARO0:
       case BARO1:
       case BARO2:
         memcpy(&(curr_elem.u.baro), &(rec_buffer[i]), sizeof(curr_elem.u.baro));
         i += sizeof(curr_elem.u.baro);
-        log_raw("TS: %lu, %ld, %ld", curr_elem.u.baro.ts,
-                curr_elem.u.baro.pressure, curr_elem.u.baro.temperature);
+        log_raw("TS: %lu, %ld, %ld", curr_elem.u.baro.ts, curr_elem.u.baro.pressure, curr_elem.u.baro.temperature);
         break;
       case FLIGHT_INFO:
-        memcpy(&(curr_elem.u.flight_info), &(rec_buffer[i]),
-               sizeof(curr_elem.u.flight_info));
+        memcpy(&(curr_elem.u.flight_info), &(rec_buffer[i]), sizeof(curr_elem.u.flight_info));
         i += sizeof(curr_elem.u.flight_info);
-        log_raw("TS: %lu, %f, %f, %f", curr_elem.u.flight_info.ts,
-                (double)curr_elem.u.flight_info.height,
-                (double)curr_elem.u.flight_info.velocity,
-                (double)curr_elem.u.flight_info.measured_altitude_AGL);
+        log_raw("TS: %lu, %f, %f, %f", curr_elem.u.flight_info.ts, (double)curr_elem.u.flight_info.height,
+                (double)curr_elem.u.flight_info.velocity, (double)curr_elem.u.flight_info.measured_altitude_AGL);
         break;
       case FLIGHT_STATE:
-        memcpy(&(curr_elem.u.flight_state), &(rec_buffer[i]),
-               sizeof(curr_elem.u.flight_state));
+        memcpy(&(curr_elem.u.flight_state), &(rec_buffer[i]), sizeof(curr_elem.u.flight_state));
         i += sizeof(curr_elem.u.flight_state);
-        log_raw("TS: %lu, %d", curr_elem.u.flight_state.ts,
-                curr_elem.u.flight_state.flight_state);
+        log_raw("TS: %lu, %d", curr_elem.u.flight_state.ts, curr_elem.u.flight_state.flight_state);
         break;
       case COVARIANCE_INFO:
-        memcpy(&(curr_elem.u.covariance_info), &(rec_buffer[i]),
-               sizeof(curr_elem.u.covariance_info));
+        memcpy(&(curr_elem.u.covariance_info), &(rec_buffer[i]), sizeof(curr_elem.u.covariance_info));
         i += sizeof(curr_elem.u.covariance_info);
-        log_raw("TS: %lu, %f, %f", curr_elem.u.covariance_info.ts,
-                (double)curr_elem.u.covariance_info.height_cov,
+        log_raw("TS: %lu, %f, %f", curr_elem.u.covariance_info.ts, (double)curr_elem.u.covariance_info.height_cov,
                 (double)curr_elem.u.covariance_info.velocity_cov);
         break;
       case SENSOR_INFO:
-        memcpy(&(curr_elem.u.sensor_info), &(rec_buffer[i]),
-               sizeof(curr_elem.u.sensor_info));
+        memcpy(&(curr_elem.u.sensor_info), &(rec_buffer[i]), sizeof(curr_elem.u.sensor_info));
         i += sizeof(curr_elem.u.sensor_info);
-        log_raw("TS: %lu, %u, %u, %u, %u, %u, %u, %u, %u",
-                curr_elem.u.sensor_info.ts,
-                curr_elem.u.sensor_info.faulty_imu[0],
-                curr_elem.u.sensor_info.faulty_imu[1],
-                curr_elem.u.sensor_info.faulty_imu[2],
-                curr_elem.u.sensor_info.faulty_baro[0],
-                curr_elem.u.sensor_info.faulty_baro[1],
-                curr_elem.u.sensor_info.faulty_baro[2]);
+        log_raw("TS: %lu, %u, %u, %u, %u, %u, %u, %u, %u", curr_elem.u.sensor_info.ts,
+                curr_elem.u.sensor_info.faulty_imu[0], curr_elem.u.sensor_info.faulty_imu[1],
+                curr_elem.u.sensor_info.faulty_imu[2], curr_elem.u.sensor_info.faulty_baro[0],
+                curr_elem.u.sensor_info.faulty_baro[1], curr_elem.u.sensor_info.faulty_baro[2]);
         break;
       default:
         log_fatal("Impossible recorder entry type!");
@@ -319,16 +284,13 @@ uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix,
 
 static inline void print_elem(const rec_elem_t *const rec_elem, char prefix) {
   char buf[100];
-  uint8_t len =
-      sprintf(buf, "%cType: %s, ", prefix, rec_type_map[rec_elem->rec_type]);
+  uint8_t len = sprintf(buf, "%cType: %s, ", prefix, rec_type_map[rec_elem->rec_type]);
   switch (rec_elem->rec_type) {
     case IMU0:
     case IMU1:
     case IMU2:
-      sprintf(buf + len, "TS: %lu, %d, %d, %d, %d, %d, %d\n",
-              rec_elem->u.imu.ts, rec_elem->u.imu.gyro_x,
-              rec_elem->u.imu.gyro_y, rec_elem->u.imu.gyro_z,
-              rec_elem->u.imu.acc_x, rec_elem->u.imu.acc_y,
+      sprintf(buf + len, "TS: %lu, %d, %d, %d, %d, %d, %d\n", rec_elem->u.imu.ts, rec_elem->u.imu.gyro_x,
+              rec_elem->u.imu.gyro_y, rec_elem->u.imu.gyro_z, rec_elem->u.imu.acc_x, rec_elem->u.imu.acc_y,
               rec_elem->u.imu.acc_z);
       //      sprintf(buf + len, "TS: %lu, %d, %d\n", rec_elem->u.imu.ts,
       //              rec_elem->u.imu.gyro_x, rec_elem->u.imu.acc_x);
@@ -336,23 +298,20 @@ static inline void print_elem(const rec_elem_t *const rec_elem, char prefix) {
     case BARO0:
     case BARO1:
     case BARO2:
-      sprintf(buf + len, "TS: %lu, %ld, %ld\n", rec_elem->u.baro.ts,
-              rec_elem->u.baro.pressure, rec_elem->u.baro.temperature);
+      sprintf(buf + len, "TS: %lu, %ld, %ld\n", rec_elem->u.baro.ts, rec_elem->u.baro.pressure,
+              rec_elem->u.baro.temperature);
       break;
     case FLIGHT_INFO:
       // sprintf(buf + len, "TS: %lu\n", rec_elem->u.flight_info.ts);
-      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.flight_info.ts,
-              (double)rec_elem->u.flight_info.height,
+      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.flight_info.ts, (double)rec_elem->u.flight_info.height,
               (double)rec_elem->u.flight_info.velocity);
       break;
     case FLIGHT_STATE:
-      sprintf(buf + len, "TS: %lu, %d\n", rec_elem->u.flight_state.ts,
-              rec_elem->u.flight_state.flight_state);
+      sprintf(buf + len, "TS: %lu, %d\n", rec_elem->u.flight_state.ts, rec_elem->u.flight_state.flight_state);
       break;
     case COVARIANCE_INFO:
       sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.covariance_info.ts,
-              (double)rec_elem->u.covariance_info.height_cov,
-              (double)rec_elem->u.covariance_info.velocity_cov);
+              (double)rec_elem->u.covariance_info.height_cov, (double)rec_elem->u.covariance_info.velocity_cov);
       break;
     default:
       log_fatal("Impossible recorder entry type!");

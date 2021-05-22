@@ -20,16 +20,9 @@ const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 384;
  * @param rec_type - recorder entry type
  * @return true if the given rec_type should be recorded
  */
-static inline bool should_record(rec_entry_type_e rec_type) {
-  return (cc_get_recorder_mask() & rec_type) > 0;
-}
+static inline bool should_record(rec_entry_type_e rec_type) { return (cc_get_recorder_mask() & rec_type) > 0; }
 
 void record(rec_entry_type_e rec_type, const void *rec_value) {
-#ifdef FLASH_TESTING
-  /* We should fill the logging queue only in [IDLE, TOUCHDOWN) */
-  //  if (global_flight_state.flight_state >= IDLE &&
-  //      global_flight_state.flight_state < TOUCHDOWN &&
-  //      should_record(rec_type)) {
   if (global_recorder_status >= REC_FILL_QUEUE && should_record(rec_type)) {
     rec_elem_t e = {.rec_type = rec_type};
     switch (rec_type) {
@@ -76,9 +69,7 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
 
     osStatus_t ret = osMessageQueuePut(rec_queue, &e, 0U, 0U);
     if (ret != osOK) {
-      log_error("Inserting an element to the recorder queue failed! Error: %d",
-                ret);
+      log_error("Inserting an element to the recorder queue failed! Error: %d", ret);
     }
   }
-#endif
 }
