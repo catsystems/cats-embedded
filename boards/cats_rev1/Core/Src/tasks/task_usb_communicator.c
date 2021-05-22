@@ -27,9 +27,6 @@ const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
 cats_usb_commands parse_usb_cmd();
 cats_usb_variables parse_usb_var(uint16_t *value);
 
-
-
-
 void task_usb_communicator(void *argument) {
   static uint8_t print_buffer[512];
   log_raw("USB config started");

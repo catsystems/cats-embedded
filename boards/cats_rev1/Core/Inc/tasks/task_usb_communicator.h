@@ -4,7 +4,7 @@
 
 #pragma once
 
-void task_usb_communicator(void *argument);
+_Noreturn void task_usb_communicator(void *argument);
 
 #define USB_COMMAND_NR  10
 #define USB_VARIABLE_NR 6

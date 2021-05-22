@@ -260,15 +260,15 @@ _Noreturn void task_init(void *argument) {
 
   /* Infinite loop */
   for (;;) {
-    if(global_usb_detection == true && usb_communication_complete == false){
+    if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
     osDelay(100);
-//    cats_error_e err = CATS_ERR_BAT_CRITICAL;
-//    error_handler(err);
-//    osDelay(1000);
-//    err = CATS_ERR_NO_CONFIG;
-//    error_handler(err);
+    //    cats_error_e err = CATS_ERR_BAT_CRITICAL;
+    //    error_handler(err);
+    //    osDelay(1000);
+    //    err = CATS_ERR_NO_CONFIG;
+    //    error_handler(err);
   }
   /* USER CODE END 5 */
 }
@@ -348,58 +348,57 @@ static void init_communication() {
 }
 
 static void init_tasks() {
-
-    switch (cc_get_boot_state()) {
-      case CATS_FLIGHT: {
+  switch (cc_get_boot_state()) {
+    case CATS_FLIGHT: {
 #if (configUSE_TRACE_FACILITY == 1)
-        baro_channel = xTraceRegisterString("Baro Channel");
-        flash_channel = xTraceRegisterString("Flash Channel");
+      baro_channel = xTraceRegisterString("Baro Channel");
+      flash_channel = xTraceRegisterString("Flash Channel");
 #endif
-        /* creation of task_recorder */
+      /* creation of task_recorder */
 #ifdef FLASH_TESTING
-        // TODO: Check rec_queue for validity here
-        rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
-        event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
+      // TODO: Check rec_queue for validity here
+      rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+      event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
-        vTraceSetQueueName(rec_queue, "Recorder Queue");
+      vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-        osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 #endif
 
-        /* creation of task_baro_read */
-        osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
+      /* creation of task_baro_read */
+      osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
 
-        /* creation of receiver */
-        // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
+      /* creation of receiver */
+      // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
-        /* creation of task_imu_read */
-        osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
+      /* creation of task_imu_read */
+      osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
 
-        /* creation of task_flight_fsm */
-        osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+      /* creation of task_flight_fsm */
+      osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
-        /* creation of task_drop_test_fsm */
-        // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
-        /* creation of task_peripherals */
-        osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
+      /* creation of task_drop_test_fsm */
+      // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
+      /* creation of task_peripherals */
+      osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
-        /* creation of task_state_est */
-        osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+      /* creation of task_state_est */
+      osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
-        /* creation of task_health_monitor */
-        osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
-      } break;
-      case CATS_CONFIG:
-        /* creation of task_flash_reader */
-        osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
-        break;
-      case CATS_TIMER:
-      case CATS_DROP:
-        break;
-      default:
-        log_fatal("Wrong boot state!");
-    }
+      /* creation of task_health_monitor */
+      osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
+    } break;
+    case CATS_CONFIG:
+      /* creation of task_flash_reader */
+      osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
+      break;
+    case CATS_TIMER:
+    case CATS_DROP:
+      break;
+    default:
+      log_fatal("Wrong boot state!");
+  }
 }
 
 static void init_imu() {
