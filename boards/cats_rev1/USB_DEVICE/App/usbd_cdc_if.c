@@ -35,7 +35,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+trace_command_buffer_t trace_command_buffer;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -141,8 +141,7 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
  * @}
  */
 
-USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = {CDC_Init_FS, CDC_DeInit_FS,
-                                              CDC_Control_FS, CDC_Receive_FS,
+USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = {CDC_Init_FS, CDC_DeInit_FS, CDC_Control_FS, CDC_Receive_FS,
                                               CDC_TransmitCplt_FS};
 
 /* Private functions ---------------------------------------------------------*/
@@ -224,18 +223,19 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
       break;
 
     case CDC_GET_LINE_CODING:
-
-	  length = 7;
-	  memcpy(pbuf, &speed, 4);
-	  pbuf[4] = 0;
-	  pbuf[5] = 0;
-	  pbuf[6] = 8;
-
+      length = 7;
+      pbuf[0] = (uint8_t)(speed);
+      pbuf[1] = (uint8_t)(speed >> 8);
+      pbuf[2] = (uint8_t)(speed >> 16);
+      pbuf[3] = (uint8_t)(speed >> 24);
+      pbuf[4] = 0;
+      pbuf[5] = 0;
+      pbuf[6] = 8;
       break;
 
     case CDC_SET_CONTROL_LINE_STATE:
 
-    break;
+      break;
 
     case CDC_SEND_BREAK:
 
@@ -269,8 +269,8 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
   /* USER CODE BEGIN 6 */
 #if (configUSE_TRACE_FACILITY == 1)
   for (uint32_t i = 0; i < *Len; i++) {
-    commandBuffer.data[commandBuffer.idx] = Buf[i];
-    commandBuffer.idx++;
+    trace_command_buffer.data[trace_command_buffer.idx] = Buf[i];
+    trace_command_buffer.idx++;
   }
 #else
   global_usb_detection = true;
@@ -300,8 +300,7 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
 uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len) {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
-  USBD_CDC_HandleTypeDef *hcdc =
-      (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
   if (hcdc->TxState != 0) {
     return USBD_BUSY;
   }

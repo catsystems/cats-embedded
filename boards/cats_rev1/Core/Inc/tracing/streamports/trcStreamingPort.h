@@ -55,13 +55,8 @@ extern "C" {
 #include "usb_device.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_if.h"
-#include "usb_device.h"
 
 /* Tested on STM32 devices using Keil/CMSIS USB stack */
-
-extern USBD_CDC_ItfTypeDef  USBD_Interface_fops_FS;
-
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 int32_t trcCDCReceive(void *data, uint32_t size, int32_t* NumBytes);
 
