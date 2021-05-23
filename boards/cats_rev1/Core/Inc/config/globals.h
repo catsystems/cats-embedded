@@ -41,6 +41,7 @@ extern SERVO SERVO2;
 /** Data streams **/
 
 extern fifo_t usb_input_fifo;
+extern uint8_t usb_fifo_in_buffer[64];
 
 /** State Estimation **/
 

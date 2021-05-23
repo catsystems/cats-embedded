@@ -8,8 +8,13 @@
 
 
 #include "util/cli.h"
-#include <string.h>
+#include "util/log.h"
+#include "util/reader.h"
+#include "config/cats_config.h"
+#include "config/globals.h"
 
+
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -74,7 +79,8 @@ void cliPrintLinef(const char *format, ...);
 static void cliPrintErrorVa(const char *cmdName, const char *format, va_list va);
 static void cliPrintError(const char *cmdName, const char *format, ...);
 static void cliPrintErrorLinef(const char *cmdName, const char *format, ...);
-
+static void cliRead(const char *cmdName, char *cmdline);
+static void cliEnable(const char *cmdName, char *cmdline);
 
 const clicmd_t cmdTable[] = {
     //CLI_COMMAND_DEF("bl", "reboot into bootloader", "[rom]", cliBootloader),
@@ -88,7 +94,24 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
+	CLI_COMMAND_DEF("read", "readout the flash", NULL, cliRead),
+	CLI_COMMAND_DEF("log_enable", "readout the flash", NULL, cliEnable),
 };
+
+static void cliEnable(const char *cmdName, char *cmdline){
+	log_enable();
+}
+
+static void cliRead(const char *cmdName, char *cmdline){
+	osDelay(2000);
+	if(log_is_enabled()) log_disable();
+	if  (cs_get_num_recorded_flights() > 0)
+		log_raw("No recordings found");
+	for (int i = 0; i < cs_get_num_recorded_flights(); i++) {
+		print_recording(i);
+	}
+	if(log_is_enabled()) log_enable();
+}
 
 static void cliDefaults(const char *cmdName, char *cmdline){
 
@@ -344,5 +367,4 @@ void cli_process(void){
 void cli_enter(fifo_t *in, fifo_t *out){
     cli_in = in;
     cli_out = out;
-    cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
 }

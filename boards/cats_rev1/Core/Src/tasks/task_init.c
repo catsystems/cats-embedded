@@ -150,6 +150,10 @@ _Noreturn void task_init(void *argument) {
   battery_monitor_init();
   buzzer_queue_status(CATS_BUZZ_BOOTUP);
 
+  // Fifo init
+  fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
+  log_disable();
+
   /* Infinite loop */
   for (;;) {
     if (global_usb_detection == true && usb_communication_complete == false) {

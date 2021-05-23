@@ -47,6 +47,14 @@ void log_disable() {
 #endif
 }
 
+bool log_is_enabled() {
+#ifdef CATS_DEBUG
+  return L.enabled;
+#else
+  return false;
+#endif
+}
+
 void log_log(int level, const char *file, int line, const char *format, ...) {
 #ifdef CATS_DEBUG
   if (L.enabled && level >= L.level && osMutexAcquire(print_mutex, 0U) == osOK) {

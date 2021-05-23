@@ -63,6 +63,8 @@ MS5607 MS3 = {
 
 fifo_t usb_input_fifo;
 
+uint8_t usb_fifo_in_buffer[64];
+
 BUZ BUZZER = {.timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .start = 0, .started = 0, .volume = 100};
 
 SERVO SERVO1 = {.timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .started = 0};

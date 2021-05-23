@@ -7,17 +7,17 @@
 #include "cmsis_os.h"
 #include <stdbool.h>
 
-enum{
-  FIFO_SIZE = 512
-};
-
 typedef struct {
   uint32_t head;
   uint32_t tail;
   uint32_t used;
-  uint8_t data[FIFO_SIZE];
+  uint32_t size;
+  uint8_t* data;
+  osMutexId_t mutex;
 } fifo_t;
 
+
+void fifo_init(fifo_t *fifo, uint8_t* pdata, uint32_t size);
 uint32_t fifo_get_length(fifo_t *fifo);
 void fifo_flush(fifo_t *fifo);
 
