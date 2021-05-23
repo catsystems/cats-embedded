@@ -102,7 +102,8 @@ void task_recorder(void *argument) {
          * REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the
          * next loop iteration we will start to write the elements to the flash
          */
-        osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever);
+        rec_elem_t dummy_log_elem;
+        osMessageQueueGet(rec_queue, &dummy_log_elem, NULL, osWaitForever);
       } else {
         /* TODO: see if this is needed */
         osDelay(1);

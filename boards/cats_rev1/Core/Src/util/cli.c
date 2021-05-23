@@ -11,13 +11,13 @@
 #include "util/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "drivers/w25qxx.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <ctype.h>
-
 #define CLI_IN_BUFFER_SIZE  256
 #define CLI_OUT_BUFFER_SIZE 256
 
@@ -55,6 +55,7 @@ static void cliSave(const char *cmdName, char *cmdline);
 static void cliSet(const char *cmdName, char *cmdline);
 static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
+static void cliErase(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -85,10 +86,18 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
     CLI_COMMAND_DEF("read", "readout the flash", NULL, cliRead),
+    CLI_COMMAND_DEF("erase_flash", "erase the flash", NULL, cliErase),
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
 };
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
+static void cliErase(const char *cmdName, char *cmdline) {
+  log_raw("Erasing the flash, this might take a while...");
+  w25qxx_erase_chip();
+  cs_init(CATS_STATUS_SECTOR, 0);
+  cs_save();
+  log_raw("Flash erased!");
+}
 
 static void cliRead(const char *cmdName, char *cmdline) {
   osDelay(2000);
@@ -160,10 +169,7 @@ void cliPrint(const char *str) {
   }
 }
 
-static void cliPrompt(void)
-{
-  cliPrint("\r\n# ");
-}
+static void cliPrompt(void) { cliPrint("\r\n# "); }
 
 void cliPrintLinefeed(void) { cliPrint("\r\n"); }
 
@@ -308,67 +314,64 @@ static void processCharacter(const char c) {
   }
 }
 
-static void processCharacterInteractive(const char c)
-{
-    if (c == '\t' || c == '?') {
-        // do tab completion
-        const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
-        uint32_t i = bufferIndex;
-        for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-            if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0)) {
-                continue;
-            }
-            if (!pstart) {
-                pstart = cmd;
-            }
-            pend = cmd;
-        }
-        if (pstart) {    /* Buffer matches one or more commands */
-            for (; ; bufferIndex++) {
-                if (pstart->name[bufferIndex] != pend->name[bufferIndex])
-                    break;
-                if (!pstart->name[bufferIndex] && bufferIndex < sizeof(cliBuffer) - 2) {
-                    /* Unambiguous -- append a space */
-                    cliBuffer[bufferIndex++] = ' ';
-                    cliBuffer[bufferIndex] = '\0';
-                    break;
-                }
-                cliBuffer[bufferIndex] = pstart->name[bufferIndex];
-            }
-        }
-        if (!bufferIndex || pstart != pend) {
-            /* Print list of ambiguous matches */
-            cliPrint("\r\n\033[K");
-            for (cmd = pstart; cmd <= pend; cmd++) {
-                cliPrint(cmd->name);
-                cliWrite('\t');
-            }
-            cliPrompt();
-            i = 0;    /* Redraw prompt */
-        }
-        for (; i < bufferIndex; i++)
-            cliWrite(cliBuffer[i]);
-    } else if (!bufferIndex && c == 4) {   // CTRL-D
-        cliExit("", cliBuffer);
-        return;
-    } else if (c == 12) {                  // NewPage / CTRL-L
-        // clear screen
-        cliPrint("\033[2J\033[1;1H");
-        cliPrompt();
-    } else if (c == '\b') {
-        // backspace
-        if (bufferIndex) {
-            cliBuffer[--bufferIndex] = 0;
-            cliPrint("\010 \010");
-        }
-    } else {
-        processCharacter(c);
+static void processCharacterInteractive(const char c) {
+  if (c == '\t' || c == '?') {
+    // do tab completion
+    const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
+    uint32_t i = bufferIndex;
+    for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
+      if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0)) {
+        continue;
+      }
+      if (!pstart) {
+        pstart = cmd;
+      }
+      pend = cmd;
     }
+    if (pstart) { /* Buffer matches one or more commands */
+      for (;; bufferIndex++) {
+        if (pstart->name[bufferIndex] != pend->name[bufferIndex]) break;
+        if (!pstart->name[bufferIndex] && bufferIndex < sizeof(cliBuffer) - 2) {
+          /* Unambiguous -- append a space */
+          cliBuffer[bufferIndex++] = ' ';
+          cliBuffer[bufferIndex] = '\0';
+          break;
+        }
+        cliBuffer[bufferIndex] = pstart->name[bufferIndex];
+      }
+    }
+    if (!bufferIndex || pstart != pend) {
+      /* Print list of ambiguous matches */
+      cliPrint("\r\n\033[K");
+      for (cmd = pstart; cmd <= pend; cmd++) {
+        cliPrint(cmd->name);
+        cliWrite('\t');
+      }
+      cliPrompt();
+      i = 0; /* Redraw prompt */
+    }
+    for (; i < bufferIndex; i++) cliWrite(cliBuffer[i]);
+  } else if (!bufferIndex && c == 4) {  // CTRL-D
+    cliExit("", cliBuffer);
+    return;
+  } else if (c == 12) {  // NewPage / CTRL-L
+    // clear screen
+    cliPrint("\033[2J\033[1;1H");
+    cliPrompt();
+  } else if (c == '\b') {
+    // backspace
+    if (bufferIndex) {
+      cliBuffer[--bufferIndex] = 0;
+      cliPrint("\010 \010");
+    }
+  } else {
+    processCharacter(c);
+  }
 }
 
 void cli_process(void) {
   while (fifo_get_length(cli_in) > 0) {
-	  processCharacterInteractive(fifo_read(cli_in));
+    processCharacterInteractive(fifo_read(cli_in));
   }
 }
 
