@@ -160,6 +160,11 @@ void cliPrint(const char *str) {
   }
 }
 
+static void cliPrompt(void)
+{
+  cliPrint("\r\n# ");
+}
+
 void cliPrintLinefeed(void) { cliPrint("\r\n"); }
 
 void cliPrintLine(const char *str) {
@@ -173,7 +178,7 @@ static void cliPrintHashLine(const char *str) {
 }
 
 static void cliPrintfva(const char *format, va_list va) {
-  char buffer[CLI_OUT_BUFFER_SIZE];
+  static char buffer[CLI_OUT_BUFFER_SIZE];
   vsnprintf(buffer, CLI_OUT_BUFFER_SIZE, format, va);
   cliPrint(buffer);
 }
@@ -292,6 +297,7 @@ static void processCharacter(const char c) {
     }
 
     memset(cliBuffer, 0, sizeof(cliBuffer));
+    cliPrompt();
 
     // 'exit' will reset this flag, so we don't need to print prompt again
 
@@ -302,13 +308,72 @@ static void processCharacter(const char c) {
   }
 }
 
+static void processCharacterInteractive(const char c)
+{
+    if (c == '\t' || c == '?') {
+        // do tab completion
+        const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
+        uint32_t i = bufferIndex;
+        for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
+            if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0)) {
+                continue;
+            }
+            if (!pstart) {
+                pstart = cmd;
+            }
+            pend = cmd;
+        }
+        if (pstart) {    /* Buffer matches one or more commands */
+            for (; ; bufferIndex++) {
+                if (pstart->name[bufferIndex] != pend->name[bufferIndex])
+                    break;
+                if (!pstart->name[bufferIndex] && bufferIndex < sizeof(cliBuffer) - 2) {
+                    /* Unambiguous -- append a space */
+                    cliBuffer[bufferIndex++] = ' ';
+                    cliBuffer[bufferIndex] = '\0';
+                    break;
+                }
+                cliBuffer[bufferIndex] = pstart->name[bufferIndex];
+            }
+        }
+        if (!bufferIndex || pstart != pend) {
+            /* Print list of ambiguous matches */
+            cliPrint("\r\n\033[K");
+            for (cmd = pstart; cmd <= pend; cmd++) {
+                cliPrint(cmd->name);
+                cliWrite('\t');
+            }
+            cliPrompt();
+            i = 0;    /* Redraw prompt */
+        }
+        for (; i < bufferIndex; i++)
+            cliWrite(cliBuffer[i]);
+    } else if (!bufferIndex && c == 4) {   // CTRL-D
+        cliExit("", cliBuffer);
+        return;
+    } else if (c == 12) {                  // NewPage / CTRL-L
+        // clear screen
+        cliPrint("\033[2J\033[1;1H");
+        cliPrompt();
+    } else if (c == '\b') {
+        // backspace
+        if (bufferIndex) {
+            cliBuffer[--bufferIndex] = 0;
+            cliPrint("\010 \010");
+        }
+    } else {
+        processCharacter(c);
+    }
+}
+
 void cli_process(void) {
   while (fifo_get_length(cli_in) > 0) {
-    processCharacter(fifo_read(cli_in));
+	  processCharacterInteractive(fifo_read(cli_in));
   }
 }
 
 void cli_enter(fifo_t *in, fifo_t *out) {
   cli_in = in;
   cli_out = out;
+  cliPrompt();
 }
