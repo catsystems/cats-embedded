@@ -13,8 +13,8 @@ void error_handler(cats_error_e err) {
   // osThreadId_t task_id = osThreadGetId();
   if (err != CATS_ERR_OK) {
     log_error("Encountered error 0x%x", err);
-    uint32_t ts = osKernelGetTickCount();
-    error_info_t error_info = {.ts = ts, .error = err};
-    record(ERROR_INFO, &error_info);
+    // uint32_t ts = osKernelGetTickCount();
+    //    error_info_t error_info = {.ts = ts, .error = err};
+    //    record(ERROR_INFO, &error_info);
   }
 }

@@ -143,13 +143,7 @@ _Noreturn void task_init(void *argument) {
       init_communication();
     }
     osDelay(100);
-    //    cats_error_e err = CATS_ERR_BAT_CRITICAL;
-    //    error_handler(err);
-    //    osDelay(1000);
-    //    err = CATS_ERR_NO_CONFIG;
-    //    error_handler(err);
   }
-  /* USER CODE END 5 */
 }
 
 /** Private Function Definitions **/
@@ -371,5 +365,10 @@ static void init_timers() {
     ev_timers[1].timer_duration_ticks = 20000;
   } else {
     ev_timers[1].timer_duration_ticks = (uint32_t)(cc_get_second_stage_timer() * 1000);
+  }
+
+  /* Create Timers */
+  for (uint32_t i = 0; i < num_timers; i++) {
+    ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
   }
 }

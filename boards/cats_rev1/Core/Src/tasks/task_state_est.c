@@ -30,8 +30,10 @@ inline static float calculate_height(float pressure_initial, float pressure, flo
 
 static void transform_data(state_estimation_data_t *state_data, kalman_filter_t *filter,
                            calibration_data_t *calibration, flight_fsm_t *fsm_state);
-static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure, uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu, float *average_pressure);
-#ifdef FILTER_DATA
+static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure,
+                         uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu,
+                         float *average_pressure);
+#ifdef USE_MEDIAN_FILTER
 static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data);
 #endif
 
@@ -50,30 +52,29 @@ void task_state_est(void *argument) {
   flight_fsm_e old_fsm_enum = MOVING;
   /* end local flight phase */
 
-
   /* calibration data */
   calibration_data_t calibration = {.angle = 1, .axis = 2};
   uint8_t imu_counter = 0;
   imu_data_t rolling_imu[10];
-  imu_data_t average_imu = { 0 };
+  imu_data_t average_imu = {};
   uint8_t pressure_counter = 0;
   int32_t rolling_pressure[10];
   float average_pressure = P_INITIAL;
   /* end calibration data */
 
   /* Initialize State Estimation */
-  state_estimation_data_t state_data = {0};
-  sensor_elimination_t elimination = {0};
+  state_estimation_data_t state_data = {};
+  sensor_elimination_t elimination = {};
   kalman_filter_t filter = {.pressure_0 = P_INITIAL, .t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   init_filter_struct(&filter);
   initialize_matrices(&filter);
 
   /* initialize Orientation State Estimation */
-  orientation_filter_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
-  init_orientation_filter_struct(&orientation_filter);
-  initialize_orientation_matrices(&orientation_filter);
+  //  orientation_filter_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  //  init_orientation_filter_struct(&orientation_filter);
+  //  initialize_orientation_matrices(&orientation_filter);
 
-#ifdef FILTER_DATA
+#ifdef USE_MEDIAN_FILTER
   /* Arrays for median Filtering */
   median_filter_t filter_data = {0};
 #endif
@@ -111,10 +112,9 @@ void task_state_est(void *argument) {
     transform_data(&state_data, &filter, &calibration, &fsm_state);
 
     /* Filter Data */
-#ifdef FILTER_DATA
-      median_filter(&filter_data, &state_data);
+#ifdef USE_MEDIAN_FILTER
+    median_filter(&filter_data, &state_data);
 #endif
-
 
     /* Check Sensor Readings */
     err |= check_sensors(&state_data, &elimination);
@@ -125,7 +125,8 @@ void task_state_est(void *argument) {
     /* Do the preprocessing on the IMU and BARO for calibration */
     /* Only do if we are in MOVING */
     if (fsm_state.flight_state == MOVING) {
-        average_data(rolling_imu, &imu_counter, rolling_pressure, &pressure_counter, &elimination, &average_imu, &average_pressure);
+      average_data(rolling_imu, &imu_counter, rolling_pressure, &pressure_counter, &elimination, &average_imu,
+                   &average_pressure);
     }
 
     /* Do a Kalman Step */
@@ -169,11 +170,9 @@ void task_state_est(void *argument) {
                                  .measured_altitude_AGL = state_data.calculated_AGL[1]};
     record(FLIGHT_INFO, &flight_info);
 
-            log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld",
-                      (int32_t)((float)filter.x_bar.pData[0] * 1000),
-                      (int32_t)((float)filter.x_bar.pData[1] * 1000),
-                      (int32_t)(state_data.acceleration[1] * 1000),
-                      (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
+              (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(state_data.acceleration[1] * 1000),
+              (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
     //            log_trace("Calibrated IMU 2: Z: %ld",
@@ -281,82 +280,83 @@ static void transform_data(state_estimation_data_t *state_data, kalman_filter_t 
       calculate_height(filter->pressure_0, state_data->pressure[2], state_data->temperature[2]);
 }
 
-static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure, uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu, float *average_pressure){
-    imu_data_t average_imu_from_global = { 0 };
-    /* First average the 3 IMU measurements if no IMUs have been eliminated */
-    average_imu_from_global.acc_x = 0;
-    average_imu_from_global.acc_y = 0;
-    average_imu_from_global.acc_z = 0;
-    for (int i = 0; i < 3; i++) {
-        if (elimination->faulty_imu[i] == 0)
-            average_imu_from_global.acc_x += global_imu[i].acc_x / (3 - elimination->num_faulty_imus);
-        average_imu_from_global.acc_y += global_imu[i].acc_y / (3 - elimination->num_faulty_imus);
-        average_imu_from_global.acc_z += global_imu[i].acc_z / (3 - elimination->num_faulty_imus);
-    }
+static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t *rolling_pressure,
+                         uint8_t *pressure_counter, sensor_elimination_t *elimination, imu_data_t *average_imu,
+                         float *average_pressure) {
+  imu_data_t average_imu_from_global = {0};
+  /* First average the 3 IMU measurements if no IMUs have been eliminated */
+  average_imu_from_global.acc_x = 0;
+  average_imu_from_global.acc_y = 0;
+  average_imu_from_global.acc_z = 0;
+  for (int i = 0; i < 3; i++) {
+    if (elimination->faulty_imu[i] == 0)
+      average_imu_from_global.acc_x += global_imu[i].acc_x / (3 - elimination->num_faulty_imus);
+    average_imu_from_global.acc_y += global_imu[i].acc_y / (3 - elimination->num_faulty_imus);
+    average_imu_from_global.acc_z += global_imu[i].acc_z / (3 - elimination->num_faulty_imus);
+  }
 
-    /* Write this into the rolling IMU array */
-    rolling_imu[*imu_counter] = average_imu_from_global;
+  /* Write this into the rolling IMU array */
+  rolling_imu[*imu_counter] = average_imu_from_global;
 
-    /* Average the rolling IMU Array */
-    average_imu->acc_x = 0;
-    average_imu->acc_y = 0;
-    average_imu->acc_z = 0;
-    for (int i = 0; i < 10; i++) {
-        average_imu->acc_x += rolling_imu[i].acc_x;
-        average_imu->acc_y += rolling_imu[i].acc_y;
-        average_imu->acc_z += rolling_imu[i].acc_z;
-    }
-    average_imu->acc_x /= 10;
-    average_imu->acc_y /= 10;
-    average_imu->acc_z /= 10;
+  /* Average the rolling IMU Array */
+  average_imu->acc_x = 0;
+  average_imu->acc_y = 0;
+  average_imu->acc_z = 0;
+  for (int i = 0; i < 10; i++) {
+    average_imu->acc_x += rolling_imu[i].acc_x;
+    average_imu->acc_y += rolling_imu[i].acc_y;
+    average_imu->acc_z += rolling_imu[i].acc_z;
+  }
+  average_imu->acc_x /= 10;
+  average_imu->acc_y /= 10;
+  average_imu->acc_z /= 10;
 
-    /* Increase the counter for the rolling IMU array */
-    (*imu_counter)++;
-    if ((*imu_counter) > 9) {
-        (*imu_counter) = 0;
-    }
+  /* Increase the counter for the rolling IMU array */
+  (*imu_counter)++;
+  if ((*imu_counter) > 9) {
+    (*imu_counter) = 0;
+  }
 
-    /* Do the Baro */
-    /* First average the 3 Baro measurements if no Baros have been eliminated
-     */
-    int32_t global_average_pressure = 0;
-    for (int i = 0; i < 3; i++) {
-        if (elimination->faulty_baro[i] == 0)
-            global_average_pressure += global_baro[i].pressure / (3 - elimination->num_faulty_baros);
-    }
+  /* Do the Baro */
+  /* First average the 3 Baro measurements if no Baros have been eliminated
+   */
+  int32_t global_average_pressure = 0;
+  for (int i = 0; i < 3; i++) {
+    if (elimination->faulty_baro[i] == 0)
+      global_average_pressure += global_baro[i].pressure / (3 - elimination->num_faulty_baros);
+  }
 
-    /* Write this into the rolling Baro array */
-    rolling_pressure[*pressure_counter] = global_average_pressure;
+  /* Write this into the rolling Baro array */
+  rolling_pressure[*pressure_counter] = global_average_pressure;
 
-    /* Average the rolling IMU Array */
-    *average_pressure = 0;
-    for (int i = 0; i < 10; i++) {
-        *average_pressure += (float)rolling_pressure[i];
-    }
-    *average_pressure /= 10.0f;
+  /* Average the rolling IMU Array */
+  *average_pressure = 0;
+  for (int i = 0; i < 10; i++) {
+    *average_pressure += (float)rolling_pressure[i];
+  }
+  *average_pressure /= 10.0f;
 
-    /* Increase the counter for the rolling Baro array */
-    (*pressure_counter)++;
-    if ((*pressure_counter) > 9) {
-        (*pressure_counter) = 0;
-    }
+  /* Increase the counter for the rolling Baro array */
+  (*pressure_counter)++;
+  if ((*pressure_counter) > 9) {
+    (*pressure_counter) = 0;
+  }
 }
-#ifdef FILTER_DATA
-static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data){
-    filter_data->data[0][filter_data->counter] = state_data->acceleration[0];
-    filter_data->data[1][filter_data->counter] = state_data->acceleration[1];
-    filter_data->data[2][filter_data->counter] = state_data->acceleration[2];
-    filter_data->data[3][filter_data->counter] = state_data->pressure[0];
-    filter_data->data[4][filter_data->counter] = state_data->pressure[1];
-    filter_data->data[5][filter_data->counter] = state_data->pressure[2];
-    filter_data->counter = filter_data->counter % 10;
+#ifdef USE_MEDIAN_FILTER
+static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data) {
+  filter_data->data[0][filter_data->counter] = state_data->acceleration[0];
+  filter_data->data[1][filter_data->counter] = state_data->acceleration[1];
+  filter_data->data[2][filter_data->counter] = state_data->acceleration[2];
+  filter_data->data[3][filter_data->counter] = state_data->pressure[0];
+  filter_data->data[4][filter_data->counter] = state_data->pressure[1];
+  filter_data->data[5][filter_data->counter] = state_data->pressure[2];
+  filter_data->counter = filter_data->counter % MEDIAN_FILTER_SIZE;
 
-    state_data->acceleration[0] = median(&filter_data->data[0][0], 10);
-    state_data->acceleration[1] = median(&filter_data->data[1][0], 10);
-    state_data->acceleration[2] = median(&filter_data->data[2][0], 10);
-    state_data->pressure[0] = median(&filter_data->data[3][0], 10);
-    state_data->pressure[1] = median(&filter_data->data[4][0], 10);
-    state_data->pressure[2] = median(&filter_data->data[5][0], 10);
+  state_data->acceleration[0] = median(&filter_data->data[0][0], MEDIAN_FILTER_SIZE);
+  state_data->acceleration[1] = median(&filter_data->data[1][0], MEDIAN_FILTER_SIZE);
+  state_data->acceleration[2] = median(&filter_data->data[2][0], MEDIAN_FILTER_SIZE);
+  state_data->pressure[0] = median(&filter_data->data[3][0], MEDIAN_FILTER_SIZE);
+  state_data->pressure[1] = median(&filter_data->data[4][0], MEDIAN_FILTER_SIZE);
+  state_data->pressure[2] = median(&filter_data->data[5][0], MEDIAN_FILTER_SIZE);
 }
 #endif
-

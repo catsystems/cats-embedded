@@ -28,12 +28,6 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
  */
 _Noreturn void task_peripherals(void* argument) {
   cats_event_e curr_event;
-
-  /* Create Timers */
-  for (uint32_t i = 0; i < num_timers; i++) {
-    ev_timers[i].timer_id = osTimerNew((void*)trigger_event, osTimerOnce, (void*)ev_timers[i].execute_event, NULL);
-  }
-
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, NULL, osWaitForever) == osOK) {
       /* Start Timer if the Config says so */

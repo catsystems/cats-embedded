@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "../DSP/Inc/arm_math.h"
 #include "cmsis_os2.h"
+#include "config/control_config.h"
 
 /** BASIC TYPES **/
 
@@ -32,9 +33,9 @@ typedef struct {
 
 /* Magnetometer data */
 typedef struct {
-    timestamp_t ts;
-    float magneto_x, magneto_y, magneto_z;
-}magneto_data_t;
+  timestamp_t ts;
+  float magneto_x, magneto_y, magneto_z;
+} magneto_data_t;
 
 /* Estimator Data */
 typedef struct {
@@ -57,9 +58,9 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
-    float data[6][10];
-    float estimate[6];
-    uint8_t counter;
+  float data[6][MEDIAN_FILTER_SIZE];
+  float estimate[6];
+  uint8_t counter;
 } median_filter_t;
 
 typedef struct {
@@ -74,8 +75,8 @@ typedef struct {
 } calibration_data_t;
 
 typedef struct {
-    float magneto_beta[3];
-    float magneto_radius;
+  float magneto_beta[3];
+  float magneto_radius;
 } magneto_calibration_data_t;
 
 extern const char *flight_fsm_map[14];

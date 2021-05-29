@@ -10,23 +10,6 @@
 #include "util/reader.h"
 
 #include <stdint.h>
-
-/**
- *
- * @return True if config update successful
- */
-
-const char usb_config_command_list[USB_COMMAND_NR][15] = {
-    "save",        "exit", "status", "version", "dump",
-    "flash_erase", "set",  "get",    "read",    "help"};
-
-const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
-    "lf_acc_th",  "conf_fil", "apo_timer1",
-    "stag_2_tim", "stages",   "boot_state"};
-
-cats_usb_commands parse_usb_cmd();
-cats_usb_variables parse_usb_var(uint16_t *value);
-
 void task_usb_communicator(void *argument) {
   static uint8_t print_buffer[512];
   static uint8_t cli_fifo_out_buffer[512];
@@ -51,6 +34,17 @@ void task_usb_communicator(void *argument) {
 
 
 // Old config just for safekeeping:
+
+// const char usb_config_command_list[USB_COMMAND_NR][15] = {
+//     "save",        "exit", "status", "version", "dump",
+//     "flash_erase", "set",  "get",    "read",    "help"};
+//
+// const char usb_config_variable_list[USB_VARIABLE_NR][15] = {
+//     "lf_acc_th",  "conf_fil", "apo_timer1",
+//     "stag_2_tim", "stages",   "boot_state"};
+//
+// cats_usb_commands parse_usb_cmd();
+// cats_usb_variables parse_usb_var(uint16_t *value);
 
 //      uint16_t value = 0;
 //      cats_usb_commands command = parse_usb_cmd();

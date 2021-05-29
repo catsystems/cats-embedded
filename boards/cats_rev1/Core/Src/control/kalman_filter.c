@@ -35,37 +35,16 @@ void initialize_matrices(kalman_filter_t *const filter) {
   /* Matrix -> mat[9] = [0, 1, 2; 3, 4 , 5; 6, 7, 8];*/
 
   /* Initialize static values */
-  float32_t Ad[9] = {1,
-                     filter->t_sampl,
-                     filter->t_sampl * filter->t_sampl / 2,
-                     0,
-                     1,
-                     filter->t_sampl,
-                     0,
-                     0,
-                     1};
+  float32_t Ad[9] = {1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2, 0, 1, filter->t_sampl, 0, 0, 1};
   arm_matrix_instance_f32 Ad_mat;
   arm_mat_init_f32(&Ad_mat, 3, 3, Ad);
 
-  float32_t Ad_T[9] = {1,
-                       filter->t_sampl,
-                       filter->t_sampl * filter->t_sampl / 2,
-                       0,
-                       1,
-                       filter->t_sampl,
-                       0,
-                       0,
-                       1};
+  float32_t Ad_T[9] = {1, filter->t_sampl, filter->t_sampl * filter->t_sampl / 2, 0, 1, filter->t_sampl, 0, 0, 1};
   arm_matrix_instance_f32 Ad_T_mat;
   arm_mat_init_f32(&Ad_T_mat, 3, 3, Ad_T);
   arm_mat_trans_f32(&Ad_mat, &Ad_T_mat);
 
-  float32_t Gd[6] = {filter->t_sampl,
-                     filter->t_sampl * filter->t_sampl / 2,
-                     1,
-                     filter->t_sampl,
-                     0,
-                     1};
+  float32_t Gd[6] = {filter->t_sampl, filter->t_sampl * filter->t_sampl / 2, 1, filter->t_sampl, 0, 1};
   arm_matrix_instance_f32 Gd_mat;
   arm_mat_init_f32(&Gd_mat, 3, 2, Gd);
 
@@ -98,8 +77,7 @@ void initialize_matrices(kalman_filter_t *const filter) {
   arm_matrix_instance_f32 Q_mat;
   arm_mat_init_f32(&Q_mat, 2, 2, Q);
 
-  float32_t R_full[9] = {STD_NOISE_BARO, 0, 0, 0, STD_NOISE_BARO, 0, 0, 0,
-                         STD_NOISE_BARO};
+  float32_t R_full[9] = {STD_NOISE_BARO, 0, 0, 0, STD_NOISE_BARO, 0, 0, 0, STD_NOISE_BARO};
   arm_matrix_instance_f32 R_full_mat;
   arm_mat_init_f32(&R_full_mat, 3, 3, R_full);
 
@@ -178,8 +156,8 @@ void reset_kalman(kalman_filter_t *filter, float initial_pressure) {
 
 /* This Function Implements the kalman Prediction as long as more than 0 IMU
  * work */
-void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
-                       sensor_elimination_t *elimination, flight_fsm_e *fsm_state) {
+void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination,
+                       flight_fsm_e *fsm_state) {
   float u = 0;
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
@@ -207,13 +185,11 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
     }
   }
 
-  if(*fsm_state > APOGEE){
-      u = 0;
+  if (*fsm_state > APOGEE) {
+    u = 0;
+  } else {
+    u /= (float)(3 - elimination->num_faulty_imus);
   }
-  else{
-      u /= (float)(3 - elimination->num_faulty_imus);
-  }
-
 
   /* Calculate Prediction of the state: x_hat = A*x_bar + B*u */
   arm_mat_mult_f32(&filter->Ad, &filter->x_bar, &holder_vec);
@@ -229,9 +205,7 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data,
 }
 
 /* This function implements the Kalman update when no Barometer is faulty */
-cats_error_e kalman_update_full(kalman_filter_t *filter,
-                                state_estimation_data_t *data) {
-
+cats_error_e kalman_update_full(kalman_filter_t *filter, state_estimation_data_t *data) {
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
   arm_mat_init_f32(&holder_mat, 3, 3, holder);
@@ -266,15 +240,13 @@ cats_error_e kalman_update_full(kalman_filter_t *filter,
   arm_mat_mult_f32(&holder_mat, &holder2_mat, &filter->K_full);
 
   /* if the matrix is singular, return an error */
-  if(inv_status == ARM_MATH_SINGULAR){
-      status = CATS_ERR_FILTER;
+  if (inv_status == ARM_MATH_SINGULAR) {
+    status = CATS_ERR_FILTER;
   }
-
 
   /* Calculate x_bar = x_hat+K*(y-Hx_hat); */
 
-  float32_t z[3] = {(float32_t)data->calculated_AGL[0],
-                    (float32_t)data->calculated_AGL[1],
+  float32_t z[3] = {(float32_t)data->calculated_AGL[0], (float32_t)data->calculated_AGL[1],
                     (float32_t)data->calculated_AGL[2]};
   arm_matrix_instance_f32 z_vec;
   arm_mat_init_f32(&z_vec, 3, 1, z);
@@ -301,8 +273,7 @@ cats_error_e kalman_update_full(kalman_filter_t *filter,
 }
 
 /* This function implements the Kalman update when one Barometer is faulty */
-cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
-                                      state_estimation_data_t *data,
+cats_error_e kalman_update_eliminated(kalman_filter_t *filter, state_estimation_data_t *data,
                                       sensor_elimination_t *elimination) {
   /* Placeholder Matrices */
 
@@ -350,19 +321,18 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
 
   /* Calculate K = P_hat*H_T*(H*P_Hat*H_T+R)^-1 */
   arm_mat_mult_f32(&filter->H_eliminated, &filter->P_hat, &holder_0_2x3_mat);
-  arm_mat_mult_f32(&holder_0_2x3_mat, &filter->H_eliminated_T,
-                   &holder_0_2x2_mat);
+  arm_mat_mult_f32(&holder_0_2x3_mat, &filter->H_eliminated_T, &holder_0_2x2_mat);
   arm_mat_add_f32(&holder_0_2x2_mat, &filter->R_eliminated, &holder_1_2x2_mat);
   arm_status inv_status = ARM_MATH_SUCCESS;
-    inv_status = arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
+  inv_status = arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_eliminated_T, &holder_0_3x2_mat);
   arm_mat_mult_f32(&holder_0_3x2_mat, &holder_0_2x2_mat, &filter->K_eliminated);
 
-    /* if the matrix is singular, return an error */
-    if(inv_status == ARM_MATH_SINGULAR){
-        status = CATS_ERR_FILTER;
-    }
+  /* if the matrix is singular, return an error */
+  if (inv_status == ARM_MATH_SINGULAR) {
+    status = CATS_ERR_FILTER;
+  }
 
   /* Finished Calculating K */
 
@@ -398,8 +368,8 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter,
   return status;
 }
 
-cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data,
-                         sensor_elimination_t *elimination, flight_fsm_e *fsm_state) {
+cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination,
+                         flight_fsm_e *fsm_state) {
   cats_error_e status = CATS_ERR_OK;
 
   kalman_prediction(filter, data, elimination, fsm_state);
