@@ -71,7 +71,7 @@ uint32_t fifo_read_until(fifo_t *fifo, uint8_t* data, uint8_t delimiter, uint32_
 	if(count > fifo->used) max = fifo->used;
 	else max = count;
 
-	int i;
+	uint32_t i;
 	for(i = 0; i < max; i++){
 		if(fifo->data[(fifo->tail+i) % fifo->size] == delimiter) {
 			found = true;

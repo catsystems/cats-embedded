@@ -23,12 +23,12 @@
  * @param argument: Not used
  * @retval None
  */
-void task_drop_test_fsm(void *argument) {
+_Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
   drop_test_fsm_t fsm_state = {.flight_state = DT_IDLE};
-  imu_data_t local_imu = {0};
+  imu_data_t local_imu;
 
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;

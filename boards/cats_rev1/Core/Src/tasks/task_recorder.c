@@ -36,7 +36,7 @@ static const char *rec_type_map[9] = {"ERROR", "IMU0",  "IMU1",        "IMU2",  
 /** Exported Function Definitions **/
 
 /* TODO: Look up some wear leveling algorithms... */
-void task_recorder(void *argument) {
+void task_recorder(__attribute__((unused)) void *argument) {
   uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
 
   uint16_t rec_buffer_idx = 0;

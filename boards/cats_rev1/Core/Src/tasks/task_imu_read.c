@@ -28,7 +28,7 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int32_t id);
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_imu_read(void *argument) {
+_Noreturn void task_imu_read(__attribute__((unused)) void *argument) {
   uint32_t tick_count, tick_update;
 
   /* initialize data variables */

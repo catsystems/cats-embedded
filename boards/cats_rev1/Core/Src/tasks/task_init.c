@@ -76,7 +76,7 @@ static void create_event_map();
 
 /** Exported Function Definitions **/
 
-_Noreturn void task_init(void *argument) {
+_Noreturn void task_init(__attribute__((unused)) void *argument) {
   osDelay(200);
   init_system();
   log_info("System initialization complete.");

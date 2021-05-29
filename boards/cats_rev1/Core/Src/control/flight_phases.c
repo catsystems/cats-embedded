@@ -11,20 +11,14 @@
 #include <stdlib.h>
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
-                      control_settings_t *settings);
-void check_thrusting_1_phase(flight_fsm_t *fsm_state,
-                             estimation_output_t *state_data);
-void check_coasting_phase(flight_fsm_t *fsm_state,
-                          estimation_output_t *state_data);
-void check_apogee_phase(flight_fsm_t *fsm_state,
-                        estimation_output_t *state_data);
-void check_drogue_phase(flight_fsm_t *fsm_state,
-                        estimation_output_t *state_data);
+void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings);
+void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
-void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
-                        estimation_output_t *state_data,
+void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, estimation_output_t *state_data,
                         control_settings_t *settings) {
   /* Save old FSM state */
   flight_fsm_t old_fsm_state = *fsm_state;
@@ -71,18 +65,12 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
 
 void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Check if the IMU moved between two timesteps */
-  if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) <
-       ALLOWED_ACC_ERROR) &&
-      (abs(fsm_state->old_imu_data.acc_y - imu_data->acc_y) <
-       ALLOWED_ACC_ERROR) &&
-      (abs(fsm_state->old_imu_data.acc_z - imu_data->acc_z) <
-       ALLOWED_ACC_ERROR) &&
-      (abs(fsm_state->old_imu_data.gyro_x - imu_data->gyro_x) <
-       ALLOWED_GYRO_ERROR) &&
-      (abs(fsm_state->old_imu_data.gyro_y - imu_data->gyro_y) <
-       ALLOWED_GYRO_ERROR) &&
-      (abs(fsm_state->old_imu_data.gyro_z - imu_data->gyro_z) <
-       ALLOWED_GYRO_ERROR)) {
+  if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) < ALLOWED_ACC_ERROR) &&
+      (abs(fsm_state->old_imu_data.acc_y - imu_data->acc_y) < ALLOWED_ACC_ERROR) &&
+      (abs(fsm_state->old_imu_data.acc_z - imu_data->acc_z) < ALLOWED_ACC_ERROR) &&
+      (abs(fsm_state->old_imu_data.gyro_x - imu_data->gyro_x) < ALLOWED_GYRO_ERROR) &&
+      (abs(fsm_state->old_imu_data.gyro_y - imu_data->gyro_y) < ALLOWED_GYRO_ERROR) &&
+      (abs(fsm_state->old_imu_data.gyro_z - imu_data->gyro_z) < ALLOWED_GYRO_ERROR)) {
     fsm_state->memory[1]++;
   } else {
     fsm_state->memory[1] = 0;
@@ -104,23 +92,16 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   }
 }
 
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
-                      control_settings_t *settings) {
+void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings) {
   /* Check if we move from IDLE Back to MOVING */
 
   /* Check if the IMU moved between two timesteps */
-  if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) >
-       ALLOWED_ACC_ERROR) ||
-      (abs(fsm_state->old_imu_data.acc_y - imu_data->acc_y) >
-       ALLOWED_ACC_ERROR) ||
-      (abs(fsm_state->old_imu_data.acc_z - imu_data->acc_z) >
-       ALLOWED_ACC_ERROR) ||
-      (abs(fsm_state->old_imu_data.gyro_x - imu_data->gyro_x) >
-       ALLOWED_GYRO_ERROR) ||
-      (abs(fsm_state->old_imu_data.gyro_y - imu_data->gyro_y) >
-       ALLOWED_GYRO_ERROR) ||
-      (abs(fsm_state->old_imu_data.gyro_z - imu_data->gyro_z) >
-       ALLOWED_GYRO_ERROR)) {
+  if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) > ALLOWED_ACC_ERROR) ||
+      (abs(fsm_state->old_imu_data.acc_y - imu_data->acc_y) > ALLOWED_ACC_ERROR) ||
+      (abs(fsm_state->old_imu_data.acc_z - imu_data->acc_z) > ALLOWED_ACC_ERROR) ||
+      (abs(fsm_state->old_imu_data.gyro_x - imu_data->gyro_x) > ALLOWED_GYRO_ERROR) ||
+      (abs(fsm_state->old_imu_data.gyro_y - imu_data->gyro_y) > ALLOWED_GYRO_ERROR) ||
+      (abs(fsm_state->old_imu_data.gyro_z - imu_data->gyro_z) > ALLOWED_GYRO_ERROR)) {
     fsm_state->memory[1]++;
   }
 
@@ -168,9 +149,8 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
     fsm_state->angular_movement[2] += angle_movement / SAMPLING_FREQUENCY;
   }
 
-  if ((abs(fsm_state->angular_movement[0]) +
-       abs(fsm_state->angular_movement[1]) +
-       abs(fsm_state->angular_movement[2])) > ANGLE_MOVE_MAX) {
+  if ((fabsf(fsm_state->angular_movement[0]) + fabsf(fsm_state->angular_movement[1]) +
+       fabsf(fsm_state->angular_movement[2])) > ANGLE_MOVE_MAX) {
     trigger_event(EV_MOVING);
     fsm_state->flight_state = MOVING;
     fsm_state->clock_memory = 0;
@@ -184,12 +164,10 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
   /* Check if we move from IDLE To THRUSTING_1 */
   /* To Make sure that the timers start any acceleration direction is accepted
    * here */
-  int32_t acceleration = imu_data->acc_x * imu_data->acc_x +
-                         imu_data->acc_y * imu_data->acc_y +
-                         imu_data->acc_z * imu_data->acc_z;
+  int32_t acceleration =
+      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
 
-  if (acceleration >
-      settings->liftoff_acc_threshold * settings->liftoff_acc_threshold) {
+  if ((float)acceleration > settings->liftoff_acc_threshold * settings->liftoff_acc_threshold) {
     fsm_state->memory[2]++;
   } else {
     fsm_state->memory[2] = 0;
@@ -207,8 +185,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 }
 
-void check_thrusting_1_phase(flight_fsm_t *fsm_state,
-                             estimation_output_t *state_data) {
+void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->acceleration < 0) {
     fsm_state->memory[1]++;
   } else {
@@ -226,8 +203,7 @@ void check_thrusting_1_phase(flight_fsm_t *fsm_state,
   }
 }
 
-void check_coasting_phase(flight_fsm_t *fsm_state,
-                          estimation_output_t *state_data) {
+void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->velocity < 0) {
     fsm_state->memory[1]++;
   }
@@ -241,8 +217,7 @@ void check_coasting_phase(flight_fsm_t *fsm_state,
   }
 }
 
-void check_apogee_phase(flight_fsm_t *fsm_state,
-                        estimation_output_t *state_data) {
+void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->velocity > PARACHUTE_DESCENT_SPEED) {
     /* Parachute Deployed */
     fsm_state->memory[1]++;
@@ -266,8 +241,7 @@ void check_apogee_phase(flight_fsm_t *fsm_state,
   //  }
 }
 
-void check_drogue_phase(flight_fsm_t *fsm_state,
-                        estimation_output_t *state_data) {
+void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->height < HEIGHT_AGL_MAIN) {
     /* Achieved Height to deploy Main */
     fsm_state->memory[1]++;
@@ -285,10 +259,9 @@ void check_drogue_phase(flight_fsm_t *fsm_state,
   }
 }
 
-void check_main_phase(flight_fsm_t *fsm_state,
-                      estimation_output_t *state_data) {
+void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   /* If the velocity is very small we have touchdown */
-  if (abs(state_data->velocity) < VELOCITY_BOUND_TOUCHDOWN) {
+  if (fabsf(state_data->velocity) < VELOCITY_BOUND_TOUCHDOWN) {
     /* Touchdown achieved */
     fsm_state->memory[1]++;
   } else {

@@ -14,7 +14,7 @@
 
 #define FAILSAFE_TIME 250
 
-_Noreturn void task_receiver(void *argument) {
+_Noreturn void task_receiver(__attribute__((unused)) void *argument) {
   uint32_t tick_count, tick_update;
 
   static receiver_data_t receiver_data = {0};

@@ -12,7 +12,7 @@ void merge(float arr[], int l, int m, int r) {
   int n2 = r - m;
 
   /* create temp arrays */
-  int L[n1], R[n2];
+  float L[n1], R[n2];
 
   /* Copy data to temp arrays L[] and R[] */
   for (i = 0; i < n1; i++) L[i] = arr[l + i];
@@ -70,5 +70,5 @@ float median(float array[], int array_size) {
   float dummy_array[array_size];
   memcpy(dummy_array, array, array_size);
   mergeSort(dummy_array, 0, array_size - 1);
-  return array[(int)(array_size / 2)];
+  return array[array_size / 2];
 }

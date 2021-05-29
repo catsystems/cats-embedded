@@ -51,11 +51,11 @@ static void cliDump(const char *cmdName, char *cmdline);
 static void cliExit(const char *cmdName, char *cmdline);
 static void cliGet(const char *cmdName, char *cmdline);
 static void cliMcuId(const char *cmdName, char *cmdline);
-static void cliSave(const char *cmdName, char *cmdline);
 static void cliSet(const char *cmdName, char *cmdline);
 static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
-static void cliErase(const char *cmdName, char *cmdline);
+static void cliEraseFlash(const char *cmdName, char *cmdline);
+static void cliEraseRecordings(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -86,18 +86,26 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
     CLI_COMMAND_DEF("read", "readout the flash", NULL, cliRead),
-    CLI_COMMAND_DEF("erase_flash", "erase the flash", NULL, cliErase),
+    CLI_COMMAND_DEF("erase_flash", "erase the flash", NULL, cliEraseFlash),
+    CLI_COMMAND_DEF("erase_recordings", "erase the recordings", NULL, cliEraseRecordings),
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
 };
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
 
-static void cliErase(const char *cmdName, char *cmdline) {
-  log_raw("Erasing the flash, this might take a while...");
+static void cliEraseFlash(const char *cmdName, char *cmdline) {
+  log_raw("\nErasing the flash, this might take a while...");
   w25qxx_erase_chip();
   cs_init(CATS_STATUS_SECTOR, 0);
   cs_save();
   log_raw("Flash erased!");
+}
+static void cliEraseRecordings(const char *cmdName, char *cmdline) {
+  log_raw("\nErasing the flight recordings, this might not take much...");
+  erase_recordings();
+  cs_init(CATS_STATUS_SECTOR, 0);
+  cs_save();
+  log_raw("Recordings erased!");
 }
 
 static void cliRead(const char *cmdName, char *cmdline) {
@@ -264,7 +272,7 @@ static char *checkCommand(char *cmdline, const char *command) {
       && (isspace((unsigned)cmdline[strlen(command)]) || cmdline[strlen(command)] == 0)) {
     return skipSpace(cmdline + strlen(command) + 1);
   } else {
-    return 0;
+    return NULL;
   }
 }
 
@@ -289,11 +297,10 @@ static void processCharacter(const char c) {
       cliBuffer[bufferIndex] = 0;  // null terminate
 
       const clicmd_t *cmd;
-      char *options;
+      char *options = NULL;
       for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-        if ((options = checkCommand(cliBuffer, cmd->name))) {
-          break;
-        }
+        options = checkCommand(cliBuffer, cmd->name);
+        if (options) break;
       }
       if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
         cmd->cliCommand(cmd->name, options);

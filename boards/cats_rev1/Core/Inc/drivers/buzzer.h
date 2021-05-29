@@ -26,7 +26,7 @@ typedef struct buzzer_dev {
 
 void buzzer_set_volume(BUZ *dev, uint16_t volume);
 void buzzer_beep(BUZ *dev, uint32_t duration);
-void buzzer_set_freq(BUZ *dev, float frequency);
+void buzzer_set_freq(BUZ *dev, uint32_t frequency);
 void buzzer_start(BUZ *dev);
 void buzzer_stop(BUZ *dev);
 uint8_t buzzer_update(BUZ *dev);

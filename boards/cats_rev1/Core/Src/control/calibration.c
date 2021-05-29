@@ -9,8 +9,7 @@
 #include "util/log.h"
 #include "stdlib.h"
 
-void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration,
-                   sensor_elimination_t *elimination) {
+void calibrate_imu(imu_data_t *imu_data, calibration_data_t *calibration) {
   /* first get the largest vector */
   if (abs(imu_data->acc_x) >= abs(imu_data->acc_y)) {
     if (abs(imu_data->acc_x) >= abs(imu_data->acc_z)) {

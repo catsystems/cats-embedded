@@ -32,7 +32,7 @@ const float voltage_lookup[3][3] = {{3.3f, 3.5f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0
 // Automatically check how many cells are connected
 void battery_monitor_init() {
   if (battery_type == ALKALINE) return;
-  int i = 1;
+  uint32_t i = 1;
   float voltage = battery_voltage();
   while (((float)i * voltage_lookup[battery_type][2]) < voltage) {
     i++;

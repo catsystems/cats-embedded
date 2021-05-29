@@ -178,6 +178,7 @@ static int8_t CDC_DeInit_FS(void) {
  */
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
   /* USER CODE BEGIN 5 */
+  UNUSED(length);
   uint32_t speed = 115200;
   switch (cmd) {
     case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -223,7 +224,6 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
       break;
 
     case CDC_GET_LINE_CODING:
-      length = 7;
       pbuf[0] = (uint8_t)(speed);
       pbuf[1] = (uint8_t)(speed >> 8);
       pbuf[2] = (uint8_t)(speed >> 16);

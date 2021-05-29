@@ -12,8 +12,8 @@
 #include "stm32l4xx_hal.h"
 
 typedef enum cs_type {
-  LOW_ACTIVE = 0,
-  HIGH_ACTIVE = 1,
+  LOW_ACTIVE = GPIO_PIN_RESET,
+  HIGH_ACTIVE = GPIO_PIN_SET,
 } cs_type_e;
 
 typedef struct spi_bus {

@@ -37,15 +37,15 @@ typedef struct {
   float max_acceleration[32];
 } cats_status_t;
 
-cats_config_t global_cats_config = {0};
-cats_status_t global_cats_status = {0};
+cats_config_t global_cats_config = {};
+cats_status_t global_cats_status = {};
 
 const uint32_t CATS_CONFIG_SECTOR = 0;
 const uint32_t CATS_STATUS_SECTOR = 1;
 
 /** cats config initialization **/
 
-void cc_init(cats_boot_state boot_state, bool clear_flash, uint32_t recorder_mask) {
+void cc_init(cats_boot_state boot_state, uint32_t recorder_mask) {
   global_cats_config.boot_state = boot_state;
   global_cats_config.recorder_mask = recorder_mask;
 }

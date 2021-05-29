@@ -18,10 +18,9 @@
 
 /** Exported Function Definitions **/
 
-_Noreturn void task_health_monitor(void *argument) {
+_Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
-
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   uint32_t alive_timer = 0;

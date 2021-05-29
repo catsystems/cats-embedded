@@ -24,7 +24,7 @@ extern const uint32_t CATS_CONFIG_SECTOR;
 extern const uint32_t CATS_STATUS_SECTOR;
 
 /** cats config initialization **/
-void cc_init(cats_boot_state boot_state, bool clear_flash, uint32_t recorder_mask);
+void cc_init(cats_boot_state boot_state, uint32_t recorder_mask);
 void cc_clear();
 
 /** accessor functions **/

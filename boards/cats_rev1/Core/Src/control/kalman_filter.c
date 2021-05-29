@@ -157,7 +157,7 @@ void reset_kalman(kalman_filter_t *filter, float initial_pressure) {
 /* This Function Implements the kalman Prediction as long as more than 0 IMU
  * work */
 void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination,
-                       flight_fsm_e *fsm_state) {
+                       flight_fsm_e fsm_state) {
   float u = 0;
   float32_t holder[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   arm_matrix_instance_f32 holder_mat;
@@ -185,7 +185,7 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
     }
   }
 
-  if (*fsm_state > APOGEE) {
+  if (fsm_state > APOGEE) {
     u = 0;
   } else {
     u /= (float)(3 - elimination->num_faulty_imus);
@@ -233,8 +233,7 @@ cats_error_e kalman_update_full(kalman_filter_t *filter, state_estimation_data_t
   arm_mat_mult_f32(&filter->H_full, &filter->P_hat, &holder_mat);
   arm_mat_mult_f32(&holder_mat, &filter->H_full_T, &holder2_mat);
   arm_mat_add_f32(&holder2_mat, &filter->R_full, &holder_mat);
-  arm_status inv_status = ARM_MATH_SUCCESS;
-  inv_status = arm_mat_inverse_f32(&holder_mat, &holder2_mat);
+  arm_status inv_status = arm_mat_inverse_f32(&holder_mat, &holder2_mat);
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_full_T, &holder_mat);
   arm_mat_mult_f32(&holder_mat, &holder2_mat, &filter->K_full);
@@ -323,8 +322,7 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter, state_estimation_
   arm_mat_mult_f32(&filter->H_eliminated, &filter->P_hat, &holder_0_2x3_mat);
   arm_mat_mult_f32(&holder_0_2x3_mat, &filter->H_eliminated_T, &holder_0_2x2_mat);
   arm_mat_add_f32(&holder_0_2x2_mat, &filter->R_eliminated, &holder_1_2x2_mat);
-  arm_status inv_status = ARM_MATH_SUCCESS;
-  inv_status = arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
+  arm_status inv_status = arm_mat_inverse_f32(&holder_1_2x2_mat, &holder_0_2x2_mat);
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_eliminated_T, &holder_0_3x2_mat);
   arm_mat_mult_f32(&holder_0_3x2_mat, &holder_0_2x2_mat, &filter->K_eliminated);
@@ -369,8 +367,8 @@ cats_error_e kalman_update_eliminated(kalman_filter_t *filter, state_estimation_
 }
 
 cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data, sensor_elimination_t *elimination,
-                         flight_fsm_e *fsm_state) {
-  cats_error_e status = CATS_ERR_OK;
+                         flight_fsm_e fsm_state) {
+  cats_error_e status;
 
   kalman_prediction(filter, data, elimination, fsm_state);
 

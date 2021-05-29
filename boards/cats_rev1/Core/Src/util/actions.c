@@ -11,7 +11,7 @@
 #include "config/globals.h"
 #include "drivers/servo.h"
 
-bool no_action_function(int32_t bummer);
+bool no_action_function(__attribute__((unused)) int32_t bummer);
 
 bool os_delay(int32_t ticks);
 
@@ -44,7 +44,7 @@ const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {no_action_function
                                                               servo_channel_three,        servo_channel_four,
                                                               set_recorder_state};
 
-bool no_action_function(int32_t bummer) {
+bool no_action_function(__attribute__((unused)) int32_t bummer) {
   // Sucks to be here...
   // it seems like someone didn't configure the actions right
   return false;
@@ -61,7 +61,7 @@ bool no_action_function(int32_t bummer) {
  * delays. */
 bool os_delay(int32_t ticks) {
   if (ticks > 0) {
-    osDelay(ticks);
+    osDelay((uint32_t)ticks);
     return true;
   }
   return false;
@@ -71,7 +71,7 @@ bool os_delay(int32_t ticks) {
 
 bool high_current_channel_one(int32_t state) {
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_1_GPIO_Port, PYRO_1_Pin, state);
+    HAL_GPIO_WritePin(PYRO_1_GPIO_Port, PYRO_1_Pin, (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -79,7 +79,7 @@ bool high_current_channel_one(int32_t state) {
 
 bool high_current_channel_two(int32_t state) {
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_2_GPIO_Port, PYRO_2_Pin, state);
+    HAL_GPIO_WritePin(PYRO_2_GPIO_Port, PYRO_2_Pin, (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -87,7 +87,7 @@ bool high_current_channel_two(int32_t state) {
 
 bool high_current_channel_three(int32_t state) {
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin, state);
+    HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin, (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -95,7 +95,7 @@ bool high_current_channel_three(int32_t state) {
 
 bool high_current_channel_four(int32_t state) {
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin, state);
+    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -103,7 +103,7 @@ bool high_current_channel_four(int32_t state) {
 
 bool high_current_channel_five(int32_t state) {
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin, state);
+    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -111,7 +111,7 @@ bool high_current_channel_five(int32_t state) {
 
 bool high_current_channel_six(int32_t state) {
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin, state);
+    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -121,7 +121,7 @@ bool high_current_channel_six(int32_t state) {
 
 bool low_level_channel_one(int32_t state) {
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(GPIO_1_GPIO_Port, GPIO_1_Pin, state);
+    HAL_GPIO_WritePin(GPIO_1_GPIO_Port, GPIO_1_Pin, (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -129,7 +129,7 @@ bool low_level_channel_one(int32_t state) {
 
 bool low_level_channel_two(int32_t state) {
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(GPIO_2_GPIO_Port, GPIO_2_Pin, state);
+    HAL_GPIO_WritePin(GPIO_2_GPIO_Port, GPIO_2_Pin, (GPIO_PinState)state);
     return true;
   }
   return false;
@@ -189,7 +189,7 @@ bool servo_channel_four(int32_t angle) {
 
 /* TODO check if mutex should be used here */
 bool set_recorder_state(int32_t state) {
-  recorder_status_e rec_status = (recorder_status_e)state;
+  volatile recorder_status_e rec_status = (recorder_status_e)state;
   /* TODO: add a boundary value for rec_status_e enum -> REC_END = 0xfff..*/
   // TODO: max flights of 32
   if (rec_status >= REC_OFF && rec_status <= REC_WRITE_TO_FLASH) {

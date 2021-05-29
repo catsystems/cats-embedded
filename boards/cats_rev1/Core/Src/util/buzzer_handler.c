@@ -18,7 +18,7 @@
 
 uint8_t status_buzzer(buzzer_status_e status);
 
-uint32_t     pitch_lookup[8] = {
+uint32_t pitch_lookup[8] = {
     2349,  // D	A
     2489,  // D#  B
     2637,  // E 	C
@@ -49,7 +49,7 @@ const char cats_status_codes[5][BUZZER_COMMAND_MAX_LENGTH] = {
 
 static uint32_t status_queue_index = 0;
 static uint32_t status_queue_elements = 0;
-static uint32_t status_queue[BUZZER_MAX_STATUS_QUEUE];
+static buzzer_status_e status_queue[BUZZER_MAX_STATUS_QUEUE];
 
 bool buzzer_queue_status(buzzer_status_e status) {
   if (status_queue_elements < BUZZER_MAX_STATUS_QUEUE) {

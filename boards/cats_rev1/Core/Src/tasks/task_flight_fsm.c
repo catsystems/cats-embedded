@@ -23,13 +23,13 @@
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_flight_fsm(void *argument) {
+_Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
   flight_fsm_t fsm_state = {.flight_state = MOVING};
   imu_data_t local_imu = {0};
-  estimation_output_t local_kf_data = {0};
+  estimation_output_t local_kf_data;
 
   control_settings_t settings = cc_get_control_settings();
 

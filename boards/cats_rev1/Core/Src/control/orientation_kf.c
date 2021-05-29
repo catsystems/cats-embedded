@@ -117,7 +117,7 @@ void initialize_orientation_matrices(orientation_filter_t* const filter) {
   memcpy(filter->Identity_data, Identity, sizeof(Identity));
 }
 
-void quaternion_skew(float* input, float* output) {
+void quaternion_skew(const float* input, float* output) {
   /* Matrix -> mat[9] = [0, 1, 2; 3, 4 , 5; 6, 7, 8];	 */
   output[0] = 0;
   output[1] = -input[3];
@@ -131,23 +131,19 @@ void quaternion_skew(float* input, float* output) {
 }
 
 /* ALL INPUTS AND OUTPUTS NEED TO BE 4,1 MATRIXES */
-void quaternion_mat(arm_matrix_instance_f32* input1,
-                    arm_matrix_instance_f32* input2,
-                    arm_matrix_instance_f32* output) {
-  float32_t LQM[16] = {
-      input1->pData[0], -input1->pData[1], -input1->pData[2], -input1->pData[3],
-      input1->pData[1], input1->pData[0],  -input1->pData[3], input1->pData[2],
-      input1->pData[2], input1->pData[3],  input1->pData[0],  -input1->pData[1],
-      input1->pData[3], -input1->pData[2], input1->pData[1],  input1->pData[0]};
+void quaternion_mat(arm_matrix_instance_f32* input1, arm_matrix_instance_f32* input2, arm_matrix_instance_f32* output) {
+  float32_t LQM[16] = {input1->pData[0], -input1->pData[1], -input1->pData[2], -input1->pData[3],
+                       input1->pData[1], input1->pData[0],  -input1->pData[3], input1->pData[2],
+                       input1->pData[2], input1->pData[3],  input1->pData[0],  -input1->pData[1],
+                       input1->pData[3], -input1->pData[2], input1->pData[1],  input1->pData[0]};
   arm_matrix_instance_f32 LQM_mat;
   arm_mat_init_f32(&LQM_mat, 4, 4, LQM);
 
   arm_mat_mult_f32(&LQM_mat, input2, output);
 }
 
-void extendR3(float32_t* input, float32_t* output) {
-  float32_t abs_value =
-      1.0f - input[0] * input[0] + input[1] * input[1] + input[2] * input[2];
+void extendR3(const float32_t* input, float32_t* output) {
+  float32_t abs_value = 1.0f - input[0] * input[0] + input[1] * input[1] + input[2] * input[2];
   float32_t q0 = 0;
   arm_sqrt_f32(abs_value, &q0);
   output[0] = q0;
@@ -157,8 +153,7 @@ void extendR3(float32_t* input, float32_t* output) {
 }
 
 void normalize_q(float32_t* input) {
-  float32_t abs_value_sq = input[0] * input[0] + input[1] * input[1] +
-                           input[2] * input[2] + input[3] * input[3];
+  float32_t abs_value_sq = input[0] * input[0] + input[1] * input[1] + input[2] * input[2] + input[3] * input[3];
   float32_t abs_value = 0;
   arm_sqrt_f32(abs_value_sq, &abs_value);
   input[0] /= abs_value;
@@ -169,11 +164,9 @@ void normalize_q(float32_t* input) {
 
 void compute_angle(imu_data_t* data, orientation_filter_t* filter) {
   /* Scale acceleration and rotate into inertial frame */
-  float32_t quat_meas[4] = {(float32_t)(data->acc_z) / 1024.0f,
-                            -(float32_t)(data->acc_y) / 1024.0f,
+  float32_t quat_meas[4] = {(float32_t)(data->acc_z) / 1024.0f, -(float32_t)(data->acc_y) / 1024.0f,
                             (float32_t)(data->acc_x) / 1024.0f, 0};
-  float32_t abs_sq = quat_meas[0] * quat_meas[0] + quat_meas[1] * quat_meas[1] +
-                     quat_meas[2] * quat_meas[2];
+  float32_t abs_sq = quat_meas[0] * quat_meas[0] + quat_meas[1] * quat_meas[1] + quat_meas[2] * quat_meas[2];
   float32_t abs = 0;
   arm_sqrt_f32(abs_sq, &abs);
 
@@ -185,8 +178,7 @@ void compute_angle(imu_data_t* data, orientation_filter_t* filter) {
   arm_mat_init_f32(&quat_meas_mat, 4, 1, quat_meas);
 
   /* Take out the current guess and conjugate it*/
-  float32_t x_hat[4] = {filter->x_hat_data[0], -filter->x_hat_data[1],
-                        -filter->x_hat_data[2], -filter->x_hat_data[3]};
+  float32_t x_hat[4] = {filter->x_hat_data[0], -filter->x_hat_data[1], -filter->x_hat_data[2], -filter->x_hat_data[3]};
   arm_matrix_instance_f32 x_hat_mat;
   arm_mat_init_f32(&x_hat_mat, 4, 1, x_hat);
 
@@ -242,16 +234,12 @@ zeros(3), eye(3)];
   arm_mat_trans_f32(&filter->G, &filter->G_T);
 }
 
-void orientation_prediction_step(orientation_filter_t* filter,
-                                 imu_data_t* data) {
+void orientation_prediction_step(orientation_filter_t* filter, imu_data_t* data) {
   /* remove bias from measurement */
   /* SCALE GYRO CORRECTLY */
-  filter->velocity_data[1] =
-      (float32_t)(data->gyro_x) / 16.4f - filter->bias_data[0];
-  filter->velocity_data[2] =
-      (float32_t)(data->gyro_y) / 16.4f - filter->bias_data[1];
-  filter->velocity_data[3] =
-      (float32_t)(data->gyro_z) / 16.4f - filter->bias_data[2];
+  filter->velocity_data[1] = (float32_t)(data->gyro_x) / 16.4f - filter->bias_data[0];
+  filter->velocity_data[2] = (float32_t)(data->gyro_y) / 16.4f - filter->bias_data[1];
+  filter->velocity_data[3] = (float32_t)(data->gyro_z) / 16.4f - filter->bias_data[2];
 
   /* Prediction step */
   /* x_hat = x_bar + 1/2*Ts(quat_mult(x_bar, velocity)) */
@@ -264,8 +252,7 @@ void orientation_prediction_step(orientation_filter_t* filter,
   arm_mat_init_f32(&holder2_mat, 4, 1, holder2_data);
   quaternion_mat(&filter->x_bar, &filter->velocity, &holder_mat);
 
-  arm_mat_scale_f32(&holder_mat, (float32_t)(0.5f * filter->t_sampl),
-                    &holder2_mat);
+  arm_mat_scale_f32(&holder_mat, (float32_t)(0.5f * filter->t_sampl), &holder2_mat);
 
   arm_mat_add_f32(&holder2_mat, &filter->x_bar, &filter->x_hat);
 
@@ -356,8 +343,7 @@ void orientation_update_step(orientation_filter_t* filter, imu_data_t* data) {
   extendR3(filter->delta_x_hat_data, extended_delta_x_hat_data);
 
   /* Extract Bias Error */
-  float32_t bias_error_data[3] = {filter->delta_x_hat_data[3],
-                                  filter->delta_x_hat_data[4],
+  float32_t bias_error_data[3] = {filter->delta_x_hat_data[3], filter->delta_x_hat_data[4],
                                   filter->delta_x_hat_data[5]};
   arm_matrix_instance_f32 bias_error_mat;
   arm_mat_init_f32(&bias_error_mat, 3, 1, bias_error_data);

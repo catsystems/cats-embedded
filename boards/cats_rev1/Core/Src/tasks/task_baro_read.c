@@ -29,7 +29,7 @@ static void read_baro();
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_baro_read(void *argument) {
+_Noreturn void task_baro_read(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
   /* actual measurements from sensor */

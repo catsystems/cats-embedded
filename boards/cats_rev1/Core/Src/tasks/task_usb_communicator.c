@@ -10,7 +10,7 @@
 #include "util/reader.h"
 
 #include <stdint.h>
-void task_usb_communicator(void *argument) {
+_Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
   static uint8_t print_buffer[512];
   static uint8_t cli_fifo_out_buffer[512];
   log_raw("USB config started");

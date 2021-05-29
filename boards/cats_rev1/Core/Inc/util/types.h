@@ -231,4 +231,4 @@ typedef struct {
 inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) { return (src_high << 8 | src_low); }
 
 /* TODO: is this really the same? It's taken from the macros.. */
-inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) { return uint8_to_uint16(src_high, src_low); }
+inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) { return (int16_t)uint8_to_uint16(src_high, src_low); }

@@ -48,8 +48,6 @@ void print_recording(uint16_t number) {
       memset(string_buffer1, 0, 400);
       memset(string_buffer2, 0, 400);
     }
-
-    current_sector = last_sector_of_flight + 1;
   } else {
     log_error("Last recorded sector of flight is 0!");
   }

@@ -14,12 +14,9 @@ extern I2C_HandleTypeDef hi2c2;
 
 /** Private Function Declarations **/
 
-static uint32_t get_conversion_ticks(MS5607 *dev);
 // Read bytes
-static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData,
-                          uint16_t size);
-static void ms_read_bytes_it(MS5607 *dev, uint8_t command, uint8_t *pData,
-                             uint16_t size);
+static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t size);
+static void ms_read_bytes_it(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t size);
 // Write command
 static void ms_write_command(MS5607 *dev, uint8_t command);
 static void read_calibration(MS5607 *dev);
@@ -42,60 +39,6 @@ void ms5607_init(MS5607 *dev) {
   read_calibration(dev);
 }
 
-// void ms5607_read_raw_pres_temp(MS5607  *dev, int32_t *pressure_raw,
-//                               int32_t *temperature_raw) {
-//  uint32_t wait_time;
-//  uint8_t command;
-//  uint8_t rec[3] = {0};
-//
-//  // figure out how many ticks a conversion needs
-//  wait_time = _get_conversion_ticks(dev);
-//
-//  // initiate pressure conversion
-//  command = COMMAND_CONVERT_D1_BASE + (dev->osr * 2);
-//  _ms_write_command(dev, command);
-//
-//  // wait till the conversion is done
-//  osDelay(wait_time);
-//
-//  // read out raw pressure value
-//  _ms_read_bytes(dev, COMMAND_ADC_READ, rec, 3);
-//  *pressure_raw = (rec[0] << 16) | (rec[1] << 8) | rec[2];
-//
-//  command = COMMAND_CONVERT_D2_BASE + (dev->osr * 2);
-//  _ms_write_command(dev, command);
-//
-//  // wait till the conversion is done
-//  osDelay(wait_time);
-//
-//  // read out raw pressure value
-//  _ms_read_bytes(dev, COMMAND_ADC_READ, rec, 3);
-//  *temperature_raw = (rec[0] << 16) | (rec[1] << 8) | rec[2];
-//}
-//
-// void ms5607_read_pres_temp(MS5607  *dev, int32_t *temperature,
-//                           int32_t *pressure) {
-//  int32_t pressure_raw;
-//  int32_t temperature_raw;
-//
-//  ms5607_read_raw_pres_temp(dev, &pressure_raw, &temperature_raw);
-//
-//  // Calculate real values with coefficients
-//  int64_t dT;
-//  int64_t OFF, SENS;
-//
-//  dT = temperature_raw - ((int32_t)dev->coefficients[4] << 8);
-//  /* Temperature in 2000  = 20.00° C */
-//  *temperature = (int32_t)2000 + (dT * dev->coefficients[5] >> 23);
-//
-//  OFF = ((int64_t)dev->coefficients[1] << 17) +
-//        ((dev->coefficients[3] * dT) >> 6);
-//  SENS = ((int64_t)dev->coefficients[0] << 16) +
-//         ((dev->coefficients[2] * dT) >> 7);
-//  /* Pressure in 110002 = 1100.02 mbar */
-//  *pressure = (int32_t)((((pressure_raw * SENS) >> 21) - OFF) >> 15);
-//}
-
 void ms5607_prepare_temp(MS5607 *dev) {
   uint8_t command;
   dev->data = MS5607_TEMPERATURE;
@@ -110,29 +53,6 @@ void ms5607_prepare_pres(MS5607 *dev) {
   ms_write_command(dev, command);
 }
 
-// void ms5607_read_pres(MS5607  *dev, int32_t *pressure) {
-//  int64_t OFF, SENS;
-//
-//  _ms5607_read_pres_raw(dev);
-//
-//  // Calculate real values with coefficients
-//
-//  OFF = ((int64_t)dev->coefficients[1] << 17) +
-//        ((dev->coefficients[3] * dev->dT) >> 6);
-//  SENS = ((int64_t)dev->coefficients[0] << 16) +
-//         ((dev->coefficients[2] * dev->dT) >> 7);
-//  /* Pressure in 110002 = 1100.02 mbar */
-//  *pressure = (int32_t)((((dev->pressure * SENS) >> 21) - OFF) >> 15);
-//}
-
-// void ms5607_read_temp(MS5607  *dev, int32_t *temperature) {
-//
-//  _ms5607_read_temp_raw(dev);
-//
-////  // Calculate real values with coefficients
-//
-//}
-
 /**
  *
  * @param dev
@@ -140,8 +60,7 @@ void ms5607_prepare_pres(MS5607 *dev) {
  * @param pressure
  * @return true if reading successful
  */
-bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature,
-                          int32_t *pressure) {
+bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature, int32_t *pressure) {
   if (i2c1_busy || i2c2_busy) return false;
   int64_t OFF, SENS;
   int64_t dT;
@@ -150,13 +69,11 @@ bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature,
   temp = (dev->raw_temp[0] << 16) + (dev->raw_temp[1] << 8) + dev->raw_temp[2];
   dT = temp - ((int32_t)dev->coefficients[4] << 8);
   /* Temperature in 2000  = 20.00° C */
-  *temperature = (int32_t)2000 + (dT * dev->coefficients[5] >> 23);
+  *temperature = (int32_t)(2000 + (dT * dev->coefficients[5] >> 23));
 
   pres = (dev->raw_pres[0] << 16) + (dev->raw_pres[1] << 8) + dev->raw_pres[2];
-  OFF = ((int64_t)dev->coefficients[1] << 17) +
-        ((dev->coefficients[3] * dT) >> 6);
-  SENS = ((int64_t)dev->coefficients[0] << 16) +
-         ((dev->coefficients[2] * dT) >> 7);
+  OFF = ((int64_t)dev->coefficients[1] << 17) + ((dev->coefficients[3] * dT) >> 6);
+  SENS = ((int64_t)dev->coefficients[0] << 16) + ((dev->coefficients[2] * dT) >> 7);
   /* Pressure in 110002 = 1100.02 mbar */
   *pressure = (int32_t)((((pres * SENS) >> 21) - OFF) >> 15);
   return true;
@@ -202,35 +119,20 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 
 /** Private Function Definitions **/
 
-static uint32_t get_conversion_ticks(MS5607 *dev) {
-  uint32_t time;
-  time = (BARO_CONVERSION_TIME_OSR_BASE * ((float)dev->osr + 1) *
-          osKernelGetTickFreq()) /
-         1000;
-  if (time < 1) time = 1;
-  return time;
-}
-
 // Read bytes
-static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData,
-                          uint16_t size) {
-  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
-                          BARO_I2C_TIMEOUT);
-  HAL_I2C_Master_Receive(dev->i2c_bus, dev->i2c_address, pData, size,
-                         BARO_I2C_TIMEOUT);
+static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t size) {
+  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1, BARO_I2C_TIMEOUT);
+  HAL_I2C_Master_Receive(dev->i2c_bus, dev->i2c_address, pData, size, BARO_I2C_TIMEOUT);
 }
 
-static void ms_read_bytes_it(MS5607 *dev, uint8_t command, uint8_t *pData,
-                             uint16_t size) {
-  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
-                          BARO_I2C_TIMEOUT);
+static void ms_read_bytes_it(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t size) {
+  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1, BARO_I2C_TIMEOUT);
   HAL_I2C_Master_Receive_IT(dev->i2c_bus, dev->i2c_address, pData, size);
 }
 
 // Write command
 static void ms_write_command(MS5607 *dev, uint8_t command) {
-  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1,
-                          BARO_I2C_TIMEOUT);
+  HAL_I2C_Master_Transmit(dev->i2c_bus, dev->i2c_address, &command, 1, BARO_I2C_TIMEOUT);
 }
 
 static void read_calibration(MS5607 *dev) {

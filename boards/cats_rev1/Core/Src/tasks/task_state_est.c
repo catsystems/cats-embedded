@@ -44,7 +44,7 @@ static void median_filter(median_filter_t *filter_data, state_estimation_data_t 
  * @param argument: Not used
  * @retval None
  */
-void task_state_est(void *argument) {
+_Noreturn void task_state_est(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
   /* local flight phase */
@@ -99,7 +99,7 @@ void task_state_est(void *argument) {
     /* Reset IMU when we go from moving to IDLE */
     if ((fsm_state.flight_state == IDLE) && (fsm_state.flight_state != old_fsm_enum)) {
       reset_kalman(&filter, average_pressure);
-      calibrate_imu(&average_imu, &calibration, &elimination);
+      calibrate_imu(&average_imu, &calibration);
     }
 
     /* Remove Accel Data when we enter apogee for the KF */
@@ -130,7 +130,7 @@ void task_state_est(void *argument) {
     }
 
     /* Do a Kalman Step */
-    kalman_step(&filter, &state_data, &elimination, &fsm_state.flight_state);
+    kalman_step(&filter, &state_data, &elimination, fsm_state.flight_state);
 
     /* write the Data into the global variable */
     global_kf_data.height = (float)filter.x_bar.pData[0];
@@ -226,9 +226,9 @@ static void transform_data(state_estimation_data_t *state_data, kalman_filter_t 
   state_data->pressure[1] = (float)(global_baro[1].pressure);
   state_data->pressure[2] = (float)(global_baro[2].pressure);
 
-  state_data->temperature[0] = global_baro[0].temperature / 100.f;
-  state_data->temperature[1] = global_baro[1].temperature / 100.f;
-  state_data->temperature[2] = global_baro[2].temperature / 100.f;
+  state_data->temperature[0] = (float)global_baro[0].temperature / 100.f;
+  state_data->temperature[1] = (float)global_baro[1].temperature / 100.f;
+  state_data->temperature[2] = (float)global_baro[2].temperature / 100.f;
 
   /* Add Sensor Noise if asked to */
   if (fsm_state->flight_state == THRUSTING_1) {
@@ -289,10 +289,11 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
   average_imu_from_global.acc_y = 0;
   average_imu_from_global.acc_z = 0;
   for (int i = 0; i < 3; i++) {
-    if (elimination->faulty_imu[i] == 0)
+    if (elimination->faulty_imu[i] == 0 && elimination->num_faulty_imus < 3) {
       average_imu_from_global.acc_x += global_imu[i].acc_x / (3 - elimination->num_faulty_imus);
-    average_imu_from_global.acc_y += global_imu[i].acc_y / (3 - elimination->num_faulty_imus);
-    average_imu_from_global.acc_z += global_imu[i].acc_z / (3 - elimination->num_faulty_imus);
+      average_imu_from_global.acc_y += global_imu[i].acc_y / (3 - elimination->num_faulty_imus);
+      average_imu_from_global.acc_z += global_imu[i].acc_z / (3 - elimination->num_faulty_imus);
+    }
   }
 
   /* Write this into the rolling IMU array */
@@ -322,7 +323,7 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
    */
   int32_t global_average_pressure = 0;
   for (int i = 0; i < 3; i++) {
-    if (elimination->faulty_baro[i] == 0)
+    if (elimination->faulty_baro[i] == 0 && elimination->num_faulty_baros < 3)
       global_average_pressure += global_baro[i].pressure / (3 - elimination->num_faulty_baros);
   }
 
