@@ -13,7 +13,7 @@ typedef struct {
   uint32_t used;
   uint32_t size;
   uint8_t* data;
-  osMutexId_t mutex;
+  volatile bool mutex;
 } fifo_t;
 
 

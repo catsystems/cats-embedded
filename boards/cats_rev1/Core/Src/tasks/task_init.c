@@ -7,6 +7,7 @@
 #include "config/globals.h"
 #include "util/log.h"
 #include "drivers/adc.h"
+#include "drivers/eeprom_emul.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "util/actions.h"
@@ -74,6 +75,7 @@ static void init_timers();
 
 static void create_event_map();
 
+
 /** Exported Function Definitions **/
 
 _Noreturn void task_init(__attribute__((unused)) void *argument) {
@@ -138,10 +140,28 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
   log_disable();
   /* Infinite loop */
+  HAL_FLASH_Unlock();
+//  EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
+//  for(int i = 0; i < 3000; i++){
+//	  ee_status = EE_WriteVariable32bits(12, 12);
+//	  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) {
+//		  ee_status|= EE_CleanUp();
+//	  }
+//  }
+//
+//  uint32_t data[4];
+//  EE_ReadVariable32bits(5,&data[0]);
+//  EE_ReadVariable32bits(6,&data[1]);
+//  EE_ReadVariable32bits(7,&data[2]);
+//  EE_ReadVariable32bits(4,&data[3]);
+
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
+
+
+
     osDelay(100);
   }
 }
