@@ -18,7 +18,7 @@
 
 uint8_t status_buzzer(buzzer_status_e status);
 
-uint32_t pitch_lookup[8] = {
+uint32_t     pitch_lookup[8] = {
     2349,  // D	A
     2489,  // D#  B
     2637,  // E 	C

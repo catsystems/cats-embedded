@@ -85,10 +85,6 @@ dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 uint32_t num_timers = 2;
 cats_timer_t *ev_timers = NULL;
 
-/** Initialization End Time **/
-
-timestamp_t init_end_time = {0};
-
 /** Recorder Queue **/
 osMessageQueueId_t rec_queue;
 osMessageQueueId_t event_queue;

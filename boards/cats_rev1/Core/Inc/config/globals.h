@@ -57,10 +57,6 @@ extern dt_telemetry_trigger_t dt_telemetry_trigger;
 extern uint32_t num_timers;
 extern cats_timer_t *ev_timers;
 
-/** Initialization End Time **/
-
-extern timestamp_t init_end_time;
-
 /** Recorder Queue **/
 extern osMessageQueueId_t rec_queue;
 extern osMessageQueueId_t event_queue;

@@ -123,8 +123,6 @@ _Noreturn void task_init(void *argument) {
   init_tasks();
   log_info("Task initialization complete.");
 
-  init_end_time = osKernelGetTickCount();
-
   servo_set_position(&SERVO1, 0);
   servo_set_position(&SERVO2, 0);
 
@@ -139,9 +137,8 @@ _Noreturn void task_init(void *argument) {
   // Fifo init
   fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
   log_disable();
-
   /* Infinite loop */
-  for (;;) {
+  while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
