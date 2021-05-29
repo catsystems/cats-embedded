@@ -18,7 +18,6 @@
 #include "tasks/task_recorder.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_peripherals.h"
-#include "tasks/task_flash_reader.h"
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_receiver.h"
 #include "tasks/task_health_monitor.h"
@@ -51,7 +50,6 @@ SET_TASK_PARAMS(task_flight_fsm, 256)
 SET_TASK_PARAMS(task_drop_test_fsm, 256)
 SET_TASK_PARAMS(task_peripherals, 256)
 SET_TASK_PARAMS(task_recorder, 256)
-SET_TASK_PARAMS(task_flash_reader, 256)
 SET_TASK_PARAMS(task_usb_communicator, 1024)
 
 /** Private Constants **/
@@ -97,7 +95,7 @@ _Noreturn void task_init(void *argument) {
   cc_set_recorder_mask(UINT32_MAX);
   cc_set_boot_state(CATS_FLIGHT);
 
-   osDelay(10);
+  osDelay(10);
 
   uint16_t num_flights = cs_get_num_recorded_flights();
   log_trace("Number of recorded flights: %hu", num_flights);
@@ -266,8 +264,6 @@ static void init_tasks() {
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
     } break;
     case CATS_CONFIG:
-      /* creation of task_flash_reader */
-      osThreadNew(task_flash_reader, NULL, &task_flash_reader_attributes);
       break;
     case CATS_TIMER:
     case CATS_DROP:
