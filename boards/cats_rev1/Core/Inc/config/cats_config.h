@@ -32,9 +32,6 @@ void cc_clear();
 cats_boot_state cc_get_boot_state();
 void cc_set_boot_state(cats_boot_state boot_state);
 
-bool cc_get_clear_flash();
-void cc_set_clear_flash(bool clear_flash);
-
 /* Control Settings accessor */
 control_settings_t cc_get_control_settings();
 void cc_set_apogee_timer(float apogee_timer);

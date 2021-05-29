@@ -96,20 +96,8 @@ _Noreturn void task_init(void *argument) {
   //  cc_set_recorder_mask(selected_entry_types);
   cc_set_recorder_mask(UINT32_MAX);
   cc_set_boot_state(CATS_FLIGHT);
-  cc_set_clear_flash(false);
 
-  /* After this point the cats config is either updated or the old config is
-   * loaded from the flash. */
-  cs_load();
-  if (cc_get_boot_state() != CATS_CONFIG && cc_get_clear_flash() == true) {
-    /* TODO: when we know how many logs we have we don't have to erase the
-     * entire chip */
-    log_info("Erasing chip...");
-    w25qxx_erase_chip();
-    cs_init(CATS_STATUS_SECTOR, 0);
-    cs_save();
-  }
-  osDelay(10);
+   osDelay(10);
 
   uint16_t num_flights = cs_get_num_recorded_flights();
   log_trace("Number of recorded flights: %hu", num_flights);
@@ -197,6 +185,7 @@ static void init_devices() {
   osDelay(10);
   cs_load();
 
+  /* TODO: throw a warning instead of setting to 0 */
   if (cs_get_num_recorded_flights() > 32) {
     cs_init(CATS_STATUS_SECTOR, 0);
     cs_save();

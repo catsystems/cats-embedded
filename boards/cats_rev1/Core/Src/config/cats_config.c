@@ -15,7 +15,6 @@ typedef struct {
   /* State according to /concepts/v1/cats_fsm.jpg */
   cats_boot_state boot_state;
   control_settings_t control_settings;
-  bool clear_flash;
   /* A bit mask that specifies which readings to log to the flash */
   uint32_t recorder_mask;
 } cats_config_t;
@@ -46,10 +45,8 @@ const uint32_t CATS_STATUS_SECTOR = 1;
 
 /** cats config initialization **/
 
-void cc_init(cats_boot_state boot_state, bool clear_flash,
-             uint32_t recorder_mask) {
+void cc_init(cats_boot_state boot_state, bool clear_flash, uint32_t recorder_mask) {
   global_cats_config.boot_state = boot_state;
-  global_cats_config.clear_flash = clear_flash;
   global_cats_config.recorder_mask = recorder_mask;
 }
 
@@ -58,68 +55,43 @@ void cc_clear() { memset(&global_cats_config, 0, sizeof(global_cats_config)); }
 /** accessor functions **/
 
 cats_boot_state cc_get_boot_state() { return global_cats_config.boot_state; }
-void cc_set_boot_state(cats_boot_state boot_state) {
-  global_cats_config.boot_state = boot_state;
-}
-
-bool cc_get_clear_flash() { return global_cats_config.clear_flash; }
-void cc_set_clear_flash(bool clear_flash) {
-  global_cats_config.clear_flash = clear_flash;
-}
+void cc_set_boot_state(cats_boot_state boot_state) { global_cats_config.boot_state = boot_state; }
 
 uint32_t cc_get_recorder_mask() { return global_cats_config.recorder_mask; }
-void cc_set_recorder_mask(uint32_t recorder_mask) {
-  global_cats_config.recorder_mask = recorder_mask;
-}
+void cc_set_recorder_mask(uint32_t recorder_mask) { global_cats_config.recorder_mask = recorder_mask; }
 
-control_settings_t cc_get_control_settings() {
-  return global_cats_config.control_settings;
-}
-float cc_get_apogee_timer() {
-  return global_cats_config.control_settings.apogee_timer;
-}
-float cc_get_second_stage_timer() {
-  return global_cats_config.control_settings.second_stage_timer;
-}
-float cc_get_liftoff_acc_threshold() {
-  return global_cats_config.control_settings.liftoff_acc_threshold;
-}
-void cc_set_apogee_timer(float apogee_timer) {
-  global_cats_config.control_settings.apogee_timer = apogee_timer;
-}
+control_settings_t cc_get_control_settings() { return global_cats_config.control_settings; }
+float cc_get_apogee_timer() { return global_cats_config.control_settings.apogee_timer; }
+float cc_get_second_stage_timer() { return global_cats_config.control_settings.second_stage_timer; }
+float cc_get_liftoff_acc_threshold() { return global_cats_config.control_settings.liftoff_acc_threshold; }
+void cc_set_apogee_timer(float apogee_timer) { global_cats_config.control_settings.apogee_timer = apogee_timer; }
 void cc_set_second_stage_timer(float second_stage_timer) {
   global_cats_config.control_settings.second_stage_timer = second_stage_timer;
 }
 void cc_set_liftoff_acc_threshold(float liftoff_acc_threshold) {
-  global_cats_config.control_settings.liftoff_acc_threshold =
-      liftoff_acc_threshold;
+  global_cats_config.control_settings.liftoff_acc_threshold = liftoff_acc_threshold;
 }
 
 /** persistence functions **/
 
 void cc_load() {
   /* TODO: global_cats_config can't be larger than page size */
-  w25qxx_read_page((uint8_t *)(&global_cats_config), CATS_CONFIG_SECTOR, 0,
-                   sizeof(global_cats_config));
+  w25qxx_read_page((uint8_t *)(&global_cats_config), CATS_CONFIG_SECTOR, 0, sizeof(global_cats_config));
 }
 
 void cc_save() {
   /* erase sector before writing to it */
   w25qxx_erase_sector(CATS_CONFIG_SECTOR);
   /* TODO: global_cats_config can't be larger than page size */
-  w25qxx_write_sector((uint8_t *)(&global_cats_config), CATS_CONFIG_SECTOR, 0,
-                      sizeof(global_cats_config));
+  w25qxx_write_sector((uint8_t *)(&global_cats_config), CATS_CONFIG_SECTOR, 0, sizeof(global_cats_config));
 }
 
 /** debug functions **/
 
 void cc_print() {
-  static const char *BOOT_STATE_STRING[] = {"CATS_INVALID", "CATS_IDLE",
-                                            "CATS_CONFIG",  "CATS_TIMER",
-                                            "CATS_DROP",    "CATS_FLIGHT"};
-  log_info("Boot State: %s, Clear Flash: %hu",
-           BOOT_STATE_STRING[global_cats_config.boot_state],
-           global_cats_config.clear_flash);
+  static const char *BOOT_STATE_STRING[] = {"CATS_INVALID", "CATS_IDLE", "CATS_CONFIG",
+                                            "CATS_TIMER",   "CATS_DROP", "CATS_FLIGHT"};
+  log_info("Boot State: %s", BOOT_STATE_STRING[global_cats_config.boot_state]);
 }
 
 /** cats status initialization **/
@@ -135,17 +107,14 @@ void cs_clear() { memset(&global_cats_status, 0, sizeof(global_cats_status)); }
 
 /** accessor functions **/
 
-uint16_t cs_get_last_recorded_sector() {
-  return global_cats_status.last_recorded_sector;
-}
+uint16_t cs_get_last_recorded_sector() { return global_cats_status.last_recorded_sector; }
 void cs_set_last_recorded_sector(uint16_t last_recorded_sector) {
   global_cats_status.last_recorded_sector = last_recorded_sector;
   /* Increment the last element of last_sectors_of_flight_recordings */
   /* 32 is good here because we are reducing it by 1 when indexing */
-  if (global_cats_status.num_recorded_flights > 0 &&
-      global_cats_status.num_recorded_flights <= 32) {
-    global_cats_status.last_sectors_of_flight_recordings
-        [global_cats_status.num_recorded_flights - 1] = last_recorded_sector;
+  if (global_cats_status.num_recorded_flights > 0 && global_cats_status.num_recorded_flights <= 32) {
+    global_cats_status.last_sectors_of_flight_recordings[global_cats_status.num_recorded_flights - 1] =
+        last_recorded_sector;
   }
 }
 
@@ -156,27 +125,21 @@ uint16_t cs_get_last_sector_of_flight(uint16_t flight_idx) {
     return 0;
 }
 
-uint16_t cs_get_num_recorded_flights() {
-  return global_cats_status.num_recorded_flights;
-}
+uint16_t cs_get_num_recorded_flights() { return global_cats_status.num_recorded_flights; }
 void cs_set_num_recorded_flights(uint16_t num_recorded_flights) {
   global_cats_status.num_recorded_flights = num_recorded_flights;
 }
 
 void cs_set_max_altitude(float altitude) {
-  global_cats_status.max_altitude[global_cats_status.num_recorded_flights - 1] =
-      altitude;
+  global_cats_status.max_altitude[global_cats_status.num_recorded_flights - 1] = altitude;
 }
 
 void cs_set_max_velocity(float velocity) {
-  global_cats_status.max_velocity[global_cats_status.num_recorded_flights - 1] =
-      velocity;
+  global_cats_status.max_velocity[global_cats_status.num_recorded_flights - 1] = velocity;
 }
 
 void cs_set_max_acceleration(float acceleration) {
-  global_cats_status
-      .max_acceleration[global_cats_status.num_recorded_flights - 1] =
-      acceleration;
+  global_cats_status.max_acceleration[global_cats_status.num_recorded_flights - 1] = acceleration;
 }
 
 float cs_get_max_acceleration(uint32_t flight) {
@@ -201,30 +164,26 @@ float cs_get_max_velocity(uint32_t flight) {
 }
 
 void cs_set_flight_phase(flight_fsm_e state) {
-  global_cats_status
-      .last_fsm_state[global_cats_status.num_recorded_flights - 1] = state;
+  global_cats_status.last_fsm_state[global_cats_status.num_recorded_flights - 1] = state;
 }
 
 /** persistence functions **/
 
 void cs_load() {
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_read_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0,
-                     sizeof(global_cats_status));
+  w25qxx_read_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
 }
 
 void cs_save() {
   /* erase sector before writing to it */
   w25qxx_erase_sector(CATS_STATUS_SECTOR);
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_write_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0,
-                      sizeof(global_cats_status));
+  w25qxx_write_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
 }
 
 /** debug functions **/
 
 void cs_print() {
-  log_info("Config: Last recorded sector: %u; Number of recorded flights: %u",
-           global_cats_status.last_recorded_sector,
+  log_info("Config: Last recorded sector: %u; Number of recorded flights: %u", global_cats_status.last_recorded_sector,
            global_cats_status.num_recorded_flights);
 }
