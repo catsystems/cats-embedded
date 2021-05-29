@@ -91,6 +91,7 @@ const clicmd_t cmdTable[] = {
 };
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
+
 static void cliErase(const char *cmdName, char *cmdline) {
   log_raw("Erasing the flash, this might take a while...");
   w25qxx_erase_chip();
@@ -169,7 +170,7 @@ void cliPrint(const char *str) {
   }
 }
 
-static void cliPrompt(void) { cliPrint("\r\n# "); }
+static void cliPrompt(void) { cliPrint("\r\n> "); }
 
 void cliPrintLinefeed(void) { cliPrint("\r\n"); }
 
@@ -351,13 +352,17 @@ static void processCharacterInteractive(const char c) {
       i = 0; /* Redraw prompt */
     }
     for (; i < bufferIndex; i++) cliWrite(cliBuffer[i]);
-  } else if (!bufferIndex && c == 4) {  // CTRL-D
-    cliExit("", cliBuffer);
-    return;
-  } else if (c == 12) {  // NewPage / CTRL-L
+  } else if (c == 4) {  // CTRL-D - clear screen
     // clear screen
     cliPrint("\033[2J\033[1;1H");
     cliPrompt();
+  } else if (c == 12) {  // CTRL-L - toggle logging
+    if (log_is_enabled()) {
+      log_disable();
+      cliPrompt();
+    } else {
+      log_enable();
+    }
   } else if (c == '\b') {
     // backspace
     if (bufferIndex) {
