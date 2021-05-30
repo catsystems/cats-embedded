@@ -328,7 +328,7 @@ static void create_event_map() {
   event_action_map = calloc(9, sizeof(event_action_map_elem_t));
 
   // Moving
-  /*event_action_map[EV_MOVING].num_actions = 1;
+  /*vent_action_map[EV_MOVING].num_actions = 1;
   event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
   event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;*/

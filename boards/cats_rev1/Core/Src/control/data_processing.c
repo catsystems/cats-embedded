@@ -80,5 +80,5 @@ float median(float array[], int array_size) {
   float dummy_array[array_size];
   memcpy(dummy_array, array, array_size * sizeof(float));
   mergeSort(dummy_array, array_size);
-  return array[array_size / 2];
+  return dummy_array[array_size / 2];
 }
