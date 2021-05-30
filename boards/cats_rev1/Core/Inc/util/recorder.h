@@ -60,7 +60,7 @@ typedef struct {
   float filtered_altitude_AGL;
 } filtered_data_info_t;
 
-typedef struct {
+typedef union {
   flight_fsm_e flight_state;
   drop_test_fsm_e drop_state;
 } flight_state_u;
