@@ -182,6 +182,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case FLIGHT_INFO:
       rec_elem_size += sizeof(rec_elem->u.flight_info);
       break;
+    case FILTERED_DATA_INFO:
+      rec_elem_size += sizeof(rec_elem->u.filtered_data_info);
+      break;
     case FLIGHT_STATE:
       rec_elem_size += sizeof(rec_elem->u.flight_state);
       break;

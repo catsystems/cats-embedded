@@ -31,6 +31,7 @@ typedef enum {
   BARO1 = 0x10,
   BARO2 = 0x20,
   FLIGHT_INFO = 0x40,
+  FILTERED_DATA_INFO = 0x60,
   FLIGHT_STATE = 0x80,
   COVARIANCE_INFO = 0x100,
   SENSOR_INFO = 0x200,
@@ -52,6 +53,12 @@ typedef struct {
   float acceleration;
   float measured_altitude_AGL;
 } flight_info_t;
+
+typedef struct {
+    timestamp_t ts;
+    float filtered_acceleration;
+    float filtered_altitude_AGL;
+} filtered_data_info_t;
 
 typedef struct {
   flight_fsm_e flight_state;
@@ -84,6 +91,7 @@ typedef union {
   imu_data_t imu;
   baro_data_t baro;
   flight_info_t flight_info;
+  filtered_data_info_t filtered_data_info;
   flight_state_t flight_state;
   covariance_info_t covariance_info;
   sensor_info_t sensor_info;

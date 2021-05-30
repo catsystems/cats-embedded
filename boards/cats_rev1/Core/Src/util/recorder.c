@@ -42,6 +42,10 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
         // log_warn("logging FLIGHT_INFO");
         e.u.flight_info = *((flight_info_t *)rec_value);
         break;
+        case FILTERED_DATA_INFO:
+        // log_warn("logging FILTERED_DATA_INFO");
+        e.u.filtered_data_info = *((filtered_data_info_t *)rec_value);
+        break;
       case FLIGHT_STATE:
         // log_warn("logging FLIGHT_STATE");
         e.u.flight_state = *((flight_state_t *)rec_value);

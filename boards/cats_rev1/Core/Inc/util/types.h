@@ -58,8 +58,8 @@ typedef struct {
 } sensor_elimination_t;
 
 typedef struct {
-  float data[6][MEDIAN_FILTER_SIZE];
-  float estimate[6];
+  float acc_data[3][MEDIAN_FILTER_SIZE];
+  float height_AGL_data[3][MEDIAN_FILTER_SIZE];
   uint8_t counter;
 } median_filter_t;
 
@@ -144,10 +144,14 @@ typedef struct {
   float32_t H_full_T_data[9];
   float32_t H_eliminated_data[6];
   float32_t H_eliminated_T_data[6];
+  float32_t H_2_eliminated_data[3];
+  float32_t H_2_eliminated_T_data[3];
   float32_t R_full_data[9];
   float32_t R_eliminated_data[4];
+  float32_t R_2_eliminated_data[1];
   float32_t K_full_data[9];
   float32_t K_eliminated_data[6];
+  float32_t K_2_eliminated_data[3];
   float32_t x_bar_data[3];
   float32_t P_bar_data[9];
   float32_t x_hat_data[3];
@@ -162,10 +166,14 @@ typedef struct {
   arm_matrix_instance_f32 H_full_T;
   arm_matrix_instance_f32 H_eliminated;
   arm_matrix_instance_f32 H_eliminated_T;
+  arm_matrix_instance_f32 H_2_eliminated;
+  arm_matrix_instance_f32 H_2_eliminated_T;
   arm_matrix_instance_f32 R_full;
   arm_matrix_instance_f32 R_eliminated;
+  arm_matrix_instance_f32 R_2_eliminated;
   arm_matrix_instance_f32 K_full;
   arm_matrix_instance_f32 K_eliminated;
+  arm_matrix_instance_f32 K_2_eliminated;
   arm_matrix_instance_f32 x_bar;
   arm_matrix_instance_f32 P_bar;
   arm_matrix_instance_f32 x_hat;
