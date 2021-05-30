@@ -8,5 +8,5 @@
 //#define INCLUDE_SPIKES
 //#define INCLUDE_OFFSET
 
-#define USE_MEDIAN_FILTER
+//#define USE_MEDIAN_FILTER
 #define MEDIAN_FILTER_SIZE 9

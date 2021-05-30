@@ -49,7 +49,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
     /* Update Imu data depending on the sensor elimination data */
     for (int i = 0; i < 3; i++) {
       if (global_elimination_data.faulty_imu[i] == 0) {
-        local_imu = global_imu[i];
+        local_imu = global_imu[i + 1];
         break;
       }
     }

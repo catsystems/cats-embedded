@@ -75,7 +75,6 @@ static void init_timers();
 
 static void create_event_map();
 
-
 /** Exported Function Definitions **/
 
 _Noreturn void task_init(__attribute__((unused)) void *argument) {
@@ -141,26 +140,24 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_disable();
   /* Infinite loop */
   HAL_FLASH_Unlock();
-//  EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
-//  for(int i = 0; i < 3000; i++){
-//	  ee_status = EE_WriteVariable32bits(12, 12);
-//	  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) {
-//		  ee_status|= EE_CleanUp();
-//	  }
-//  }
-//
-//  uint32_t data[4];
-//  EE_ReadVariable32bits(5,&data[0]);
-//  EE_ReadVariable32bits(6,&data[1]);
-//  EE_ReadVariable32bits(7,&data[2]);
-//  EE_ReadVariable32bits(4,&data[3]);
+  //  EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
+  //  for(int i = 0; i < 3000; i++){
+  //	  ee_status = EE_WriteVariable32bits(12, 12);
+  //	  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) {
+  //		  ee_status|= EE_CleanUp();
+  //	  }
+  //  }
+  //
+  //  uint32_t data[4];
+  //  EE_ReadVariable32bits(5,&data[0]);
+  //  EE_ReadVariable32bits(6,&data[1]);
+  //  EE_ReadVariable32bits(7,&data[2]);
+  //  EE_ReadVariable32bits(4,&data[3]);
 
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
-
-
 
     osDelay(100);
   }
@@ -330,6 +327,13 @@ static void create_event_map() {
   /* TODO: where to free this? */
   event_action_map = calloc(9, sizeof(event_action_map_elem_t));
 
+  // Moving
+  /*event_action_map[EV_MOVING].num_actions = 1;
+  event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
+  event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;*/
+
+  // Idle
   event_action_map[EV_IDLE].num_actions = 1;
   event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
