@@ -129,9 +129,9 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     filtered_data_info_t filtered_data_info = {
         .ts = osKernelGetTickCount(),
         .filtered_acceleration =
-            (state_data.acceleration[0] + state_data.acceleration[1] + state_data.acceleration[2]) / 3,
+            (state_data.acceleration[0] + state_data.acceleration[1] + state_data.acceleration[2]) / 3.0f,
         .filtered_altitude_AGL =
-            (state_data.calculated_AGL[0] + state_data.calculated_AGL[1] + state_data.calculated_AGL[2]) / 3};
+            (state_data.calculated_AGL[0] + state_data.calculated_AGL[1] + state_data.calculated_AGL[2]) / 3.0f};
     record(FILTERED_DATA_INFO, &filtered_data_info);
 #endif
 
