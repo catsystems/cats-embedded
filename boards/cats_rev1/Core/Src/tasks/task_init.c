@@ -368,6 +368,12 @@ static void create_event_map() {
   event_action_map[EV_TIMER_2].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_TWO];
   event_action_map[EV_TIMER_2].action_list[0].func_arg = 1;
+
+  // Touchdown
+  event_action_map[EV_TOUCHDOWN].num_actions = 1;
+  event_action_map[EV_TOUCHDOWN].action_list = calloc(1, sizeof(peripheral_act_t));
+  event_action_map[EV_TOUCHDOWN].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
+  event_action_map[EV_TOUCHDOWN].action_list[0].func_arg = REC_OFF;
   /* ................ */
 }
 

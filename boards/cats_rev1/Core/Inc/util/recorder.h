@@ -50,14 +50,17 @@ typedef struct {
   timestamp_t ts;
   float height;
   float velocity;
-  float acceleration;
-  float measured_altitude_AGL;
+  float acceleration; /* Acceleration with removed offset from inside the KF */
 } flight_info_t;
 
 typedef struct {
   timestamp_t ts;
-  float filtered_acceleration;
-  float filtered_altitude_AGL;
+  float measured_altitude_AGL; /* Raw Altitude computed from Baro Data averaged */
+  float measured_acceleration; /* Raw Altitude computed from Acceleration Data averaged but turned into the right
+                                  coordinate frame averaged */
+  float filtered_altitude_AGL; /* Median Filtered Values from Baro Data averaged */
+  float filtered_acceleration; /* Median Filtered Values from the acceleration but turned into the right coordinate
+                                  frame averaged */
 } filtered_data_info_t;
 
 typedef union {

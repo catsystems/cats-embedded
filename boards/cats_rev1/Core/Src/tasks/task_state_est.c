@@ -9,15 +9,12 @@
 #include "control/kalman_filter.h"
 #include "control/sensor_elimination.h"
 #include "control/calibration.h"
-#include "util/log.h"
-#include "util/types.h"
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "control/orientation_kf.h"
 #include "control/data_processing.h"
 
 #include <math.h>
-#include <stdlib.h>
 
 /** Private Constants **/
 
@@ -128,6 +125,8 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     median_filter(&filter_data, &state_data);
     filtered_data_info_t filtered_data_info = {
         .ts = osKernelGetTickCount(),
+        .measured_altitude_AGL = raw_altitude_AGL,
+        .measured_acceleration = raw_accel,
         .filtered_acceleration =
             (state_data.acceleration[0] + state_data.acceleration[1] + state_data.acceleration[2]) / 3.0f,
         .filtered_altitude_AGL =
@@ -185,8 +184,12 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     flight_info_t flight_info = {.ts = ts,
                                  .height = filter.x_bar.pData[0],
                                  .velocity = filter.x_bar.pData[1],
-                                 .acceleration = raw_accel,
-                                 .measured_altitude_AGL = raw_altitude_AGL};
+                                 .acceleration = filtered_data_info.filtered_acceleration + filter.x_bar.pData[1]};
+    if (fsm_state.flight_state >= APOGEE) {
+      flight_info.height = filter.x_bar.pData[0];
+      flight_info.velocity = filter.x_bar.pData[1];
+      flight_info.acceleration = filter.x_bar.pData[2];
+    }
     record(FLIGHT_INFO, &flight_info);
 
     log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
