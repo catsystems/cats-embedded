@@ -183,10 +183,24 @@ typedef struct {
 } kalman_filter_t;
 
 typedef struct {
-  float liftoff_acc_threshold;
-  float apogee_timer;
-  float second_stage_timer;
+  uint16_t liftoff_acc_threshold;
+  uint16_t main_altitude;
 } control_settings_t;
+
+typedef struct {
+  uint16_t duration;
+  uint8_t start_event;
+  uint8_t end_event;
+} config_timer_t;
+
+typedef struct {
+  uint16_t action_pointer;
+  int16_t arg;
+} config_action_t;
+
+typedef struct {
+  config_action_t action[16];
+} config_event_actions_t;
 
 typedef enum {
   CATS_BUZZ_NONE = 0,

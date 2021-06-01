@@ -42,16 +42,16 @@
       .priority = (osPriority_t)osPriorityNormal, \
   };
 
-SET_TASK_PARAMS(task_baro_read, 256)
-SET_TASK_PARAMS(task_imu_read, 256)
-SET_TASK_PARAMS(task_receiver, 256)
-SET_TASK_PARAMS(task_health_monitor, 256)
-SET_TASK_PARAMS(task_state_est, 2048)
+SET_TASK_PARAMS(task_baro_read, 128)
+SET_TASK_PARAMS(task_imu_read, 128)
+SET_TASK_PARAMS(task_receiver, 64)
+SET_TASK_PARAMS(task_health_monitor, 64)
+SET_TASK_PARAMS(task_state_est, 1024)
 SET_TASK_PARAMS(task_flight_fsm, 256)
 SET_TASK_PARAMS(task_drop_test_fsm, 256)
 SET_TASK_PARAMS(task_peripherals, 256)
 SET_TASK_PARAMS(task_recorder, 256)
-SET_TASK_PARAMS(task_usb_communicator, 1024)
+SET_TASK_PARAMS(task_usb_communicator, 256)
 
 /** Private Constants **/
 
@@ -93,8 +93,12 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   //                                  FLIGHT_INFO | COVARIANCE_INFO |
   //                                  SENSOR_INFO;
   //  cc_set_recorder_mask(selected_entry_types);
-  cc_set_recorder_mask(UINT32_MAX);
-  cc_set_boot_state(CATS_FLIGHT);
+  cc_init();
+
+  cc_load();
+
+  global_cats_config.config.recorder_mask = UINT32_MAX;
+  global_cats_config.config.boot_state = CATS_FLIGHT;
 
   osDelay(10);
 
@@ -105,15 +109,9 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   }
 
   /* Check if the FSM configurations make sense */
-  if (cc_get_apogee_timer() < 3) {
-    log_error("Apogee Timer is not configured Properly!");
-  }
-  if (cc_get_second_stage_timer() < 5) {
-    log_error("Second Stage Timer is not configured Properly!");
-  }
-  if (cc_get_liftoff_acc_threshold() < 1500) {
+  if (global_cats_config.config.control_settings.liftoff_acc_threshold < 1500) {
     log_error("Acceleration Threshold is not configured Properly!");
-    cc_set_liftoff_acc_threshold(1499.0f);
+    global_cats_config.config.control_settings.liftoff_acc_threshold = 1500;
   }
 
   osDelay(100);
@@ -137,22 +135,9 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   // Fifo init
   fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
+  fifo_init(&usb_output_fifo, usb_fifo_out_buffer, 256);
   log_disable();
   /* Infinite loop */
-  HAL_FLASH_Unlock();
-  //  EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
-  //  for(int i = 0; i < 3000; i++){
-  //	  ee_status = EE_WriteVariable32bits(12, 12);
-  //	  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) {
-  //		  ee_status|= EE_CleanUp();
-  //	  }
-  //  }
-  //
-  //  uint32_t data[4];
-  //  EE_ReadVariable32bits(5,&data[0]);
-  //  EE_ReadVariable32bits(6,&data[1]);
-  //  EE_ReadVariable32bits(7,&data[2]);
-  //  EE_ReadVariable32bits(4,&data[3]);
 
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
@@ -232,7 +217,7 @@ static void init_communication() {
 }
 
 static void init_tasks() {
-  switch (cc_get_boot_state()) {
+  switch (global_cats_config.config.boot_state) {
     case CATS_FLIGHT: {
 #if (configUSE_TRACE_FACILITY == 1)
       baro_channel = xTraceRegisterString("Baro Channel");
@@ -378,27 +363,20 @@ static void create_event_map() {
 }
 
 static void init_timers() {
-  ev_timers = calloc(num_timers, sizeof(cats_timer_t));
-  /* Timer 1 */
-  ev_timers[0].timer_init_event = EV_LIFTOFF;
-  ev_timers[0].execute_event = EV_TIMER_1;
-  if (cc_get_apogee_timer() < 3) {
-    ev_timers[0].timer_duration_ticks = 10000;
-  } else {
-    ev_timers[0].timer_duration_ticks = (uint32_t)(cc_get_apogee_timer() * 1000);
-  }
 
-  /* Timer 2 */
-  ev_timers[1].timer_init_event = EV_LIFTOFF;
-  ev_timers[1].execute_event = EV_TIMER_2;
-  if (cc_get_apogee_timer() < 5) {
-    ev_timers[1].timer_duration_ticks = 20000;
-  } else {
-    ev_timers[1].timer_duration_ticks = (uint32_t)(cc_get_second_stage_timer() * 1000);
+  uint32_t used_timers = 2;
+  /* Init timers*/
+  for(uint32_t i = 0; i < num_timers; i++){
+	  if(global_cats_config.config.timers[i].start_event && global_cats_config.config.timers[i].end_event){
+		  ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
+		  ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
+		  ev_timers[i].timer_duration_ticks = (uint32_t)global_cats_config.config.timers[i].duration;
+		  used_timers++;
+		}
   }
 
   /* Create Timers */
-  for (uint32_t i = 0; i < num_timers; i++) {
+  for (uint32_t i = 0; i < used_timers; i++) {
     ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
   }
 }

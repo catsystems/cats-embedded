@@ -25,7 +25,7 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   uint32_t alive_timer = 0;
   flight_fsm_e old_fsm_state = MOVING;
-
+  static uint8_t print_buffer[256];
   while (1) {
     battery_level_e level = battery_level();
     if (level == BATTERY_CRIT)
@@ -46,6 +46,13 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
       buzzer_queue_status(CATS_BUZZ_CHANGED_READY);
     if (global_flight_state.flight_state == MOVING && (global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
+
+
+    uint32_t len = fifo_get_length(&usb_output_fifo);
+    if(len){
+	  fifo_read_bytes(&usb_output_fifo, print_buffer, len);
+	  CDC_Transmit_FS(print_buffer, len);
+    }
 
     buzzer_handler_update();
     old_fsm_state = global_flight_state.flight_state;

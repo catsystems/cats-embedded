@@ -37,7 +37,7 @@
 #define BALLISTIC_SAFETY_COUNTER 300
 
 /* DROGUE */
-#define HEIGHT_AGL_MAIN     30.0f
+//#define HEIGHT_AGL_MAIN     30.0f
 #define MAIN_SAFETY_COUNTER 10
 
 /* MAIN */

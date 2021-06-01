@@ -42,6 +42,8 @@ extern SERVO SERVO2;
 
 extern fifo_t usb_input_fifo;
 extern uint8_t usb_fifo_in_buffer[64];
+extern fifo_t usb_output_fifo;
+extern uint8_t usb_fifo_out_buffer[256];
 
 /** State Estimation **/
 
@@ -55,7 +57,7 @@ extern dt_telemetry_trigger_t dt_telemetry_trigger;
 
 /** Timers **/
 extern uint32_t num_timers;
-extern cats_timer_t *ev_timers;
+extern cats_timer_t ev_timers[8];
 
 /** Recorder Queue **/
 extern osMessageQueueId_t rec_queue;

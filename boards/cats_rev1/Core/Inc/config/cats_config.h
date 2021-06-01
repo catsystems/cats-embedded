@@ -20,29 +20,33 @@ typedef enum {
   CATS_HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_boot_state;
 
+typedef struct {
+  /* State according to /concepts/v1/cats_fsm.jpg */
+  cats_boot_state boot_state;
+
+  control_settings_t control_settings;
+  /* A bit mask that specifies which readings to log to the flash */
+  uint32_t recorder_mask;
+
+  //Timers
+  config_timer_t timers[8];
+  // Event action map
+  config_event_actions_t event_actions[9];
+} cats_config_t;
+
+typedef union {
+  cats_config_t config;
+  uint32_t config_array[sizeof(cats_config_t)/sizeof(uint32_t)];
+} cats_config_u;
+
+extern cats_config_u global_cats_config;
+
 extern const uint32_t CATS_CONFIG_SECTOR;
 extern const uint32_t CATS_STATUS_SECTOR;
 
 /** cats config initialization **/
-void cc_init(cats_boot_state boot_state, uint32_t recorder_mask);
-void cc_clear();
-
-/** accessor functions **/
-
-cats_boot_state cc_get_boot_state();
-void cc_set_boot_state(cats_boot_state boot_state);
-
-/* Control Settings accessor */
-control_settings_t cc_get_control_settings();
-void cc_set_apogee_timer(float apogee_timer);
-void cc_set_second_stage_timer(float second_stage_timer);
-void cc_set_liftoff_acc_threshold(float liftoff_acc_threshold);
-float cc_get_apogee_timer();
-float cc_get_second_stage_timer();
-float cc_get_liftoff_acc_threshold();
-
-uint32_t cc_get_recorder_mask();
-void cc_set_recorder_mask(uint32_t recorder_mask);
+void cc_init();
+void cc_defaults();
 
 /** persistence functions **/
 void cc_load();
@@ -80,3 +84,4 @@ void cs_save();
 
 /** debug functions **/
 void cs_print();
+

@@ -5,6 +5,7 @@
  *      Author: Jonas
  */
 
+#include "config/cats_config.h"
 #include "control/flight_phases.h"
 #include "tasks/task_peripherals.h"
 
@@ -167,7 +168,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_set
   int32_t acceleration =
       imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
 
-  if ((float)acceleration > settings->liftoff_acc_threshold * settings->liftoff_acc_threshold) {
+  if ((float)acceleration > (float)settings->liftoff_acc_threshold * (float)settings->liftoff_acc_threshold) {
     fsm_state->memory[2]++;
   } else {
     fsm_state->memory[2] = 0;
@@ -242,7 +243,7 @@ void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data
 }
 
 void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-  if (state_data->height < HEIGHT_AGL_MAIN) {
+  if (state_data->height < (float)global_cats_config.config.control_settings.main_altitude) {
     /* Achieved Height to deploy Main */
     fsm_state->memory[1]++;
   } else {

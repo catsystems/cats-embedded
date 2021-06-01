@@ -20,7 +20,7 @@ const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 384;
  * @param rec_type - recorder entry type
  * @return true if the given rec_type should be recorded
  */
-static inline bool should_record(rec_entry_type_e rec_type) { return (cc_get_recorder_mask() & rec_type) > 0; }
+static inline bool should_record(rec_entry_type_e rec_type) { return (global_cats_config.config.recorder_mask & rec_type) > 0; }
 
 void record(rec_entry_type_e rec_type, const void *rec_value) {
   if (global_recorder_status >= REC_FILL_QUEUE && should_record(rec_type)) {

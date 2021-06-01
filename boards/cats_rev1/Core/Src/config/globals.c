@@ -62,7 +62,9 @@ MS5607 MS3 = {
 };
 
 fifo_t usb_input_fifo;
+fifo_t usb_output_fifo;
 
+uint8_t usb_fifo_out_buffer[256];
 uint8_t usb_fifo_in_buffer[64];
 
 BUZ BUZZER = {.timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .start = 0, .started = 0, .volume = 100};
@@ -82,8 +84,8 @@ drop_test_fsm_t global_drop_test_state = {.flight_state = DT_IDLE};
 dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
 /** Timers **/
-uint32_t num_timers = 2;
-cats_timer_t *ev_timers = NULL;
+uint32_t num_timers = 8;
+cats_timer_t ev_timers[8] = {};
 
 /** Recorder Queue **/
 osMessageQueueId_t rec_queue;

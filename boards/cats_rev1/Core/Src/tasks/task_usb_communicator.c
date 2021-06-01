@@ -3,7 +3,7 @@
 //
 
 #include "util/log.h"
-#include "util/cli.h"
+#include "cli/cli.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "tasks/task_usb_communicator.h"
@@ -11,22 +11,17 @@
 
 #include <stdint.h>
 _Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
-  static uint8_t print_buffer[512];
-  static uint8_t cli_fifo_out_buffer[512];
+
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");
-  fifo_t usb_output_fifo;
-  fifo_init(&usb_output_fifo, cli_fifo_out_buffer, 512);
+
+
   fifo_flush(&usb_input_fifo);
+  fifo_flush(&usb_output_fifo);
   cli_enter(&usb_input_fifo, &usb_output_fifo);
   while (1) {
 	  if (fifo_get_length(&usb_input_fifo)){
 		  cli_process();
-	  }
-	  uint32_t len = fifo_get_length(&usb_output_fifo);
-	  if(len){
-		  fifo_read_bytes(&usb_output_fifo, print_buffer, len);
-		  CDC_Transmit_FS(print_buffer, len);
 	  }
     osDelay(10);
   }

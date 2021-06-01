@@ -31,7 +31,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   imu_data_t local_imu = {0};
   estimation_output_t local_kf_data;
 
-  control_settings_t settings = cc_get_control_settings();
+  control_settings_t settings = global_cats_config.config.control_settings;
 
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
