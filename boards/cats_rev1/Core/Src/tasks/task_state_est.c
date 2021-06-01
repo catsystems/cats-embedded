@@ -184,7 +184,7 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     flight_info_t flight_info = {.ts = ts,
                                  .height = filter.x_bar.pData[0],
                                  .velocity = filter.x_bar.pData[1],
-                                 .acceleration = filtered_data_info.filtered_acceleration + filter.x_bar.pData[1]};
+                                 .acceleration = filtered_data_info.filtered_acceleration + filter.x_bar.pData[2]};
     if (fsm_state.flight_state >= APOGEE) {
       flight_info.height = filter.x_bar.pData[0];
       flight_info.velocity = filter.x_bar.pData[1];
@@ -193,7 +193,8 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     record(FLIGHT_INFO, &flight_info);
 
     log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
-              (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(state_data.acceleration[1] * 1000),
+              (int32_t)((float)filter.x_bar.pData[1] * 1000),
+              (int32_t)(filtered_data_info.filtered_acceleration * 1000),
               (int32_t)((float)filter.x_bar.pData[2] * 1000));
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
