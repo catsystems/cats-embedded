@@ -13,7 +13,7 @@
 
 #define STD_NOISE_BARO   9.0f    // From data analysis: 2.6f
 #define STD_NOISE_IMU    0.004f  // From data analysis: 0.004f
-#define STD_NOISE_OFFSET 0.001f
+#define STD_NOISE_OFFSET 0.000001f
 
 void init_filter_struct(kalman_filter_t *filter);
 
