@@ -19,7 +19,6 @@
 #include "tasks/task_imu_read.h"
 #include "tasks/task_init.h"
 //#include "tasks/task_recorder.h"
-#include "tasks/task_magneto_read.h"
 #include "drivers/spi.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_peripherals.h"
@@ -55,18 +54,6 @@ const osThreadAttr_t task_imu_read_attributes = {
     .stack_size = sizeof(task_imu_read_buffer),
     .cb_mem = &task_imu_read_control_block,
     .cb_size = sizeof(task_imu_read_control_block),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Definitions for task_magneto_read */
-uint32_t task_magneto_read_buffer[256];
-StaticTask_t task_magneto_read_control_block;
-const osThreadAttr_t task_magneto_read_attributes = {
-    .name = "task_magneto_read",
-    .stack_mem = &task_magneto_read_buffer[0],
-    .stack_size = sizeof(task_magneto_read_buffer),
-    .cb_mem = &task_magneto_read_control_block,
-    .cb_size = sizeof(task_magneto_read_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -450,9 +437,6 @@ static void init_tasks() {
 
         /* creation of task_state_est */
         osThreadNew(task_state_est, NULL, &task_state_est_attributes);
-
-        /* creation of task_magneto_read */
-        osThreadNew(task_magneto_read, NULL, &task_magneto_read_attributes);
 
         /* creation of task_health_monitor */
         //        osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);

@@ -8,6 +8,7 @@
 #include "cmsis_os.h"
 #include "tasks/task_imu_read.h"
 #include "sensors/icm20601.h"
+#include "sensors/mmc5983ma.h"
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "util/log.h"
@@ -32,13 +33,14 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *tem
 void task_imu_read(void *argument) {
   uint32_t tick_count, tick_update;
 
-  /* initialize data variables */
+  /* initialize IMU data variables */
   int16_t gyroscope[3] = {0};    /* 0 = x, 1 = y, 2 = z */
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
   int16_t temperature;
 
-  /* initialize queue message */
-  // imu_data_t queue_data = { 0 };
+  /* initialize MAGNETO data variables */
+  magneto_data_t magneto_data;
+  float data[3];
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -55,12 +57,13 @@ void task_imu_read(void *argument) {
     //            2, gyroscope[0], gyroscope[1], gyroscope[2],
     //            acceleration[0], acceleration[1], acceleration[2], temperature);
 
-    //    global_imu[imu_idx].acc_x = acceleration[0];
-    //    global_imu[imu_idx].acc_y = acceleration[1];
-    //    global_imu[imu_idx].acc_z = acceleration[2];
-    //    global_imu[imu_idx].gyro_x = gyroscope[0];
-    //    global_imu[imu_idx].gyro_y = gyroscope[1];
-    //    global_imu[imu_idx].gyro_z = gyroscope[2];
+    mmc5983ma_read_calibrated(&MAG, data);
+    magneto_data.magneto_x = data[0];
+    magneto_data.magneto_y = data[1];
+    magneto_data.magneto_z = data[2];
+    magneto_data.ts = osKernelGetTickCount();
+
+    global_magneto = magneto_data;
 
     /* TODO: The speed of copying looks to be the same, code size reduced by 16B
      * with memcpy vs. assignment with -0g */
