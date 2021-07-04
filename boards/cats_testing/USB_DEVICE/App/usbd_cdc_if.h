@@ -24,7 +24,7 @@
 #define __USBD_CDC_IF_H__
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -35,19 +35,19 @@ extern "C" {
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
- * @brief For Usb device.
- * @{
- */
+  * @brief For Usb device.
+  * @{
+  */
 
 /** @defgroup USBD_CDC_IF USBD_CDC_IF
- * @brief Usb VCP device module
- * @{
- */
+  * @brief Usb VCP device module
+  * @{
+  */
 
 /** @defgroup USBD_CDC_IF_Exported_Defines USBD_CDC_IF_Exported_Defines
- * @brief Defines.
- * @{
- */
+  * @brief Defines.
+  * @{
+  */
 /* USER CODE BEGIN EXPORTED_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
@@ -55,63 +55,62 @@ extern "C" {
 #define APP_TX_DATA_SIZE 512
 
 // command buffer size
-#define BUFSIZE 64
+#define TRACE_COMMAND_BUFSIZE 64
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /** @defgroup USBD_CDC_IF_Exported_Types USBD_CDC_IF_Exported_Types
- * @brief Types.
- * @{
- */
+  * @brief Types.
+  * @{
+  */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
 typedef struct {
-  uint32_t idx;
-  uint8_t data[BUFSIZE];
-} recBuf;
+    uint32_t idx;
+    uint8_t data[TRACE_COMMAND_BUFSIZE];
+} trace_command_buffer_t;
 /* USER CODE END EXPORTED_TYPES */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /** @defgroup USBD_CDC_IF_Exported_Macros USBD_CDC_IF_Exported_Macros
- * @brief Aliases.
- * @{
- */
+  * @brief Aliases.
+  * @{
+  */
 
 /* USER CODE BEGIN EXPORTED_MACRO */
 
 /* USER CODE END EXPORTED_MACRO */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
- * @brief Public variables.
- * @{
- */
+  * @brief Public variables.
+  * @{
+  */
 
 /** CDC Interface callback. */
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern recBuf commandBuffer;
+extern trace_command_buffer_t trace_command_buffer;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
- * @}
- */
+  * @}
+  */
 
-/** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype
- * USBD_CDC_IF_Exported_FunctionsPrototype
- * @brief Public functions declaration.
- * @{
- */
+/** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype USBD_CDC_IF_Exported_FunctionsPrototype
+  * @brief Public functions declaration.
+  * @{
+  */
 
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
@@ -120,16 +119,16 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /**
- * @}
- */
+  * @}
+  */
 
 #ifdef __cplusplus
 }

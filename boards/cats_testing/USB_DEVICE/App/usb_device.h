@@ -24,7 +24,7 @@
 #define __USB_DEVICE__H__
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -37,18 +37,18 @@ extern "C" {
 /* USER CODE END INCLUDE */
 
 /** @addtogroup USBD_OTG_DRIVER
- * @{
- */
+  * @{
+  */
 
 /** @defgroup USBD_DEVICE USBD_DEVICE
- * @brief Device file for Usb otg low level driver.
- * @{
- */
+  * @brief Device file for Usb otg low level driver.
+  * @{
+  */
 
 /** @defgroup USBD_DEVICE_Exported_Variables USBD_DEVICE_Exported_Variables
- * @brief Public variables.
- * @{
- */
+  * @brief Public variables.
+  * @{
+  */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
@@ -67,13 +67,13 @@ extern "C" {
 
 /* USER CODE END VARIABLES */
 /**
- * @}
- */
+  * @}
+  */
 
 /** @defgroup USBD_DEVICE_Exported_FunctionsPrototype USBD_DEVICE_Exported_FunctionsPrototype
- * @brief Declaration of public functions for Usb device.
- * @{
- */
+  * @brief Declaration of public functions for Usb device.
+  * @{
+  */
 
 /** USB Device initialization function. */
 void MX_USB_DEVICE_Init(void);
@@ -85,16 +85,16 @@ void MX_USB_DEVICE_Init(void);
 
 /* USER CODE END FD */
 /**
- * @}
- */
+  * @}
+  */
 
 /**
- * @}
- */
+  * @}
+  */
 
 /**
- * @}
- */
+  * @}
+  */
 
 #ifdef __cplusplus
 }
