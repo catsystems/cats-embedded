@@ -19,7 +19,7 @@ static void spi_init(SPI_BUS *bus) {
 
 inline uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size, uint8_t *rx_buf,
                                     uint16_t rx_size) {
-  if (!bus->busy) return 0;
+  if (bus->busy) return 0;
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   HAL_SPI_Transmit(bus->spi_handle, tx_buf, tx_size, SPI_TIMEOUT);
   HAL_SPI_Receive(bus->spi_handle, rx_buf, rx_size, SPI_TIMEOUT);
@@ -28,7 +28,7 @@ inline uint8_t spi_transmit_receive(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_s
 }
 
 inline uint8_t spi_transmit(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size) {
-  if (!bus->busy) return 0;
+  if (bus->busy) return 0;
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   HAL_SPI_Transmit(bus->spi_handle, tx_buf, tx_size, SPI_TIMEOUT);
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
@@ -36,7 +36,7 @@ inline uint8_t spi_transmit(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size) {
 }
 
 inline uint8_t spi_receive(SPI_BUS *bus, uint8_t *rx_buf, uint16_t rx_size) {
-  if (!bus->busy) return 0;
+  if (bus->busy) return 0;
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   HAL_SPI_Receive(bus->spi_handle, rx_buf, rx_size, SPI_TIMEOUT);
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, !bus->cs_type);
@@ -44,7 +44,7 @@ inline uint8_t spi_receive(SPI_BUS *bus, uint8_t *rx_buf, uint16_t rx_size) {
 }
 
 inline uint8_t spi_transmit_it(SPI_BUS *bus, uint8_t *tx_buf, uint16_t tx_size) {
-  if (!bus->busy) return 0;
+  if (bus->busy) return 0;
   // Toggle CS to make device active
   HAL_GPIO_WritePin(bus->cs_port, bus->cs_pin, bus->cs_type);
   bus->busy = true;

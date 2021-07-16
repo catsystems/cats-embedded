@@ -89,15 +89,16 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   osDelay(100);
   /* In order to change what is logged just remove it from the following OR:
    * In the given example, BARO1 and FLIGHT_STATE ARE MISSING */
-  //  uint32_t selected_entry_types = IMU0 | IMU1 | IMU2 | BARO0 | BARO2 |
-  //                                  FLIGHT_INFO | COVARIANCE_INFO |
-  //                                  SENSOR_INFO;
-  //  cc_set_recorder_mask(selected_entry_types);
+  //    uint32_t selected_entry_types = IMU0 | IMU1 | IMU2 | BARO0 | BARO2 |
+  //                                    FLIGHT_INFO | COVARIANCE_INFO |
+  //                                    SENSOR_INFO;
+  //    cc_set_recorder_mask(selected_entry_types);
   cc_init();
 
   cc_load();
 
-  global_cats_config.config.recorder_mask = UINT32_MAX;
+  // global_cats_config.config.recorder_mask = UINT32_MAX;
+  global_cats_config.config.recorder_mask = 0;
   global_cats_config.config.boot_state = CATS_FLIGHT;
 
   osDelay(10);
@@ -139,13 +140,13 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_disable();
   /* Infinite loop */
 
-  //  while (1) {
-  //    if (global_usb_detection == true && usb_communication_complete == false) {
-  //      init_communication();
-  //    }
-  //
-  //    osDelay(100);
-  //  }
+  while (1) {
+    if (global_usb_detection == true && usb_communication_complete == false) {
+      init_communication();
+    }
+
+    osDelay(100);
+  }
 }
 
 /** Private Function Definitions **/
@@ -172,9 +173,9 @@ static void init_devices() {
   init_buzzer();
 
   /* FLASH */
-  w25qxx_init();
-  osDelay(10);
-  cs_load();
+  //  w25qxx_init();
+  //  osDelay(10);
+  //  cs_load();
 
   /* TODO: throw a warning instead of setting to 0 */
   if (cs_get_num_recorded_flights() > 32) {
@@ -347,16 +348,14 @@ static void create_event_map() {
   // Timer 1 / Drogue
   event_action_map[EV_TIMER_1].num_actions = 1;
   event_action_map[EV_TIMER_1].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_SERVO_ONE];
-  event_action_map[EV_TIMER_1].action_list[0].func_arg = 180;
+  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
+  event_action_map[EV_TIMER_1].action_list[0].func_arg = 1;
 
   // Timer 2 / Main
-  event_action_map[EV_TIMER_2].num_actions = 2;
-  event_action_map[EV_TIMER_2].action_list = calloc(2, sizeof(peripheral_act_t));
+  event_action_map[EV_TIMER_2].num_actions = 1;
+  event_action_map[EV_TIMER_2].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_TIMER_2].action_list[0].func_arg = 1;
-  event_action_map[EV_TIMER_2].action_list[1].func_ptr = action_table[ACT_SERVO_TWO];
-  event_action_map[EV_TIMER_2].action_list[1].func_arg = 180;
+  event_action_map[EV_TIMER_2].action_list[0].func_arg = 0;
 
   // Touchdown
   event_action_map[EV_TOUCHDOWN].num_actions = 1;
