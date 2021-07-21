@@ -63,7 +63,7 @@ UART_HandleTypeDef huart1;
 
 /* Definitions for task_init_name */
 osThreadId_t task_init_nameHandle;
-uint32_t task_init_buffer[256];
+uint32_t task_init_buffer[512];
 osStaticThreadDef_t task_init_control_block;
 const osThreadAttr_t task_init_name_attributes = {
     .name = "task_init_name",
@@ -140,7 +140,7 @@ int main(void) {
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
-  MX_QUADSPI_Init();
+  //MX_QUADSPI_Init();
   MX_RTC_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -374,18 +374,18 @@ static void MX_QUADSPI_Init(void) {
 
   /* USER CODE END QUADSPI_Init 1 */
   /* QUADSPI parameter configuration*/
-  hqspi.Instance = QUADSPI;
-  hqspi.Init.ClockPrescaler = 255;
-  hqspi.Init.FifoThreshold = 1;
-  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-  hqspi.Init.FlashSize = 24;
-  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
-  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
-  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
-  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-  if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
-    Error_Handler();
-  }
+//  hqspi.Instance = QUADSPI;
+//  hqspi.Init.ClockPrescaler = 255;
+//  hqspi.Init.FifoThreshold = 1;
+//  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
+//  hqspi.Init.FlashSize = 24;
+//  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
+//  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
+//  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+//  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+//  if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
+//    Error_Handler();
+//  }
   /* USER CODE BEGIN QUADSPI_Init 2 */
 
   /* USER CODE END QUADSPI_Init 2 */

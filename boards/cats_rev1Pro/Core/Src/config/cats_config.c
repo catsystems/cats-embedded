@@ -3,7 +3,7 @@
 //
 
 #include "config/cats_config.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 #include "util/log.h"
 #include "drivers/eeprom_emul.h"
 
@@ -46,7 +46,6 @@ const cats_config_u DEFAULT_CONFIG = {
 cats_config_u global_cats_config = {};
 cats_status_t global_cats_status = {};
 
-const uint32_t CATS_CONFIG_SECTOR = 0;
 const uint32_t CATS_STATUS_SECTOR = 1;
 
 /** cats config initialization **/
@@ -165,14 +164,14 @@ void cs_set_flight_phase(flight_fsm_e state) {
 
 void cs_load() {
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_read_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
+  QSPI_W25Qxx_ReadBuffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * 256 * 16, sizeof(global_cats_status));
 }
 
 void cs_save() {
   /* erase sector before writing to it */
-  w25qxx_erase_sector(CATS_STATUS_SECTOR);
+  QSPI_W25Qxx_SectorErase(CATS_STATUS_SECTOR);
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_write_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
+  QSPI_W25Qxx_WriteBuffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * 256 * 16, sizeof(global_cats_status));
 }
 
 /** debug functions **/

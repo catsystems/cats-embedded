@@ -2,7 +2,7 @@
 // Created by stoja on 20.12.20.
 //
 
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/log.h"
@@ -42,16 +42,16 @@
       .priority = (osPriority_t)osPriorityNormal, \
   };
 
-SET_TASK_PARAMS(task_baro_read, 128)
-SET_TASK_PARAMS(task_imu_read, 128)
-SET_TASK_PARAMS(task_receiver, 64)
-SET_TASK_PARAMS(task_health_monitor, 64)
+SET_TASK_PARAMS(task_baro_read, 256)
+SET_TASK_PARAMS(task_imu_read, 256)
+SET_TASK_PARAMS(task_receiver, 256)
+SET_TASK_PARAMS(task_health_monitor, 128)
 SET_TASK_PARAMS(task_state_est, 1024)
-SET_TASK_PARAMS(task_flight_fsm, 256)
-SET_TASK_PARAMS(task_drop_test_fsm, 256)
-SET_TASK_PARAMS(task_peripherals, 256)
-SET_TASK_PARAMS(task_recorder, 256)
-SET_TASK_PARAMS(task_usb_communicator, 256)
+SET_TASK_PARAMS(task_flight_fsm, 512)
+SET_TASK_PARAMS(task_drop_test_fsm, 512)
+SET_TASK_PARAMS(task_peripherals, 512)
+SET_TASK_PARAMS(task_recorder, 512)
+SET_TASK_PARAMS(task_usb_communicator, 512)
 
 /** Private Constants **/
 
@@ -97,8 +97,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   cc_load();
 
-  // global_cats_config.config.recorder_mask = UINT32_MAX;
-  global_cats_config.config.recorder_mask = 0;
+  global_cats_config.config.recorder_mask = UINT32_MAX;
+  // global_cats_config.config.recorder_mask = 0;
   global_cats_config.config.boot_state = CATS_FLIGHT;
 
   osDelay(10);
@@ -140,11 +140,30 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_disable();
   /* Infinite loop */
 
+  log_raw("erasing the chip..");
+  // QSPI_W25Qxx_ChipErase();
+  log_raw("chip erased..");
+
+  uint8_t test_write[256];
+  uint8_t test_read[256] = {};
+  for (uint32_t i = 0; i < 256; ++i) {
+    test_write[i] = i;
+  }
+  uint32_t curr_page = 250;
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
 
+    log_raw("Writing to page %lu", curr_page);
+    QSPI_W25Qxx_WriteBuffer(test_write, curr_page * 256, 256);
+
+    log_raw("Reading from page %lu", curr_page);
+    QSPI_W25Qxx_ReadBuffer(test_read, curr_page * 256, 256);
+    for (uint32_t i = 0; i < 256; ++i) {
+      log_raw("%lu", (uint32_t)test_read[i]);
+    }
+    ++curr_page;
     osDelay(100);
   }
 }
@@ -176,7 +195,13 @@ static void init_devices() {
   //  w25qxx_init();
   //  osDelay(10);
   //  cs_load();
+  QSPI_W25Qxx_Init();
 
+  uint8_t status1 = QSPI_W25Qxx_ReadStatus1();
+  uint8_t status2 = QSPI_W25Qxx_ReadStatus2();
+  uint8_t status3 = QSPI_W25Qxx_ReadStatus3();
+
+  log_raw("Flash statuses: %x %x %x ", status1, status2, status3);
   /* TODO: throw a warning instead of setting to 0 */
   if (cs_get_num_recorded_flights() > 32) {
     cs_init(CATS_STATUS_SECTOR, 0);
@@ -187,10 +212,10 @@ static void init_devices() {
   uint16_t first_writable_sector = cs_get_last_recorded_sector() + 1;
   /* increment the first writable sector as long as the current sector is not
    * empty */
-  while (first_writable_sector < w25qxx.sector_count &&
-         !w25qxx_is_empty_sector(first_writable_sector, 0, w25qxx.sector_size)) {
-    ++first_writable_sector;
-  }
+  //  while (first_writable_sector < w25qxx.sector_count &&
+  //         !w25qxx_is_empty_sector(first_writable_sector, 0, w25qxx.sector_size)) {
+  //    ++first_writable_sector;
+  //  }
 
   /* if the first writable sector is not immediately following the last recorded
    * sector, update the config */
@@ -205,11 +230,11 @@ static void init_devices() {
     cs_save();
   }
 
-  if (first_writable_sector >= w25qxx.sector_count) {
-    log_error("No empty sectors left!");
-  } else if (first_writable_sector >= w25qxx.sector_count - 256) {
-    log_warn("Less than 256 sectors left!");
-  }
+  //  if (first_writable_sector >= w25qxx.sector_count) {
+  //    log_error("No empty sectors left!");
+  //  } else if (first_writable_sector >= w25qxx.sector_count - 256) {
+  //    log_warn("Less than 256 sectors left!");
+  //  }
 }
 
 static void init_communication() {
@@ -314,16 +339,16 @@ static void create_event_map() {
   event_action_map = calloc(9, sizeof(event_action_map_elem_t));
 
   // Moving
-  /*vent_action_map[EV_MOVING].num_actions = 1;
+  event_action_map[EV_MOVING].num_actions = 1;
   event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;*/
+  event_action_map[EV_MOVING].action_list[0].func_arg = REC_WRITE_TO_FLASH;
 
   // Idle
   event_action_map[EV_IDLE].num_actions = 1;
   event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
+  event_action_map[EV_IDLE].action_list[0].func_arg = REC_WRITE_TO_FLASH;
 
   // Liftoff
   event_action_map[EV_LIFTOFF].num_actions = 1;

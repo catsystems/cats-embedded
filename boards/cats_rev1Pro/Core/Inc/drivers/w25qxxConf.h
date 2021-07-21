@@ -1,9 +1,9 @@
 #pragma once
 
 #include "main.h"
-extern SPI_HandleTypeDef hspi2;
+extern QSPI_HandleTypeDef hqspi;
 
-#define CATS_W25QXX_SPI     hspi2
-#define CATS_W25QXX_CS_GPIO CS_BARO3_Pin
-#define CATS_W25QXX_CS_PIN  CS_BARO3_Pin
+#define CATS_W25QXX_SPI     hqspi;
+#define CATS_W25QXX_CS_GPIO GPIOB
+#define CATS_W25QXX_CS_PIN  GPIO_PIN_11
 #define CATS_W25QXX_DEBUG   0

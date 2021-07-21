@@ -6,7 +6,7 @@
 #include "tasks/task_recorder.h"
 #include "util/log.h"
 #include "util/types.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
@@ -50,7 +50,7 @@ void task_recorder(__attribute__((unused)) void *argument) {
 
   /* At this point, last recorded sector should be 100% accurate */
   uint16_t last_recorded_sector = cs_get_last_recorded_sector();
-  uint32_t page_id = w25qxx_sector_to_page(last_recorded_sector + 1);
+  uint32_t page_id = ((last_recorded_sector + 1) * 4096) / 256;
 
 #ifdef FLASH_READ_TEST
   rec_elem_t break_elem_mem = {.rec_type = HEHE};
@@ -113,7 +113,8 @@ void task_recorder(__attribute__((unused)) void *argument) {
 #ifdef FLASH_READ_TEST
     print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
 #endif
-    w25qxx_write_page(rec_buffer, page_id, 0, 256);
+    log_raw("writing to flash...");
+    QSPI_W25Qxx_WritePage(rec_buffer, page_id * 256, 256);
 
 #ifdef FLASH_READ_TEST
     w25qxx_read_page(read_buf, page_id, 0, 256);
@@ -141,13 +142,13 @@ void task_recorder(__attribute__((unused)) void *argument) {
       memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
 
-    if (page_id == w25qxx.page_count) {
+    if (page_id == 131072) {
       /* throw an error */
       log_error("No more space left, all pages filled!");
       /* TODO: this task should actually be killed somehow */
       break; /* end the task */
     } else {
-      uint32_t last_page_of_last_recorded_sector = w25qxx_sector_to_page(last_recorded_sector) + 15;
+      uint32_t last_page_of_last_recorded_sector = ((last_recorded_sector + 15) * 4096) / 256;
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
         cs_set_last_recorded_sector(++last_recorded_sector);
@@ -155,7 +156,7 @@ void task_recorder(__attribute__((unused)) void *argument) {
                   cs_get_num_recorded_flights());
         //        HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
         // cs_save();
-      } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
+      } else if (page_id < ((last_recorded_sector)*4096) / 256) {
         log_fatal("Something went horribly wrong!");
       }
       page_id++;

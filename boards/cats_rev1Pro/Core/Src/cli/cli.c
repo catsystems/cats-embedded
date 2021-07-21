@@ -12,7 +12,7 @@
 #include "util/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -110,7 +110,7 @@ static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
 
 static void cliEraseFlash(const char *cmdName, char *cmdline) {
   log_raw("\nErasing the flash, this might take a while...");
-  w25qxx_erase_chip();
+  QSPI_W25Qxx_ChipErase();
   cs_init(CATS_STATUS_SECTOR, 0);
   cs_save();
   log_raw("Flash erased!");
