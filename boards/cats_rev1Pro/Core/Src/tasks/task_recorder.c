@@ -113,8 +113,8 @@ void task_recorder(__attribute__((unused)) void *argument) {
 #ifdef FLASH_READ_TEST
     print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
 #endif
-    //log_raw("writing to flash...");
-    QSPI_W25Qxx_WritePage(rec_buffer, page_id * 256, 256);
+    // log_raw("writing to flash...");
+    w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
 
 #ifdef FLASH_READ_TEST
     w25qxx_read_page(read_buf, page_id, 0, 256);
@@ -142,21 +142,21 @@ void task_recorder(__attribute__((unused)) void *argument) {
       memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
 
-    if (page_id == 131072) {
+    if (page_id == w25q.page_count) {
       /* throw an error */
       log_error("No more space left, all pages filled!");
       /* TODO: this task should actually be killed somehow */
       break; /* end the task */
     } else {
-      uint32_t last_page_of_last_recorded_sector = ((last_recorded_sector + 15) * 4096) / 256;
+      uint32_t last_page_of_last_recorded_sector = ((last_recorded_sector + 15) * w25q.sector_size) / w25q.page_size;
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
         cs_set_last_recorded_sector(++last_recorded_sector);
         log_debug("Updating last recorded sector to %d; num_flights: %hu", last_recorded_sector,
                   cs_get_num_recorded_flights());
-                HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
         // cs_save();
-      } else if (page_id < ((last_recorded_sector)*4096) / 256) {
+      } else if (page_id < (last_recorded_sector * w25q.sector_size) / w25q.page_size) {
         log_fatal("Something went horribly wrong!");
       }
       page_id++;

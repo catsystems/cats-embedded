@@ -38,12 +38,10 @@ typedef enum {
   W25Q128,
   W25Q256,
   W25Q512,
-
-} w25qxx_id_t;
+} w25q_id;
 
 typedef struct {
-  w25qxx_id_t id;
-  uint8_t uniq_id[8];
+  w25q_id id;
   uint16_t page_size;
   uint32_t page_count;
   uint32_t sector_size;

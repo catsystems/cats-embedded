@@ -140,7 +140,7 @@ int main(void) {
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
-  MX_QUADSPI_Init();
+  //MX_QUADSPI_Init();
   MX_RTC_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();

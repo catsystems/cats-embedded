@@ -150,7 +150,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 //    test_write[i] = i;
 //  }
 
-  //QSPI_W25Qxx_SectorErase(4096);
+  //w25q_sector_erase(4096);
 
   //uint32_t curr_page = 16;
   while (1) {
@@ -159,10 +159,10 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
     }
 
     //log_raw("Writing to page %lu", curr_page);
-    //QSPI_W25Qxx_WriteBuffer(test_write, curr_page * 256, 256);
+    //w25q_write_buffer(test_write, curr_page * 256, 256);
 
     //log_raw("Reading from page %lu", curr_page);
-    //QSPI_W25Qxx_ReadBuffer(test_read, curr_page * 256, 256);
+    //w25q_read_buffer(test_read, curr_page * 256, 256);
     //for (uint32_t i = 0; i < 256; ++i) {
     //  log_raw("%lu", (uint32_t)test_read[i]);
     //}
@@ -198,17 +198,17 @@ static void init_devices() {
   //  w25qxx_init();
   //  osDelay(10);
 
-  QSPI_W25Qxx_Init();
+  w25q_init();
 
   log_raw("erasing the chip..");
-  //QSPI_W25Qxx_ChipErase();
+  //w25q_chip_erase();
   log_raw("chip erased..");
 
-  uint8_t status1 = QSPI_W25Qxx_ReadStatus1();
-  uint8_t status2 = QSPI_W25Qxx_ReadStatus2();
-  uint8_t status3 = QSPI_W25Qxx_ReadStatus3();
+  uint8_t status1 = w25q_read_status_reg1();
+  uint8_t status2 = w25q_read_status_reg2();
+  uint8_t status3 = w25q_read_status_reg3();
 
-  log_raw("Flash statuses: %x %x %x ", status1, status2, status3);
+  log_raw("Flash statuses: %x %x %x", status1, status2, status3);
   /* TODO: throw a warning instead of setting to 0 */
   if (cs_get_num_recorded_flights() > 32) {
     cs_init(CATS_STATUS_SECTOR, 0);
@@ -223,8 +223,8 @@ static void init_devices() {
   uint32_t first_writable_sector = cs_get_last_recorded_sector() + 1;
   /* increment the first writable sector as long as the current sector is not
    * empty */
-    while (first_writable_sector < 1024 * 16 &&
-           !QSPI_W25Qxx_is_empty_sector(first_writable_sector * 4096)) {
+    while (first_writable_sector < w25q.sector_count &&
+           !w25q_is_empty_sector(first_writable_sector * w25q.sector_size)) {
       ++first_writable_sector;
       log_warn("Incrementing last recorded sector...");
     }
@@ -242,9 +242,9 @@ static void init_devices() {
     cs_save();
   }
 
-    if (first_writable_sector >= 1024 * 16) {
+    if (first_writable_sector >= w25q.sector_count) {
       log_error("No empty sectors left!");
-    } else if (first_writable_sector >= 1024 * 16 - 256) {
+    } else if (first_writable_sector >= w25q.sector_size - 256) {
       log_warn("Less than 256 sectors left!");
     }
 }
