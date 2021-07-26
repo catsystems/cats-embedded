@@ -58,20 +58,57 @@
 //     }
 // }
 
+// Write enable
+int8_t QSPI_W25Qxx_WriteEnable(void) {
+  QSPI_CommandTypeDef s_command;     // QSPI transport configuration
+  QSPI_AutoPollingTypeDef s_config;  // Polling comparison related configuration parameters
+
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
+  s_command.AddressMode = QSPI_ADDRESS_NONE;                // No address mode
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
+  s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;   // Every time the data is transmitted, an instruction is sent
+  s_command.DataMode = QSPI_DATA_NONE;             // No data mode
+  s_command.DummyCycles = 0;                       // Number of empty periods
+  s_command.Instruction = W25Qxx_CMD_WriteEnable;  // Send write enable command
+
+  // Send write enable command
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Qxx_ERROR_WRITEENABLE;
+  // Keep querying W25Qxx_CMD_ReadStatus_REG1 register, read w25qxx in the status byte_ Status_ REG1_ Wel is compared
+  // with 0x02 Read status register 1 bit 1 (read-only), WEL write enable flag bit. When the flag bit is 1, it means
+  // that write operation can be performed
+
+  s_config.Match = 0x02;                   // Match value
+  s_config.Mask = W25Qxx_Status_REG1_WEL;  // Read status register 1 bit 1 (read-only), WEL write enable flag bit. When
+  // the flag bit is 1, it means that write operation can be performed
+  s_config.MatchMode = QSPI_MATCH_MODE_AND;             // Sum operation
+  s_config.StatusBytesSize = 1;                         // Status bytes
+  s_config.Interval = 0x10;                             // Polling interval
+  s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;  // Auto stop mode
+
+  s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1;  // Read status information register
+  s_command.DataMode = QSPI_DATA_1_LINE;               // 1-line data mode
+  s_command.NbData = 1;                                // Data length
+
+  // Send polling wait command
+  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    return W25Qxx_ERROR_AUTOPOLLING;  // Polling waiting for no response, error returned
+
+  return QSPI_W25Qxx_OK;  // Communication ended normally
+}
+
 void MX_QUADSPI_Init(void) {
   hqspi.Instance = QUADSPI;  // QSPI peripherals
-
-  /* QSPI The core clock is set to PLL2CLK, the speed is 250M, and the driver clock is 125M after 2 frequency division
-   */
 
   // When the memory mapping mode is used, the frequency division coefficient here cannot be set to 0, otherwise the
   // reading error will occur
   hqspi.Init.ClockPrescaler = 1;  // The QSPI core clock is divided by 1 + 1 to get the QSPI communication driver clock
   hqspi.Init.FifoThreshold = 32;  // FIFO threshold
-  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;  // Sample after half CLK cycle
-  hqspi.Init.FlashSize = 24;  // FLASH size, the number of bytes in FLASH = 2^[FSIZE+1], for 8MB W25Q64 set to 22
+  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;  // Sample after half CLK cycle
+  hqspi.Init.FlashSize = 25;  // FLASH size, the number of bytes in FLASH = 2^[FSIZE+1], for 8MB W25Q64 set to 22
   hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;  // Time for chip selection to keep high level
-  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_3;                   // Mode 3
+  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_3;                   // Mode 0
   hqspi.Init.FlashID = QSPI_FLASH_ID_1;                       // Using QSPI1
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;              // Turn off dual flash mode
   // Application configuration
@@ -82,12 +119,12 @@ void MX_QUADSPI_Init(void) {
 int8_t QSPI_W25Qxx_Init(void) {
   uint32_t Device_ID;
 
-  MX_QUADSPI_Init();                 // Initialize QSPI
+  // MX_QUADSPI_Init();                 // Initialize QSPI
   QSPI_W25Qxx_Reset();               // reset
   Device_ID = QSPI_W25Qxx_ReadID();  // Read ID
 
-  if (Device_ID == W25Qxx_FLASH_ID)  // Check peripheral devices
-  {
+  // Check peripheral devices
+  if (Device_ID == W25Qxx_FLASH_ID) {
     log_raw("W25Q64 OK,flash ID:%lX\r\n", Device_ID);  // Initialize successfully, print debug information
     return QSPI_W25Qxx_OK;                             // Return success flag
   } else {
@@ -158,6 +195,26 @@ int8_t QSPI_W25Qxx_Reset(void) {
   // Use the automatic polling flag bit to wait for the end of communication
   if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) return W25Qxx_ERROR_AUTOPOLLING;  // Polling wait no response
 
+  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+    return W25Qxx_ERROR_WRITEENABLE;
+  }
+
+  osDelay(1000);
+
+  s_command.Instruction = 0x11;
+
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    return W25Qxx_ERROR_INIT;  // If the sending fails, an error message is returned
+
+  uint8_t ucRegister3 = 0x62;
+  // Start data transfer
+  if (HAL_QSPI_Transmit(&hqspi, &ucRegister3, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    return W25Qxx_ERROR_TRANSMIT;  // Transmission data error
+  }
+
+  // Use the automatic polling flag bit to wait for the end of communication
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) return W25Qxx_ERROR_AUTOPOLLING;  // Polling wait no response
+
   return QSPI_W25Qxx_OK;  // Reset successfully
 }
 
@@ -167,7 +224,7 @@ uint32_t QSPI_W25Qxx_ReadID(void) {
   uint32_t W25Qxx_ID = 0;         // Device ID
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -195,7 +252,7 @@ uint8_t QSPI_W25Qxx_ReadStatus1(void) {
   uint8_t QSPI_ReceiveBuff;       // Store data read by QSPI
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -221,7 +278,7 @@ uint8_t QSPI_W25Qxx_ReadStatus2(void) {
   uint8_t QSPI_ReceiveBuff;       // Store data read by QSPI
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -247,7 +304,7 @@ uint8_t QSPI_W25Qxx_ReadStatus3(void) {
   uint8_t QSPI_ReceiveBuff;       // Store data read by QSPI
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -275,7 +332,7 @@ int8_t QSPI_W25Qxx_MemoryMappedMode(void) {
   QSPI_MemoryMappedTypeDef s_mem_mapped_cfg;  // Memory mapped access parameters
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -298,53 +355,13 @@ int8_t QSPI_W25Qxx_MemoryMappedMode(void) {
   return QSPI_W25Qxx_OK;  // Configuration successful
 }
 
-// Write enable
-int8_t QSPI_W25Qxx_WriteEnable(void) {
-  QSPI_CommandTypeDef s_command;     // QSPI transport configuration
-  QSPI_AutoPollingTypeDef s_config;  // Polling comparison related configuration parameters
-
-  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressMode = QSPI_ADDRESS_NONE;                // No address mode
-  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
-  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
-  s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
-  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;   // Every time the data is transmitted, an instruction is sent
-  s_command.DataMode = QSPI_DATA_NONE;             // No data mode
-  s_command.DummyCycles = 0;                       // Number of empty periods
-  s_command.Instruction = W25Qxx_CMD_WriteEnable;  // Send write enable command
-
-  // Send write enable command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Qxx_ERROR_WRITEENABLE;
-  // Keep querying W25Qxx_CMD_ReadStatus_REG1 register, read w25qxx in the status byte_ Status_ REG1_ Wel is compared
-  // with 0x02 Read status register 1 bit 1 (read-only), WEL write enable flag bit. When the flag bit is 1, it means
-  // that write operation can be performed
-
-  s_config.Match = 0x02;                   // Match value
-  s_config.Mask = W25Qxx_Status_REG1_WEL;  // Read status register 1 bit 1 (read-only), WEL write enable flag bit. When
-                                           // the flag bit is 1, it means that write operation can be performed
-  s_config.MatchMode = QSPI_MATCH_MODE_AND;             // Sum operation
-  s_config.StatusBytesSize = 1;                         // Status bytes
-  s_config.Interval = 0x10;                             // Polling interval
-  s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;  // Auto stop mode
-
-  s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1;  // Read status information register
-  s_command.DataMode = QSPI_DATA_1_LINE;               // 1-line data mode
-  s_command.NbData = 1;                                // Data length
-
-  // Send polling wait command
-  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-    return W25Qxx_ERROR_AUTOPOLLING;  // Polling waiting for no response, error returned
-
-  return QSPI_W25Qxx_OK;  // Communication ended normally
-}
-
 /* Erase */
 // Here, the original document is copied, and the instructions are repeated without comment
 int8_t QSPI_W25Qxx_SectorErase(uint32_t SectorAddress) {
   QSPI_CommandTypeDef s_command;  // QSPI transport configuration
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address mode
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address mode
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  //	No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -370,41 +387,54 @@ int8_t QSPI_W25Qxx_SectorErase(uint32_t SectorAddress) {
   return QSPI_W25Qxx_OK;  // Erase succeeded
 }
 
-int8_t QSPI_W25Qxx_BlockErase_32K(uint32_t SectorAddress) {
-  QSPI_CommandTypeDef s_command;  // QSPI transport configuration
-
-  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address mode
-  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  //	No alternate bytes
-  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
-  s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
-  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;      // Every time the data is transmitted, an instruction is sent
-  s_command.AddressMode = QSPI_ADDRESS_1_LINE;        // 1-line address mode
-  s_command.DataMode = QSPI_DATA_NONE;                // No data
-  s_command.DummyCycles = 0;                          // Number of empty periods
-  s_command.Address = SectorAddress;                  // Address to erase
-  s_command.Instruction = W25Qxx_CMD_BlockErase_32K;  // Block erase command, each erase 32K bytes
-
-  // Send write enable
-  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
-    return W25Qxx_ERROR_WRITEENABLE;  // Write enable failed
+bool QSPI_W25Qxx_is_empty_sector(uint32_t address) {
+  uint8_t buf[32];
+  uint32_t i;
+  for (i = 0; i < 4096; i += 32) {
+    QSPI_W25Qxx_ReadBuffer(buf, address, 32);
+    if (buf[31] != 0xFF) break;
   }
-  // Issue erase command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-    return W25Qxx_ERROR_Erase;  // Erase failed
-  }
-  // Use the automatic polling flag bit to wait for the end of erasure
-  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
-    return W25Qxx_ERROR_AUTOPOLLING;  // Polling wait no response
-  }
-  return QSPI_W25Qxx_OK;  // Erase succeeded
+  if (i < 4096)
+    return false;
+  else
+    return true;
 }
+//
+// int8_t QSPI_W25Qxx_BlockErase_32K(uint32_t SectorAddress) {
+//  QSPI_CommandTypeDef s_command;  // QSPI transport configuration
+//
+//  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
+//  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address mode
+//  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  //	No alternate bytes
+//  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
+//  s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
+//  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;      // Every time the data is transmitted, an instruction is sent
+//  s_command.AddressMode = QSPI_ADDRESS_1_LINE;        // 1-line address mode
+//  s_command.DataMode = QSPI_DATA_NONE;                // No data
+//  s_command.DummyCycles = 0;                          // Number of empty periods
+//  s_command.Address = SectorAddress;                  // Address to erase
+//  s_command.Instruction = W25Qxx_CMD_BlockErase_32K;  // Block erase command, each erase 32K bytes
+//
+//  // Send write enable
+//  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+//    return W25Qxx_ERROR_WRITEENABLE;  // Write enable failed
+//  }
+//  // Issue erase command
+//  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+//    return W25Qxx_ERROR_Erase;  // Erase failed
+//  }
+//  // Use the automatic polling flag bit to wait for the end of erasure
+//  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+//    return W25Qxx_ERROR_AUTOPOLLING;  // Polling wait no response
+//  }
+//  return QSPI_W25Qxx_OK;  // Erase succeeded
+//}
 
 int8_t QSPI_W25Qxx_BlockErase_64K(uint32_t SectorAddress) {
   QSPI_CommandTypeDef s_command;  // QSPI transport configuration
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address mode
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address mode
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  //	No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -435,7 +465,7 @@ int8_t QSPI_W25Qxx_ChipErase(void) {
   QSPI_AutoPollingTypeDef s_config;  // Polling wait configuration parameters
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address mode
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address mode
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  //	No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here
@@ -480,10 +510,9 @@ int8_t QSPI_W25Qxx_ChipErase(void) {
 
 /* write in */
 int8_t QSPI_W25Qxx_WritePage(uint8_t* pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite) {
-  /* TODO: change AddressSize to 32 bits */
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,      // One line command mode
-      .AddressSize = QSPI_ADDRESS_24_BITS,             // 24 bit address
+      .AddressSize = QSPI_ADDRESS_32_BITS,             // 24 bit address
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,  // No alternate bytes
       .DdrMode = QSPI_DDR_MODE_DISABLE,                // Disable DDR mode
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,   // Data delay in DDR mode is not used here
@@ -561,10 +590,10 @@ int8_t QSPI_W25Qxx_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddr, uint32_t Si
 
 /* read */
 int8_t QSPI_W25Qxx_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddr, uint32_t NumByteToRead) {
-  QSPI_CommandTypeDef s_command;  // QSPI transport configuration
+  QSPI_CommandTypeDef s_command = {};  // QSPI transport configuration
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;      // One line command mode
-  s_command.AddressSize = QSPI_ADDRESS_24_BITS;             // 24 bit address
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;             // 24 bit address
   s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;  // No alternate bytes
   s_command.DdrMode = QSPI_DDR_MODE_DISABLE;                // Disable DDR mode
   s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;   // Data delay in DDR mode is not used here

@@ -60,13 +60,13 @@ void cs_clear();
 
 /** accessor functions **/
 
-uint16_t cs_get_last_recorded_sector();
-void cs_set_last_recorded_sector(uint16_t last_recorded_sector);
+uint32_t cs_get_last_recorded_sector();
+void cs_set_last_recorded_sector(uint32_t last_recorded_sector);
 
 uint16_t cs_get_num_recorded_flights();
 void cs_set_num_recorded_flights(uint16_t last_recorded_sector);
 
-uint16_t cs_get_last_sector_of_flight(uint16_t flight_idx);
+uint32_t cs_get_last_sector_of_flight(uint16_t flight_idx);
 
 void cs_set_max_altitude(float altitude);
 void cs_set_max_acceleration(float acceleration);

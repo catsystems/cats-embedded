@@ -113,7 +113,7 @@ void task_recorder(__attribute__((unused)) void *argument) {
 #ifdef FLASH_READ_TEST
     print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
 #endif
-    log_raw("writing to flash...");
+    //log_raw("writing to flash...");
     QSPI_W25Qxx_WritePage(rec_buffer, page_id * 256, 256);
 
 #ifdef FLASH_READ_TEST
@@ -154,7 +154,7 @@ void task_recorder(__attribute__((unused)) void *argument) {
         cs_set_last_recorded_sector(++last_recorded_sector);
         log_debug("Updating last recorded sector to %d; num_flights: %hu", last_recorded_sector,
                   cs_get_num_recorded_flights());
-        //        HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+                HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
         // cs_save();
       } else if (page_id < ((last_recorded_sector)*4096) / 256) {
         log_fatal("Something went horribly wrong!");

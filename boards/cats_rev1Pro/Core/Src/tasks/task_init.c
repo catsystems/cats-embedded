@@ -95,6 +95,9 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   //    cc_set_recorder_mask(selected_entry_types);
   cc_init();
 
+  //cc_defaults();
+
+  //cc_save();
   cc_load();
 
   global_cats_config.config.recorder_mask = UINT32_MAX;
@@ -106,7 +109,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   uint16_t num_flights = cs_get_num_recorded_flights();
   log_trace("Number of recorded flights: %hu", num_flights);
   for (uint16_t i = 0; i < num_flights; i++) {
-    log_trace("Last sectors of flight %hu: %hu", i, cs_get_last_sector_of_flight(i));
+    log_trace("Last sectors of flight %hu: %lu", i, cs_get_last_sector_of_flight(i));
   }
 
   /* Check if the FSM configurations make sense */
@@ -140,30 +143,30 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_disable();
   /* Infinite loop */
 
-  log_raw("erasing the chip..");
-  // QSPI_W25Qxx_ChipErase();
-  log_raw("chip erased..");
 
-  uint8_t test_write[256];
-  uint8_t test_read[256] = {};
-  for (uint32_t i = 0; i < 256; ++i) {
-    test_write[i] = i;
-  }
-  uint32_t curr_page = 250;
+//  uint8_t test_write[256];
+//  uint8_t test_read[256] = {};
+//  for (uint32_t i = 0; i < 256; ++i) {
+//    test_write[i] = i;
+//  }
+
+  //QSPI_W25Qxx_SectorErase(4096);
+
+  //uint32_t curr_page = 16;
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
 
-    log_raw("Writing to page %lu", curr_page);
-    QSPI_W25Qxx_WriteBuffer(test_write, curr_page * 256, 256);
+    //log_raw("Writing to page %lu", curr_page);
+    //QSPI_W25Qxx_WriteBuffer(test_write, curr_page * 256, 256);
 
-    log_raw("Reading from page %lu", curr_page);
-    QSPI_W25Qxx_ReadBuffer(test_read, curr_page * 256, 256);
-    for (uint32_t i = 0; i < 256; ++i) {
-      log_raw("%lu", (uint32_t)test_read[i]);
-    }
-    ++curr_page;
+    //log_raw("Reading from page %lu", curr_page);
+    //QSPI_W25Qxx_ReadBuffer(test_read, curr_page * 256, 256);
+    //for (uint32_t i = 0; i < 256; ++i) {
+    //  log_raw("%lu", (uint32_t)test_read[i]);
+    //}
+    //++curr_page;
     osDelay(100);
   }
 }
@@ -194,8 +197,12 @@ static void init_devices() {
   /* FLASH */
   //  w25qxx_init();
   //  osDelay(10);
-  //  cs_load();
+
   QSPI_W25Qxx_Init();
+
+  log_raw("erasing the chip..");
+  //QSPI_W25Qxx_ChipErase();
+  log_raw("chip erased..");
 
   uint8_t status1 = QSPI_W25Qxx_ReadStatus1();
   uint8_t status2 = QSPI_W25Qxx_ReadStatus2();
@@ -208,21 +215,26 @@ static void init_devices() {
     cs_save();
   }
 
+//  cs_clear();
+//  cs_save();
+  cs_load();
+
   /* set the first writable sector as the last recorded sector + 1 */
-  uint16_t first_writable_sector = cs_get_last_recorded_sector() + 1;
+  uint32_t first_writable_sector = cs_get_last_recorded_sector() + 1;
   /* increment the first writable sector as long as the current sector is not
    * empty */
-  //  while (first_writable_sector < w25qxx.sector_count &&
-  //         !w25qxx_is_empty_sector(first_writable_sector, 0, w25qxx.sector_size)) {
-  //    ++first_writable_sector;
-  //  }
+    while (first_writable_sector < 1024 * 16 &&
+           !QSPI_W25Qxx_is_empty_sector(first_writable_sector * 4096)) {
+      ++first_writable_sector;
+      log_warn("Incrementing last recorded sector...");
+    }
 
   /* if the first writable sector is not immediately following the last recorded
    * sector, update the config */
   if (first_writable_sector != cs_get_last_recorded_sector() + 1) {
     log_warn(
-        "Last recorded sector was: %hu and first writable sector is: "
-        "%hu!",
+        "Last recorded sector was: %lu and first writable sector is: "
+        "%lu!",
         cs_get_last_recorded_sector(), first_writable_sector);
     uint16_t actual_last_recorded_sector = first_writable_sector - 1;
     log_info("Updating last recorded sector to %hu", actual_last_recorded_sector);
@@ -230,11 +242,11 @@ static void init_devices() {
     cs_save();
   }
 
-  //  if (first_writable_sector >= w25qxx.sector_count) {
-  //    log_error("No empty sectors left!");
-  //  } else if (first_writable_sector >= w25qxx.sector_count - 256) {
-  //    log_warn("Less than 256 sectors left!");
-  //  }
+    if (first_writable_sector >= 1024 * 16) {
+      log_error("No empty sectors left!");
+    } else if (first_writable_sector >= 1024 * 16 - 256) {
+      log_warn("Less than 256 sectors left!");
+    }
 }
 
 static void init_communication() {
@@ -257,7 +269,7 @@ static void init_tasks() {
       vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-      // osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
       /* creation of task_baro_read */
       osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
@@ -339,16 +351,16 @@ static void create_event_map() {
   event_action_map = calloc(9, sizeof(event_action_map_elem_t));
 
   // Moving
-  event_action_map[EV_MOVING].num_actions = 1;
-  event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_MOVING].action_list[0].func_arg = REC_WRITE_TO_FLASH;
+//  event_action_map[EV_MOVING].num_actions = 1;
+//  event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
+//  event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
+//  event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Idle
   event_action_map[EV_IDLE].num_actions = 1;
   event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_IDLE].action_list[0].func_arg = REC_WRITE_TO_FLASH;
+  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Liftoff
   event_action_map[EV_LIFTOFF].num_actions = 1;

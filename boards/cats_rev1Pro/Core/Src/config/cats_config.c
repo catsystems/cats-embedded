@@ -57,7 +57,7 @@ void cc_init() {
 }
 void cc_defaults() {
   // TODO get this working!
-  // memset(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
+  memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
 }
 
 /** persistence functions **/
@@ -100,8 +100,8 @@ void cs_clear() { memset(&global_cats_status, 0, sizeof(global_cats_status)); }
 
 /** accessor functions **/
 
-uint16_t cs_get_last_recorded_sector() { return global_cats_status.last_recorded_sector; }
-void cs_set_last_recorded_sector(uint16_t last_recorded_sector) {
+uint32_t cs_get_last_recorded_sector() { return global_cats_status.last_recorded_sector; }
+void cs_set_last_recorded_sector(uint32_t last_recorded_sector) {
   global_cats_status.last_recorded_sector = last_recorded_sector;
   /* Increment the last element of last_sectors_of_flight_recordings */
   /* 32 is good here because we are reducing it by 1 when indexing */
@@ -111,7 +111,7 @@ void cs_set_last_recorded_sector(uint16_t last_recorded_sector) {
   }
 }
 
-uint16_t cs_get_last_sector_of_flight(uint16_t flight_idx) {
+uint32_t cs_get_last_sector_of_flight(uint16_t flight_idx) {
   if (flight_idx < 32) {
     return global_cats_status.last_sectors_of_flight_recordings[flight_idx];
   } else
@@ -169,7 +169,7 @@ void cs_load() {
 
 void cs_save() {
   /* erase sector before writing to it */
-  QSPI_W25Qxx_SectorErase(CATS_STATUS_SECTOR);
+  QSPI_W25Qxx_SectorErase(CATS_STATUS_SECTOR * 256 * 16);
   /* TODO: global_cats_status can't be larger than sector size */
   QSPI_W25Qxx_WriteBuffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * 256 * 16, sizeof(global_cats_status));
 }

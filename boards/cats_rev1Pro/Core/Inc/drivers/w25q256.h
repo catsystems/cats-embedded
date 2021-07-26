@@ -7,6 +7,8 @@
 #include "stm32l433xx.h"
 #include "main.h"
 
+#include <stdbool.h>
+
 /*----------------------------------------------- Named parameter macro-------------------------------------------*/
 
 #define QSPI_W25Qxx_OK            0   // w25qxx communication is normal
@@ -22,16 +24,16 @@
 #define W25Qxx_CMD_JedecID     0x9F  // JEDEC ID
 #define W25Qxx_CMD_WriteEnable 0X06  // write enable
 
-#define W25Qxx_CMD_SectorErase    0x20  // sector erase, 4K bytes, reference erase time 45ms
+#define W25Qxx_CMD_SectorErase    0x21  // sector erase, 4K bytes, reference erase time 45ms
 #define W25Qxx_CMD_BlockErase_32K 0x52  // block erase, 32K bytes, reference erase time 120ms
-#define W25Qxx_CMD_BlockErase_64K 0xD8  // block erase, 64K bytes, reference erase time 150ms
+#define W25Qxx_CMD_BlockErase_64K 0xDC  // block erase, 64K bytes, reference erase time 150ms
 #define W25Qxx_CMD_ChipErase      0xC7  // whole chip erase, reference erase time 20S
 
 #define W25Qxx_CMD_QuadInputPageProgram \
-  0x32  // in 1-1-4 mode (1-line instruction, 1-line address, 4-line data), page programming instruction, reference
+  0x34  // in 1-1-4 mode (1-line instruction, 1-line address, 4-line data), page programming instruction, reference
         // write time 0.4ms
 #define W25Qxx_CMD_FastReadQuad_IO \
-  0xEB  // in 1-4-4 mode (1-wire instruction, 4-wire address, 4-wire data), read instructions quickly
+  0xEC  // in 1-4-4 mode (1-wire instruction, 4-wire address, 4-wire data), read instructions quickly
 
 #define W25Qxx_CMD_ReadStatus_REG1 0X05  // read status register 1
 #define W25Qxx_CMD_ReadStatus_REG2 0x35  // read status register 1
@@ -45,7 +47,7 @@
 
 #define W25Qxx_PageSize  256  // page size, 256 bytes
 #define W25Qxx_FlashSize 0x800000 / / W25Q64 size, 8M bytes
-#define W25Qxx_FLASH_ID  0Xef4019  // W25Q64 JEDEC ID
+#define W25Qxx_FLASH_ID  0Xef4020  // W25Q64 JEDEC ID
 #define W25Qxx_ChipErase_TIMEOUT_MAX \
   100000U  // timeout waiting time. The maximum time required for W25Q64 to erase the whole chip is 100S
 #define W25Qxx_Mem_Addr > 0x90000000  // address of memory mapping mode
@@ -108,6 +110,8 @@ int8_t QSPI_W25Qxx_ReadBuffer(uint8_t *pBuffer, uint32_t ReadAddr, uint32_t NumB
 uint8_t QSPI_W25Qxx_ReadStatus1(void);
 uint8_t QSPI_W25Qxx_ReadStatus2(void);
 uint8_t QSPI_W25Qxx_ReadStatus3(void);
+
+bool QSPI_W25Qxx_is_empty_sector(uint32_t address);
 
 extern QSPI_HandleTypeDef hqspi;
 

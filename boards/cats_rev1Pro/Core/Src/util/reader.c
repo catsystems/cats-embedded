@@ -58,7 +58,7 @@ void print_recording(uint16_t number) {
 void erase_recordings() {
   for (uint32_t i = CATS_STATUS_SECTOR + 1; i < cs_get_last_recorded_sector() + 1; i++) {
       QSPI_W25Qxx_SectorErase(i);
-    log_raw("Erased Sector %lu out of %d", i, cs_get_last_recorded_sector());
+    log_raw("Erased Sector %lu out of %lu", i, cs_get_last_recorded_sector());
   }
   cs_clear();
   cs_save();
