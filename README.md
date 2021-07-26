@@ -18,7 +18,6 @@ Currently the configuration tool is still under development.
 All CATS code is open source and can be used free of charge without warranty. 
 
 ## Pushing to Remote Repository
-
 In order to ensure consistency and easier diff review between commits,
 *clang-format* should be used to format all modified C/C++ files. 
 
