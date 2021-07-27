@@ -25,14 +25,6 @@ static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
 static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
                                uint_fast8_t *rec_elem_size);
 
-#ifdef FLASH_READ_TEST
-static inline void print_elem(const rec_elem_t *rec_elem, char prefix);
-uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix, const rec_elem_t *break_elem);
-
-static const char *rec_type_map[9] = {"ERROR", "IMU0",  "IMU1",        "IMU2",        "BARO0",
-                                      "BARO1", "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
-#endif
-
 /** Exported Function Definitions **/
 
 /* TODO: Look up some wear leveling algorithms... */
@@ -44,35 +36,15 @@ void task_recorder(__attribute__((unused)) void *argument) {
 
   log_debug("Recorder Task Started...\n");
 
-#ifdef FLASH_READ_TEST
-  uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
-#endif
-
   /* At this point, last recorded sector should be 100% accurate */
   uint16_t last_recorded_sector = cs_get_last_recorded_sector();
-  uint32_t page_id = ((last_recorded_sector + 1) * 4096) / 256;
-
-#ifdef FLASH_READ_TEST
-  rec_elem_t break_elem_mem = {.rec_type = HEHE};
-  rec_elem_t break_elem_flash = {.rec_type = HEHE};
-#endif
+  uint32_t page_id = ((last_recorded_sector + 1) * w25q.sector_size) / w25q.page_size;
 
   uint16_t bytes_remaining = 0;
 
-#ifdef FLASH_READ_TEST
-  uint16_t print_bytes_remaining_mem = 0;
-  uint16_t print_bytes_remaining_flash = 0;
-#endif
   uint32_t max_elem_count = 0;
   while (1) {
     rec_elem_t curr_log_elem;
-
-#ifdef FLASH_READ_TEST
-    if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_mem)) + print_bytes_remaining_mem, &rec_buffer[0], bytes_remaining);
-      print_elem(&break_elem_mem, '~');
-    }
-#endif
 
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
@@ -110,31 +82,14 @@ void task_recorder(__attribute__((unused)) void *argument) {
       }
     }
 
-#ifdef FLASH_READ_TEST
-    print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
-#endif
     // log_raw("writing to flash...");
     w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
-
-#ifdef FLASH_READ_TEST
-    w25qxx_read_page(read_buf, page_id, 0, 256);
-
-    if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_flash)) + print_bytes_remaining_flash, &rec_buffer[0], bytes_remaining);
-      print_elem(&break_elem_flash, '*');
-    }
-
-    print_bytes_remaining_flash = print_page(read_buf, bytes_remaining, '$', &break_elem_flash);
-#endif
 
     /* reset log buffer index */
     if (rec_buffer_idx > REC_BUFFER_LEN) {
       bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
       rec_buffer_idx = bytes_remaining;
     } else {
-#ifdef FLASH_READ_TEST
-      bytes_remaining = 0;
-#endif
       rec_buffer_idx = 0;
     }
 

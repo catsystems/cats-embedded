@@ -164,14 +164,14 @@ void cs_set_flight_phase(flight_fsm_e state) {
 
 void cs_load() {
   /* TODO: global_cats_status can't be larger than sector size */
-  w25q_read_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * 256 * 16, sizeof(global_cats_status));
+  w25q_read_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size, sizeof(global_cats_status));
 }
 
 void cs_save() {
   /* erase sector before writing to it */
-  w25q_sector_erase(CATS_STATUS_SECTOR * 256 * 16);
+  w25q_sector_erase(CATS_STATUS_SECTOR * w25q.sector_size);
   /* TODO: global_cats_status can't be larger than sector size */
-  w25q_write_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * 256 * 16, sizeof(global_cats_status));
+  w25q_write_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size, sizeof(global_cats_status));
 }
 
 /** debug functions **/

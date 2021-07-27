@@ -98,6 +98,6 @@ uint8_t w25q_read_status_reg1(void);
 uint8_t w25q_read_status_reg2(void);
 uint8_t w25q_read_status_reg3(void);
 
-bool w25q_is_empty_sector(uint32_t sector_address);
+bool w25q_is_sector_empty(uint32_t sector_address);
 
 extern w25q_t w25q;

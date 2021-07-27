@@ -13,6 +13,7 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "drivers/w25q256.h"
+#include "util/actions.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -73,6 +74,8 @@ static void cliEraseFlash(const char *cmdName, char *cmdline);
 static void cliEraseRecordings(const char *cmdName, char *cmdline);
 static void cliRecInfo(const char *cmdName, char *cmdline);
 static void cliPrintFlight(const char *cmdName, char *cmdline);
+static void cliFlashWrite(const char *cmdName, char *cmdline);
+static void cliFlashStop(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -108,6 +111,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rec_info", "get the flight recorder info", NULL, cliRecInfo),
     CLI_COMMAND_DEF("rec_print_flight", "print a specific flight", "[flight_number]", cliPrintFlight),
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
+    CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cliFlashWrite),
+    CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cliFlashStop),
 };
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
@@ -153,6 +158,16 @@ static void cliPrintFlight(const char *cmdName, char *cmdline) {
   } else {
     log_raw("\nArgument not provided!");
   }
+}
+
+static void cliFlashWrite(const char *cmdName, char *cmdline) {
+  log_raw("\nSetting recorder state to REC_WRITE_TO_FLASH");
+  set_recorder_state(REC_WRITE_TO_FLASH);
+}
+
+static void cliFlashStop(const char *cmdName, char *cmdline) {
+  log_raw("\nSetting recorder state to REC_FILL_QUEUE");
+  set_recorder_state(REC_FILL_QUEUE);
 }
 
 static void cliRead(const char *cmdName, char *cmdline) {

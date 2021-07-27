@@ -200,6 +200,9 @@ static void init_devices() {
 
   w25q_init();
 
+  osDelay(10);
+  cs_load();
+
   log_raw("erasing the chip..");
   //w25q_chip_erase();
   log_raw("chip erased..");
@@ -217,20 +220,17 @@ static void init_devices() {
 
 //  cs_clear();
 //  cs_save();
-  cs_load();
 
   /* set the first writable sector as the last recorded sector + 1 */
   uint32_t first_writable_sector = cs_get_last_recorded_sector() + 1;
-  /* increment the first writable sector as long as the current sector is not
-   * empty */
+  /* increment the first writable sector as long as the current sector is not empty */
     while (first_writable_sector < w25q.sector_count &&
-           !w25q_is_empty_sector(first_writable_sector * w25q.sector_size)) {
+           !w25q_is_sector_empty(first_writable_sector * w25q.sector_size)) {
       ++first_writable_sector;
       log_warn("Incrementing last recorded sector...");
     }
 
-  /* if the first writable sector is not immediately following the last recorded
-   * sector, update the config */
+  /* if the first writable sector is not immediately following the last recorded sector, update the config */
   if (first_writable_sector != cs_get_last_recorded_sector() + 1) {
     log_warn(
         "Last recorded sector was: %lu and first writable sector is: "
@@ -357,10 +357,10 @@ static void create_event_map() {
 //  event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Idle
-  event_action_map[EV_IDLE].num_actions = 1;
-  event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
+//  event_action_map[EV_IDLE].num_actions = 1;
+//  event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
+//  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
+//  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
 
   // Liftoff
   event_action_map[EV_LIFTOFF].num_actions = 1;

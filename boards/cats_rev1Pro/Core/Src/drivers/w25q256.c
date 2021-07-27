@@ -366,18 +366,24 @@ int8_t w25q_sector_erase(uint32_t sector_address) {
   return QSPI_W25Qxx_OK;  // Erase succeeded
 }
 
-bool w25q_is_empty_sector(uint32_t sector_address) {
-  uint8_t buf[32];
+bool w25q_is_sector_empty(uint32_t sector_address) {
+  uint8_t buf[32] = {};
   uint32_t i;
-  for (i = 0; i < 4096; i += 32) {
-    w25q_read_buffer(buf, sector_address, 32);
-    if (buf[31] != 0xFF) break;
+  bool sector_empty = true;
+  uint32_t curr_address = sector_address;
+  for (i = 0; (i < w25q.sector_size) && sector_empty; i += 32) {
+    w25q_read_buffer(buf, curr_address, 32);
+    for (uint32_t x = 0; x < 32; x++) {
+      if (buf[x] != 0xFF) {
+        sector_empty = false;
+        break;
+      }
+    }
+    curr_address += 32;
   }
-  if (i < 4096)
-    return false;
-  else
-    return true;
+  return sector_empty;
 }
+
 //
 // int8_t w25q_block_erase_32k(uint32_t SectorAddress) {
 //  QSPI_CommandTypeDef s_command;  // QSPI transport configuration
@@ -474,7 +480,7 @@ int8_t w25q_chip_erase(void) {
       .StatusBytesSize = 1,                         //	Status bytes
       .Mask =
           W25Q_STATUS_REG1_BUSY,  // Mask the status bytes received in polling mode, and only compare the needed bits
-  };  // Polling wait configuration parameters
+  };                              // Polling wait configuration parameters
 
   s_command.Instruction = W25Q_CMD_READ_STATUS_REG1;  // Read status information register
   s_command.DataMode = QSPI_DATA_1_LINE;              // 1-line data mode
