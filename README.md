@@ -18,7 +18,6 @@ Currently the configuration tool is still under development.
 All CATS code is open source and can be used free of charge without warranty. 
 
 ## Pushing to Remote Repository
-
 In order to ensure consistency and easier diff review between commits,
 *clang-format* should be used to format all modified C/C++ files. 
 
@@ -32,4 +31,5 @@ copy the pre-commit hook from `./hooks` to `./.git/hooks`.
 Unfortunately, it is not easily possible to check whether the code is
 formatted correctly on the server side (while you are doing a push) so
 _**please**_ do this if you are working with C/C++ files. 
+
 
