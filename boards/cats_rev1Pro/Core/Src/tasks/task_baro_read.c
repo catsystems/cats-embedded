@@ -41,13 +41,13 @@ void task_baro_read(void *argument) {
     tick_count += tick_update;
     // Phase 1, get the temperature
     prepare_temp();
-    osDelay(1);
+    osDelay(2);
     read_baro();
-    osDelay(1);
+    osDelay(2);
     prepare_pres();
-    osDelay(1);
+    osDelay(2);
     read_baro();
-    osDelay(1);
+    osDelay(2);
 
     get_temp_pres(temperature, pressure);
 
