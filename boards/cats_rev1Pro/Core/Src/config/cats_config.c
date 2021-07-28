@@ -56,7 +56,6 @@ void cc_init() {
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
 }
 void cc_defaults() {
-  // TODO get this working!
   memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
 }
 

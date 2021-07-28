@@ -608,7 +608,10 @@ static void cliHelp(const char *cmdName, char *cmdline) {
 
 void cliPrint(const char *str) {
   while (*str) {
-    while (fifo_write(cli_out, *str++) == false) osDelay(10);
+    while (fifo_write(cli_out, *str++) == false){
+    	osDelay(10);
+    	*str--;
+    }
   }
 }
 
