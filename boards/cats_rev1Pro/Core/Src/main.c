@@ -63,7 +63,7 @@ UART_HandleTypeDef huart1;
 
 /* Definitions for task_init_name */
 osThreadId_t task_init_nameHandle;
-uint32_t task_init_buffer[256];
+uint32_t task_init_buffer[512];
 osStaticThreadDef_t task_init_control_block;
 const osThreadAttr_t task_init_name_attributes = {
     .name = "task_init_name",
@@ -140,7 +140,7 @@ int main(void) {
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
-  MX_QUADSPI_Init();
+  // MX_QUADSPI_Init();
   MX_RTC_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -366,29 +366,20 @@ static void MX_CAN1_Init(void) {
  * @retval None
  */
 static void MX_QUADSPI_Init(void) {
-  /* USER CODE BEGIN QUADSPI_Init 0 */
+  hqspi.Instance = QUADSPI;  // QSPI peripherals
 
-  /* USER CODE END QUADSPI_Init 0 */
-
-  /* USER CODE BEGIN QUADSPI_Init 1 */
-
-  /* USER CODE END QUADSPI_Init 1 */
-  /* QUADSPI parameter configuration*/
-  hqspi.Instance = QUADSPI;
-  hqspi.Init.ClockPrescaler = 255;
-  hqspi.Init.FifoThreshold = 1;
-  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-  hqspi.Init.FlashSize = 24;
-  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
-  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
-  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
-  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-  if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN QUADSPI_Init 2 */
-
-  /* USER CODE END QUADSPI_Init 2 */
+  // When the memory mapping mode is used, the frequency division coefficient here cannot be set to 0, otherwise the
+  // reading error will occur
+  hqspi.Init.ClockPrescaler = 1;  // The QSPI core clock is divided by 1 + 1 to get the QSPI communication driver clock
+  hqspi.Init.FifoThreshold = 4;   // FIFO threshold
+  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;  // Sample after half CLK cycle
+  hqspi.Init.FlashSize = 25;  // FLASH size, the number of bytes in FLASH = 2^[FSIZE+1], for 8MB W25Q64 set to 22
+  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;  // Time for chip selection to keep high level
+  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;                   // Mode 0
+  hqspi.Init.FlashID = QSPI_FLASH_ID_1;                       // Using QSPI1
+  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;              // Turn off dual flash mode
+  // Application configuration
+  HAL_QSPI_Init(&hqspi);
 }
 
 /**

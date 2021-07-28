@@ -32,3 +32,6 @@ typedef enum {
   ACT_SERVO_FOUR,
   ACT_SET_RECORDER_STATE,
 } action_function_list_e;
+
+/* TODO - don't export this anymore after the flash is working */
+bool set_recorder_state(int32_t state);

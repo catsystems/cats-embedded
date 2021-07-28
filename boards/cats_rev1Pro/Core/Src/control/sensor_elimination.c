@@ -264,7 +264,7 @@ cats_error_e check_imus_1_fault(state_estimation_data_t *data, sensor_eliminatio
   uint8_t counter = 0;
   for (int i = 0; i < 3; i++) {
     if (elimination->faulty_imu[i] == 1) {
-      log_warn("IMU Number %d faulty", i);
+      // log_warn("IMU Number %d faulty", i);
       counter += 1;
     }
   }

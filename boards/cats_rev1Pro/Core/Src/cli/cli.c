@@ -12,7 +12,8 @@
 #include "util/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
+#include "util/actions.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -71,6 +72,10 @@ static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
 static void cliEraseFlash(const char *cmdName, char *cmdline);
 static void cliEraseRecordings(const char *cmdName, char *cmdline);
+static void cliRecInfo(const char *cmdName, char *cmdline);
+static void cliPrintFlight(const char *cmdName, char *cmdline);
+static void cliFlashWrite(const char *cmdName, char *cmdline);
+static void cliFlashStop(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -101,26 +106,68 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
     CLI_COMMAND_DEF("read", "readout the flash", NULL, cliRead),
-    CLI_COMMAND_DEF("erase_flash", "erase the flash", NULL, cliEraseFlash),
-    CLI_COMMAND_DEF("erase_recordings", "erase the recordings", NULL, cliEraseRecordings),
+    CLI_COMMAND_DEF("flash_erase", "erase the flash", NULL, cliEraseFlash),
+    CLI_COMMAND_DEF("rec_erase", "erase the recordings", NULL, cliEraseRecordings),
+    CLI_COMMAND_DEF("rec_info", "get the flight recorder info", NULL, cliRecInfo),
+    CLI_COMMAND_DEF("rec_print_flight", "print a specific flight", "[flight_number]", cliPrintFlight),
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
+    CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cliFlashWrite),
+    CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cliFlashStop),
 };
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
 
 static void cliEraseFlash(const char *cmdName, char *cmdline) {
   log_raw("\nErasing the flash, this might take a while...");
-  w25qxx_erase_chip();
+  w25q_chip_erase();
   cs_init(CATS_STATUS_SECTOR, 0);
   cs_save();
   log_raw("Flash erased!");
 }
+
 static void cliEraseRecordings(const char *cmdName, char *cmdline) {
   log_raw("\nErasing the flight recordings, this might not take much...");
   erase_recordings();
   cs_init(CATS_STATUS_SECTOR, 0);
   cs_save();
   log_raw("Recordings erased!");
+}
+
+static void cliRecInfo(const char *cmdName, char *cmdline) {
+  uint16_t num_flights = cs_get_num_recorded_flights();
+  log_raw("\nNumber of recorded flights: %hu", num_flights);
+  for (uint16_t i = 0; i < num_flights; i++) {
+    log_raw("Last sectors of flight %hu: %lu", i, cs_get_last_sector_of_flight(i));
+  }
+}
+
+static void cliPrintFlight(const char *cmdName, char *cmdline) {
+  uint16_t num_flights = cs_get_num_recorded_flights();
+  char *endptr;
+  uint32_t flight_idx = strtoul(cmdline, &endptr, 10);
+
+  if (cmdline != endptr) {
+    // A number was found
+    if (flight_idx >= num_flights) {
+      log_raw("\nFlight %lu doesn't exist", flight_idx);
+      log_raw("Number of recorded flights: %hu", num_flights);
+    } else {
+      log_raw("");
+      print_recording(flight_idx);
+    }
+  } else {
+    log_raw("\nArgument not provided!");
+  }
+}
+
+static void cliFlashWrite(const char *cmdName, char *cmdline) {
+  log_raw("\nSetting recorder state to REC_WRITE_TO_FLASH");
+  set_recorder_state(REC_WRITE_TO_FLASH);
+}
+
+static void cliFlashStop(const char *cmdName, char *cmdline) {
+  log_raw("\nSetting recorder state to REC_FILL_QUEUE");
+  set_recorder_state(REC_FILL_QUEUE);
 }
 
 static void cliRead(const char *cmdName, char *cmdline) {
@@ -251,7 +298,7 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
 
         case VAR_UINT32:
           // uin32_t array
-          cliPrintf("%u", ((uint32_t *)valuePointer)[i]);
+          cliPrintf("%lu", ((uint32_t *)valuePointer)[i]);
           break;
       }
 
@@ -289,11 +336,11 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
     switch (var->type & VALUE_MODE_MASK) {
       case MODE_DIRECT:
         if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-          cliPrintf("%u", (uint32_t)value);
+          cliPrintf("%lu", (uint32_t)value);
           if ((uint32_t)value > var->config.u32Max) {
             valueIsCorrupted = true;
           } else if (full) {
-            cliPrintf(" 0 %u", var->config.u32Max);
+            cliPrintf(" 0 %lu", var->config.u32Max);
           }
         } else {
           int min;
@@ -365,7 +412,7 @@ static void cliPrintVarRange(const clivalue_t *var) {
     case (MODE_DIRECT): {
       switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT32:
-          cliPrintLinef("Allowed range: 0 - %u", var->config.u32Max);
+          cliPrintLinef("Allowed range: 0 - %lu", var->config.u32Max);
 
           break;
         case VAR_UINT8:
@@ -561,7 +608,10 @@ static void cliHelp(const char *cmdName, char *cmdline) {
 
 void cliPrint(const char *str) {
   while (*str) {
-    while (fifo_write(cli_out, *str++) == false) osDelay(10);
+    while (fifo_write(cli_out, *str++) == false){
+    	osDelay(10);
+    	*str--;
+    }
   }
 }
 

@@ -192,10 +192,11 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     }
     record(FLIGHT_INFO, &flight_info);
 
-    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
-              (int32_t)((float)filter.x_bar.pData[1] * 1000),
-              (int32_t)(filtered_data_info.filtered_acceleration * 1000),
-              (int32_t)((float)filter.x_bar.pData[2] * 1000));
+//    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
+//              (int32_t)((float)filter.x_bar.pData[1] * 1000),
+//              (int32_t)(filtered_data_info.filtered_acceleration * 1000),
+//              (int32_t)((float)filter.x_bar.pData[2] * 1000));
+
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));
     //            log_trace("Calibrated IMU 2: Z: %ld",

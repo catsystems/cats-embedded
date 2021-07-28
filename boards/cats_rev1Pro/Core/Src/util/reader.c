@@ -8,7 +8,7 @@
 #include "util/log.h"
 #include "config/globals.h"
 #include "config/cats_config.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 
 #include "main.h"
 
@@ -25,11 +25,11 @@ void print_recording(uint16_t number) {
     log_raw("Recording of flight #%hu:", number);
     osDelay(2000);
 
-    uint32_t start_page_id = w25qxx_sector_to_page(current_sector);
-    uint32_t end_page_id = w25qxx_sector_to_page(last_sector_of_flight + 1);
+    uint32_t start_page_id = (current_sector * w25q.sector_size) / w25q.page_size;
+    uint32_t end_page_id = ((last_sector_of_flight + 1) * w25q.sector_size) / w25q.page_size;
     uint32_t curr_page_id = start_page_id;
     while (curr_page_id < end_page_id) {
-      w25qxx_read_page(read_buf, curr_page_id, 0, 256);
+      w25q_read_buffer(read_buf, curr_page_id * w25q.page_size, 256);
       int write_idx = 0;
       for (uint32_t j = 0; j < 128; ++j) {
         write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
@@ -43,7 +43,7 @@ void print_recording(uint16_t number) {
 
       ++curr_page_id;
       if (curr_page_id % 16 == 0) {
-        //        HAL_GPIO_TogglePin(GPIOC, LED_FAULT_Pin);
+        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
       }
       memset(string_buffer1, 0, 400);
       memset(string_buffer2, 0, 400);
@@ -57,8 +57,8 @@ void print_recording(uint16_t number) {
 
 void erase_recordings() {
   for (uint32_t i = CATS_STATUS_SECTOR + 1; i < cs_get_last_recorded_sector() + 1; i++) {
-    w25qxx_erase_sector(i);
-    log_raw("Erased Sector %lu out of %d", i, cs_get_last_recorded_sector());
+    w25q_sector_erase(i * w25q.sector_size);
+    log_raw("Erased Sector %lu out of %lu", i, cs_get_last_recorded_sector());
   }
   cs_clear();
   cs_save();

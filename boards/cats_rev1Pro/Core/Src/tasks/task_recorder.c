@@ -6,7 +6,7 @@
 #include "tasks/task_recorder.h"
 #include "util/log.h"
 #include "util/types.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
@@ -25,14 +25,6 @@ static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
 static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
                                uint_fast8_t *rec_elem_size);
 
-#ifdef FLASH_READ_TEST
-static inline void print_elem(const rec_elem_t *rec_elem, char prefix);
-uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix, const rec_elem_t *break_elem);
-
-static const char *rec_type_map[9] = {"ERROR", "IMU0",  "IMU1",        "IMU2",        "BARO0",
-                                      "BARO1", "BARO2", "FLIGHT_INFO", "FLIGHT_STATE"};
-#endif
-
 /** Exported Function Definitions **/
 
 /* TODO: Look up some wear leveling algorithms... */
@@ -44,35 +36,15 @@ void task_recorder(__attribute__((unused)) void *argument) {
 
   log_debug("Recorder Task Started...\n");
 
-#ifdef FLASH_READ_TEST
-  uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
-#endif
-
   /* At this point, last recorded sector should be 100% accurate */
   uint16_t last_recorded_sector = cs_get_last_recorded_sector();
-  uint32_t page_id = w25qxx_sector_to_page(last_recorded_sector + 1);
-
-#ifdef FLASH_READ_TEST
-  rec_elem_t break_elem_mem = {.rec_type = HEHE};
-  rec_elem_t break_elem_flash = {.rec_type = HEHE};
-#endif
+  uint32_t page_id = ((last_recorded_sector + 1) * w25q.sector_size) / w25q.page_size;
 
   uint16_t bytes_remaining = 0;
 
-#ifdef FLASH_READ_TEST
-  uint16_t print_bytes_remaining_mem = 0;
-  uint16_t print_bytes_remaining_flash = 0;
-#endif
   uint32_t max_elem_count = 0;
   while (1) {
     rec_elem_t curr_log_elem;
-
-#ifdef FLASH_READ_TEST
-    if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_mem)) + print_bytes_remaining_mem, &rec_buffer[0], bytes_remaining);
-      print_elem(&break_elem_mem, '~');
-    }
-#endif
 
     /* TODO: check if this should be < or <= */
     while (rec_buffer_idx < REC_BUFFER_LEN) {
@@ -110,30 +82,14 @@ void task_recorder(__attribute__((unused)) void *argument) {
       }
     }
 
-#ifdef FLASH_READ_TEST
-    print_bytes_remaining_mem = print_page(rec_buffer, bytes_remaining, '+', &break_elem_mem);
-#endif
-    w25qxx_write_page(rec_buffer, page_id, 0, 256);
-
-#ifdef FLASH_READ_TEST
-    w25qxx_read_page(read_buf, page_id, 0, 256);
-
-    if (bytes_remaining > 0) {
-      memcpy(((uint8_t *)(&break_elem_flash)) + print_bytes_remaining_flash, &rec_buffer[0], bytes_remaining);
-      print_elem(&break_elem_flash, '*');
-    }
-
-    print_bytes_remaining_flash = print_page(read_buf, bytes_remaining, '$', &break_elem_flash);
-#endif
+    // log_raw("writing to flash...");
+    w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
 
     /* reset log buffer index */
     if (rec_buffer_idx > REC_BUFFER_LEN) {
       bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
       rec_buffer_idx = bytes_remaining;
     } else {
-#ifdef FLASH_READ_TEST
-      bytes_remaining = 0;
-#endif
       rec_buffer_idx = 0;
     }
 
@@ -141,21 +97,21 @@ void task_recorder(__attribute__((unused)) void *argument) {
       memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
 
-    if (page_id == w25qxx.page_count) {
+    if (page_id == w25q.page_count) {
       /* throw an error */
       log_error("No more space left, all pages filled!");
       /* TODO: this task should actually be killed somehow */
       break; /* end the task */
     } else {
-      uint32_t last_page_of_last_recorded_sector = w25qxx_sector_to_page(last_recorded_sector) + 15;
+      uint32_t last_page_of_last_recorded_sector = ((last_recorded_sector + 15) * w25q.sector_size) / w25q.page_size;
       if (page_id > last_page_of_last_recorded_sector) {
         /* we stepped into a new sector, need to update it */
         cs_set_last_recorded_sector(++last_recorded_sector);
         log_debug("Updating last recorded sector to %d; num_flights: %hu", last_recorded_sector,
                   cs_get_num_recorded_flights());
-        //        HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
+        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
         // cs_save();
-      } else if (page_id < w25qxx_sector_to_page(last_recorded_sector)) {
+      } else if (page_id < (last_recorded_sector * w25q.sector_size) / w25q.page_size) {
         log_fatal("Something went horribly wrong!");
       }
       page_id++;

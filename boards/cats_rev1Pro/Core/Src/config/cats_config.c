@@ -3,7 +3,7 @@
 //
 
 #include "config/cats_config.h"
-#include "drivers/w25qxx.h"
+#include "drivers/w25q256.h"
 #include "util/log.h"
 #include "drivers/eeprom_emul.h"
 
@@ -46,7 +46,6 @@ const cats_config_u DEFAULT_CONFIG = {
 cats_config_u global_cats_config = {};
 cats_status_t global_cats_status = {};
 
-const uint32_t CATS_CONFIG_SECTOR = 0;
 const uint32_t CATS_STATUS_SECTOR = 1;
 
 /** cats config initialization **/
@@ -57,8 +56,7 @@ void cc_init() {
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
 }
 void cc_defaults() {
-  // TODO get this working!
-  // memset(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
+  memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
 }
 
 /** persistence functions **/
@@ -101,8 +99,8 @@ void cs_clear() { memset(&global_cats_status, 0, sizeof(global_cats_status)); }
 
 /** accessor functions **/
 
-uint16_t cs_get_last_recorded_sector() { return global_cats_status.last_recorded_sector; }
-void cs_set_last_recorded_sector(uint16_t last_recorded_sector) {
+uint32_t cs_get_last_recorded_sector() { return global_cats_status.last_recorded_sector; }
+void cs_set_last_recorded_sector(uint32_t last_recorded_sector) {
   global_cats_status.last_recorded_sector = last_recorded_sector;
   /* Increment the last element of last_sectors_of_flight_recordings */
   /* 32 is good here because we are reducing it by 1 when indexing */
@@ -112,7 +110,7 @@ void cs_set_last_recorded_sector(uint16_t last_recorded_sector) {
   }
 }
 
-uint16_t cs_get_last_sector_of_flight(uint16_t flight_idx) {
+uint32_t cs_get_last_sector_of_flight(uint16_t flight_idx) {
   if (flight_idx < 32) {
     return global_cats_status.last_sectors_of_flight_recordings[flight_idx];
   } else
@@ -165,14 +163,14 @@ void cs_set_flight_phase(flight_fsm_e state) {
 
 void cs_load() {
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_read_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
+  w25q_read_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size, sizeof(global_cats_status));
 }
 
 void cs_save() {
   /* erase sector before writing to it */
-  w25qxx_erase_sector(CATS_STATUS_SECTOR);
+  w25q_sector_erase(CATS_STATUS_SECTOR * w25q.sector_size);
   /* TODO: global_cats_status can't be larger than sector size */
-  w25qxx_write_sector((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR, 0, sizeof(global_cats_status));
+  w25q_write_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size, sizeof(global_cats_status));
 }
 
 /** debug functions **/
