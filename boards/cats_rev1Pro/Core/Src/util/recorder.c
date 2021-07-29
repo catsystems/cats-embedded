@@ -40,6 +40,10 @@ void record(rec_entry_type_e rec_type, const void *rec_value) {
         // log_warn("logging BARO %d", rec_type);
         e.u.baro = *((baro_data_t *)rec_value);
         break;
+      case MAGNETO:
+        // log_warn("logging MAGNETO_INFO");
+        e.u.magneto_info = *((magneto_data_t *)rec_value);
+        break;
       case FLIGHT_INFO:
         // log_warn("logging FLIGHT_INFO");
         e.u.flight_info = *((flight_info_t *)rec_value);

@@ -135,6 +135,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case BARO2:
       rec_elem_size += sizeof(rec_elem->u.baro);
       break;
+    case MAGNETO:
+      rec_elem_size += sizeof(rec_elem->u.magneto_info);
+      break;
     case FLIGHT_INFO:
       rec_elem_size += sizeof(rec_elem->u.flight_info);
       break;

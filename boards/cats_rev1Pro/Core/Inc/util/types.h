@@ -55,6 +55,7 @@ typedef struct {
   uint8_t faulty_baro[3];
   uint8_t num_faulty_imus;
   uint8_t num_faulty_baros;
+  bool high_acc;
 } sensor_elimination_t;
 
 typedef struct {

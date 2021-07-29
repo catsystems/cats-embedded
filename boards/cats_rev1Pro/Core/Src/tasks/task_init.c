@@ -7,6 +7,7 @@
 #include "config/globals.h"
 #include "util/log.h"
 #include "drivers/adc.h"
+#include "drivers/spi.h"
 #include "drivers/eeprom_emul.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
@@ -68,6 +69,8 @@ static void init_tasks();
 static void init_imu();
 
 static void init_baro();
+
+static void init_magneto();
 
 static void init_buzzer();
 
@@ -189,6 +192,9 @@ static void init_devices() {
   osDelay(10);
   /* BARO */
   init_baro();
+  osDelay(10);
+  /* MAGNETO */
+  init_magneto();
   osDelay(10);
   /* BUZZER */
   init_buzzer();
@@ -330,6 +336,12 @@ static void init_baro() {
   osDelay(10);
   ms5607_init(&MS3);
   osDelay(10);
+}
+
+static void init_magneto() {
+  spi_init(MAG.spi);
+  mmc5983ma_init(&MAG);
+  // mmc5983_calibration(&MAG);
 }
 
 static void init_buzzer() {

@@ -7,7 +7,6 @@
 
 #include "control/sensor_elimination.h"
 #include "util/log.h"
-#include <stdlib.h>
 #include <math.h>
 
 cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *elimination) {
@@ -44,26 +43,60 @@ cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *
 cats_error_e check_imus_no_faults(state_estimation_data_t *data, sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
-    if ((data->acceleration[i] > UPPER_BOUND_ACC) || (data->acceleration[i] < LOWER_BOUND_ACC)) {
-      elimination->faulty_imu[i] = 1;
+    if (i == HIGH_G_ACC_INDEX) {
+      /* check Bound of high G accel */
+      if ((data->acceleration[i] > UPPER_BOUND_100G_ACC) || (data->acceleration[i] < LOWER_BOUND_100G_ACC)) {
+        elimination->faulty_imu[i] = 1;
+      }
+      /* check if we are in high acceleration mode */
+      else if ((data->acceleration[i] > UPPER_BOUND_ACC) && (data->acceleration[i] < UPPER_BOUND_100G_ACC)) {
+        elimination->high_acc = true;
+      } else {
+        elimination->high_acc = false;
+      }
     }
   }
 
   /* Check freezing of Sensor */
-  for (int i = 0; i < 3; i++) {
-    /* Acceleration */
-    if (data->acceleration[i] == elimination->last_value[i]) {
-      elimination->num_freeze[i] += 1;
-      if (elimination->num_freeze[i] > MAX_NUM_SAME_VALUE_IMU) {
-        elimination->faulty_imu[i] = 1;
+  if (elimination->high_acc) {
+    /* Only check high accel IMU */
+    if (data->acceleration[HIGH_G_ACC_INDEX] == elimination->last_value[HIGH_G_ACC_INDEX]) {
+      elimination->num_freeze[HIGH_G_ACC_INDEX] += 1;
+      if (elimination->num_freeze[HIGH_G_ACC_INDEX] > MAX_NUM_SAME_VALUE_IMU) {
+        elimination->faulty_imu[HIGH_G_ACC_INDEX] = 1;
       }
     } else {
-      elimination->last_value[i] = data->acceleration[i];
-      elimination->num_freeze[i] = 0;
+      elimination->last_value[HIGH_G_ACC_INDEX] = data->acceleration[HIGH_G_ACC_INDEX];
+      elimination->num_freeze[HIGH_G_ACC_INDEX] = 0;
+    }
+  } else {
+    /* Check all IMUs */
+    for (int i = 0; i < 3; i++) {
+      if (data->acceleration[i] == elimination->last_value[i]) {
+        elimination->num_freeze[i] += 1;
+        if (elimination->num_freeze[i] > MAX_NUM_SAME_VALUE_IMU) {
+          elimination->faulty_imu[i] = 1;
+        }
+      } else {
+        elimination->last_value[i] = data->acceleration[i];
+        elimination->num_freeze[i] = 0;
+      }
     }
   }
 
-  /* Do Majority Voting */
+  /* Do Majority Voting only if we are in low acceleration mode */
+  if (elimination->high_acc) {
+    switch (elimination->num_faulty_imus) {
+      case 0:
+        return CATS_ERR_OK;
+      case 1:
+        return CATS_ERR_IMU;
+      case 2:
+        return CATS_ERR_IMU;
+      default:
+        return CATS_ERR_FILTER;
+    }
+  }
   float error[3] = {0};
 
   /* Acceleration */
@@ -112,7 +145,7 @@ cats_error_e check_imus_no_faults(state_estimation_data_t *data, sensor_eliminat
     case 1:
       return CATS_ERR_IMU;
     case 2:
-      return CATS_ERR_FILTER;
+      return CATS_ERR_IMU;
     default:
       return CATS_ERR_FILTER;
   }
@@ -232,7 +265,7 @@ cats_error_e check_baros_no_faults(state_estimation_data_t *data, sensor_elimina
     case 1:
       return CATS_ERR_BARO;
     case 2:
-      return CATS_ERR_FILTER;
+      return CATS_ERR_IMU;
     default:
       return CATS_ERR_FILTER;
   }
@@ -241,22 +274,44 @@ cats_error_e check_baros_no_faults(state_estimation_data_t *data, sensor_elimina
 cats_error_e check_imus_1_fault(state_estimation_data_t *data, sensor_elimination_t *elimination) {
   /* Check bounds */
   for (int i = 0; i < 3; i++) {
-    if ((data->acceleration[i] > UPPER_BOUND_ACC) || (data->acceleration[i] < LOWER_BOUND_ACC)) {
-      elimination->faulty_imu[i] = 1;
+    if (i == HIGH_G_ACC_INDEX) {
+      /* check Bound of 100G accel */
+      if ((data->acceleration[i] > UPPER_BOUND_100G_ACC) || (data->acceleration[i] < LOWER_BOUND_100G_ACC)) {
+        elimination->faulty_imu[i] = 1;
+      }
+      /* check if we are in high acceleration mode */
+      else if ((data->acceleration[i] > UPPER_BOUND_ACC) && (data->acceleration[i] < UPPER_BOUND_100G_ACC)) {
+        elimination->high_acc = true;
+      } else {
+        elimination->high_acc = false;
+      }
     }
   }
 
   /* Check freezing of Sensor */
-  for (int i = 0; i < 3; i++) {
-    /* Acceleration */
-    if (data->acceleration[i] == elimination->last_value[i]) {
-      elimination->num_freeze[i] += 1;
-      if (elimination->num_freeze[i] > MAX_NUM_SAME_VALUE_IMU) {
-        elimination->faulty_imu[i] = 1;
+  if (elimination->high_acc) {
+    /* Only check high accel IMU */
+    if (data->acceleration[HIGH_G_ACC_INDEX] == elimination->last_value[HIGH_G_ACC_INDEX]) {
+      elimination->num_freeze[HIGH_G_ACC_INDEX] += 1;
+      if (elimination->num_freeze[HIGH_G_ACC_INDEX] > MAX_NUM_SAME_VALUE_IMU) {
+        elimination->faulty_imu[HIGH_G_ACC_INDEX] = 1;
       }
     } else {
-      elimination->last_value[i] = data->acceleration[i];
-      elimination->num_freeze[i] = 0;
+      elimination->last_value[HIGH_G_ACC_INDEX] = data->acceleration[HIGH_G_ACC_INDEX];
+      elimination->num_freeze[HIGH_G_ACC_INDEX] = 0;
+    }
+  } else {
+    /* Check all IMUs */
+    for (int i = 0; i < 3; i++) {
+      if (data->acceleration[i] == elimination->last_value[i]) {
+        elimination->num_freeze[i] += 1;
+        if (elimination->num_freeze[i] > MAX_NUM_SAME_VALUE_IMU) {
+          elimination->faulty_imu[i] = 1;
+        }
+      } else {
+        elimination->last_value[i] = data->acceleration[i];
+        elimination->num_freeze[i] = 0;
+      }
     }
   }
 
@@ -276,7 +331,7 @@ cats_error_e check_imus_1_fault(state_estimation_data_t *data, sensor_eliminatio
     case 1:
       return CATS_ERR_IMU;
     case 2:
-      return CATS_ERR_FILTER;
+      return CATS_ERR_IMU;
     default:
       return CATS_ERR_FILTER;
   }
@@ -331,7 +386,7 @@ cats_error_e check_baros_1_fault(state_estimation_data_t *data, sensor_eliminati
     case 1:
       return CATS_ERR_BARO;
     case 2:
-      return CATS_ERR_FILTER;
+      return CATS_ERR_BARO;
     default:
       return CATS_ERR_FILTER;
   }

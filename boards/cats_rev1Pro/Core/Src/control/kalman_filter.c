@@ -7,7 +7,7 @@
 
 #include "control/kalman_filter.h"
 #include "cmsis_os.h"
-
+#include "config/globals.h"
 #include <string.h>
 
 void init_filter_struct(kalman_filter_t *const filter) {
@@ -201,17 +201,37 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
   /* Prediction Step */
 
   /* Average Acceleration */
-  /* Check if we have ruled out an accelerometer */
-  for (int i = 0; i < 3; i++) {
-    if (elimination->faulty_imu[i] == 0) {
-      u += data->acceleration[i];
+  int counter_acc = 0;
+  /* check if we are in high acceleration mode */
+  if (elimination->high_acc) {
+    u = data->acceleration[HIGH_G_ACC_INDEX];
+    counter_acc++;
+  } else {
+    /* Check if we have ruled out an accelerometer */
+    /* if we only have one accelerometer left, use it */
+    if (elimination->num_faulty_imus == 2) {
+      for (int i = 0; i < 3; i++) {
+        if (elimination->faulty_imu[i] == 0) {
+          u += data->acceleration[i];
+          counter_acc++;
+        }
+      }
+    }
+    /* if we have at least two left, only use low acc imus */
+    else {
+      for (int i = 0; i < 3; i++) {
+        if ((elimination->faulty_imu[i] == 0) && (i != HIGH_G_ACC_INDEX)) {
+          u += data->acceleration[i];
+          counter_acc++;
+        }
+      }
     }
   }
 
   if (fsm_state > APOGEE) {
     u = 0;
   } else {
-    u /= (float)(3 - elimination->num_faulty_imus);
+    u /= (float)(counter_acc);
   }
 
   /* Calculate Prediction of the state: x_hat = A*x_bar + B*u */
@@ -508,7 +528,7 @@ cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data,
   if (elimination->num_faulty_baros > 1) {
     log_error("Kalman step faulty baros: %d", elimination->num_faulty_baros);
   }
-  if (elimination->num_faulty_imus > 1) {
+  if (elimination->num_faulty_imus >= 1) {
     log_error("Faulty IMUs: %d", elimination->num_faulty_imus);
   }
   return status;

@@ -108,7 +108,6 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
       reset_kalman(&filter, average_pressure);
       calibrate_imu(&average_imu, &calibration);
     }
-
     /* Remove Accel Data when we enter apogee for the KF */
     if ((fsm_state.flight_state == APOGEE) && (fsm_state.flight_state != old_fsm_enum)) {
       float32_t Q_dash[4] = {0, 0, 0, 10.0f};
@@ -117,20 +116,35 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
     transform_data(&state_data, &filter, &calibration, &fsm_state);
-    raw_accel = (state_data.acceleration[0] + state_data.acceleration[1] + state_data.acceleration[2]) / 3;
-    raw_altitude_AGL = (state_data.calculated_AGL[0] + state_data.calculated_AGL[1] + state_data.calculated_AGL[2]) / 3;
+    raw_accel = 0;
+    raw_altitude_AGL = 0;
+    for (int i = 0; i < 3; i++) {
+      if (elimination.faulty_imu[i] == 0) {
+        raw_accel += state_data.acceleration[i] / (float)(elimination.num_faulty_imus);
+      }
+      if (elimination.faulty_baro[i] == 0) {
+        raw_altitude_AGL += state_data.calculated_AGL[i] / (float)(elimination.num_faulty_baros);
+      }
+    }
 
     /* Filter Data */
 #ifdef USE_MEDIAN_FILTER
     median_filter(&filter_data, &state_data);
-    filtered_data_info_t filtered_data_info = {
-        .ts = osKernelGetTickCount(),
-        .measured_altitude_AGL = raw_altitude_AGL,
-        .measured_acceleration = raw_accel,
-        .filtered_acceleration =
-            (state_data.acceleration[0] + state_data.acceleration[1] + state_data.acceleration[2]) / 3.0f,
-        .filtered_altitude_AGL =
-            (state_data.calculated_AGL[0] + state_data.calculated_AGL[1] + state_data.calculated_AGL[2]) / 3.0f};
+    float filtered_acc = 0;
+    float filtered_AGL = 0;
+    for (int i = 0; i < 3; i++) {
+      if (elimination.faulty_imu[i] == 0) {
+        filtered_acc += state_data.acceleration[i] / (float)(elimination.num_faulty_imus);
+      }
+      if (elimination.faulty_baro[i] == 0) {
+        filtered_AGL += state_data.calculated_AGL[i] / (float)(elimination.num_faulty_baros);
+      }
+    }
+    filtered_data_info_t filtered_data_info = {.ts = osKernelGetTickCount(),
+                                               .measured_altitude_AGL = raw_altitude_AGL,
+                                               .measured_acceleration = raw_accel,
+                                               .filtered_acceleration = filtered_acc,
+                                               .filtered_altitude_AGL = filtered_AGL};
     record(FILTERED_DATA_INFO, &filtered_data_info);
 #endif
 
@@ -192,10 +206,10 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     }
     record(FLIGHT_INFO, &flight_info);
 
-//    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
-//              (int32_t)((float)filter.x_bar.pData[1] * 1000),
-//              (int32_t)(filtered_data_info.filtered_acceleration * 1000),
-//              (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    log_trace("Height %ld; Velocity %ld; Acceleration %ld; Offset %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
+              (int32_t)((float)filter.x_bar.pData[1] * 1000),
+              (int32_t)(filtered_data_info.filtered_acceleration * 1000),
+              (int32_t)((float)filter.x_bar.pData[2] * 1000));
 
     //            log_trace("Calibrated IMU 1: Z: %ld",
     //            (int32_t)(1000*state_data.acceleration[0]));

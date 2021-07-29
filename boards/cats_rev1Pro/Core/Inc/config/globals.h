@@ -49,7 +49,8 @@ extern fifo_t usb_output_fifo;
 extern uint8_t usb_fifo_out_buffer[256];
 
 /** State Estimation **/
-
+/* Index of high G Accel */
+#define HIGH_G_ACC_INDEX 2
 extern baro_data_t global_baro[3];
 extern imu_data_t global_imu[3];
 extern magneto_data_t global_magneto;
