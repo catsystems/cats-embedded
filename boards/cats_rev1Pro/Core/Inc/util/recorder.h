@@ -30,14 +30,15 @@ typedef enum {
   BARO0 = 0x08,
   BARO1 = 0x10,
   BARO2 = 0x20,
-  FLIGHT_INFO = 0x40,
-  FILTERED_DATA_INFO = 0x80,
-  FLIGHT_STATE = 0x100,
-  COVARIANCE_INFO = 0x200,
-  SENSOR_INFO = 0x400,
-  EVENT_INFO = 0x800,
-  ERROR_INFO = 0x1000,
-  HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
+  MAGNETO = 0x40,
+  FLIGHT_INFO = 0x80,
+  FILTERED_DATA_INFO = 0x100,
+  FLIGHT_STATE = 0x200,
+  COVARIANCE_INFO = 0x400,
+  SENSOR_INFO = 0x800,
+  EVENT_INFO = 0x1000,
+  ERROR_INFO = 0x2000,
+  HEHE = 0xFFFFFFFF,
 } rec_entry_type_e;
 
 typedef struct {
@@ -100,6 +101,7 @@ typedef union {
   sensor_info_t sensor_info;
   event_info_t event_info;
   error_info_t error_info;
+  magneto_data_t magneto_info;
 } rec_elem_u;
 
 typedef struct {

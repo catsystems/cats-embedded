@@ -9,11 +9,16 @@
 
 #include "util/types.h"
 #include "util/error_handler.h"
+#include "config/globals.h"
 
 /* in m/s^2 */
-#define UPPER_BOUND_ACC 320
+#define UPPER_BOUND_100G_ACC 1900
 /* in m/s^2 */
-#define LOWER_BOUND_ACC (-320)
+#define LOWER_BOUND_100G_ACC (-1900)
+/* in m/s^2 */
+#define UPPER_BOUND_ACC 300
+/* in m/s^2 */
+#define LOWER_BOUND_ACC (-300)
 /* in Pa */
 #define UPPER_BOUND_PRESSURE 200000
 /* in Pa */
@@ -35,7 +40,7 @@
 #define MAJ_VOTE_NUM_VALUES 5
 /* The error in m/s^2 that has to be between 2 imus and the third to count as
  * faulty imu */
-#define MAJ_VOTE_IMU_ERROR 3
+#define MAJ_VOTE_IMU_ERROR 20
 /* The error in Pa that has to be between 2 baros and the third to count as
  * faulty baro */
 #define MAJ_VOTE_PRESSURE_ERROR 1000

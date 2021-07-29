@@ -12,7 +12,7 @@ static uint16_t instance_count = 0;
 
 static SPI_BUS *buses[MAX_INSTANCES];
 
-static void spi_init(SPI_BUS *bus) {
+void spi_init(SPI_BUS *bus) {
   buses[instance_count] = bus;
   instance_count++;
 }
