@@ -89,7 +89,9 @@ static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t
 }
 
 // Write command
-static void ms_write_command(MS5607 *dev, uint8_t command) { spi_transmit(dev->spi_bus, &command, 1); }
+static void ms_write_command(MS5607 *dev, uint8_t command) {
+	spi_transmit(dev->spi_bus, &command, 1);
+}
 
 static void read_calibration(MS5607 *dev) {
   for (int i = 0; i < 6; i++) {
