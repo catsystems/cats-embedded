@@ -6,7 +6,7 @@
 #include "tasks/task_recorder.h"
 #include "util/log.h"
 #include "util/types.h"
-#include "drivers/w25q256.h"
+#include "drivers/w25q.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"

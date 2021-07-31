@@ -140,7 +140,7 @@ int main(void) {
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
-  // MX_QUADSPI_Init();
+  MX_QUADSPI_Init();
   MX_RTC_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -366,20 +366,29 @@ static void MX_CAN1_Init(void) {
  * @retval None
  */
 static void MX_QUADSPI_Init(void) {
-  hqspi.Instance = QUADSPI;  // QSPI peripherals
+  hqspi.Instance = QUADSPI;
 
-  // When the memory mapping mode is used, the frequency division coefficient here cannot be set to 0, otherwise the
-  // reading error will occur
-  hqspi.Init.ClockPrescaler = 1;  // The QSPI core clock is divided by 1 + 1 to get the QSPI communication driver clock
-  hqspi.Init.FifoThreshold = 4;   // FIFO threshold
-  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;  // Sample after half CLK cycle
-  hqspi.Init.FlashSize = 25;  // FLASH size, the number of bytes in FLASH = 2^[FSIZE+1], for 8MB W25Q64 set to 22
-  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;  // Time for chip selection to keep high level
-  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;                   // Mode 0
-  hqspi.Init.FlashID = QSPI_FLASH_ID_1;                       // Using QSPI1
-  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;              // Turn off dual flash mode
+  hqspi.Init.ClockPrescaler = 1;
+  hqspi.Init.FifoThreshold = 4;
+  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
+  hqspi.Init.FlashSize = 25;
+  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
+  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
+  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
   // Application configuration
   HAL_QSPI_Init(&hqspi);
+
+  /* USER CODE BEGIN QUADSPI_Init */
+  //  hqspi.Init.ClockPrescaler = 1;
+  //  hqspi.Init.FifoThreshold = 4;
+  //  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
+  //  hqspi.Init.FlashSize = 25;
+  //  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
+  //  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
+  //  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
+  //  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+  /* USER CODE END QUADSPI_Init */
 }
 
 /**

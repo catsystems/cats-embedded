@@ -32,7 +32,6 @@ bool servo_channel_two(int32_t angle);
 bool servo_channel_three(int32_t angle);  // reserved for later use
 bool servo_channel_four(int32_t angle);   // reserved for later use
 
-
 const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {no_action_function,         os_delay,
                                                               high_current_channel_one,   high_current_channel_two,
                                                               high_current_channel_three, high_current_channel_four,
