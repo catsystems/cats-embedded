@@ -8,7 +8,7 @@
 #include "util/log.h"
 #include "config/globals.h"
 #include "config/cats_config.h"
-#include "drivers/w25q256.h"
+#include "drivers/w25q.h"
 
 #include "main.h"
 

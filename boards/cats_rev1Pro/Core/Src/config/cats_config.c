@@ -3,7 +3,7 @@
 //
 
 #include "config/cats_config.h"
-#include "drivers/w25q256.h"
+#include "drivers/w25q.h"
 #include "util/log.h"
 #include "drivers/eeprom_emul.h"
 
@@ -55,9 +55,7 @@ void cc_init() {
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
 }
-void cc_defaults() {
-  memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
-}
+void cc_defaults() { memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config)); }
 
 /** persistence functions **/
 
@@ -170,7 +168,8 @@ void cs_save() {
   /* erase sector before writing to it */
   w25q_sector_erase(CATS_STATUS_SECTOR * w25q.sector_size);
   /* TODO: global_cats_status can't be larger than sector size */
-  w25q_write_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size, sizeof(global_cats_status));
+  w25q_write_buffer((uint8_t *)(&global_cats_status), CATS_STATUS_SECTOR * w25q.sector_size,
+                    sizeof(global_cats_status));
 }
 
 /** debug functions **/

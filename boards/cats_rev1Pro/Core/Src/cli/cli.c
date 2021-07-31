@@ -12,7 +12,7 @@
 #include "util/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "drivers/w25q256.h"
+#include "drivers/w25q.h"
 #include "util/actions.h"
 
 #include <string.h>
@@ -608,9 +608,9 @@ static void cliHelp(const char *cmdName, char *cmdline) {
 
 void cliPrint(const char *str) {
   while (*str) {
-    while (fifo_write(cli_out, *str++) == false){
-    	osDelay(10);
-    	*str--;
+    while (fifo_write(cli_out, *str++) == false) {
+      osDelay(10);
+      *str--;
     }
   }
 }
