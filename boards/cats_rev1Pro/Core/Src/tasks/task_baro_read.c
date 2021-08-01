@@ -49,7 +49,7 @@ void task_baro_read(void *argument) {
     read_baro();
 
     // Prepare new readout
-    if(stage == READ_BARO_TEMPERATURE){
+    if (stage == READ_BARO_TEMPERATURE) {
     	prepare_pres();
     	stage = READ_BARO_PRESSURE;
     } else {
