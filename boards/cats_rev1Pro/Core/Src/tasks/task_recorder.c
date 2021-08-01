@@ -6,14 +6,13 @@
 #include "tasks/task_recorder.h"
 #include "util/log.h"
 #include "util/types.h"
-#include "drivers/w25q.h"
+#include "lfs/lfs_custom.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "main.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 
 /** Private Constants **/
 
@@ -27,8 +26,7 @@ static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, 
 
 /** Exported Function Definitions **/
 
-/* TODO: Look up some wear leveling algorithms... */
-void task_recorder(__attribute__((unused)) void *argument) {
+_Noreturn void task_recorder(__attribute__((unused)) void *argument) {
   uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
 
   uint16_t rec_buffer_idx = 0;
@@ -36,14 +34,11 @@ void task_recorder(__attribute__((unused)) void *argument) {
 
   log_debug("Recorder Task Started...\n");
 
-  /* At this point, last recorded sector should be 100% accurate */
-  uint16_t last_recorded_sector = cs_get_last_recorded_sector();
-  uint32_t page_id = ((last_recorded_sector + 1) * w25q.sector_size) / w25q.page_size;
-
   uint16_t bytes_remaining = 0;
-
   uint32_t max_elem_count = 0;
+
   while (1) {
+    static uint32_t sync_counter = 0;
     rec_elem_t curr_log_elem;
 
     /* TODO: check if this should be < or <= */
@@ -53,21 +48,13 @@ void task_recorder(__attribute__((unused)) void *argument) {
         max_elem_count = curr_elem_count;
         log_warn("max_queued_elems: %lu", max_elem_count);
       }
-      /* We should write to flash only in [THRUSTING_1, TOUCHDOWN) */
-      //      if (global_flight_state.flight_state >= THRUSTING_1 &&
-      //          global_flight_state.flight_state < TOUCHDOWN) {
+
       if (global_recorder_status >= REC_WRITE_TO_FLASH) {
         if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
-          //#ifdef FLASH_READ_TEST
-          //        print_elem(&curr_log_elem, '-');
-          //#endif
-
           write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
         } else {
           log_error("Something wrong with the recording queue!");
         }
-        //      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT &&
-        //                 global_flight_state.flight_state < THRUSTING_1) {
       } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT && global_recorder_status == REC_FILL_QUEUE) {
         /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we
          * start to empty it. When thrusting is detected we will have around
@@ -82,8 +69,9 @@ void task_recorder(__attribute__((unused)) void *argument) {
       }
     }
 
-    // log_raw("writing to flash...");
-    w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
+    /* call LFS function here */
+    // w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
+    lfs_file_write(&lfs, &current_flight_file, rec_buffer, 256);
 
     /* reset log buffer index */
     if (rec_buffer_idx > REC_BUFFER_LEN) {
@@ -97,27 +85,15 @@ void task_recorder(__attribute__((unused)) void *argument) {
       memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
 
-    if (page_id == w25q.page_count) {
-      /* throw an error */
-      log_error("No more space left, all pages filled!");
-      /* TODO: this task should actually be killed somehow */
-      break; /* end the task */
-    } else {
-      uint32_t last_page_of_last_recorded_sector = ((last_recorded_sector + 15) * w25q.sector_size) / w25q.page_size;
-      if (page_id > last_page_of_last_recorded_sector) {
-        /* we stepped into a new sector, need to update it */
-        cs_set_last_recorded_sector(++last_recorded_sector);
-        log_debug("Updating last recorded sector to %d; num_flights: %hu", last_recorded_sector,
-                  cs_get_num_recorded_flights());
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        // cs_save();
-      } else if (page_id < (last_recorded_sector * w25q.sector_size) / w25q.page_size) {
-        log_fatal("Something went horribly wrong!");
-      }
-      page_id++;
+    if (sync_counter % 16 == 0) {
+      /* Flash the LED at certain intervals */
+      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+      lfs_file_sync(&lfs, &current_flight_file);
     }
+    ++sync_counter;
+
+    /* TODO: check if there is enough space left on the flash */
   }
-  free(rec_buffer);
 }
 
 /** Private Function Definitions **/

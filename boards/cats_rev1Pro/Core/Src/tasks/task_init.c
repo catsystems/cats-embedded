@@ -23,9 +23,12 @@
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_receiver.h"
 #include "tasks/task_health_monitor.h"
+#include "lfs/lfs.h"
+#include "lfs/lfs_custom.h"
 #include "util/fifo.h"
 #include "main.h"
 #include "cmsis_os.h"
+
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -61,6 +64,8 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
 static void init_system();
 
 static void init_devices();
+
+static void init_lfs();
 
 static void init_communication();
 
@@ -109,12 +114,6 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(10);
 
-  uint16_t num_flights = cs_get_num_recorded_flights();
-  log_trace("Number of recorded flights: %hu", num_flights);
-  for (uint16_t i = 0; i < num_flights; i++) {
-    log_trace("Last sectors of flight %hu: %lu", i, cs_get_last_sector_of_flight(i));
-  }
-
   /* Check if the FSM configurations make sense */
   if (global_cats_config.config.control_settings.liftoff_acc_threshold < 1500) {
     log_error("Acceleration Threshold is not configured Properly!");
@@ -122,6 +121,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   }
 
   osDelay(100);
+
+  init_lfs();
 
   create_event_map();
   init_timers();
@@ -146,29 +147,10 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_disable();
   /* Infinite loop */
 
-  //  uint8_t test_write[256];
-  //  uint8_t test_read[256] = {};
-  //  for (uint32_t i = 0; i < 256; ++i) {
-  //    test_write[i] = i;
-  //  }
-
-  // w25q_sector_erase(4096);
-
-  // uint32_t curr_page = 16;
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
-
-    // log_raw("Writing to page %lu", curr_page);
-    // w25q_write_buffer(test_write, curr_page * 256, 256);
-
-    // log_raw("Reading from page %lu", curr_page);
-    // w25q_read_buffer(test_read, curr_page * 256, 256);
-    // for (uint32_t i = 0; i < 256; ++i) {
-    //  log_raw("%lu", (uint32_t)test_read[i]);
-    //}
-    //++curr_page;
     osDelay(100);
   }
 }
@@ -198,54 +180,42 @@ static void init_devices() {
   osDelay(10);
   /* BUZZER */
   init_buzzer();
-
+  /* FLASH */
   w25q_init();
-  osDelay(10);
+}
 
-  cs_load();
-
-  uint8_t status1 = 0;
-  uint8_t status2 = 0;
-  uint8_t status3 = 0;
-  w25q_read_status_reg(1, &status1);
-  w25q_read_status_reg(2, &status2);
-  w25q_read_status_reg(3, &status1);
-
-  log_debug("Flash statuses: %x %x %x", status1, status2, status3);
-  /* TODO: throw a warning instead of setting to 0 */
-  if (cs_get_num_recorded_flights() > 32) {
-    cs_init(CATS_STATUS_SECTOR, 0);
-    cs_save();
+static void init_lfs() {
+  /* mount the filesystem */
+  int err = lfs_mount(&lfs, &lfs_cfg);
+  if (err == 0) {
+    log_raw("LFS mounted successfully!");
+  } else {
+    /* reformat if we can't mount the filesystem */
+    /* this should only happen on the first boot */
+    log_raw("LFS mounting failed with error %d!", err);
+    log_raw("Trying LFS format");
+    lfs_format(&lfs, &lfs_cfg);
+    int err2 = lfs_mount(&lfs, &lfs_cfg);
+    if (err2 != 0) {
+      log_raw("LFS mounting failed again with error %d!", err2);
+    }
   }
 
-  //  cs_clear();
-  //  cs_save();
+  lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
 
-  /* set the first writable sector as the last recorded sector + 1 */
-  uint32_t first_writable_sector = cs_get_last_recorded_sector() + 1;
-  /* increment the first writable sector as long as the current sector is not empty */
-  while (first_writable_sector < w25q.sector_count && !w25q_is_sector_empty(first_writable_sector * w25q.sector_size)) {
-    ++first_writable_sector;
-    log_warn("Incrementing last recorded sector...");
+  /* read how many flights we have */
+  if (lfs_file_read(&lfs, &fc_file, &flight_counter, sizeof(flight_counter)) > 0) {
+    log_debug("Flights found: %lu", flight_counter);
+  } else {
+    lfs_file_rewind(&lfs, &fc_file);
+    lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
   }
+  lfs_file_close(&lfs, &fc_file);
 
-  /* if the first writable sector is not immediately following the last recorded sector, update the config */
-  if (first_writable_sector != cs_get_last_recorded_sector() + 1) {
-    log_warn(
-        "Last recorded sector was: %lu and first writable sector is: "
-        "%lu!",
-        cs_get_last_recorded_sector(), first_writable_sector);
-    uint16_t actual_last_recorded_sector = first_writable_sector - 1;
-    log_info("Updating last recorded sector to %hu", actual_last_recorded_sector);
-    cs_set_last_recorded_sector(actual_last_recorded_sector);
-    cs_save();
-  }
+  /* create the flights directory */
+  lfs_mkdir(&lfs, "flights");
 
-  if (first_writable_sector >= w25q.sector_count) {
-    log_error("No empty sectors left!");
-  } else if (first_writable_sector >= w25q.sector_size - 256) {
-    log_warn("Less than 256 sectors left!");
-  }
+  strncpy(cwd, "/", sizeof(cwd));
 }
 
 static void init_communication() {

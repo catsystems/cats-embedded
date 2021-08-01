@@ -149,6 +149,18 @@ w25q_status_e w25q_init(void) {
   w25q.page_count = (w25q.sector_count * w25q.sector_size) / w25q.page_size;
   w25q.block_size = w25q.sector_size * 16;
   w25q.capacity_in_kilobytes = (w25q.sector_count * w25q.sector_size) / 1024;
+
+  osDelay(10);
+
+  uint8_t status1 = 0;
+  uint8_t status2 = 0;
+  uint8_t status3 = 0;
+  w25q_read_status_reg(1, &status1);
+  w25q_read_status_reg(2, &status2);
+  w25q_read_status_reg(3, &status3);
+
+  log_debug("Flash statuses: %x %x %x", status1, status2, status3);
+
   return W25Q_OK;
 }
 
@@ -226,7 +238,7 @@ w25q_status_e w25q_reset(void) {
   return W25Q_OK;
 }
 
-w25q_status_e w25q_read_id(uint32_t* w25q_id) {
+w25q_status_e w25q_read_id(uint32_t *w25q_id) {
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressSize = QSPI_ADDRESS_32_BITS,
@@ -255,7 +267,7 @@ w25q_status_e w25q_read_id(uint32_t* w25q_id) {
   return W25Q_OK;
 }
 
-w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t* status_reg_val) {
+w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_val) {
   if (status_reg_num < 1 || status_reg_num > 3) {
     return W25Q_ERR_INVALID_PARAM;
   }
@@ -288,12 +300,12 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t* status_reg_v
       .Instruction = status_reg_cmd,
   };
 
-  uint8_t qspi_receive_buff = 0;  // Store data read by QSPI
-
   if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_INIT;
 
   // receive data
   if (HAL_QSPI_Receive(&hqspi, status_reg_val, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_TRANSMIT;
+
+  return W25Q_OK;
 }
 
 w25q_status_e w25q_sector_erase(uint32_t sector_address) {
@@ -451,7 +463,7 @@ w25q_status_e w25q_chip_erase(void) {
 }
 
 /* write in */
-w25q_status_e w25q_write_page(uint8_t* buf, uint32_t write_addr, uint16_t num_bytes_to_write) {
+w25q_status_e w25q_write_page(uint8_t *buf, uint32_t write_addr, uint16_t num_bytes_to_write) {
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressSize = QSPI_ADDRESS_32_BITS,
@@ -486,9 +498,9 @@ w25q_status_e w25q_write_page(uint8_t* buf, uint32_t write_addr, uint16_t num_by
   return W25Q_OK;
 }
 
-w25q_status_e w25q_write_buffer(uint8_t* buf, uint32_t write_addr, uint32_t num_bytes_to_write) {
+w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_bytes_to_write) {
   uint32_t end_addr, current_size, current_addr;
-  uint8_t* write_data;
+  uint8_t *write_data;
 
   // Calculates the remaining space on the current page
   current_size = W25Q_PAGE_SIZE - (write_addr % W25Q_PAGE_SIZE);
@@ -529,7 +541,7 @@ w25q_status_e w25q_write_buffer(uint8_t* buf, uint32_t write_addr, uint32_t num_
 }
 
 /* read */
-w25q_status_e w25q_read_buffer(uint8_t* buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
+w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressSize = QSPI_ADDRESS_32_BITS,

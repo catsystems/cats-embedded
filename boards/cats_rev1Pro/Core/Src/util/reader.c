@@ -8,28 +8,26 @@
 #include "util/log.h"
 #include "config/globals.h"
 #include "config/cats_config.h"
-#include "drivers/w25q.h"
-
-#include "main.h"
+#include "lfs/lfs_custom.h"
 
 void print_recording(uint16_t number) {
   char *string_buffer1 = calloc(400, sizeof(char));
   char *string_buffer2 = calloc(400, sizeof(char));
   uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
-  uint16_t start_sector = CATS_STATUS_SECTOR + 1;
-  if (number > 0) start_sector = cs_get_last_sector_of_flight(number - 1) + 1;
-  uint16_t current_sector = start_sector;
 
-  uint16_t last_sector_of_flight = cs_get_last_sector_of_flight(number);
-  if (last_sector_of_flight != 0) {
-    log_raw("Recording of flight #%hu:", number);
-    osDelay(2000);
+  char filename[32] = {};
+  snprintf(filename, 32, "flights/flight_%05d", number);
 
-    uint32_t start_page_id = (current_sector * w25q.sector_size) / w25q.page_size;
-    uint32_t end_page_id = ((last_sector_of_flight + 1) * w25q.sector_size) / w25q.page_size;
-    uint32_t curr_page_id = start_page_id;
-    while (curr_page_id < end_page_id) {
-      w25q_read_buffer(read_buf, curr_page_id * w25q.page_size, 256);
+  log_raw("Reading file: %s", filename);
+
+  lfs_file_t curr_file;
+  if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
+    int file_size = lfs_file_size(&lfs, &curr_file);
+    for (lfs_size_t i = 0; i < file_size; i += 256) {
+      lfs_size_t chunk = lfs_min(256, file_size - i);
+
+      lfs_file_read(&lfs, &curr_file, read_buf, chunk);
+
       int write_idx = 0;
       for (uint32_t j = 0; j < 128; ++j) {
         write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
@@ -41,25 +39,18 @@ void print_recording(uint16_t number) {
       }
       log_rawr("%s\n", string_buffer2);
 
-      ++curr_page_id;
-      if (curr_page_id % 16 == 0) {
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-      }
       memset(string_buffer1, 0, 400);
       memset(string_buffer2, 0, 400);
     }
   } else {
-    log_error("Last recorded sector of flight is 0!");
+    log_error("Flight %d not found!", number);
   }
+
+  lfs_file_close(&lfs, &curr_file);
+
   free(string_buffer1);
   free(string_buffer2);
 }
 
-void erase_recordings() {
-  for (uint32_t i = CATS_STATUS_SECTOR + 1; i < cs_get_last_recorded_sector() + 1; i++) {
-    w25q_sector_erase(i * w25q.sector_size);
-    log_raw("Erased Sector %lu out of %lu", i, cs_get_last_recorded_sector());
-  }
-  cs_clear();
-  cs_save();
+void erase_recordings() { /* remove everything from /flights */
 }

@@ -62,7 +62,7 @@ void task_imu_read(void *argument) {
     magneto_data.magneto_y = data[1];
     magneto_data.magneto_z = data[2];
     magneto_data.ts = osKernelGetTickCount();
-    log_info("Magneto %ld: RAW Mx: %ld, My:%ld, Mz:%ld", 1, (int32_t)((float)data[0] * 1000),
+    log_info("Magneto %d: RAW Mx: %ld, My:%ld, Mz:%ld", 1, (int32_t)((float)data[0] * 1000),
              (int32_t)((float)data[1] * 1000), (int32_t)((float)data[2] * 1000));
 
     global_magneto = magneto_data;
