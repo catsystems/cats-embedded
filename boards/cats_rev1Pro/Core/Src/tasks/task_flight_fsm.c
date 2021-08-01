@@ -76,11 +76,12 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
       // When we are in any flight state update the flash sector with last
       // flight phase
       if (fsm_state.flight_state == TOUCHDOWN) {
-        cs_set_flight_phase(fsm_state.flight_state);
-        cs_set_max_altitude(max_h);
-        cs_set_max_velocity(max_v);
-        cs_set_max_acceleration(max_a);
-        cs_save();
+        // TODO - create a stats file
+        //        cs_set_flight_phase(fsm_state.flight_state);
+        //        cs_set_max_altitude(max_h);
+        //        cs_set_max_velocity(max_v);
+        //        cs_set_max_acceleration(max_a);
+        //        cs_save();
       }
     }
 

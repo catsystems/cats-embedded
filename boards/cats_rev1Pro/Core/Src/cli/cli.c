@@ -12,8 +12,9 @@
 #include "util/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "drivers/w25q.h"
+#include "lfs/lfs_custom.h"
 #include "util/actions.h"
+#include "drivers/w25q.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -76,6 +77,8 @@ static void cliRecInfo(const char *cmdName, char *cmdline);
 static void cliPrintFlight(const char *cmdName, char *cmdline);
 static void cliFlashWrite(const char *cmdName, char *cmdline);
 static void cliFlashStop(const char *cmdName, char *cmdline);
+static void cliLs(const char *cmdName, char *cmdline);
+static void cliCd(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -113,44 +116,72 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
     CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cliFlashWrite),
     CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cliFlashStop),
+    CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
+    CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
 };
+
+static void cliLs(const char *cmdName, char *cmdline) { lfs_ls(cwd); }
+static void cliCd(const char *cmdName, char *cmdline) {
+  /* TODO - check if a directory actually exists */
+  if (cmdline == NULL || strcmp(cmdline, "/") == 0) {
+    strncpy(cwd, "/", sizeof(cwd));
+  } else if (strcmp(cmdline, "..") == 0) {
+    /* return one lvl back */
+  } else if (strcmp(cmdline, ".") != 0) {
+    if (cmdline[0] == '/') {
+      /* absolute path */
+      strncpy(cwd, cmdline, sizeof(cwd));
+    } else {
+      /* relative path */
+      strncat(cwd, cmdline, sizeof(cwd) - strlen(cwd) - 1);
+    }
+  }
+}
 
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
 
 static void cliEraseFlash(const char *cmdName, char *cmdline) {
   log_raw("\nErasing the flash, this might take a while...");
   w25q_chip_erase();
-  cs_init(CATS_STATUS_SECTOR, 0);
-  cs_save();
   log_raw("Flash erased!");
+  log_raw("Mounting LFS");
+
+  int err = lfs_mount(&lfs, &lfs_cfg);
+  if (err == 0) {
+    log_raw("LFS mounted successfully!");
+  } else {
+    log_raw("LFS mounting failed with error %d!", err);
+    log_raw("Trying LFS format");
+    lfs_format(&lfs, &lfs_cfg);
+    int err2 = lfs_mount(&lfs, &lfs_cfg);
+    if (err2 != 0) {
+      log_raw("LFS mounting failed again with error %d!", err2);
+    }
+  }
 }
 
 static void cliEraseRecordings(const char *cmdName, char *cmdline) {
   log_raw("\nErasing the flight recordings, this might not take much...");
   erase_recordings();
-  cs_init(CATS_STATUS_SECTOR, 0);
-  cs_save();
   log_raw("Recordings erased!");
 }
 
 static void cliRecInfo(const char *cmdName, char *cmdline) {
-  uint16_t num_flights = cs_get_num_recorded_flights();
-  log_raw("\nNumber of recorded flights: %hu", num_flights);
-  for (uint16_t i = 0; i < num_flights; i++) {
-    log_raw("Last sectors of flight %hu: %lu", i, cs_get_last_sector_of_flight(i));
-  }
+  // implement a "ls" here
+  log_raw("\nNumber of recorded flights: %lu", flight_counter);
+  lfs_ls("flights/");
 }
 
 static void cliPrintFlight(const char *cmdName, char *cmdline) {
-  uint16_t num_flights = cs_get_num_recorded_flights();
+  /* TODO - count how many files in a directory here */
   char *endptr;
   uint32_t flight_idx = strtoul(cmdline, &endptr, 10);
 
   if (cmdline != endptr) {
     // A number was found
-    if (flight_idx >= num_flights) {
+    if (flight_idx > flight_counter) {
       log_raw("\nFlight %lu doesn't exist", flight_idx);
-      log_raw("Number of recorded flights: %hu", num_flights);
+      log_raw("Number of recorded flights: %lu", flight_counter);
     } else {
       log_raw("");
       print_recording(flight_idx);
@@ -175,7 +206,8 @@ static void cliRead(const char *cmdName, char *cmdline) {
   /* Remember the current logging state so that we can revert back to it after we read out the flash */
   bool log_was_enabled = log_is_enabled();
   log_disable();
-  uint16_t num_recorded_flights = cs_get_num_recorded_flights();
+  /* iterate through all recordings in the /flights dir */
+  uint16_t num_recorded_flights = 0;
   if (num_recorded_flights == 0)
     log_raw("No recordings found");
   else
@@ -615,7 +647,7 @@ void cliPrint(const char *str) {
   }
 }
 
-static void cliPrompt(void) { cliPrint("\r\n> "); }
+static void cliPrompt(void) { cliPrintf("\r\n^._.^:%s> ", cwd); }
 
 void cliPrintLinefeed(void) { cliPrint("\r\n"); }
 

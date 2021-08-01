@@ -9,6 +9,7 @@
 
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "lfs/lfs_custom.h"
 #include "drivers/servo.h"
 
 bool no_action_function(__attribute__((unused)) int32_t bummer);
@@ -188,12 +189,23 @@ bool servo_channel_four(int32_t angle) {
 /* TODO check if mutex should be used here */
 bool set_recorder_state(int32_t state) {
   volatile recorder_status_e rec_status = (recorder_status_e)state;
-  /* TODO: add a boundary value for rec_status_e enum -> REC_END = 0xfff..*/
-  // TODO: max flights of 32
+  /* TODO: add a boundary value for rec_status_e enum -> REC_END = 0xfff.. */
   if (rec_status >= REC_OFF && rec_status <= REC_WRITE_TO_FLASH) {
+    /* close the current file */
+    lfs_file_close(&lfs, &current_flight_file);
     if (state == REC_WRITE_TO_FLASH) {
-      cs_set_num_recorded_flights(cs_get_num_recorded_flights() + 1);
-      cs_save();
+      /* increment number of flights */
+      flight_counter += 1;
+      lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
+      lfs_file_rewind(&lfs, &fc_file);
+      lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
+      lfs_file_close(&lfs, &fc_file);
+
+      char filename[32] = {};
+      snprintf(filename, 32, "flights/flight_%05lu", flight_counter);
+
+      /* open a new file */
+      lfs_file_open(&lfs, &current_flight_file, filename, LFS_O_WRONLY | LFS_O_CREAT);
     }
     global_recorder_status = rec_status;
 

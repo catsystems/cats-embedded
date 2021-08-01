@@ -10,3 +10,6 @@
 
 void cli_process(void);
 void cli_enter(fifo_t *in, fifo_t *out);
+
+void cliPrint(const char *str);
+void cliPrintf(const char *format, ...) __attribute__((format(printf, 1, 2)));
