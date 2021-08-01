@@ -53,7 +53,7 @@ MS5607 MS1 = {
     .cs_port = CS_BARO1_GPIO_Port,
     .cs_pin = CS_BARO1_Pin,
     .spi_bus = &SPI_BARO1,
-    .osr = MS5607_OSR_256,
+    .osr = MS5607_OSR_2048,
 };
 
 SPI_BUS SPI_BARO2 = {
@@ -63,7 +63,7 @@ MS5607 MS2 = {
     .cs_port = CS_BARO2_GPIO_Port,
     .cs_pin = CS_BARO2_Pin,
     .spi_bus = &SPI_BARO2,
-    .osr = MS5607_OSR_256,
+    .osr = MS5607_OSR_2048,
 };
 
 SPI_BUS SPI_BARO3 = {
@@ -73,7 +73,7 @@ MS5607 MS3 = {
     .cs_port = CS_BARO3_GPIO_Port,
     .cs_pin = CS_BARO3_Pin,
     .spi_bus = &SPI_BARO3,
-    .osr = MS5607_OSR_256,
+    .osr = MS5607_OSR_2048,
 };
 
 SPI_BUS SPI_MAG = {
