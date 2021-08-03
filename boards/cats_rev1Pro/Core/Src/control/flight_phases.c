@@ -11,13 +11,13 @@
 
 #include <stdlib.h>
 
-void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings);
-void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
-void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
-void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
-void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
-void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data);
+static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings);
+static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
 void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, estimation_output_t *state_data,
                         control_settings_t *settings) {
@@ -64,7 +64,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, estimatio
   }
 }
 
-void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
+static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Check if the IMU moved between two timesteps */
   if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) < ALLOWED_ACC_ERROR) &&
       (abs(fsm_state->old_imu_data.acc_y - imu_data->acc_y) < ALLOWED_ACC_ERROR) &&
@@ -91,9 +91,32 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
     fsm_state->angular_movement[1] = 0;
     fsm_state->angular_movement[2] = 0;
   }
+
+  /* Check if we move from MOVING To THRUSTING_1 */
+  /* To Make sure that the timers start any acceleration direction is accepted
+   * here */
+  int32_t acceleration =
+      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+
+  if ((float)acceleration > (MOV_LIFTOFF_THRESHOLD * MOV_LIFTOFF_THRESHOLD)) {
+    fsm_state->memory[2]++;
+  } else {
+    fsm_state->memory[2] = 0;
+  }
+
+  if (fsm_state->memory[2] > MOV_LIFTOFF_SAFETY_COUNTER) {
+    trigger_event(EV_LIFTOFF);
+    fsm_state->flight_state = THRUSTING_1;
+    fsm_state->clock_memory = 0;
+    fsm_state->memory[1] = 0;
+    fsm_state->memory[2] = 0;
+    fsm_state->angular_movement[0] = 0;
+    fsm_state->angular_movement[1] = 0;
+    fsm_state->angular_movement[2] = 0;
+  }
 }
 
-void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings) {
+static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings) {
   /* Check if we move from IDLE Back to MOVING */
 
   /* Check if the IMU moved between two timesteps */
@@ -163,8 +186,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_set
   }
 
   /* Check if we move from IDLE To THRUSTING_1 */
-  /* To Make sure that the timers start any acceleration direction is accepted
-   * here */
+  /* The absolut value of the acceleration is used here to make sure that we detect liftoff */
   int32_t acceleration =
       imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
 
@@ -186,7 +208,7 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_set
   }
 }
 
-void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->acceleration < 0) {
     fsm_state->memory[1]++;
   } else {
@@ -204,7 +226,7 @@ void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state
   }
 }
 
-void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->velocity < 0) {
     fsm_state->memory[1]++;
   }
@@ -218,7 +240,7 @@ void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_da
   }
 }
 
-void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->velocity > PARACHUTE_DESCENT_SPEED) {
     /* Parachute Deployed */
     fsm_state->memory[1]++;
@@ -234,7 +256,7 @@ void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data
     fsm_state->memory[2] = 0;
   }
 
-  //  if (fsm_state->memory[2] > BALISTIC_SAFETY_COUNTER) {
+  //  if (fsm_state->memory[2] > BALLISTIC_SAFETY_COUNTER) {
   //    fsm_state->flight_state = BALLISTIC;
   //    fsm_state->clock_memory = 0;
   //    fsm_state->memory[1] = 0;
@@ -242,7 +264,7 @@ void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data
   //  }
 }
 
-void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->height < (float)global_cats_config.config.control_settings.main_altitude) {
     /* Achieved Height to deploy Main */
     fsm_state->memory[1]++;
@@ -260,7 +282,7 @@ void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data
   }
 }
 
-void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   /* If the velocity is very small we have touchdown */
   if (fabsf(state_data->velocity) < VELOCITY_BOUND_TOUCHDOWN) {
     /* Touchdown achieved */

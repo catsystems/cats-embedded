@@ -24,6 +24,12 @@ typedef struct {
   int16_t acc_x, acc_y, acc_z;
 } imu_data_t;
 
+/* IMU data */
+typedef struct {
+  timestamp_t ts;
+  int8_t acc_x, acc_y, acc_z;
+} accel_data_t;
+
 /* Barometer data */
 typedef struct {
   timestamp_t ts;
@@ -51,9 +57,9 @@ typedef struct {
   int32_t num_freeze[9];
   int32_t num_maj_vote[9];
   float last_value[9];
-  uint8_t faulty_imu[3];
+  uint8_t faulty_accel[3];
   uint8_t faulty_baro[3];
-  uint8_t num_faulty_imus;
+  uint8_t num_faulty_accel;
   uint8_t num_faulty_baros;
   bool high_acc;
 } sensor_elimination_t;

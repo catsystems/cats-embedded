@@ -11,8 +11,8 @@
 #include "util/types.h"
 
 #define INIT_COV   0.1f
-#define NOISE_VEL  0.1f
-#define NOISE_POS  0.01f
+#define NOISE_VEL  0.01f
+#define NOISE_POS  0.03f
 #define NOISE_BIAS 0.01f
 
 typedef struct {
@@ -55,9 +55,10 @@ typedef struct {
   arm_matrix_instance_f32 P_hat;
   arm_matrix_instance_f32 Identity;
   float t_sampl;
+  float32_t raw_computed_orientation[4];
 } orientation_filter_t;
 
 void init_orientation_filter_struct(orientation_filter_t* filter);
 void initialize_orientation_matrices(orientation_filter_t* filter);
 void orientation_prediction_step(orientation_filter_t* filter, imu_data_t* data);
-void orientation_update_step(orientation_filter_t* filter, imu_data_t* data);
+void orientation_update_step(orientation_filter_t* filter, imu_data_t* data, magneto_data_t* magneto_data);

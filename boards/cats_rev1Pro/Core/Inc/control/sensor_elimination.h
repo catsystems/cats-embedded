@@ -12,9 +12,9 @@
 #include "config/globals.h"
 
 /* in m/s^2 */
-#define UPPER_BOUND_100G_ACC 1900
+#define UPPER_BOUND_HIGH_G_ACC 1900
 /* in m/s^2 */
-#define LOWER_BOUND_100G_ACC (-1900)
+#define LOWER_BOUND_HIGH_G_ACC (-1900)
 /* in m/s^2 */
 #define UPPER_BOUND_ACC 300
 /* in m/s^2 */
@@ -49,7 +49,3 @@
 #define MAJ_VOTE_TEMPERATURE_ERROR 20
 
 cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *elimination);
-cats_error_e check_imus_no_faults(state_estimation_data_t *data, sensor_elimination_t *elimination);
-cats_error_e check_baros_no_faults(state_estimation_data_t *data, sensor_elimination_t *elimination);
-cats_error_e check_imus_1_fault(state_estimation_data_t *data, sensor_elimination_t *elimination);
-cats_error_e check_baros_1_fault(state_estimation_data_t *data, sensor_elimination_t *elimination);

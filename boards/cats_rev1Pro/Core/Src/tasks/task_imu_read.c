@@ -36,11 +36,12 @@ void task_imu_read(void *argument) {
   /* initialize IMU data variables */
   int16_t gyroscope[3] = {0};    /* 0 = x, 1 = y, 2 = z */
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
-  int16_t temperature;
+  int16_t temperature = {0};
+  accel_data_t accel_data = {0};
 
   /* initialize MAGNETO data variables */
-  magneto_data_t magneto_data;
-  float data[3];
+  magneto_data_t magneto_data = {0};
+  float data[3] = {0};
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -57,20 +58,27 @@ void task_imu_read(void *argument) {
     //            2, gyroscope[0], gyroscope[1], gyroscope[2],
     //            acceleration[0], acceleration[1], acceleration[2], temperature);
 
+    /* Read and Save Magnetometer Data */
     mmc5983ma_read_calibrated(&MAG, data);
     magneto_data.magneto_x = data[0];
     magneto_data.magneto_y = data[1];
     magneto_data.magneto_z = data[2];
     magneto_data.ts = osKernelGetTickCount();
-    log_info("Magneto %d: RAW Mx: %ld, My:%ld, Mz:%ld", 1, (int32_t)((float)data[0] * 1000),
-             (int32_t)((float)data[1] * 1000), (int32_t)((float)data[2] * 1000));
+    // log_info("Magneto %ld: RAW Mx: %ld, My:%ld, Mz:%ld", 1, (int32_t)((float)data[0] * 1000),
+    //         (int32_t)((float)data[1] * 1000), (int32_t)((float)data[2] * 1000));
 
     global_magneto = magneto_data;
     record(MAGNETO, &magneto_data);
 
+    /* Read and Save High-G IMU Data */
+    /* Todo: Read High-G IMU Data */
+    memcpy(&(global_accel.acc_x), &(accel_data.acc_x), 3 * sizeof(int8_t));
+    global_accel.ts = tick_count;
+    record(ACCELEROMETER, &(global_accel));
+
     /* TODO: The speed of copying looks to be the same, code size reduced by 16B
      * with memcpy vs. assignment with -0g */
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < NUM_IMU; i++) {
       read_imu(gyroscope, acceleration, &temperature, i);
       memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
       memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));

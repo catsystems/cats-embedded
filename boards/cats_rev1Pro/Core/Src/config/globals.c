@@ -62,7 +62,7 @@ MS5607 MS1 = {
     .cs_port = CS_BARO1_GPIO_Port,
     .cs_pin = CS_BARO1_Pin,
     .spi_bus = &SPI_BARO1,
-    .osr = MS5607_OSR_2048,
+    .osr = MS5607_OSR_1024,
 };
 
 SPI_BUS SPI_BARO2 = {
@@ -72,7 +72,7 @@ MS5607 MS2 = {
     .cs_port = CS_BARO2_GPIO_Port,
     .cs_pin = CS_BARO2_Pin,
     .spi_bus = &SPI_BARO2,
-    .osr = MS5607_OSR_2048,
+    .osr = MS5607_OSR_1024,
 };
 
 SPI_BUS SPI_BARO3 = {
@@ -82,7 +82,7 @@ MS5607 MS3 = {
     .cs_port = CS_BARO3_GPIO_Port,
     .cs_pin = CS_BARO3_Pin,
     .spi_bus = &SPI_BARO3,
-    .osr = MS5607_OSR_2048,
+    .osr = MS5607_OSR_1024,
 };
 
 SPI_BUS SPI_MAG = {
@@ -115,8 +115,9 @@ SERVO SERVO2 = {.timer = &htim2, .channel = TIM_CHANNEL_2, .pulse = 15000, .star
 
 /** State Estimation **/
 
-baro_data_t global_baro[3] = {0};
-imu_data_t global_imu[3] = {0};
+baro_data_t global_baro[NUM_BARO] = {0};
+imu_data_t global_imu[NUM_IMU] = {0};
+accel_data_t global_accel = {0};
 magneto_data_t global_magneto = {0};
 estimation_output_t global_kf_data = {0};
 sensor_elimination_t global_elimination_data = {0};

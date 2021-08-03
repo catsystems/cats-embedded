@@ -7,7 +7,6 @@
 
 #include "control/kalman_filter.h"
 #include "cmsis_os.h"
-#include "config/globals.h"
 #include <string.h>
 
 void init_filter_struct(kalman_filter_t *const filter) {
@@ -209,9 +208,9 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
   } else {
     /* Check if we have ruled out an accelerometer */
     /* if we only have one accelerometer left, use it */
-    if (elimination->num_faulty_imus == 2) {
-      for (int i = 0; i < 3; i++) {
-        if (elimination->faulty_imu[i] == 0) {
+    if (elimination->num_faulty_accel == (NUM_ACC - 1)) {
+      for (int i = 0; i < NUM_ACC; i++) {
+        if (elimination->faulty_accel[i] == 0) {
           u += data->acceleration[i];
           counter_acc++;
         }
@@ -219,15 +218,15 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
     }
     /* if we have at least two left, only use low acc imus */
     else {
-      for (int i = 0; i < 3; i++) {
-        if ((elimination->faulty_imu[i] == 0) && (i != HIGH_G_ACC_INDEX)) {
+      for (int i = 0; i < NUM_ACC; i++) {
+        if ((elimination->faulty_accel[i] == 0) && (i != HIGH_G_ACC_INDEX)) {
           u += data->acceleration[i];
           counter_acc++;
         }
       }
     }
   }
-
+  /* Todo: Scary >*/
   if (fsm_state > APOGEE) {
     u = 0;
   } else {
@@ -508,28 +507,22 @@ cats_error_e kalman_step(kalman_filter_t *filter, state_estimation_data_t *data,
 
   kalman_prediction(filter, data, elimination, fsm_state);
 
-  switch (elimination->num_faulty_baros) {
-    case 0:
+  switch (NUM_PRESSURE - elimination->num_faulty_baros) {
+    case 3:
       status = kalman_update_full(filter, data);
       break;
-    case 1:
+    case 2:
       status = kalman_update_eliminated(filter, data, elimination);
       break;
-    case 2:
+    case 1:
       status = kalman_update_2_eliminated(filter, data, elimination);
       break;
-    case 3:
+    case 0:
       status = CATS_ERR_FILTER;
       break;
     default:
       status = CATS_ERR_FILTER;
       break;
-  }
-  if (elimination->num_faulty_baros > 1) {
-    log_error("Kalman step faulty baros: %d", elimination->num_faulty_baros);
-  }
-  if (elimination->num_faulty_imus >= 1) {
-    log_error("Faulty IMUs: %d", elimination->num_faulty_imus);
   }
   return status;
 }

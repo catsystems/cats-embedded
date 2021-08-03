@@ -5,7 +5,9 @@
  *      Author: jonas
  */
 
+#include "util/log.h"
 #include "control/orientation_kf.h"
+#include <math.h>
 
 void init_orientation_filter_struct(orientation_filter_t* const filter) {
   arm_mat_init_f32(&filter->F, 6, 6, filter->F_data);
@@ -143,7 +145,7 @@ void quaternion_mat(arm_matrix_instance_f32* input1, arm_matrix_instance_f32* in
 }
 
 void extendR3(const float32_t* input, float32_t* output) {
-  float32_t abs_value = 1.0f - input[0] * input[0] + input[1] * input[1] + input[2] * input[2];
+  float32_t abs_value = 1.0f - input[0] * input[0] - input[1] * input[1] - input[2] * input[2];
   float32_t q0 = 0;
   arm_sqrt_f32(abs_value, &q0);
   output[0] = q0;
@@ -162,20 +164,85 @@ void normalize_q(float32_t* input) {
   input[3] /= abs_value;
 }
 
-void compute_angle(imu_data_t* data, orientation_filter_t* filter) {
-  /* Scale acceleration and rotate into inertial frame */
-  float32_t quat_meas[4] = {(float32_t)(data->acc_z) / 1024.0f, -(float32_t)(data->acc_y) / 1024.0f,
-                            (float32_t)(data->acc_x) / 1024.0f, 0};
-  float32_t abs_sq = quat_meas[0] * quat_meas[0] + quat_meas[1] * quat_meas[1] + quat_meas[2] * quat_meas[2];
-  float32_t abs = 0;
-  arm_sqrt_f32(abs_sq, &abs);
+void compute_angle(imu_data_t* data, magneto_data_t* magneto_data, orientation_filter_t* filter) {
+  /* Preprocess IMU Data */
+  float32_t scaled_imu[3] = {((float32_t)(data->acc_x)) / 1024.0f, ((float32_t)(data->acc_y)) / 1024.0f,
+                             ((float32_t)(data->acc_z)) / 1024.0f};
+  float32_t amplitude =
+      sqrtf(scaled_imu[0] * scaled_imu[0] + scaled_imu[1] * scaled_imu[1] + scaled_imu[2] * scaled_imu[2]);
+  scaled_imu[0] /= amplitude;
+  scaled_imu[1] /= amplitude;
+  scaled_imu[2] /= amplitude;
+  /* Compute Quaternion from Accelerometer Data */
+  float32_t quat_meas_acc[4] = {0};
+  if (scaled_imu[2] < 0) {
+    quat_meas_acc[0] = -scaled_imu[1] / sqrtf(2.0f * (1.0f - scaled_imu[2]));
+    quat_meas_acc[1] = sqrtf((1.0f - scaled_imu[2]) / 2.0f);
+    quat_meas_acc[3] = scaled_imu[0] / sqrtf(2.0f * (1.0f - scaled_imu[2]));
+  } else {
+    quat_meas_acc[0] = sqrtf((scaled_imu[2] + 1.0f) / 2.0f);
+    quat_meas_acc[1] = -scaled_imu[1] / sqrtf(2.0f * (scaled_imu[2] + 1.0f));
+    quat_meas_acc[2] = scaled_imu[0] / sqrtf(2.0f * (scaled_imu[2] + 1.0f));
+  }
 
-  quat_meas[0] /= abs;
-  quat_meas[1] /= abs;
-  quat_meas[2] /= abs;
+  /* Create Quaternion Structs for IMU */
+  arm_matrix_instance_f32 quat_imu_mat;
+  arm_mat_init_f32(&quat_imu_mat, 4, 1, quat_meas_acc);
+  /* Conjugate to turn the magnetometer in the right direction */
+  arm_matrix_instance_f32 quat_imu_mat_conj;
+  float32_t quat_meas_acc_conj[4] = {quat_meas_acc[0], -quat_meas_acc[1], -quat_meas_acc[2], -quat_meas_acc[3]};
+  arm_mat_init_f32(&quat_imu_mat_conj, 4, 1, quat_meas_acc_conj);
 
+  /* Compute Quaternion from Magnetometer Data */
+
+  /* Normalize and rotate quaternion */
+  float32_t quat_meas_magneto[4] = {0};
+  magneto_data_t processed_magno = *magneto_data;
+  float32_t ampl = sqrtf(processed_magno.magneto_x * processed_magno.magneto_x +
+                         processed_magno.magneto_y * processed_magno.magneto_y +
+                         processed_magno.magneto_z * processed_magno.magneto_z);
+  processed_magno.magneto_x /= ampl;
+  processed_magno.magneto_y /= ampl;
+  processed_magno.magneto_z /= ampl;
+  float32_t magneto_scaled[4] = {0, processed_magno.magneto_x, processed_magno.magneto_y, processed_magno.magneto_z};
+  arm_matrix_instance_f32 scaled_magneto_mat;
+  arm_mat_init_f32(&scaled_magneto_mat, 4, 1, magneto_scaled);
+
+  float32_t holder[4] = {0};
+  arm_matrix_instance_f32 holder_mat;
+  arm_mat_init_f32(&holder_mat, 4, 1, holder);
+  float32_t rotated_magneto[4] = {0};
+  arm_matrix_instance_f32 rotated_magneto_mat;
+  arm_mat_init_f32(&rotated_magneto_mat, 4, 1, rotated_magneto);
+  /* l = q_star*m*q */
+  quaternion_mat(&quat_imu_mat_conj, &scaled_magneto_mat, &holder_mat);
+  quaternion_mat(&holder_mat, &quat_imu_mat, &rotated_magneto_mat);
+  /*
+    log_trace("%ld; %ld; %ld; %ld", (int32_t)((float)rotated_magneto[0] * 1000),
+              (int32_t)((float)rotated_magneto[1] * 1000), (int32_t)((float)rotated_magneto[2] * 1000),
+              (int32_t)((float)rotated_magneto[3] * 1000));
+  */
+  float32_t tau = rotated_magneto[1] * rotated_magneto[1] + rotated_magneto[2] * rotated_magneto[2];
+  float32_t sqrt_tau = sqrtf(tau);
+  if (rotated_magneto[1] < 0) {
+    quat_meas_magneto[0] = rotated_magneto[2] / (sqrtf(2.0f) * sqrtf(tau - rotated_magneto[1] * sqrt_tau));
+    quat_meas_magneto[3] = sqrtf(tau - rotated_magneto[1] * sqrt_tau) / (sqrtf(2.0f) * sqrt_tau);
+  } else {
+    quat_meas_magneto[0] = sqrtf(tau + rotated_magneto[1] * sqrt_tau) / (sqrtf(2.0f) * sqrt_tau);
+    quat_meas_magneto[3] = rotated_magneto[2] / (sqrtf(2.0f) * sqrtf(tau + rotated_magneto[1] * sqrt_tau));
+  }
+
+  arm_matrix_instance_f32 quat_magneto_mat;
+  arm_mat_init_f32(&quat_magneto_mat, 4, 1, quat_meas_magneto);
+
+  /* Compute Quaternion */
+  float32_t quat_meas[4] = {0};
   arm_matrix_instance_f32 quat_meas_mat;
   arm_mat_init_f32(&quat_meas_mat, 4, 1, quat_meas);
+  quaternion_mat(&quat_imu_mat, &quat_magneto_mat, &quat_meas_mat);
+
+  /* For Logging */
+  memcpy(filter->raw_computed_orientation, quat_meas, sizeof(quat_meas));
 
   /* Take out the current guess and conjugate it*/
   float32_t x_hat[4] = {filter->x_hat_data[0], -filter->x_hat_data[1], -filter->x_hat_data[2], -filter->x_hat_data[3]};
@@ -237,9 +304,9 @@ zeros(3), eye(3)];
 void orientation_prediction_step(orientation_filter_t* filter, imu_data_t* data) {
   /* remove bias from measurement */
   /* SCALE GYRO CORRECTLY */
-  filter->velocity_data[1] = (float32_t)(data->gyro_x) / 16.4f - filter->bias_data[0];
-  filter->velocity_data[2] = (float32_t)(data->gyro_y) / 16.4f - filter->bias_data[1];
-  filter->velocity_data[3] = (float32_t)(data->gyro_z) / 16.4f - filter->bias_data[2];
+  filter->velocity_data[1] = (((float32_t)(data->gyro_x)) / 16.4f) * (PI / 180) - filter->bias_data[0];
+  filter->velocity_data[2] = (((float32_t)(data->gyro_y)) / 16.4f) * (PI / 180) - filter->bias_data[1];
+  filter->velocity_data[3] = (((float32_t)(data->gyro_z)) / 16.4f) * (PI / 180) - filter->bias_data[2];
 
   /* Prediction step */
   /* x_hat = x_bar + 1/2*Ts(quat_mult(x_bar, velocity)) */
@@ -297,7 +364,7 @@ void orientation_prediction_step(orientation_filter_t* filter, imu_data_t* data)
   arm_mat_add_f32(&holder3_mat, &filter->P_bar, &filter->P_hat);
 }
 
-void orientation_update_step(orientation_filter_t* filter, imu_data_t* data) {
+void orientation_update_step(orientation_filter_t* filter, imu_data_t* data, magneto_data_t* magneto_data) {
   /* Compute Kalman Gain */
   /* K = P_hat*H'/(H*P_hat*H' + R) */
   float32_t holder_6x3_data[18] = {0};
@@ -332,7 +399,7 @@ void orientation_update_step(orientation_filter_t* filter, imu_data_t* data) {
 
   /* Compute Error */
   /* error = K*reduce(quat_error) = K*reduce(x_hat^* * meas) = K*z */
-  compute_angle(data, filter);
+  compute_angle(data, magneto_data, filter);
   arm_mat_mult_f32(&filter->K, &filter->z, &filter->delta_x_hat);
 
   /* Extract and Normalize attitude Error */

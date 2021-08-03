@@ -12,8 +12,9 @@
 #include "config/globals.h"
 
 /** Private Constants **/
-enum {	READ_BARO_TEMPERATURE = 1,
-		READ_BARO_PRESSURE = 2,
+enum {
+  READ_BARO_TEMPERATURE = 1,
+  READ_BARO_PRESSURE = 2,
 };
 
 /** Private Function Declarations **/
@@ -34,11 +35,11 @@ void task_baro_read(void *argument) {
   uint32_t tick_count, tick_update;
   uint32_t stage = READ_BARO_TEMPERATURE;
   /* actual measurements from sensor */
-  int32_t temperature[3];
-  int32_t pressure[3];
+  int32_t temperature[NUM_BARO];
+  int32_t pressure[NUM_BARO];
 
   tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / (2*CONTROL_SAMPLING_FREQ);
+  tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
   prepare_temp();
   osDelay(5);
   while (1) {
@@ -50,20 +51,24 @@ void task_baro_read(void *argument) {
 
     // Prepare new readout
     if (stage == READ_BARO_TEMPERATURE) {
-    	prepare_pres();
-    	stage = READ_BARO_PRESSURE;
+      prepare_pres();
+      stage = READ_BARO_PRESSURE;
     } else {
-    	prepare_temp();
-    	stage = READ_BARO_TEMPERATURE;
+      prepare_temp();
+      stage = READ_BARO_TEMPERATURE;
 
-    	get_temp_pres(temperature, pressure);
-    	for (int i = 0; i < 3; i++) {
-    	      global_baro[i].pressure = pressure[i];
-    	      global_baro[i].temperature = temperature[i];
-    	      global_baro[i].ts = tick_count;
+      get_temp_pres(temperature, pressure);
 
-    	      record(BARO0 << i, &(global_baro[i]));
-    	}
+      // log_info("P1: %ld; P2: %ld; P3: %ld; T1: %ld; T2: %ld; T3: %ld", pressure[0], pressure[1], pressure[2],
+      // temperature[0], temperature[1], temperature[2]);
+
+      for (int i = 0; i < NUM_BARO; i++) {
+        global_baro[i].pressure = pressure[i];
+        global_baro[i].temperature = temperature[i];
+        global_baro[i].ts = tick_count;
+
+        record(BARO0 << i, &(global_baro[i]));
+      }
     }
 
     osDelayUntil(tick_count);
