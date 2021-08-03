@@ -27,9 +27,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  flight_fsm_t fsm_state = {.flight_state = MOVING};
   imu_data_t local_imu = {0};
-  estimation_output_t local_kf_data;
 
   control_settings_t settings = global_cats_config.config.control_settings;
 
@@ -43,39 +41,33 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   // osDelay(1000);
 
   while (1) {
-    /* Update KF data */
-    local_kf_data = global_kf_data;
-
     /* Update Imu data depending on the sensor elimination data */
     for (int i = 0; i < 3; i++) {
-      if (global_elimination_data.faulty_imu[i] == 0) {
+      if (global_elimination_data.faulty_accel[i] == 0) {
         local_imu = global_imu[i + 1];
         break;
       }
     }
 
     /* Check Flight Phases */
-    check_flight_phase(&fsm_state, &local_imu, &local_kf_data, &settings);
-
-    /* Update Global Flight phase */
-    global_flight_state = fsm_state;
+    check_flight_phase(&global_flight_state, &local_imu, &global_kf_data, &settings);
 
     // Keep track of max speed, velocity and acceleration for flight stats
-    if (fsm_state.flight_state >= THRUSTING_1 && fsm_state.flight_state <= APOGEE) {
-      if (max_v < local_kf_data.velocity) max_v = local_kf_data.velocity;
-      if (max_a < local_kf_data.acceleration) max_a = local_kf_data.acceleration;
-      if (max_h < local_kf_data.height) max_h = local_kf_data.height;
+    if (global_flight_state.flight_state >= THRUSTING_1 && global_flight_state.flight_state <= APOGEE) {
+      if (max_v < global_kf_data.velocity) max_v = global_kf_data.velocity;
+      if (max_a < global_kf_data.acceleration) max_a = global_kf_data.acceleration;
+      if (max_h < global_kf_data.height) max_h = global_kf_data.height;
     }
 
-    if (fsm_state.state_changed == 1) {
-      log_error("State Changed to %s", flight_fsm_map[fsm_state.flight_state]);
+    if (global_flight_state.state_changed == 1) {
+      log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);
       flight_state_t flight_state = {.ts = osKernelGetTickCount(),
-                                     .flight_or_drop_state.flight_state = fsm_state.flight_state};
+                                     .flight_or_drop_state.flight_state = global_flight_state.flight_state};
       record(FLIGHT_STATE, &flight_state);
 
       // When we are in any flight state update the flash sector with last
       // flight phase
-      if (fsm_state.flight_state == TOUCHDOWN) {
+      if (global_flight_state.flight_state == TOUCHDOWN) {
         // TODO - create a stats file
         //        cs_set_flight_phase(fsm_state.flight_state);
         //        cs_set_max_altitude(max_h);

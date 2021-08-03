@@ -114,8 +114,14 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case MAGNETO:
       rec_elem_size += sizeof(rec_elem->u.magneto_info);
       break;
+    case ACCELEROMETER:
+      rec_elem_size += sizeof(rec_elem->u.accel_data);
+      break;
     case FLIGHT_INFO:
       rec_elem_size += sizeof(rec_elem->u.flight_info);
+      break;
+    case ORIENTATION_INFO:
+      rec_elem_size += sizeof(rec_elem->u.orientation_info);
       break;
     case FILTERED_DATA_INFO:
       rec_elem_size += sizeof(rec_elem->u.filtered_data_info);

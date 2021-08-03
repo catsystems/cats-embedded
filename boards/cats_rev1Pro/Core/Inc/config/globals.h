@@ -17,6 +17,7 @@
 #include "drivers/servo.h"
 #include "stm32l4xx_hal.h"
 #include "usbd_cdc_if.h"
+#include "sensor_config.h"
 
 /** Sampling Frequencies **/
 #define CONTROL_SAMPLING_FREQ 100
@@ -53,9 +54,9 @@ extern uint8_t usb_fifo_out_buffer[256];
 
 /** State Estimation **/
 /* Index of high G Accel */
-#define HIGH_G_ACC_INDEX 2
-extern baro_data_t global_baro[3];
-extern imu_data_t global_imu[3];
+extern baro_data_t global_baro[NUM_BARO];
+extern imu_data_t global_imu[NUM_IMU];
+extern accel_data_t global_accel;
 extern magneto_data_t global_magneto;
 extern flight_fsm_t global_flight_state;
 extern drop_test_fsm_t global_drop_test_state;

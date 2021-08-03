@@ -31,13 +31,15 @@ typedef enum {
   BARO1 = 0x10,
   BARO2 = 0x20,
   MAGNETO = 0x40,
-  FLIGHT_INFO = 0x80,
-  FILTERED_DATA_INFO = 0x100,
-  FLIGHT_STATE = 0x200,
-  COVARIANCE_INFO = 0x400,
-  SENSOR_INFO = 0x800,
-  EVENT_INFO = 0x1000,
-  ERROR_INFO = 0x2000,
+  ACCELEROMETER = 0x80,
+  FLIGHT_INFO = 0x100,
+  ORIENTATION_INFO = 0x200,
+  FILTERED_DATA_INFO = 0x400,
+  FLIGHT_STATE = 0x800,
+  COVARIANCE_INFO = 0x1000,
+  SENSOR_INFO = 0x2000,
+  EVENT_INFO = 0x4000,
+  ERROR_INFO = 0x8000,
   HEHE = 0xFFFFFFFF,
 } rec_entry_type_e;
 
@@ -53,6 +55,12 @@ typedef struct {
   float velocity;
   float acceleration; /* Acceleration with removed offset from inside the KF */
 } flight_info_t;
+
+typedef struct {
+  timestamp_t ts;
+  int16_t estimated_orientation[4];
+  int16_t raw_orientation[4];
+} orientation_info_t;
 
 typedef struct {
   timestamp_t ts;
@@ -94,14 +102,16 @@ typedef struct {
 typedef union {
   imu_data_t imu;
   baro_data_t baro;
+  magneto_data_t magneto_info;
+  accel_data_t accel_data;
   flight_info_t flight_info;
+  orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;
   flight_state_t flight_state;
   covariance_info_t covariance_info;
   sensor_info_t sensor_info;
   event_info_t event_info;
   error_info_t error_info;
-  magneto_data_t magneto_info;
 } rec_elem_u;
 
 typedef struct {

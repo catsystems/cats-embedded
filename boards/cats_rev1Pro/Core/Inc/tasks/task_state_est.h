@@ -20,9 +20,8 @@ _Noreturn void task_state_est(void *argument);
 #define SPIKE_BARO
 #define SPIKE_IMU
 #define SPIKE_SENSOR_CHOICE 1
-#define SPIKE_THRESHOLD                                                    \
-  0.001f /* rng between 0 and 1 and it it is smaller than the threshold we \
-            inject a spike */
+/* rng between 0 and 1 and it it is smaller than the threshold we inject a spike */
+#define SPIKE_THRESHOLD 0.01f
 
 /* Noise Settings */
 #define ACC_NOISE_MAX_AMPL      0.2f /* In m/s^2 */
