@@ -46,6 +46,15 @@ const ICM20601 ICM3 = {
     .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
 };
 
+SPI_BUS SPI_ACCEL = {.cs_port = CS_ACC_GPIO_Port, .cs_pin = CS_ACC_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
+
+const H3LIS100DL ACCEL = {
+    .spi = &SPI_ACCEL,
+    .power_mode = H3LIS100DL_PM_NM_ODR,
+    .sample_rate = H3LIS100DL_ODR_100,
+    .filter = H3LIS100DL_HPC_8,
+};
+
 SPI_BUS SPI_BARO1 = {
     .cs_port = CS_BARO1_GPIO_Port, .cs_pin = CS_BARO1_Pin, .spi_handle = &hspi2, .cs_type = LOW_ACTIVE};
 
