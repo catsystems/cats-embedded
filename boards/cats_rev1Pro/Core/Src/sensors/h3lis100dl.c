@@ -19,7 +19,7 @@ bool h3lis100dl_init(const H3LIS100DL *dev) {
   // verify we are able to read from the chip
   uint8_t buffer = 0;
 
-  read_data(dev, H3LIS100DL_WHO_AM_I, &buffer, 1);
+  read_data(dev->spi, H3LIS100DL_WHO_AM_I, &buffer, 1);
   if (buffer != H3LIS100DL_WHO_AM_I_CONST) return false;
 
   // CTRL_REG_1
@@ -36,13 +36,13 @@ bool h3lis100dl_init(const H3LIS100DL *dev) {
 }
 
 void h3lis100dl_read_raw(const H3LIS100DL *dev, int8_t *data) {
-  read_data(dev->spi, H3LIS100DL_OUT_X, (uint8_t)data[0], 1);
-  read_data(dev->spi, H3LIS100DL_OUT_Y, (uint8_t)data[1], 1);
-  read_data(dev->spi, H3LIS100DL_OUT_Z, (uint8_t)data[2], 1);
+  read_data(dev->spi, H3LIS100DL_OUT_X, (uint8_t *)&data[0], 1);
+  read_data(dev->spi, H3LIS100DL_OUT_Y, (uint8_t *)&data[1], 1);
+  read_data(dev->spi, H3LIS100DL_OUT_Z, (uint8_t *)&data[2], 1);
 }
 
 void h3lis100dl_read(const H3LIS100DL *dev, float *data) {
-  uint8_t tmp[3];
+  int8_t tmp[3];
   h3lis100dl_read_raw(dev, tmp);
   for (int i = 0; i < 3; i++) {
     data[i] = (float)((int8_t)tmp[i]) * 7.6518f;

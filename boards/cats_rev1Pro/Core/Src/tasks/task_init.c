@@ -49,8 +49,8 @@ SET_TASK_PARAMS(task_health_monitor, 128)
 SET_TASK_PARAMS(task_state_est, 1024)
 SET_TASK_PARAMS(task_flight_fsm, 512)
 SET_TASK_PARAMS(task_drop_test_fsm, 512)
-SET_TASK_PARAMS(task_peripherals, 256)
-SET_TASK_PARAMS(task_recorder, 256)
+SET_TASK_PARAMS(task_peripherals, 512)
+SET_TASK_PARAMS(task_recorder, 512)
 SET_TASK_PARAMS(task_usb_communicator, 512)
 
 /** Private Constants **/
