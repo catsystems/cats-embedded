@@ -52,7 +52,7 @@ const H3LIS100DL ACCEL = {
     .spi = &SPI_ACCEL,
     .power_mode = H3LIS100DL_PM_NM_ODR,
     .sample_rate = H3LIS100DL_ODR_100,
-    .filter = H3LIS100DL_HPC_8,
+    .filter = H3LIS100DL_NO_FILTER,
 };
 
 SPI_BUS SPI_BARO1 = {

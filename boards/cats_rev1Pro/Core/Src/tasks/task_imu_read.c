@@ -9,7 +9,6 @@
 #include "tasks/task_imu_read.h"
 #include "sensors/icm20601.h"
 #include "sensors/mmc5983ma.h"
-#include "sensors/h3lis100dl.h"
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "util/log.h"
@@ -40,10 +39,8 @@ void task_imu_read(void *argument) {
   int16_t temperature;
 
   /* initialize MAGNETO data variables */
-  float mag_field[3];
-
-  /* initialize ACCEL data variables */
-  int8_t high_g_acceleration[3];
+  magneto_data_t magneto_data;
+  float data[3];
 
   /* Infinite loop */
   tick_count = osKernelGetTickCount();
@@ -60,13 +57,16 @@ void task_imu_read(void *argument) {
     //            2, gyroscope[0], gyroscope[1], gyroscope[2],
     //            acceleration[0], acceleration[1], acceleration[2], temperature);
 
-    mmc5983ma_read_calibrated(&MAG, mag_field);
-    global_magneto.magneto_x = mag_field[0];
-    global_magneto.magneto_y = mag_field[1];
-    global_magneto.magneto_z = mag_field[2];
-    global_magneto.ts = osKernelGetTickCount();
+    mmc5983ma_read_calibrated(&MAG, data);
+    magneto_data.magneto_x = data[0];
+    magneto_data.magneto_y = data[1];
+    magneto_data.magneto_z = data[2];
+    magneto_data.ts = osKernelGetTickCount();
+    log_info("Magneto %ld: RAW Mx: %ld, My:%ld, Mz:%ld", 1, (int32_t)((float)data[0] * 1000),
+             (int32_t)((float)data[1] * 1000), (int32_t)((float)data[2] * 1000));
 
-    h3lis100dl_read_raw(&ACCEL, high_g_acceleration);
+    global_magneto = magneto_data;
+    record(MAGNETO, &magneto_data);
 
     /* TODO: The speed of copying looks to be the same, code size reduced by 16B
      * with memcpy vs. assignment with -0g */
