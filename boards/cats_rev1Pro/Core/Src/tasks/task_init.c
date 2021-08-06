@@ -316,10 +316,10 @@ static void init_imu() {
     log_error("IMU 2 initialization failed");
   }
 
-  //  while (!icm20601_init(&ICM3)) {
-  //    osDelay(10);
-  //    log_error("IMU 3 initialization failed");
-  //  }
+  while (!h3lis100dl_init(&ACCEL)) {
+    osDelay(10);
+    log_error("ACCEL initialization failed");
+  }
   //#define CALIBRATE_ACCEL
 
 #ifdef CALIBRATE_ACCEL

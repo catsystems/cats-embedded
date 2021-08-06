@@ -10,6 +10,7 @@
 #include "sensors/icm20601.h"
 #include "sensors/ms5607.h"
 #include "sensors/mmc5983ma.h"
+#include "sensors/h3lis100dl.h"
 #include "drivers/spi.h"
 #include "drivers/sbus.h"
 #include "drivers/buzzer.h"
@@ -35,6 +36,8 @@ extern MS5607 MS2;
 extern MS5607 MS3;
 
 extern MMC5983MA MAG;
+
+extern const H3LIS100DL ACCEL;
 
 extern BUZ BUZZER;
 
