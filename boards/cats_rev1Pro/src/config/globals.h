@@ -48,7 +48,7 @@ extern SERVO SERVO2;
 /** Data streams **/
 
 extern fifo_t usb_input_fifo;
-extern uint8_t usb_fifo_in_buffer[64];
+extern uint8_t usb_fifo_in_buffer[256];
 extern fifo_t usb_output_fifo;
 extern uint8_t usb_fifo_out_buffer[256];
 

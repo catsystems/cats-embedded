@@ -105,7 +105,7 @@ fifo_t usb_input_fifo;
 fifo_t usb_output_fifo;
 
 uint8_t usb_fifo_out_buffer[256];
-uint8_t usb_fifo_in_buffer[64];
+uint8_t usb_fifo_in_buffer[256];
 
 BUZ BUZZER = {.timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .start = 0, .started = 0, .volume = 100};
 

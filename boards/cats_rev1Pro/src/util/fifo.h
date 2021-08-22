@@ -13,7 +13,7 @@ typedef struct {
   uint32_t used;
   uint32_t size;
   uint8_t *data;
-  volatile bool mutex;
+  osSemaphoreId_t id;
 } fifo_t;
 
 void fifo_init(fifo_t *fifo, uint8_t *pdata, uint32_t size);

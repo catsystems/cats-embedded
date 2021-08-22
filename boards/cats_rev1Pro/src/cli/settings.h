@@ -10,7 +10,7 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS } lookupTableIndex_e;
+typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS } lookupTableIndex_e;
 
 typedef struct lookupTableEntry_s {
   const char *const *values;

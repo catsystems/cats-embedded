@@ -27,6 +27,7 @@
 static uint32_t bufferIndex = 0;
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
+static char oldcliBuffer[CLI_IN_BUFFER_SIZE];
 
 static fifo_t *cli_in;
 static fifo_t *cli_out;
@@ -207,7 +208,6 @@ static void cliPrintFlight(const char *cmdName, char *cmdline) {
       log_raw("\nFlight %lu doesn't exist", flight_idx);
       log_raw("Number of recorded flights: %lu", flight_counter);
     } else {
-      log_raw("");
       dump_recording(flight_idx);
     }
   } else {
@@ -565,7 +565,7 @@ static void cliSet(const char *cmdName, char *cmdline) {
     const clivalue_t *val = &valueTable[index];
 
     bool valueChanged = false;
-    int16_t value = 0;
+
     switch (val->type & VALUE_MODE_MASK) {
       case MODE_DIRECT: {
         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
@@ -604,13 +604,77 @@ static void cliSet(const char *cmdName, char *cmdline) {
           matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
           if (matched) {
-            value = tableValueIndex;
-
-            cliSetVar(val, value);
+            cliSetVar(val, tableValueIndex);
             valueChanged = true;
           }
         }
       } break;
+      case MODE_ARRAY: {
+        const uint8_t arrayLength = val->config.array.length;
+        char *valPtr = eqptr;
+
+        int i = 0;
+        while (i < arrayLength && valPtr != NULL) {
+          // skip spaces
+          valPtr = skipSpace(valPtr);
+
+          // process substring starting at valPtr
+          // note: no need to copy substrings for atoi()
+          //       it stops at the first character that cannot be converted...
+          switch (val->type & VALUE_TYPE_MASK) {
+            default:
+            case VAR_UINT8: {
+              // fetch data pointer
+              uint8_t *data = (uint8_t *)val->pdata + i;
+              // store value
+              *data = (uint8_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_INT8: {
+              // fetch data pointer
+              int8_t *data = (int8_t *)val->pdata + i;
+              // store value
+              *data = (int8_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_UINT16: {
+              // fetch data pointer
+              uint16_t *data = (uint16_t *)val->pdata + i;
+              // store value
+              *data = (uint16_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_INT16: {
+              // fetch data pointer
+              int16_t *data = (int16_t *)val->pdata + i;
+              // store value
+              *data = (int16_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_UINT32: {
+              // fetch data pointer
+              uint32_t *data = (uint32_t *)val->pdata + i;
+              // store value
+              *data = (uint32_t)strtoul((const char *)valPtr, NULL, 10);
+            }
+
+            break;
+          }
+
+          // find next comma (or end of string)
+          valPtr = strchr(valPtr, ',') + 1;
+
+          i++;
+        }
+      }
+        // mark as changed
+        valueChanged = true;
+
+        break;
     }
 
     if (valueChanged) {
@@ -628,7 +692,36 @@ static void cliSet(const char *cmdName, char *cmdline) {
   }
 }
 
-static void cliStatus(const char *cmdName, char *cmdline) {}
+static void cliStatus(const char *cmdName, char *cmdline) {
+  /** Print Output map **/
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
+
+  cliPrintf("\n * ACTION CONFIGURATION *\n");
+  config_action_t action;
+  for (int i = 1; i < 10; i++) {
+    int nr_actions = cc_get_action_number(i);
+    if (nr_actions > 0) {
+      cliPrintf("\n%s\n", p_event_table->values[i]);
+      cliPrintf("   Number of Actions: %d\n", nr_actions);
+      for (int j = 0; j < nr_actions; j++) {
+        cc_get_action(i, (int16_t)j, &action);
+        cliPrintf("     %s - %d\n", p_action_table->values[action.action_pointer], action.arg);
+      }
+    }
+  }
+
+  /** Print Timer Configuration **/
+  cliPrintf("\n\n * TIMER CONFIGURATION *\n");
+  for (int i = 0; i < num_timers; i++) {
+    if (global_cats_config.config.timers[i].start_event > 0) {
+      cliPrintf("\nTIMER %d\n", i + 1);
+      cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
+      cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
+      cliPrintf("  Duration: %d ms\n", global_cats_config.config.timers[i].duration);
+    }
+  }
+}
 
 static void cliVersion(const char *cmdName, char *cmdline) {}
 
@@ -666,7 +759,7 @@ void cliPrint(const char *str) {
   while (*str) {
     while (fifo_write(cli_out, *str++) == false) {
       osDelay(10);
-      *str--;
+      str--;
     }
   }
 }
@@ -796,7 +889,7 @@ static void processCharacter(const char c) {
       }
       bufferIndex = 0;
     }
-
+    memcpy(oldcliBuffer, cliBuffer, sizeof(cliBuffer));
     memset(cliBuffer, 0, sizeof(cliBuffer));
     cliPrompt();
 
@@ -810,6 +903,11 @@ static void processCharacter(const char c) {
 }
 
 static void processCharacterInteractive(const char c) {
+  static uint16_t ignore = 0;
+  if (ignore) {
+    ignore--;
+    return;
+  }
   if (c == '\t' || c == '?') {
     // do tab completion
     const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -863,6 +961,17 @@ static void processCharacterInteractive(const char c) {
       cliBuffer[--bufferIndex] = 0;
       cliPrint("\010 \010");
     }
+  } else if (c == 27) {
+    // up arrow
+    while (bufferIndex) {
+      cliBuffer[--bufferIndex] = 0;
+      cliPrint("\010 \010");
+    }
+    for (int i = 0; i < sizeof(oldcliBuffer); i++) {
+      if (oldcliBuffer[i] == 0) break;
+      processCharacter(oldcliBuffer[i]);
+    }
+    ignore = 2;
   } else {
     processCharacter(c);
   }

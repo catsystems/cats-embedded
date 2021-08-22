@@ -201,13 +201,9 @@ typedef struct {
 } config_timer_t;
 
 typedef struct {
-  uint16_t action_pointer;
+  int16_t action_pointer;
   int16_t arg;
 } config_action_t;
-
-typedef struct {
-  config_action_t action[16];
-} config_event_actions_t;
 
 typedef enum {
   CATS_BUZZ_NONE = 0,

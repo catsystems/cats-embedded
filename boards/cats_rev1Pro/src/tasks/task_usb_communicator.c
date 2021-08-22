@@ -10,6 +10,7 @@
 #include "util/reader.h"
 
 #include <stdint.h>
+
 _Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");
@@ -21,6 +22,7 @@ _Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
     if (fifo_get_length(&usb_input_fifo)) {
       cli_process();
     }
+
     osDelay(10);
   }
 }
