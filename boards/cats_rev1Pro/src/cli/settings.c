@@ -16,12 +16,18 @@ const char* const lookupTabeEvents[] = {
     "UNUSED", "IDLE", "MOVING", "LIFTOFF", "MAX_V", "APOGEE", "POST_APOGEE", "TOUCHDOWN", "TIMER_1_END", "TIMER_2_END",
 };
 
+const char* const lookupTabeActions[] = {
+    "NONE",   "DELAY",   "HC_ONE",  "HC_TWO",    "HC_THREE",  "HC_FOUR",     "HC_FIVE",    "HC_SIX",   "LL_ONE",
+    "LL_TWO", "LL_TREE", "LL_FOUR", "SERVO_ONE", "SERVO_TWO", "SERVO_THREE", "SERVO_FOUR", "RECORDER",
+};
+
 #define LOOKUP_TABLE_ENTRY(name) \
   { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableBootState),
     LOOKUP_TABLE_ENTRY(lookupTabeEvents),
+    LOOKUP_TABLE_ENTRY(lookupTabeActions),
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -63,6 +69,7 @@ const clivalue_t valueTable[] = {
      &global_cats_config.config.timers[3].end_event},
     {"timer4_duration", VAR_UINT16, .config.minmaxUnsigned = {1000, 60000},
      &global_cats_config.config.timers[3].duration},
+    {"action_table", VAR_INT16 | MODE_ARRAY, .config.array.length = 128, global_cats_config.config.action_array},
 
 };
 

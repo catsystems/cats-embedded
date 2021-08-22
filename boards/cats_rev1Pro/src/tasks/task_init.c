@@ -48,9 +48,11 @@
 
 SET_TASK_PARAMS(task_baro_read, 256)
 SET_TASK_PARAMS(task_imu_read, 256)
+
 // SET_TASK_PARAMS(task_receiver, 256)
-SET_TASK_PARAMS(task_health_monitor, 128)
 SET_TASK_PARAMS(task_state_est, 1300)
+SET_TASK_PARAMS(task_health_monitor, 256)
+
 SET_TASK_PARAMS(task_flight_fsm, 512)
 SET_TASK_PARAMS(task_drop_test_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 512)
@@ -142,7 +144,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   buzzer_queue_status(CATS_BUZZ_BOOTUP);
 
   // Fifo init
-  fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
+  fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 256);
   fifo_init(&usb_output_fifo, usb_fifo_out_buffer, 256);
   log_disable();
 
@@ -335,6 +337,18 @@ static void create_event_map() {
   //  event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
   //  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
   //  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
+
+  int16_t nr_actions;
+  config_action_t action;
+  for (int i = 0; i < 9; i++) {
+    nr_actions = cc_get_action_number(i);
+    if (nr_actions > 0) {
+      for (int16_t j = 0; j < nr_actions; j++) {
+        cc_get_action(i, j, &action);
+        osDelay(1);
+      }
+    }
+  }
 
   // Liftoff
   event_action_map[EV_LIFTOFF].num_actions = 1;

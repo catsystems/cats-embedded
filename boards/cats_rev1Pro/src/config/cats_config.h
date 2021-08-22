@@ -31,7 +31,7 @@ typedef struct {
   // Timers
   config_timer_t timers[8];
   // Event action map
-  config_event_actions_t event_actions[9];
+  int16_t action_array[128];
 } cats_config_t;
 
 typedef union {
@@ -53,3 +53,7 @@ void cc_save();
 
 /** debug functions **/
 void cc_print();
+
+/** action map functions **/
+int16_t cc_get_action_number(cats_event_e event);
+bool cc_get_action(cats_event_e event, int16_t id, config_action_t* action);
