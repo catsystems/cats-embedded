@@ -1,49 +1,13 @@
-/*******************************************************************************
- * Trace Recorder Library for Tracealyzer v4.3.11
- * Percepio AB, www.percepio.com
+/*
+ * Trace Recorder for Tracealyzer v4.5.0
+ * Copyright 2021 Percepio AB
+ * www.percepio.com
  *
- * trcConfig.h
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Main configuration parameters for the trace recorder library.
  * More settings can be found in trcStreamingConfig.h and trcSnapshotConfig.h.
- *
- * Read more at http://percepio.com/2016/10/05/rtos-tracing/
- *
- * Terms of Use
- * This file is part of the trace recorder library (RECORDER), which is the
- * intellectual property of Percepio AB (PERCEPIO) and provided under a
- * license as follows.
- * The RECORDER may be used free of charge for the purpose of recording data
- * intended for analysis in PERCEPIO products. It may not be used or modified
- * for other purposes without explicit permission from PERCEPIO.
- * You may distribute the RECORDER in its original source code form, assuming
- * this text (terms of use, disclaimer, copyright notice) is unchanged. You are
- * allowed to distribute the RECORDER with minor modifications intended for
- * configuration or porting of the RECORDER, e.g., to allow using it on a
- * specific processor, processor family or with a specific communication
- * interface. Any such modifications should be documented directly below
- * this comment block.
- *
- * Disclaimer
- * The RECORDER is being delivered to you AS IS and PERCEPIO makes no warranty
- * as to its use or performance. PERCEPIO does not and cannot warrant the
- * performance or results you may obtain by using the RECORDER or documentation.
- * PERCEPIO make no warranties, express or implied, as to noninfringement of
- * third party rights, merchantability, or fitness for any particular purpose.
- * In no event will PERCEPIO, its technology partners, or distributors be liable
- * to you for any consequential, incidental or special damages, including any
- * lost profits or lost savings, even if a representative of PERCEPIO has been
- * advised of the possibility of such damages, or for any claim by any third
- * party. Some jurisdictions do not allow the exclusion or limitation of
- * incidental, consequential or special damages, or the exclusion of implied
- * warranties or limitations on how long an implied warranty may last, so the
- * above limitations may not apply to you.
- *
- * Tabs are used for indent in this file (1 tab = 4 spaces)
- *
- * Copyright Percepio AB, 2018.
- * www.percepio.com
- ******************************************************************************/
+ */
 
 #ifndef TRC_CONFIG_H
 #define TRC_CONFIG_H
@@ -52,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "tracing/trcPortDefines.h"
+#include "../../Tracing/inc/trcPortDefines.h"
 
 /******************************************************************************
  * Include of processor header file
@@ -106,31 +70,23 @@ extern "C" {
  * trace recorder library with an older version of FreeRTOS).
  *
  * TRC_FREERTOS_VERSION_7_3_X				If using FreeRTOS v7.3.X
- * TRC_FREERTOS_VERSION_7_4_X				If using FreeRTOS v7.4.X
+ * TRC_FREERTOS_VERSION_7_4_X				If using FreeRTOS v7.4.X 
  * TRC_FREERTOS_VERSION_7_5_X				If using FreeRTOS v7.5.X
  * TRC_FREERTOS_VERSION_7_6_X				If using FreeRTOS v7.6.X
  * TRC_FREERTOS_VERSION_8_X_X				If using FreeRTOS v8.X.X
  * TRC_FREERTOS_VERSION_9_0_0				If using FreeRTOS v9.0.0
  * TRC_FREERTOS_VERSION_9_0_1				If using FreeRTOS v9.0.1
  * TRC_FREERTOS_VERSION_9_0_2				If using FreeRTOS v9.0.2
- * TRC_FREERTOS_VERSION_10_0_0				If using FreeRTOS
- *v10.0.0
- * TRC_FREERTOS_VERSION_10_0_1				If using FreeRTOS
- *v10.0.1
- * TRC_FREERTOS_VERSION_10_1_0				If using FreeRTOS
- *v10.1.0
- * TRC_FREERTOS_VERSION_10_1_1				If using FreeRTOS
- *v10.1.1
- * TRC_FREERTOS_VERSION_10_2_0				If using FreeRTOS
- *v10.2.0
- * TRC_FREERTOS_VERSION_10_2_1				If using FreeRTOS
- *v10.2.1
- * TRC_FREERTOS_VERSION_10_3_0				If using FreeRTOS
- *v10.3.0
- * TRC_FREERTOS_VERSION_10_3_1				If using FreeRTOS
- *v10.3.1
- * TRC_FREERTOS_VERSION_10_4_0				If using FreeRTOS
- *v10.4.0 or later
+ * TRC_FREERTOS_VERSION_10_0_0				If using FreeRTOS v10.0.0
+ * TRC_FREERTOS_VERSION_10_0_1				If using FreeRTOS v10.0.1
+ * TRC_FREERTOS_VERSION_10_1_0				If using FreeRTOS v10.1.0
+ * TRC_FREERTOS_VERSION_10_1_1				If using FreeRTOS v10.1.1
+ * TRC_FREERTOS_VERSION_10_2_0				If using FreeRTOS v10.2.0
+ * TRC_FREERTOS_VERSION_10_2_1				If using FreeRTOS v10.2.1
+ * TRC_FREERTOS_VERSION_10_3_0				If using FreeRTOS v10.3.0
+ * TRC_FREERTOS_VERSION_10_3_1				If using FreeRTOS v10.3.1
+ * TRC_FREERTOS_VERSION_10_4_0				If using FreeRTOS v10.4.0
+ * TRC_FREERTOS_VERSION_10_4_1				If using FreeRTOS v10.4.1 or later
  *****************************************************************************/
 #define TRC_CFG_FREERTOS_VERSION TRC_FREERTOS_VERSION_10_2_1
 
@@ -146,7 +102,7 @@ extern "C" {
  ******************************************************************************/
 #define TRC_CFG_SCHEDULING_ONLY 0
 
-/******************************************************************************
+ /******************************************************************************
  * TRC_CFG_INCLUDE_MEMMANG_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -158,18 +114,18 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_INCLUDE_MEMMANG_EVENTS 1
 
-/******************************************************************************
+ /******************************************************************************
  * TRC_CFG_INCLUDE_USER_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
  *
- * If this is zero (0), all code related to User Events is excluded in order
+ * If this is zero (0), all code related to User Events is excluded in order 
  * to reduce code size. Any attempts of storing User Events are then silently
  * ignored.
  *
- * User Events are application-generated events, like "printf" but for the
- * trace log, generated using vTracePrint and vTracePrintF.
- * The formatting is done on host-side, by Tracealyzer. User Events are
+ * User Events are application-generated events, like "printf" but for the 
+ * trace log, generated using vTracePrint and vTracePrintF. 
+ * The formatting is done on host-side, by Tracealyzer. User Events are 
  * therefore much faster than a console printf and can often be used
  * in timing critical code without problems.
  *
@@ -181,9 +137,9 @@ extern "C" {
  *
  * Default value is 1.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_USER_EVENTS 0
+#define TRC_CFG_INCLUDE_USER_EVENTS 1
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_ISR_TRACING
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -195,7 +151,7 @@ extern "C" {
  * calling a traced kernel service. These events will still be recorded and
  * show up in anonymous ISR instances in Tracealyzer, with names such as
  * "ISR sending to <queue name>".
- * To disable such tracing, please refer to vTraceSetFilterGroup and
+ * To disable such tracing, please refer to vTraceSetFilterGroup and 
  * vTraceSetFilterMask.
  *
  * Default value is 1.
@@ -205,7 +161,7 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_INCLUDE_ISR_TRACING 1
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_READY_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -220,7 +176,7 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_INCLUDE_READY_EVENTS 1
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_OSTICK_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -233,7 +189,7 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_INCLUDE_OSTICK_EVENTS 0
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_EVENT_GROUP_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -244,7 +200,7 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_INCLUDE_EVENT_GROUP_EVENTS 0
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_TIMER_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
@@ -253,19 +209,19 @@ extern "C" {
  *
  * Default value is 0 since dependent on timers.c
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_TIMER_EVENTS 0
+#define TRC_CFG_INCLUDE_TIMER_EVENTS 1
 
-/*****************************************************************************
+ /*****************************************************************************
  * TRC_CFG_INCLUDE_PEND_FUNC_CALL_EVENTS
  *
  * Macro which should be defined as either zero (0) or one (1).
  *
- * If this is zero (0), the trace will exclude any "pending function call"
+ * If this is zero (0), the trace will exclude any "pending function call" 
  * events, such as xTimerPendFunctionCall().
  *
  * Default value is 0 since dependent on timers.c
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_PEND_FUNC_CALL_EVENTS 0
+#define TRC_CFG_INCLUDE_PEND_FUNC_CALL_EVENTS 1
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_INCLUDE_STREAM_BUFFER_EVENTS
@@ -279,19 +235,19 @@ extern "C" {
  ******************************************************************************/
 #define TRC_CFG_INCLUDE_STREAM_BUFFER_EVENTS 0
 
-/******************************************************************************
+ /******************************************************************************
  * TRC_CFG_ENABLE_STACK_MONITOR
  *
  * If enabled (1), the recorder periodically reports the unused stack space of
  * all active tasks.
  * The stack monitoring runs in the Tracealyzer Control task, TzCtrl. This task
- * is always created by the recorder when in streaming mode.
+ * is always created by the recorder when in streaming mode. 
  * In snapshot mode, the TzCtrl task is only used for stack monitoring and is
  * not created unless this is enabled.
  *****************************************************************************/
 #define TRC_CFG_ENABLE_STACK_MONITOR 1
 
-/******************************************************************************
+ /******************************************************************************
  * TRC_CFG_STACK_MONITOR_MAX_TASKS
  *
  * Macro which should be defined as a non-zero integer value.
@@ -301,9 +257,9 @@ extern "C" {
  *
  * Default value is 10.
  *****************************************************************************/
-#define TRC_CFG_STACK_MONITOR_MAX_TASKS 10
+#define TRC_CFG_STACK_MONITOR_MAX_TASKS 12
 
-/******************************************************************************
+ /******************************************************************************
  * TRC_CFG_STACK_MONITOR_MAX_REPORTS
  *
  * Macro which should be defined as a non-zero integer value.
@@ -311,7 +267,7 @@ extern "C" {
  * This defines how many tasks that will be subject to stack usage analysis for
  * each execution of the Tracealyzer Control task (TzCtrl). Note that the stack
  * monitoring cycles between the tasks, so this does not affect WHICH tasks that
- * are monitored, but HOW OFTEN each task stack is analyzed.
+ * are monitored, but HOW OFTEN each task stack is analyzed. 
  *
  * This setting can be combined with TRC_CFG_CTRL_TASK_DELAY to tune the
  * frequency of the stack monitoring. This is motivated since the stack analysis
@@ -324,38 +280,38 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_STACK_MONITOR_MAX_REPORTS 1
 
-/*******************************************************************************
+ /*******************************************************************************
  * Configuration Macro: TRC_CFG_CTRL_TASK_PRIORITY
  *
- * The scheduling priority of the Tracealyzer Control (TzCtrl) task.
+ * The scheduling priority of the Tracealyzer Control (TzCtrl) task. 
  *
- * In streaming mode, TzCtrl is used to receive start/stop commands from
+ * In streaming mode, TzCtrl is used to receive start/stop commands from 
  * Tracealyzer and in some cases also to transmit the trace data (for stream
  * ports that uses the internal buffer, like TCP/IP). For such stream ports,
  * make sure the TzCtrl priority is high enough to ensure reliable periodic
- * execution and transfer of the data, but low enough to avoid disturbing any
+ * execution and transfer of the data, but low enough to avoid disturbing any 
  * time-sensitive functions.
  *
  * In Snapshot mode, TzCtrl is only used for the stack usage monitoring and is
- * not created if stack monitoring is disabled. TRC_CFG_CTRL_TASK_PRIORITY
- *should be low, to avoid disturbing any time-sensitive tasks.
+ * not created if stack monitoring is disabled. TRC_CFG_CTRL_TASK_PRIORITY should
+ * be low, to avoid disturbing any time-sensitive tasks.
  ******************************************************************************/
 #define TRC_CFG_CTRL_TASK_PRIORITY 1
 
-/*******************************************************************************
+ /*******************************************************************************
  * Configuration Macro: TRC_CFG_CTRL_TASK_DELAY
  *
- * The delay between loops of the TzCtrl task (see TRC_CFG_CTRL_TASK_PRIORITY),
- * which affects the frequency of the stack monitoring.
- *
+ * The delay between loops of the TzCtrl task (see TRC_CFG_CTRL_TASK_PRIORITY), 
+ * which affects the frequency of the stack monitoring. 
+ * 
  * In streaming mode, this also affects the trace data transfer if you are using
  * a stream port leveraging the internal buffer (like TCP/IP). A shorter delay
  * increases the CPU load of TzCtrl somewhat, but may improve the performance of
  * of the trace streaming, especially if the trace buffer is small.
  ******************************************************************************/
-#define TRC_CFG_CTRL_TASK_DELAY 10
+#define TRC_CFG_CTRL_TASK_DELAY 5
 
-/*******************************************************************************
+ /*******************************************************************************
  * Configuration Macro: TRC_CFG_CTRL_TASK_STACK_SIZE
  *
  * The stack size of the Tracealyzer Control (TzCtrl) task.
@@ -406,11 +362,49 @@ extern "C" {
  *****************************************************************************/
 #define TRC_CFG_ACKNOWLEDGE_QUEUE_SET_SEND 0 /* TRC_ACKNOWLEDGED */
 
+ /*******************************************************************************
+ * TRC_CFG_RECORDER_DATA_INIT
+ *
+ * Macro which states wether the recorder data should have an initial value.
+ *
+ * In very specific cases where traced objects are created before main(),
+ * the recorder will need to be started even before that. In these cases,
+ * the recorder data would be initialized by vTraceEnable(TRC_INIT) but could
+ * then later be overwritten by the initialization value.
+ * If this is an issue for you, set TRC_CFG_RECORDER_DATA_INIT to 0.
+ * The following code can then be used before any traced objects are created:
+ *
+ *	extern uint32_t RecorderEnabled;
+ *	RecorderEnabled = 0;
+ *	vTraceInitialize();
+ *
+ * After the clocks are properly initialized, use vTraceEnable(...) to start
+ * the tracing.
+ *
+ * Default value is 1.
+ ******************************************************************************/
+#define TRC_CFG_RECORDER_DATA_INIT 1
+
+ /******************************************************************************
+ * TRC_CFG_RECORDER_DATA_ATTRIBUTE
+ *
+ * When setting TRC_CFG_RECORDER_DATA_INIT to 0, you might also need to make
+ * sure certain recorder data is placed in a specific RAM section to avoid being
+ * zeroed out after initialization. Define TRC_CFG_RECORDER_DATA_ATTRIBUTE as
+ * that attribute.
+ *
+ * Example:
+ * #define TRC_CFG_RECORDER_DATA_ATTRIBUTE __attribute__((section(".bss.trace_recorder_data")))
+ *
+ * Default value is empty.
+ *****************************************************************************/
+#define TRC_CFG_RECORDER_DATA_ATTRIBUTE 
+
 /* Specific configuration, depending on Streaming/Snapshot mode */
 #if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_SNAPSHOT)
-#include "trcSnapshotConfig.h"
+#include "../../Tracing/cfg/trcSnapshotConfig.h"
 #elif (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
-#include "trcStreamingConfig.h"
+#include "../../Tracing/cfg/trcStreamingConfig.h"
 #endif
 
 #ifdef __cplusplus

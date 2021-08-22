@@ -97,9 +97,23 @@ static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_
 }
 static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
                          lfs_size_t size) {
+  static uint32_t sync_counter = 0;
+  static uint32_t sync_counter_err = 0;
   if (w25q_write_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
+    if (sync_counter % 32 == 0) {
+      /* Flash the LED at certain intervals */
+      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+      lfs_file_sync(&lfs, &current_flight_file);
+    }
+    ++sync_counter;
     return 0;
   }
+  if (sync_counter_err % 32 == 0) {
+    /* Flash the LED at certain intervals */
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+    lfs_file_sync(&lfs, &current_flight_file);
+  }
+  ++sync_counter_err;
   return -1;
 }
 static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block) {

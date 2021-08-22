@@ -136,7 +136,6 @@ osMessageQueueId_t event_queue;
 /** Tracing Channels **/
 
 #if (configUSE_TRACE_FACILITY == 1)
-#include "tracing/trcRecorder.h"
 traceString baro_channel;
 traceString flash_channel;
 #endif

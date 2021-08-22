@@ -16,7 +16,7 @@
 
 /** Private Constants **/
 
-static const uint32_t REC_BUFFER_LEN = 256;
+#define REC_BUFFER_LEN 256
 
 /** Private Function Declarations **/
 
@@ -27,7 +27,7 @@ static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, 
 /** Exported Function Definitions **/
 
 _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
-  uint8_t *rec_buffer = (uint8_t *)calloc(REC_BUFFER_LEN, sizeof(uint8_t));
+  uint8_t rec_buffer[REC_BUFFER_LEN] = {};
 
   uint16_t rec_buffer_idx = 0;
   uint_fast8_t curr_log_elem_size = 0;
@@ -38,7 +38,6 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
   uint32_t max_elem_count = 0;
 
   while (1) {
-    static uint32_t sync_counter = 0;
     rec_elem_t curr_log_elem;
 
     /* TODO: check if this should be < or <= */
@@ -51,16 +50,16 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
 
       if (global_recorder_status >= REC_WRITE_TO_FLASH) {
         if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
+          // trace_print(flash_channel, "write_value start");
           write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
+          // trace_print(flash_channel, "write_value end");
         } else {
           log_error("Something wrong with the recording queue!");
         }
       } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT && global_recorder_status == REC_FILL_QUEUE) {
-        /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we
-         * start to empty it. When thrusting is detected we will have around
-         * REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the
-         * next loop iteration we will start to write the elements to the flash
-         */
+        /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
+         * detected we will have around REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the next loop
+         * iteration we will start to write the elements to the flash. */
         rec_elem_t dummy_log_elem;
         osMessageQueueGet(rec_queue, &dummy_log_elem, NULL, osWaitForever);
       } else {
@@ -69,9 +68,9 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
       }
     }
 
-    /* call LFS function here */
-    // w25q_write_page(rec_buffer, page_id * w25q.page_size, 256);
-    lfs_file_write(&lfs, &current_flight_file, rec_buffer, 256);
+    trace_print(flash_channel, "lfw start");
+    int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, 256);
+    trace_printf(flash_channel, "lfw end, written %d", sz);
 
     /* reset log buffer index */
     if (rec_buffer_idx > REC_BUFFER_LEN) {
@@ -84,13 +83,6 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
     if (rec_buffer_idx > 0) {
       memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
     }
-
-    if (sync_counter % 16 == 0) {
-      /* Flash the LED at certain intervals */
-      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-      lfs_file_sync(&lfs, &current_flight_file);
-    }
-    ++sync_counter;
 
     /* TODO: check if there is enough space left on the flash */
   }

@@ -165,7 +165,7 @@ _Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
 //          if (value > cs_get_num_recorded_flights() - 1)
 //            log_raw("Error: Value to big");
 //          for (int i = 0; i < cs_get_num_recorded_flights(); i++) {
-//            print_recording(i);
+//            dump_recording(i);
 //          }
 //
 //          break;

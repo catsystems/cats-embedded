@@ -8,9 +8,9 @@
 #include "config/cats_config.h"
 
 /* TODO: set this queue to 256 at least */
-const uint32_t REC_QUEUE_SIZE = 512;
+const uint32_t REC_QUEUE_SIZE = 256;
 const float REC_QUEUE_PRE_THRUSTING_FILL_RATIO = 0.75f;
-const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 384;
+const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT = 200;
 // TODO Element is not constant error
 // REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE;
 

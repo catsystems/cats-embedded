@@ -267,19 +267,11 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
  */
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
   /* USER CODE BEGIN 6 */
-#if (configUSE_TRACE_FACILITY == 1)
-  for (uint32_t i = 0; i < *Len; i++) {
-    trace_command_buffer.data[trace_command_buffer.idx] = Buf[i];
-    trace_command_buffer.idx++;
-  }
-#else
   global_usb_detection = true;
   uint32_t buf_length = *Len;
   if (buf_length != 0) {
     fifo_write_bytes(&usb_input_fifo, Buf, buf_length);
   }
-#endif
-
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -306,14 +298,6 @@ uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len) {
   }
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
-#if (configUSE_TRACE_FACILITY == 1)
-  static uint8_t led_counter = 0;
-  if (led_counter++ % 64 == 0) {
-    //    HAL_GPIO_TogglePin(GPIOC, LED_FAULT_Pin);
-    //    HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-  }
-  osDelay(2);
-#endif
   /* USER CODE END 7 */
   return result;
 }

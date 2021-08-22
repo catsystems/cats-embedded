@@ -77,6 +77,7 @@ static void cliRecInfo(const char *cmdName, char *cmdline);
 static void cliPrintFlight(const char *cmdName, char *cmdline);
 static void cliFlashWrite(const char *cmdName, char *cmdline);
 static void cliFlashStop(const char *cmdName, char *cmdline);
+static void cliLfsFormat(const char *cmdName, char *cmdline);
 static void cliLs(const char *cmdName, char *cmdline);
 static void cliCd(const char *cmdName, char *cmdline);
 
@@ -118,8 +119,23 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cliFlashStop),
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
+    CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cliLfsFormat),
 };
 
+static void cliLfsFormat(const char *cmdName, char *cmdline) {
+  log_raw("\nTrying LFS format");
+  lfs_format(&lfs, &lfs_cfg);
+  int err = lfs_mount(&lfs, &lfs_cfg);
+  if (err != 0) {
+    log_raw("LFS mounting failed with error %d!", err);
+  } else {
+    log_raw("Mounting successful!");
+    /* create the flights directory */
+    lfs_mkdir(&lfs, "flights");
+
+    strncpy(cwd, "/", sizeof(cwd));
+  }
+}
 static void cliLs(const char *cmdName, char *cmdline) { lfs_ls(cwd); }
 static void cliCd(const char *cmdName, char *cmdline) {
   /* TODO - check if a directory actually exists */
@@ -156,8 +172,15 @@ static void cliEraseFlash(const char *cmdName, char *cmdline) {
     int err2 = lfs_mount(&lfs, &lfs_cfg);
     if (err2 != 0) {
       log_raw("LFS mounting failed again with error %d!", err2);
+      return;
+    } else {
+      log_raw("Mounting successful!");
     }
   }
+  /* create the flights directory */
+  lfs_mkdir(&lfs, "flights");
+
+  strncpy(cwd, "/", sizeof(cwd));
 }
 
 static void cliEraseRecordings(const char *cmdName, char *cmdline) {
@@ -184,7 +207,7 @@ static void cliPrintFlight(const char *cmdName, char *cmdline) {
       log_raw("Number of recorded flights: %lu", flight_counter);
     } else {
       log_raw("");
-      print_recording(flight_idx);
+      dump_recording(flight_idx);
     }
   } else {
     log_raw("\nArgument not provided!");
@@ -213,7 +236,7 @@ static void cliRead(const char *cmdName, char *cmdline) {
   else
     log_raw("Number of recorded flights: %hu", num_recorded_flights);
   for (int i = 0; i < num_recorded_flights; i++) {
-    print_recording(i);
+    dump_recording(i);
   }
   if (log_was_enabled) log_enable();
 }
