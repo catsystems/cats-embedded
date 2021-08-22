@@ -10,5 +10,6 @@
 #include "util/types.h"
 #include "cmsis_os.h"
 
-void print_recording(uint16_t number);
+void dump_recording(uint16_t number);
+void parse_recording(uint16_t number);
 void erase_recordings();

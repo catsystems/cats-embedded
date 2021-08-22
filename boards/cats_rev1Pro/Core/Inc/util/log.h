@@ -9,15 +9,16 @@
 
 #pragma once
 
-#include <string.h>
-#include "FreeRTOSConfig.h"
+#include "trcRecorder.h"
 #include "cmsis_os.h"
+
+#include <string.h>
 #include <stdbool.h>
 
 /** TRACING SECTION **/
 #if (configUSE_TRACE_FACILITY == 1)
-#define trace_print(ch, str)       vTracePrint(ch, str);
-#define trace_printf(ch, str, ...) vTracePrintF(ch, str, __VA_ARGS__);
+#define trace_print(ch, str)       vTracePrint(ch, str)
+#define trace_printf(ch, str, ...) vTracePrintF(ch, str, __VA_ARGS__)
 #else
 #define trace_print(ch, str) \
   do {                       \

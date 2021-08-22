@@ -48,9 +48,9 @@
 
 SET_TASK_PARAMS(task_baro_read, 256)
 SET_TASK_PARAMS(task_imu_read, 256)
-SET_TASK_PARAMS(task_receiver, 256)
+// SET_TASK_PARAMS(task_receiver, 256)
 SET_TASK_PARAMS(task_health_monitor, 128)
-SET_TASK_PARAMS(task_state_est, 2048)
+SET_TASK_PARAMS(task_state_est, 1300)
 SET_TASK_PARAMS(task_flight_fsm, 512)
 SET_TASK_PARAMS(task_drop_test_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 512)
@@ -145,8 +145,11 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   fifo_init(&usb_input_fifo, usb_fifo_in_buffer, 64);
   fifo_init(&usb_output_fifo, usb_fifo_out_buffer, 256);
   log_disable();
-  /* Infinite loop */
 
+  //  osDelay(3000);
+  //  HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+  //  set_recorder_state(REC_WRITE_TO_FLASH);
+  /* Infinite loop */
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
@@ -158,10 +161,6 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 /** Private Function Definitions **/
 
 static void init_system() {
-#if (configUSE_TRACE_FACILITY == 1)
-  vTraceEnable(TRC_START_AWAIT_HOST);
-  HAL_GPIO_TogglePin(GPIOC, LED_STATUS_Pin);
-#endif
   log_set_level(LOG_TRACE);
   log_enable();
 }

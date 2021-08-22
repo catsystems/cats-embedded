@@ -96,15 +96,7 @@ static void read_baro() {
 }
 
 static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
-  trace_print(baro_channel, "Get temp pres 1 start");
   ms5607_get_temp_pres(&MS1, &temperature[0], &pressure[0]);
-  trace_print(baro_channel, "Get temp pres 1 end");
-
-  trace_print(baro_channel, "Get temp pres 2 start");
   ms5607_get_temp_pres(&MS2, &temperature[1], &pressure[1]);
-  trace_print(baro_channel, "Get temp pres 2 end");
-
-  trace_print(baro_channel, "Get temp pres 3 start");
   ms5607_get_temp_pres(&MS3, &temperature[2], &pressure[2]);
-  trace_print(baro_channel, "Get temp pres 3 end");
 }

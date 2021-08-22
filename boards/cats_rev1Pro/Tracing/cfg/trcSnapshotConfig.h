@@ -1,53 +1,19 @@
-/*******************************************************************************
- * Trace Recorder Library for Tracealyzer v4.3.11
- * Percepio AB, www.percepio.com
+/*
+ * Trace Recorder for Tracealyzer v4.5.0
+ * Copyright 2021 Percepio AB
+ * www.percepio.com
  *
- * trcSnapshotConfig.h
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Configuration parameters for trace recorder library in snapshot mode.
  * Read more at http://percepio.com/2016/10/05/rtos-tracing/
- *
- * Terms of Use
- * This file is part of the trace recorder library (RECORDER), which is the
- * intellectual property of Percepio AB (PERCEPIO) and provided under a
- * license as follows.
- * The RECORDER may be used free of charge for the purpose of recording data
- * intended for analysis in PERCEPIO products. It may not be used or modified
- * for other purposes without explicit permission from PERCEPIO.
- * You may distribute the RECORDER in its original source code form, assuming
- * this text (terms of use, disclaimer, copyright notice) is unchanged. You are
- * allowed to distribute the RECORDER with minor modifications intended for
- * configuration or porting of the RECORDER, e.g., to allow using it on a
- * specific processor, processor family or with a specific communication
- * interface. Any such modifications should be documented directly below
- * this comment block.
- *
- * Disclaimer
- * The RECORDER is being delivered to you AS IS and PERCEPIO makes no warranty
- * as to its use or performance. PERCEPIO does not and cannot warrant the
- * performance or results you may obtain by using the RECORDER or documentation.
- * PERCEPIO make no warranties, express or implied, as to noninfringement of
- * third party rights, merchantability, or fitness for any particular purpose.
- * In no event will PERCEPIO, its technology partners, or distributors be liable
- * to you for any consequential, incidental or special damages, including any
- * lost profits or lost savings, even if a representative of PERCEPIO has been
- * advised of the possibility of such damages, or for any claim by any third
- * party. Some jurisdictions do not allow the exclusion or limitation of
- * incidental, consequential or special damages, or the exclusion of implied
- * warranties or limitations on how long an implied warranty may last, so the
- * above limitations may not apply to you.
- *
- * Tabs are used for indent in this file (1 tab = 4 spaces)
- *
- * Copyright Percepio AB, 2018.
- * www.percepio.com
- ******************************************************************************/
+ */
 
 #ifndef TRC_SNAPSHOT_CONFIG_H
 #define TRC_SNAPSHOT_CONFIG_H
 
-#define TRC_SNAPSHOT_MODE_RING_BUFFER    (0x01)
-#define TRC_SNAPSHOT_MODE_STOP_WHEN_FULL (0x02)
+#define TRC_SNAPSHOT_MODE_RING_BUFFER		(0x01)
+#define TRC_SNAPSHOT_MODE_STOP_WHEN_FULL	(0x02)
 
 /******************************************************************************
  * TRC_CFG_SNAPSHOT_MODE
@@ -106,15 +72,15 @@
  * check the actual usage by selecting View menu -> Trace Details ->
  * Resource Usage -> Object Table.
  ******************************************************************************/
-#define TRC_CFG_NTASK          15
-#define TRC_CFG_NISR           5
-#define TRC_CFG_NQUEUE         10
-#define TRC_CFG_NSEMAPHORE     10
-#define TRC_CFG_NMUTEX         10
-#define TRC_CFG_NTIMER         5
-#define TRC_CFG_NEVENTGROUP    5
-#define TRC_CFG_NSTREAMBUFFER  5
-#define TRC_CFG_NMESSAGEBUFFER 5
+#define TRC_CFG_NTASK			15
+#define TRC_CFG_NISR			5
+#define TRC_CFG_NQUEUE			10
+#define TRC_CFG_NSEMAPHORE		10
+#define TRC_CFG_NMUTEX			10
+#define TRC_CFG_NTIMER			5
+#define TRC_CFG_NEVENTGROUP		5
+#define TRC_CFG_NSTREAMBUFFER	5
+#define TRC_CFG_NMESSAGEBUFFER	5
 
 /******************************************************************************
  * TRC_CFG_INCLUDE_FLOAT_SUPPORT
@@ -161,15 +127,15 @@
  * kernel objects, such as tasks and queues. If longer names are used, they will
  * be truncated when stored in the recorder.
  *****************************************************************************/
-#define TRC_CFG_NAME_LEN_TASK          15
-#define TRC_CFG_NAME_LEN_ISR           15
-#define TRC_CFG_NAME_LEN_QUEUE         15
-#define TRC_CFG_NAME_LEN_SEMAPHORE     15
-#define TRC_CFG_NAME_LEN_MUTEX         15
-#define TRC_CFG_NAME_LEN_TIMER         15
-#define TRC_CFG_NAME_LEN_EVENTGROUP    15
-#define TRC_CFG_NAME_LEN_STREAMBUFFER  15
-#define TRC_CFG_NAME_LEN_MESSAGEBUFFER 15
+#define TRC_CFG_NAME_LEN_TASK			15
+#define TRC_CFG_NAME_LEN_ISR			15
+#define TRC_CFG_NAME_LEN_QUEUE			15
+#define TRC_CFG_NAME_LEN_SEMAPHORE		15
+#define TRC_CFG_NAME_LEN_MUTEX			15
+#define TRC_CFG_NAME_LEN_TIMER			15
+#define TRC_CFG_NAME_LEN_EVENTGROUP 	15
+#define TRC_CFG_NAME_LEN_STREAMBUFFER 	15
+#define TRC_CFG_NAME_LEN_MESSAGEBUFFER 	15
 
 /******************************************************************************
  *** ADVANCED SETTINGS ********************************************************
@@ -180,15 +146,15 @@
  *****************************************************************************/
 
 /******************************************************************************
- * TRC_CFG_HEAP_SIZE_BELOW_16M
- *
- * An integer constant that can be used to reduce the buffer usage of memory
- * allocation events (malloc/free). This value should be 1 if the heap size is
- * below 16 MB (2^24 byte), and you can live with reported addresses showing the
- * lower 24 bits only. If 0, you get the full 32-bit addresses.
- *
- * Default value is 0.
- ******************************************************************************/
+* TRC_CFG_HEAP_SIZE_BELOW_16M
+*
+* An integer constant that can be used to reduce the buffer usage of memory
+* allocation events (malloc/free). This value should be 1 if the heap size is
+* below 16 MB (2^24 byte), and you can live with reported addresses showing the
+* lower 24 bits only. If 0, you get the full 32-bit addresses.
+*
+* Default value is 0.
+******************************************************************************/
 #define TRC_CFG_HEAP_SIZE_BELOW_16M 0
 
 /******************************************************************************
