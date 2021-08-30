@@ -7,9 +7,9 @@
 
 #include "tasks/task_state_est.h"
 #include "control/kalman_filter.h"
+#include "control/orientation_filter.h"
 #include "control/sensor_elimination.h"
 #include "control/calibration.h"
-#include "control/orientation_kf.h"
 #include "control/data_processing.h"
 
 #include <math.h>
@@ -31,9 +31,7 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
                          float *average_pressure);
 
 #ifdef USE_MEDIAN_FILTER
-
 static void median_filter(median_filter_t *filter_data, state_estimation_data_t *state_data);
-
 #endif
 
 /** Exported Function Definitions **/
@@ -78,9 +76,17 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
   float raw_altitude_AGL;
 
   /* initialize Orientation State Estimation */
+#ifdef USE_ORIENTATION_KF
+  orientation_kf_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  init_orientation_filter(&orientation_filter);
+  reset_orientation_filter(&orientation_filter);
+#endif
+
+#ifdef USE_ORIENTATION_FILTER
   orientation_filter_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
-  init_orientation_filter_struct(&orientation_filter);
-  initialize_orientation_matrices(&orientation_filter);
+  init_orientation_filter(&orientation_filter);
+  reset_orientation_filter(&orientation_filter);
+#endif
 
 #ifdef USE_MEDIAN_FILTER
   /* Arrays for median Filtering */
@@ -175,10 +181,15 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 
     uint32_t ts = osKernelGetTickCount();
 
+    /* Do Orientation Kalman */
+#if defined(USE_ORIENTATION_KF) || defined(USE_ORIENTATION_FILTER)
+    read_sensor_data(&global_magneto, &global_imu[0], &orientation_filter);
+    orientation_filter_step(&orientation_filter);
+    orientation_info_t orientation_info;
+    orientation_info.ts = ts;
+#endif
+#ifdef USE_ORIENTATION_KF
     /* DO ORIENTATION KALMAN */
-
-    orientation_prediction_step(&orientation_filter, &global_imu[1]);
-    orientation_update_step(&orientation_filter, &global_imu[1], &global_magneto);
 
     log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld; |RAW|: q0: %ld; q1: %ld; q2: %ld; q3: %ld;",
               (int32_t)(orientation_filter.x_bar_data[0] * 1000), (int32_t)(orientation_filter.x_bar_data[1] * 1000),
@@ -188,15 +199,27 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
               (int32_t)(orientation_filter.raw_computed_orientation[2] * 1000),
               (int32_t)(orientation_filter.raw_computed_orientation[3] * 1000));
 
-    orientation_info_t orientation_info;
-    orientation_info.ts = ts;
-
     for (uint8_t i = 0; i < 4; i++) {
       orientation_info.raw_orientation[i] = (int16_t)(orientation_filter.raw_computed_orientation[i] * 10000.0f);
       orientation_info.estimated_orientation[i] = (int16_t)(orientation_filter.x_bar_data[i] * 10000.0f);
     }
 
     record(ORIENTATION_INFO, &orientation_info);
+#endif
+#ifdef USE_ORIENTATION_FILTER
+    /* DO ORIENTATION Filter */
+    log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", (int32_t)(orientation_filter.estimate_data[0] * 1000),
+              (int32_t)(orientation_filter.estimate_data[1] * 1000),
+              (int32_t)(orientation_filter.estimate_data[2] * 1000),
+              (int32_t)(orientation_filter.estimate_data[3] * 1000));
+
+    for (uint8_t i = 0; i < 4; i++) {
+      orientation_info.raw_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
+      orientation_info.estimated_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
+    }
+
+    record(ORIENTATION_INFO, &orientation_info);
+#endif
 
     /* Log Covariance Data of KF */
     covariance_info_t cov_info = {.ts = ts, .height_cov = filter.P_bar.pData[1], .velocity_cov = filter.P_bar.pData[5]};
