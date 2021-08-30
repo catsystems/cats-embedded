@@ -63,7 +63,7 @@ extern "C" {
  *
  * Note: not used by the J-Link RTT stream port (see trcStreamingPort.h instead)
  ******************************************************************************/
-#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_COUNT 12
+#define TRC_CFG_PAGED_EVENT_BUFFER_PAGE_COUNT 10
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_PAGED_EVENT_BUFFER_PAGE_SIZE

@@ -177,6 +177,7 @@ static void cliEraseFlash(const char *cmdName, char *cmdline) {
       log_raw("Mounting successful!");
     }
   }
+  flight_counter = 0;
   /* create the flights directory */
   lfs_mkdir(&lfs, "flights");
 

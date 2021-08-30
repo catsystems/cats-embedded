@@ -15,7 +15,6 @@ static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t
 // Write command
 static void ms_write_command(MS5607 *dev, uint8_t command);
 static void read_calibration(MS5607 *dev);
-void ms5607_read_raw(MS5607 *dev);
 
 /** Exported Function Definitions **/
 
