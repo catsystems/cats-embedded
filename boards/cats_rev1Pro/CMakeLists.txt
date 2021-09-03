@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 # specify cross compilers and tools
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_CXX_COMPILER arm-none-eabi-g++)
-set(CMAKE_ASM_COMPILER  arm-none-eabi-gcc)
+set(CMAKE_ASM_COMPILER arm-none-eabi-gcc)
 set(CMAKE_AR arm-none-eabi-ar)
 set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 set(CMAKE_OBJDUMP arm-none-eabi-objdump)
@@ -18,18 +18,31 @@ project(cats_rev1Pro C CXX ASM)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
+if (CMAKE_BUILD_TYPE)
+    define_property(
+            SOURCE
+            PROPERTY COMPILE_FLAGS
+            INHERITED
+            BRIEF_DOCS "brief-doc"
+            FULL_DOCS "full-doc"
+    )
+    string(TOUPPER ${CMAKE_BUILD_TYPE} _build_type)
+    set_directory_properties(PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS_${_build_type}}")
+    set(CMAKE_CXX_FLAGS_${_build_type} "")
+endif ()
+
 #Uncomment for hardware floating point
 add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
 add_compile_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
 add_link_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
-link_directories(Drivers/CMSIS/DSP/lib/)
+link_directories(lib/CMSIS/DSP/lib/)
 
 #Uncomment for software floating point
 #add_compile_options(-mfloat-abi=soft)
 
 add_compile_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_compile_options(-ffunction-sections -fdata-sections -fno-common -fmessage-length=0 -fdiagnostics-color=always -fstack-usage
-                    -Wall -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -Wformat=2 -Wformat-truncation=2 -Wformat-overflow)
+        -Wall -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -Wformat=2 -Wformat-truncation=2 -Wformat-overflow)
 
 # uncomment to mitigate c++17 absolute addresses warnings
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-register")
@@ -48,11 +61,35 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Tracing/inc Tracing/cfg Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F USB_DEVICE/App USB_DEVICE/Target Middlewares/ST/STM32_USB_Device_Library/Core/Inc Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc)
+include_directories(
+        lib/STM/STM32L4xx_HAL_Driver/Inc
+        lib/STM/STM32L4xx_HAL_Driver/Inc/Legacy
+        lib/STM/USB/STM32_USB_Device_Library/Core/Inc
+        lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
+        lib/STM/USB/USB_DEVICE/App
+        lib/STM/USB/USB_DEVICE/Target
+        lib/CMSIS/Device/ST/STM32L4xx/Include
+        lib/CMSIS/Include
+        lib/CMSIS/DSP/Inc
+        lib/FreeRTOS/Source/include
+        lib/FreeRTOS/Source/CMSIS_RTOS_V2
+        lib/FreeRTOS/Source/portable/GCC/ARM_CM4F
+        lib/Tracing/inc
+        lib/Tracing/cfg
+        lib/LittleFS
+        src/)
 
 add_definitions(-DUSE_HAL_DRIVER -DDEBUG -DSTM32L433xx)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*" "Middlewares/*.*" "Tracing/*.*" "USB_DEVICE/*.*")
+file(GLOB_RECURSE LIB_FILES "lib/*.*")
+set_source_files_properties(
+        ${LIB_FILES}
+        PROPERTIES
+        COMPILE_FLAGS -O3
+)
+
+
+file(GLOB_RECURSE SOURCES "lib/*.*" "src/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32L433RCTX_FLASH.ld)
 

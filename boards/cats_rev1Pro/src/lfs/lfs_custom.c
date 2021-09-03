@@ -1,0 +1,125 @@
+//
+// Created by Nemanja on 8/8/2021.
+//
+
+#include "lfs.h"
+#include "drivers/w25q.h"
+#include "cli/cli.h"
+
+static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
+static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
+                         lfs_size_t size);
+static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block);
+static int w25q_lfs_sync(const struct lfs_config *c);
+
+/* File System Handle  -- NOT THREAD SAFE!!! */
+lfs_t lfs;
+const struct lfs_config lfs_cfg = {
+    // block device operations
+    .read = w25q_lfs_read,
+    .prog = w25q_lfs_prog,
+    .erase = w25q_lfs_erase,
+    .sync = w25q_lfs_sync,
+
+    // block device configuration
+    .read_size = 256,
+    .prog_size = 256,
+    .block_size = 4096,
+    .block_count = 1024,
+    .cache_size = 512,
+    .lookahead_size = 512,
+    .block_cycles = 500,
+};
+
+lfs_file_t fc_file;
+lfs_file_t current_flight_file;
+uint32_t flight_counter;
+char cwd[256] = {};
+
+int lfs_ls(const char *path) {
+  lfs_dir_t dir;
+  int err = lfs_dir_open(&lfs, &dir, path);
+  if (err) {
+    return err;
+  }
+
+  struct lfs_info info;
+  while (true) {
+    int res = lfs_dir_read(&lfs, &dir, &info);
+    if (res < 0) {
+      return res;
+    }
+
+    if (res == 0) {
+      break;
+    }
+
+    switch (info.type) {
+      case LFS_TYPE_REG:
+        cliPrint("file ");
+        break;
+      case LFS_TYPE_DIR:
+        cliPrint(" dir ");
+        break;
+      default:
+        cliPrint("   ? ");
+        break;
+    }
+
+    static const char *prefixes[] = {"", "K", "M", "G"};
+    if (info.type == LFS_TYPE_REG) {
+      for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--) {
+        if (info.size >= (1 << 10 * i) - 1) {
+          cliPrintf("%*lu%sB ", 4 - (i != 0), info.size >> 10 * i, prefixes[i]);
+          break;
+        }
+      }
+    } else {
+      cliPrint("      ");
+    }
+
+    cliPrintf("%s\n", info.name);
+  }
+
+  err = lfs_dir_close(&lfs, &dir);
+  if (err) {
+    return err;
+  }
+
+  return 0;
+}
+
+static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
+  if (w25q_read_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
+    return 0;
+  }
+  return -1;
+}
+static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
+                         lfs_size_t size) {
+  static uint32_t sync_counter = 0;
+  static uint32_t sync_counter_err = 0;
+  if (w25q_write_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
+    if (sync_counter % 32 == 0) {
+      /* Flash the LED at certain intervals */
+      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+      lfs_file_sync(&lfs, &current_flight_file);
+    }
+    ++sync_counter;
+    return 0;
+  }
+  if (sync_counter_err % 32 == 0) {
+    /* Flash the LED at certain intervals */
+    HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
+    lfs_file_sync(&lfs, &current_flight_file);
+  }
+  ++sync_counter_err;
+  return -1;
+}
+static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block) {
+  if (w25q_sector_erase(block) == W25Q_OK) {
+    return 0;
+  }
+  return -1;
+}
+static int w25q_lfs_sync(const struct lfs_config *c) { return 0; }
