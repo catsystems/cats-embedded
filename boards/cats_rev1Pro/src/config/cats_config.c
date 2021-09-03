@@ -22,25 +22,6 @@ const cats_config_u DEFAULT_CONFIG = {
     .config.timers[3].duration = 1000,
     .config.timers[3].start_event = 0,
     .config.timers[3].end_event = 0,
-
-    .config.action_array[0] = 2,
-    .config.action_array[1] = 1,
-    .config.action_array[2] = 2,
-    .config.action_array[3] = 1,
-
-    .config.action_array[4] = 3,
-    .config.action_array[5] = 2,
-    .config.action_array[6] = 3,
-    .config.action_array[7] = 1,
-    .config.action_array[8] = 4,
-    .config.action_array[9] = 1,
-
-    .config.action_array[10] = 5,
-    .config.action_array[11] = 2,
-    .config.action_array[12] = 11,
-    .config.action_array[13] = 180,
-    .config.action_array[14] = 12,
-    .config.action_array[15] = 90,
 };
 
 cats_config_u global_cats_config = {};
@@ -110,6 +91,13 @@ int16_t cc_get_action_number(cats_event_e event) {
   return nr_actions;
 }
 
+/**
+ * Returns the action parameters
+ * @param event
+ * @param id
+ * @param action
+ * @return
+ */
 bool cc_get_action(cats_event_e event, int16_t id, config_action_t* action) {
   if (cc_get_action_number(event) < (id + 1)) return false;
   int i = 0;
@@ -128,6 +116,7 @@ bool cc_get_action(cats_event_e event, int16_t id, config_action_t* action) {
     i += (2 * nr_actions) + 2;
 
   } while (i < 128);
+  return false;
 }
 /** debug functions **/
 
