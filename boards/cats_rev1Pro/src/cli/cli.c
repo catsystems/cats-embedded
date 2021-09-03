@@ -72,6 +72,7 @@ static void cliMcuId(const char *cmdName, char *cmdline);
 static void cliSet(const char *cmdName, char *cmdline);
 static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
+static void cliConfig(const char *cmdName, char *cmdline);
 static void cliEraseFlash(const char *cmdName, char *cmdline);
 static void cliEraseRecordings(const char *cmdName, char *cmdline);
 static void cliRecInfo(const char *cmdName, char *cmdline);
@@ -121,6 +122,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
     CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cliLfsFormat),
+    CLI_COMMAND_DEF("config", "print and edit the flight config", "[print|reset|add] {event} {action} {arg}",
+                    cliConfig),
 };
 
 static void cliLfsFormat(const char *cmdName, char *cmdline) {
@@ -326,6 +329,40 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value) {
   }
 }
 
+static void print_action_config() {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
+
+  cliPrintf("\n * ACTION CONFIGURATION *\n");
+  config_action_t action;
+  for (int i = 1; i < 10; i++) {
+    int nr_actions = cc_get_action_number(i);
+    if (nr_actions > 0) {
+      cliPrintf("\n%s\n", p_event_table->values[i]);
+      cliPrintf("   Number of Actions: %d\n", nr_actions);
+      for (int j = 0; j < nr_actions; j++) {
+        cc_get_action(i, (int16_t)j, &action);
+        cliPrintf("     %s - %d\n", p_action_table->values[action.action_pointer], action.arg);
+      }
+    }
+  }
+}
+
+static void print_timer_config() {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
+
+  cliPrintf("\n\n * TIMER CONFIGURATION *\n");
+  for (int i = 0; i < num_timers; i++) {
+    if (global_cats_config.config.timers[i].start_event > 0) {
+      cliPrintf("\nTIMER %d\n", i + 1);
+      cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
+      cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
+      cliPrintf("  Duration: %d ms\n", global_cats_config.config.timers[i].duration);
+    }
+  }
+}
+
 static void printValuePointer(const char *cmdName, const clivalue_t *var, const void *valuePointer, bool full) {
   if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
     for (int i = 0; i < var->config.array.length; i++) {
@@ -450,6 +487,32 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd) {
   return bufEnd - bufBegin;
 }
 
+uint16_t cli_get_event_index(char *name, uint8_t length) {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  for (uint32_t i = 0; i < 9; i++) {
+    const char *settingName = p_event_table->values[i];
+
+    // ensure exact match when setting to prevent setting variables with shorter names
+    if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
+      return i;
+    }
+  }
+  return valueTableEntryCount;
+}
+
+uint16_t cli_get_action_index(char *name, uint8_t length) {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_ACTIONS];
+  for (uint32_t i = 0; i < 17; i++) {
+    const char *settingName = p_event_table->values[i];
+
+    // ensure exact match when setting to prevent setting variables with shorter names
+    if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
+      return i;
+    }
+  }
+  return valueTableEntryCount;
+}
+
 uint16_t cliGetSettingIndex(char *name, uint8_t length) {
   for (uint32_t i = 0; i < valueTableEntryCount; i++) {
     const char *settingName = valueTable[i].name;
@@ -460,6 +523,15 @@ uint16_t cliGetSettingIndex(char *name, uint8_t length) {
     }
   }
   return valueTableEntryCount;
+}
+
+static const char *nextArg(const char *currentArg) {
+  const char *ptr = strchr(currentArg, ' ');
+  while (ptr && *ptr == ' ') {
+    ptr++;
+  }
+
+  return ptr;
 }
 
 static void cliPrintVarRange(const clivalue_t *var) {
@@ -530,6 +602,64 @@ static void cliGet(const char *cmdName, char *cmdline) {
 
   if (!matchedCommands) {
     cliPrintErrorLinef(cmdName, "INVALID NAME");
+  }
+}
+
+static void cliConfig(const char *cmdName, char *cmdline) {
+  const uint32_t len = strlen(cmdline);
+  char *eqptr;
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
+  if ((eqptr = strstr(cmdline, " ")) != NULL) {
+    uint8_t actionNameLength = getWordLength(cmdline, eqptr);
+    eqptr++;
+    eqptr = skipSpace(eqptr);
+    const char check[] = "add";
+    const char *ptr = cmdline;
+    int val = 0;
+    if (strncasecmp(cmdline, check, strlen(check)) == 0 && actionNameLength == strlen(check)) {
+      uint8_t valid_count = 0;
+      uint32_t event, action, arg;
+      ptr = nextArg(ptr);
+      if (ptr) {
+        val = atoi(ptr);
+        if (val >= 0 && val < 9) {
+          event = val;
+          valid_count++;
+        }
+      }
+      ptr = nextArg(ptr);
+      if (ptr) {
+        val = atoi(ptr);
+        if (val >= 0 && val < 17) {
+          action = val;
+          valid_count++;
+        }
+      }
+      ptr = nextArg(ptr);
+      if (ptr) {
+        val = atoi(ptr);
+        if (val >= 0) {
+          arg = val;
+          valid_count++;
+        }
+      }
+      if (valid_count == 3) {
+        cliPrintf("Added: %s: %s = %d \n", p_event_table->values[event], p_action_table->values[action], arg);
+      } else {
+        cliPrintLine("Invalid number of arguments");
+      }
+
+    } else {
+      cliPrintLine("Invalid option");
+    }
+  } else {
+    const char check[] = "print";
+    if (strncasecmp(cmdline, check, strlen(check)) == 0) {
+      print_action_config();
+    } else {
+      cliPrintLine("Invalid option");
+    }
   }
 }
 
@@ -691,36 +821,7 @@ static void cliSet(const char *cmdName, char *cmdline) {
   }
 }
 
-static void cliStatus(const char *cmdName, char *cmdline) {
-  /** Print Output map **/
-  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
-  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
-
-  cliPrintf("\n * ACTION CONFIGURATION *\n");
-  config_action_t action;
-  for (int i = 1; i < 10; i++) {
-    int nr_actions = cc_get_action_number(i);
-    if (nr_actions > 0) {
-      cliPrintf("\n%s\n", p_event_table->values[i]);
-      cliPrintf("   Number of Actions: %d\n", nr_actions);
-      for (int j = 0; j < nr_actions; j++) {
-        cc_get_action(i, (int16_t)j, &action);
-        cliPrintf("     %s - %d\n", p_action_table->values[action.action_pointer], action.arg);
-      }
-    }
-  }
-
-  /** Print Timer Configuration **/
-  cliPrintf("\n\n * TIMER CONFIGURATION *\n");
-  for (int i = 0; i < num_timers; i++) {
-    if (global_cats_config.config.timers[i].start_event > 0) {
-      cliPrintf("\nTIMER %d\n", i + 1);
-      cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
-      cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
-      cliPrintf("  Duration: %d ms\n", global_cats_config.config.timers[i].duration);
-    }
-  }
-}
+static void cliStatus(const char *cmdName, char *cmdline) {}
 
 static void cliVersion(const char *cmdName, char *cmdline) {}
 
