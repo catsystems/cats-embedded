@@ -9,6 +9,21 @@
 //#define INCLUDE_SPIKES
 //#define INCLUDE_OFFSET
 
+#define USE_ORIENTATION_FILTER
+#define USE_ADAPTIVE_GAIN
+
+//#define USE_ORIENTATION_KF
+#ifdef USE_ORIENTATION_KF
+#define INIT_COV   0.1f
+#define NOISE_VEL  0.01f
+#define NOISE_POS  0.03f
+#define NOISE_BIAS 0.01f
+#endif
+
+#if defined(USE_ORIENTATION_FILTER) && defined(USE_ORIENTATION_KF)
+#undef USE_ORIENTATION_KF
+#endif
+
 #define USE_MEDIAN_FILTER
 #define MEDIAN_FILTER_SIZE 9
 
