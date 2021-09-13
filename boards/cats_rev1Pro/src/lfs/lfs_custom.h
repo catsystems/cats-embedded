@@ -10,7 +10,6 @@ extern lfs_t lfs;
 extern const struct lfs_config lfs_cfg;
 
 extern lfs_file_t fc_file;
-extern lfs_file_t current_flight_file;
 
 extern char cwd[256];
 

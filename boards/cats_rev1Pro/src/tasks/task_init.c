@@ -54,9 +54,9 @@ SET_TASK_PARAMS(task_state_est, 1300)
 SET_TASK_PARAMS(task_health_monitor, 256)
 
 SET_TASK_PARAMS(task_flight_fsm, 512)
-SET_TASK_PARAMS(task_drop_test_fsm, 512)
-SET_TASK_PARAMS(task_peripherals, 512)
-SET_TASK_PARAMS(task_recorder, 512)
+// SET_TASK_PARAMS(task_drop_test_fsm, 512)
+SET_TASK_PARAMS(task_peripherals, 256)
+SET_TASK_PARAMS(task_recorder, 1592)
 SET_TASK_PARAMS(task_usb_communicator, 512)
 
 /** Private Constants **/
@@ -148,9 +148,6 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   fifo_init(&usb_output_fifo, usb_fifo_out_buffer, 256);
   log_disable();
 
-  //  osDelay(3000);
-  //  HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-  //  set_recorder_state(REC_WRITE_TO_FLASH);
   /* Infinite loop */
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
@@ -208,6 +205,7 @@ static void init_lfs() {
   if (lfs_file_read(&lfs, &fc_file, &flight_counter, sizeof(flight_counter)) > 0) {
     log_debug("Flights found: %lu", flight_counter);
   } else {
+    log_debug("Flights found: %lu", flight_counter);
     lfs_file_rewind(&lfs, &fc_file);
     lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
   }
@@ -234,6 +232,7 @@ static void init_tasks() {
       /* creation of task_recorder */
       // TODO: Check rec_queue for validity here
       rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
+      rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), NULL);
       event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
 #if (configUSE_TRACE_FACILITY == 1)
       vTraceSetQueueName(rec_queue, "Recorder Queue");

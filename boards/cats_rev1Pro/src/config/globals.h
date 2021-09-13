@@ -70,6 +70,7 @@ extern cats_timer_t ev_timers[8];
 
 /** Recorder Queue **/
 extern osMessageQueueId_t rec_queue;
+extern osMessageQueueId_t rec_cmd_queue;
 extern osMessageQueueId_t event_queue;
 
 /** Tracing Channels **/

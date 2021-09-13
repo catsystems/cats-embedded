@@ -37,55 +37,130 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
   uint16_t bytes_remaining = 0;
   uint32_t max_elem_count = 0;
 
+  lfs_file_t current_flight_file;
+  char current_flight_filename[32] = {};
+
   while (1) {
-    rec_elem_t curr_log_elem;
+    rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
 
-    /* TODO: check if this should be < or <= */
-    while (rec_buffer_idx < REC_BUFFER_LEN) {
-      uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
-      if (max_elem_count < curr_elem_count) {
-        max_elem_count = curr_elem_count;
-        log_warn("max_queued_elems: %lu", max_elem_count);
-      }
-
-      if (global_recorder_status >= REC_WRITE_TO_FLASH) {
-        if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
-          // trace_print(flash_channel, "write_value start");
-          write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
-          // trace_print(flash_channel, "write_value end");
-        } else {
-          log_error("Something wrong with the recording queue!");
-        }
-      } else if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT && global_recorder_status == REC_FILL_QUEUE) {
-        /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
-         * detected we will have around REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the next loop
-         * iteration we will start to write the elements to the flash. */
+    if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, NULL, osWaitForever) != osOK) {
+      log_error("Something wrong with the command recorder queue");
+      continue;
+    }
+    // trace_printf(flash_channel, "received command %d", curr_rec_cmd);
+    switch (curr_rec_cmd) {
+      case REC_CMD_INVALID:
+        log_error("Invalid command value!");
+        break;
+      case REC_CMD_FILL_Q: {
         rec_elem_t dummy_log_elem;
-        osMessageQueueGet(rec_queue, &dummy_log_elem, NULL, osWaitForever);
-      } else {
-        /* TODO: see if this is needed */
-        osDelay(1);
-      }
+        uint32_t cmd_check_counter = 0;
+        log_info("Started filling pre recording queue");
+        while (1) {
+          uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
+          if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT) {
+            /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
+             * detected we will have around REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the next loop
+             * iteration we will start to write the elements to the flash. */
+            osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
+            // osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
+            // osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
+          } else {
+            /* Check for a new command */
+            if (osMessageQueueGetCount(rec_cmd_queue) > 0) {
+              /* breaks out of the inner while loop */
+              break;
+            }
+            osDelay(1);
+          }
+
+          ++cmd_check_counter;
+          /* Check for a new command */
+          if (((cmd_check_counter % 16) == 0) && (osMessageQueueGetCount(rec_cmd_queue) > 0)) {
+            /* breaks out of the inner while loop */
+            break;
+          }
+        }
+      } break;
+      case REC_CMD_FILL_Q_STOP:
+        osMessageQueueReset(rec_queue);
+        break;
+      case REC_CMD_WRITE: {
+        /* increment number of flights */
+        ++flight_counter;
+        lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
+        lfs_file_rewind(&lfs, &fc_file);
+        lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
+        lfs_file_close(&lfs, &fc_file);
+
+        /* open a new file */
+        snprintf(current_flight_filename, 32, "flights/flight_%05lu", flight_counter);
+        lfs_file_open(&lfs, &current_flight_file, current_flight_filename, LFS_O_WRONLY | LFS_O_CREAT);
+        rec_elem_t curr_log_elem;
+        uint32_t sync_counter = 0;
+        log_info("Started writing to flash");
+        while (1) {
+          /* TODO: check if this should be < or <= */
+          while (rec_buffer_idx < REC_BUFFER_LEN) {
+            // uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
+            // if (max_elem_count < curr_elem_count) {
+            //  max_elem_count = curr_elem_count;
+            //  log_warn("max_queued_elems: %lu", max_elem_count);
+            //}
+
+            if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
+              // trace_print(flash_channel, "write_value start");
+              write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
+              // trace_print(flash_channel, "write_value end");
+            } else {
+              log_error("Something wrong with the recording queue!");
+            }
+          }
+          // log_info("lfw start");
+          // trace_print(flash_channel, "lfw start");
+          int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+          // trace_printf(flash_channel, "lfw end, written %ld", sz);
+          ++sync_counter;
+          /* Check for a new command */
+          if ((sync_counter % 32) == 0) {
+            lfs_file_sync(&lfs, &current_flight_file);
+          }
+          // log_info("lfw synced");
+          // log_info("written to file: %ld", sz);
+
+          /* reset log buffer index */
+          if (rec_buffer_idx > REC_BUFFER_LEN) {
+            bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
+            rec_buffer_idx = bytes_remaining;
+          } else {
+            rec_buffer_idx = 0;
+          }
+
+          if (rec_buffer_idx > 0) {
+            memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
+          }
+          /* Check for a new command */
+          if (osMessageQueueGetCount(rec_cmd_queue) > 0) {
+            /* breaks out of the inner while loop */
+            break;
+          }
+        }
+      } break;
+      case REC_CMD_WRITE_STOP: {
+        log_info("Stopped writing to flash");
+        /* close the current file */
+        lfs_file_close(&lfs, &current_flight_file);
+
+        /* reset recording buffer index and queue */
+        rec_buffer_idx = 0;
+        osMessageQueueReset(rec_queue);
+      } break;
+      default:
+        log_error("Unknown command value: %u", curr_rec_cmd);
+        break;
     }
-
-    trace_print(flash_channel, "lfw start");
-    int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, 256);
-    trace_printf(flash_channel, "lfw end, written %d", sz);
-
-    /* reset log buffer index */
-    if (rec_buffer_idx > REC_BUFFER_LEN) {
-      bytes_remaining = rec_buffer_idx - REC_BUFFER_LEN;
-      rec_buffer_idx = bytes_remaining;
-    } else {
-      rec_buffer_idx = 0;
-    }
-
-    if (rec_buffer_idx > 0) {
-      memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
-    }
-
-    /* TODO: check if there is enough space left on the flash */
   }
+  /* TODO: check if there is enough space left on the flash */
 }
 
 /** Private Function Definitions **/

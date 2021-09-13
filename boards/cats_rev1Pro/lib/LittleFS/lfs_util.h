@@ -46,10 +46,11 @@ extern "C" {
 // macros must not have side-effects as the macros can be removed for a smaller
 // code footprint
 
+//#define LFS_YES_TRACE
 // Logging functions
 #ifndef LFS_TRACE
 #ifdef LFS_YES_TRACE
-//#define LFS_TRACE_(fmt, ...) trace_printf(flash_channel, "%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+//#define LFS_TRACE_(fmt, ...) log_raw("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_TRACE_(fmt, ...) trace_printf(flash_channel, "T " fmt "%s\n", __VA_ARGS__)
 #define LFS_TRACE(...)       LFS_TRACE_(__VA_ARGS__, "")
 #else
@@ -59,7 +60,7 @@ extern "C" {
 
 #ifndef LFS_DEBUG
 #ifndef LFS_NO_DEBUG
-//#define LFS_DEBUG_(fmt, ...) trace_printf(flash_channel, "%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+//#define LFS_DEBUG_(fmt, ...) log_raw("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_DEBUG_(fmt, ...) trace_printf(flash_channel, "D " fmt "%s\n", __VA_ARGS__)
 #define LFS_DEBUG(...)       LFS_DEBUG_(__VA_ARGS__, "")
 #else
@@ -69,7 +70,7 @@ extern "C" {
 
 #ifndef LFS_WARN
 #ifndef LFS_NO_WARN
-//#define LFS_WARN_(fmt, ...) trace_printf(flash_channel, "%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+//#define LFS_WARN_(fmt, ...) log_raw("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_WARN_(fmt, ...) trace_printf(flash_channel, "W " fmt "%s\n", __VA_ARGS__)
 #define LFS_WARN(...)       LFS_WARN_(__VA_ARGS__, "")
 #else
@@ -79,7 +80,7 @@ extern "C" {
 
 #ifndef LFS_ERROR
 #ifndef LFS_NO_ERROR
-//#define LFS_ERROR_(fmt, ...) trace_printf(flash_channel, "%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+//#define LFS_ERROR_(fmt, ...) log_raw("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_ERROR_(fmt, ...) trace_printf(flash_channel, "E " fmt "%s\n",__VA_ARGS__)
 #define LFS_ERROR(...)       LFS_ERROR_(__VA_ARGS__, "")
 #else

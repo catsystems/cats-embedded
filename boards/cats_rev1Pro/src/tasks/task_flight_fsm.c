@@ -11,6 +11,7 @@
 #include "tasks/task_flight_fsm.h"
 #include "control/flight_phases.h"
 #include "config/cats_config.h"
+#include "tasks/task_peripherals.h"
 
 /** Private Constants **/
 
@@ -37,7 +38,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   float max_v = 0;
   float max_a = 0;
   float max_h = 0;
-
+  trigger_event(EV_MOVING);
   // osDelay(1000);
 
   while (1) {

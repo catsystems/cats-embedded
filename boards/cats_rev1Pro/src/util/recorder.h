@@ -16,10 +16,16 @@
 #endif
 //#define FLASH_READ_TEST
 
-/** Exported Consts **/
+#if (configUSE_TRACE_FACILITY == 1)
+#define REC_QUEUE_SIZE 256
+#else
+#define REC_QUEUE_SIZE 512
+#endif
 
-extern const uint32_t REC_QUEUE_SIZE;
-extern const uint32_t REC_QUEUE_PRE_THRUSTING_LIMIT;
+#define REC_CMD_QUEUE_SIZE 16
+
+#define REC_QUEUE_PRE_THRUSTING_FILL_RATIO 0.75f
+#define REC_QUEUE_PRE_THRUSTING_LIMIT (uint32_t)(REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE)
 
 /** Exported Types **/
 
@@ -42,6 +48,14 @@ typedef enum {
   ERROR_INFO = 0x8000,
   HEHE = 0xFFFFFFFF,
 } rec_entry_type_e;
+
+typedef enum {
+  REC_CMD_INVALID = 0,
+  REC_CMD_FILL_Q = 1,
+  REC_CMD_FILL_Q_STOP,
+  REC_CMD_WRITE,
+  REC_CMD_WRITE_STOP
+} rec_cmd_type_e;
 
 typedef struct {
   timestamp_t ts;

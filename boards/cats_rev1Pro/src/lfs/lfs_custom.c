@@ -12,6 +12,14 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
 static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block);
 static int w25q_lfs_sync(const struct lfs_config *c);
 
+#define LFS_CACHE_SIZE     512
+#define LFS_LOOKAHEAD_SIZE 512
+
+/* LFS Static Buffers */
+static uint8_t read_buffer[LFS_CACHE_SIZE] = {};
+static uint8_t prog_buffer[LFS_CACHE_SIZE] = {};
+static uint8_t lookahead_buffer[LFS_LOOKAHEAD_SIZE] = {};
+
 /* File System Handle  -- NOT THREAD SAFE!!! */
 lfs_t lfs;
 const struct lfs_config lfs_cfg = {
@@ -26,15 +34,17 @@ const struct lfs_config lfs_cfg = {
     .prog_size = 256,
     .block_size = 4096,
     .block_count = 1024,
-    .cache_size = 512,
-    .lookahead_size = 512,
+    .cache_size = LFS_CACHE_SIZE,
+    .lookahead_size = LFS_LOOKAHEAD_SIZE,
     .block_cycles = 500,
-};
+    .read_buffer = read_buffer,
+    .prog_buffer = prog_buffer,
+    .lookahead_buffer = lookahead_buffer};
 
-lfs_file_t fc_file;
-lfs_file_t current_flight_file;
-uint32_t flight_counter;
 char cwd[256] = {};
+
+uint32_t flight_counter = 0;
+lfs_file_t fc_file;
 
 int lfs_ls(const char *path) {
   lfs_dir_t dir;
@@ -103,7 +113,6 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
     if (sync_counter % 32 == 0) {
       /* Flash the LED at certain intervals */
       HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-      lfs_file_sync(&lfs, &current_flight_file);
     }
     ++sync_counter;
     return 0;
@@ -111,15 +120,14 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
   if (sync_counter_err % 32 == 0) {
     /* Flash the LED at certain intervals */
     HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
-    lfs_file_sync(&lfs, &current_flight_file);
   }
   ++sync_counter_err;
-  return -1;
+  return LFS_ERR_CORRUPT;
 }
 static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block) {
   if (w25q_sector_erase(block) == W25Q_OK) {
     return 0;
   }
-  return -1;
+  return LFS_ERR_CORRUPT;
 }
 static int w25q_lfs_sync(const struct lfs_config *c) { return 0; }

@@ -131,6 +131,7 @@ cats_timer_t ev_timers[8] = {};
 
 /** Recorder Queue **/
 osMessageQueueId_t rec_queue;
+osMessageQueueId_t rec_cmd_queue;
 osMessageQueueId_t event_queue;
 
 /** Tracing Channels **/
