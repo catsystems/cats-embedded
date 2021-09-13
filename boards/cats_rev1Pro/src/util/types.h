@@ -229,16 +229,18 @@ typedef struct {
   peripheral_act_t *action_list;
 } event_action_map_elem_t;
 
+#define NUM_EVENTS 9
+
 typedef enum {
-  EV_IDLE = 1,
-  EV_MOVING,
+  EV_MOVING = 0,
+  EV_IDLE,
   EV_LIFTOFF,
   EV_MAX_V,
   EV_APOGEE,
   EV_POST_APOGEE,
   EV_TOUCHDOWN,
-  EV_TIMER_1,
-  EV_TIMER_2,
+  EV_CUSTOM_1,
+  EV_CUSTOM_2,
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 

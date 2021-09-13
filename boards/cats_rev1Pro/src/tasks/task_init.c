@@ -132,8 +132,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   init_tasks();
   log_info("Task initialization complete.");
 
-  servo_set_position(&SERVO1, 0);
-  servo_set_position(&SERVO2, 0);
+  servo_set_position(&SERVO1, global_cats_config.config.initial_servo_position[0]);
+  servo_set_position(&SERVO2, global_cats_config.config.initial_servo_position[1]);
 
   servo_start(&SERVO1);
   servo_start(&SERVO2);
@@ -322,79 +322,34 @@ static void init_buzzer() {
 
 static void create_event_map() {
   /* number of event types + 0th element */
-  /* TODO: move number of events to a constant */
   /* TODO: where to free this? */
-  event_action_map = calloc(9, sizeof(event_action_map_elem_t));
-
-  // Moving
-  //  event_action_map[EV_MOVING].num_actions = 1;
-  //  event_action_map[EV_MOVING].action_list = calloc(1, sizeof(peripheral_act_t));
-  //  event_action_map[EV_MOVING].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  //  event_action_map[EV_MOVING].action_list[0].func_arg = REC_FILL_QUEUE;
-
-  // Idle
-  //  event_action_map[EV_IDLE].num_actions = 1;
-  //  event_action_map[EV_IDLE].action_list = calloc(1, sizeof(peripheral_act_t));
-  //  event_action_map[EV_IDLE].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  //  event_action_map[EV_IDLE].action_list[0].func_arg = REC_FILL_QUEUE;
+  event_action_map = calloc(NUM_EVENTS, sizeof(event_action_map_elem_t));
 
   int16_t nr_actions;
   config_action_t action;
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < NUM_EVENTS; i++) {
     nr_actions = cc_get_action_number(i);
     if (nr_actions > 0) {
+      event_action_map[i].num_actions = nr_actions;
+      event_action_map[i].action_list = calloc(nr_actions, sizeof(peripheral_act_t));
       for (int16_t j = 0; j < nr_actions; j++) {
-        cc_get_action(i, j, &action);
-        osDelay(1);
+        if (cc_get_action(i, j, &action) == true){
+          event_action_map[i].action_list[j].func_ptr = action_table[action.action_pointer];
+          event_action_map[i].action_list[j].func_arg = action.arg;
+        } else {
+          event_action_map[i].num_actions = j;
+          break;
+        }
       }
     }
   }
-
-  // Liftoff
-  event_action_map[EV_LIFTOFF].num_actions = 1;
-  event_action_map[EV_LIFTOFF].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_LIFTOFF].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_LIFTOFF].action_list[0].func_arg = REC_WRITE_TO_FLASH;
-
-  // Apogee / Drogue
-  event_action_map[EV_APOGEE].num_actions = 1;
-  event_action_map[EV_APOGEE].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_APOGEE].action_list[0].func_ptr = action_table[ACT_SERVO_ONE];
-  event_action_map[EV_APOGEE].action_list[0].func_arg = 180;
-
-  // Low Altitude / Main
-  event_action_map[EV_POST_APOGEE].num_actions = 2;
-  event_action_map[EV_POST_APOGEE].action_list = calloc(2, sizeof(peripheral_act_t));
-  event_action_map[EV_POST_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_POST_APOGEE].action_list[0].func_arg = 1;
-  event_action_map[EV_POST_APOGEE].action_list[1].func_ptr = action_table[ACT_SERVO_TWO];
-  event_action_map[EV_POST_APOGEE].action_list[1].func_arg = 180;
-
-  // Timer 1 / Drogue
-  event_action_map[EV_TIMER_1].num_actions = 1;
-  event_action_map[EV_TIMER_1].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_TIMER_1].action_list[0].func_arg = 1;
-
-  // Timer 2 / Main
-  event_action_map[EV_TIMER_2].num_actions = 1;
-  event_action_map[EV_TIMER_2].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_TIMER_2].action_list[0].func_arg = 0;
-
-  // Touchdown
-  event_action_map[EV_TOUCHDOWN].num_actions = 1;
-  event_action_map[EV_TOUCHDOWN].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TOUCHDOWN].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
-  event_action_map[EV_TOUCHDOWN].action_list[0].func_arg = REC_OFF;
-  /* ................ */
 }
 
 static void init_timers() {
-  uint32_t used_timers = 2;
+  uint32_t used_timers = 0;
   /* Init timers*/
   for (uint32_t i = 0; i < num_timers; i++) {
-    if (global_cats_config.config.timers[i].start_event && global_cats_config.config.timers[i].end_event) {
+    if (global_cats_config.config.timers[i].duration) {
       ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
       ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
       ev_timers[i].timer_duration_ticks = (uint32_t)global_cats_config.config.timers[i].duration;

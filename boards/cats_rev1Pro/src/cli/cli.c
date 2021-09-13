@@ -251,13 +251,20 @@ static void cliDefaults(const char *cmdName, char *cmdline) {
 
 static void cliDump(const char *cmdName, char *cmdline) {}
 
-static void cliExit(const char *cmdName, char *cmdline) {}
+static void cliExit(const char *cmdName, char *cmdline) {
+  NVIC_SystemReset();
+}
 
 static void cliMcuId(const char *cmdName, char *cmdline) {}
 
 static void cliSave(const char *cmdName, char *cmdline) {
-  cc_save();
-  NVIC_SystemReset();
+  if (cc_save() == false){
+    cliPrintLine("Saving unsuccessful, trying force save...");
+    if (cc_format_save() == false){
+      cliPrintLine("Force save failed!");
+    }
+  }
+  cliPrintLine("Successfully written to flash");
 }
 
 static char *skipSpace(char *buffer) {
@@ -335,7 +342,7 @@ static void print_action_config() {
 
   cliPrintf("\n * ACTION CONFIGURATION *\n");
   config_action_t action;
-  for (int i = 1; i < 10; i++) {
+  for (int i = 0; i < NUM_EVENTS; i++) {
     int nr_actions = cc_get_action_number(i);
     if (nr_actions > 0) {
       cliPrintf("\n%s\n", p_event_table->values[i]);
@@ -354,7 +361,7 @@ static void print_timer_config() {
 
   cliPrintf("\n\n * TIMER CONFIGURATION *\n");
   for (int i = 0; i < num_timers; i++) {
-    if (global_cats_config.config.timers[i].start_event > 0) {
+    if (global_cats_config.config.timers[i].duration > 0) {
       cliPrintf("\nTIMER %d\n", i + 1);
       cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
       cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
@@ -606,61 +613,8 @@ static void cliGet(const char *cmdName, char *cmdline) {
 }
 
 static void cliConfig(const char *cmdName, char *cmdline) {
-  const uint32_t len = strlen(cmdline);
-  char *eqptr;
-  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
-  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
-  if ((eqptr = strstr(cmdline, " ")) != NULL) {
-    uint8_t actionNameLength = getWordLength(cmdline, eqptr);
-    eqptr++;
-    eqptr = skipSpace(eqptr);
-    const char check[] = "add";
-    const char *ptr = cmdline;
-    int val = 0;
-    if (strncasecmp(cmdline, check, strlen(check)) == 0 && actionNameLength == strlen(check)) {
-      uint8_t valid_count = 0;
-      uint32_t event, action, arg;
-      ptr = nextArg(ptr);
-      if (ptr) {
-        val = atoi(ptr);
-        if (val >= 0 && val < 9) {
-          event = val;
-          valid_count++;
-        }
-      }
-      ptr = nextArg(ptr);
-      if (ptr) {
-        val = atoi(ptr);
-        if (val >= 0 && val < 17) {
-          action = val;
-          valid_count++;
-        }
-      }
-      ptr = nextArg(ptr);
-      if (ptr) {
-        val = atoi(ptr);
-        if (val >= 0) {
-          arg = val;
-          valid_count++;
-        }
-      }
-      if (valid_count == 3) {
-        cliPrintf("Added: %s: %s = %d \n", p_event_table->values[event], p_action_table->values[action], arg);
-      } else {
-        cliPrintLine("Invalid number of arguments");
-      }
-
-    } else {
-      cliPrintLine("Invalid option");
-    }
-  } else {
-    const char check[] = "print";
-    if (strncasecmp(cmdline, check, strlen(check)) == 0) {
-      print_action_config();
-    } else {
-      cliPrintLine("Invalid option");
-    }
-  }
+  print_action_config();
+  print_timer_config();
 }
 
 static void cliSet(const char *cmdName, char *cmdline) {
@@ -858,7 +812,7 @@ static void cliHelp(const char *cmdName, char *cmdline) {
 void cliPrint(const char *str) {
   while (*str) {
     while (fifo_write(cli_out, *str++) == false) {
-      osDelay(10);
+      osDelay(1);
       str--;
     }
   }
