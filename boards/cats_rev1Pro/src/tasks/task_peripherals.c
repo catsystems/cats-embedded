@@ -56,7 +56,7 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
 osStatus_t trigger_event(cats_event_e ev) {
   log_warn("Event %d added to the queue", ev);
   /* TODO: check if timeout should be 0 here */
-  return osMessageQueuePut(event_queue, &ev, 0U, 0U);
+  return osMessageQueuePut(event_queue, &ev, 0U, 10U);
 }
 
 /** Private Function Definitions **/

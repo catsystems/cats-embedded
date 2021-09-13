@@ -3,27 +3,8 @@
 //
 
 #include "config/cats_config.h"
-#include "drivers/w25q.h"
 #include "util/log.h"
 #include "drivers/eeprom_emul.h"
-
-typedef struct {
-  /* Last sector where task_recorder wrote the data; The next sector will be
-   * first checked if it's empty and if so, the next flight recorder
-   * log will be recorded starting from that sector */
-  uint16_t last_recorded_sector;
-  /* Total number of currently logged flights on the flash chip. This value
-   * represents the length of the array stored in sector #1 that holds the
-   * starting sectors of separate flight logs. */
-  uint16_t num_recorded_flights;
-  /* TODO: don't create a static array here */
-  uint16_t last_sectors_of_flight_recordings[32];
-
-  flight_fsm_e last_fsm_state[32];
-  float max_altitude[32];
-  float max_velocity[32];
-  float max_acceleration[32];
-} cats_status_t;
 
 const cats_config_u DEFAULT_CONFIG = {
     .config.boot_state = CATS_FLIGHT,
@@ -44,7 +25,6 @@ const cats_config_u DEFAULT_CONFIG = {
 };
 
 cats_config_u global_cats_config = {};
-cats_status_t global_cats_status = {};
 
 const uint32_t CATS_STATUS_SECTOR = 1;
 

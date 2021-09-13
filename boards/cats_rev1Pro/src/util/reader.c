@@ -11,6 +11,11 @@
 #include "lfs/lfs_custom.h"
 
 void dump_recording(uint16_t number) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    log_raw("The recorder is currently active, stop it first!");
+    return;
+  }
+
   char *string_buffer1 = calloc(400, sizeof(char));
   char *string_buffer2 = calloc(400, sizeof(char));
   uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
@@ -53,6 +58,11 @@ void dump_recording(uint16_t number) {
 }
 
 void parse_recording(uint16_t number) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    log_raw("The recorder is currently active, stop it first!");
+    return;
+  }
+
   char *string_buffer1 = calloc(400, sizeof(char));
   char *string_buffer2 = calloc(400, sizeof(char));
   uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
@@ -66,9 +76,9 @@ void parse_recording(uint16_t number) {
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
     int file_size = lfs_file_size(&lfs, &curr_file);
     lfs_size_t i = 0;
-//    while(i < file_size){
-//      break;
-//    }
+    //    while(i < file_size){
+    //      break;
+    //    }
 
     //    for (lfs_size_t i = 0; i < file_size; i += 256) {
     //      lfs_size_t chunk = lfs_min(256, file_size - i);
