@@ -5,23 +5,33 @@
 #include "config/cats_config.h"
 #include "util/log.h"
 #include "drivers/eeprom_emul.h"
+#include "util/actions.h"
+
 
 const cats_config_u DEFAULT_CONFIG = {
     .config.boot_state = CATS_FLIGHT,
     .config.control_settings.main_altitude = 150,
     .config.control_settings.liftoff_acc_threshold = 1500,
-    .config.timers[0].duration = 1000,
+    .config.timers[0].duration = 0,
     .config.timers[0].start_event = 0,
     .config.timers[0].end_event = 0,
-    .config.timers[1].duration = 1000,
+    .config.timers[1].duration = 0,
     .config.timers[1].start_event = 0,
     .config.timers[1].end_event = 0,
-    .config.timers[2].duration = 1000,
+    .config.timers[2].duration = 0,
     .config.timers[2].start_event = 0,
     .config.timers[2].end_event = 0,
-    .config.timers[3].duration = 1000,
+    .config.timers[3].duration = 0,
     .config.timers[3].start_event = 0,
     .config.timers[3].end_event = 0,
+    .config.action_array[EV_IDLE][0] = ACT_SET_RECORDER_STATE,
+    .config.action_array[EV_IDLE][1] = REC_FILL_QUEUE,
+    .config.action_array[EV_LIFTOFF][0] = ACT_SET_RECORDER_STATE,
+    .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
+    .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
+    .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
+    .config.initial_servo_position[0] = 0,
+    .config.initial_servo_position[1] = 0,
 };
 
 cats_config_u global_cats_config = {};
@@ -34,6 +44,8 @@ void cc_init() {
   HAL_FLASH_Unlock();
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
+  osDelay(5);
+  HAL_FLASH_Lock();
 }
 
 void cc_defaults() { memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config)); }
@@ -46,15 +58,40 @@ void cc_load() {
   }
 }
 
-void cc_save() {
+bool cc_format_save(){
+  HAL_FLASH_Unlock();
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
+  EE_Status ee_status = EE_Format(EE_FORCED_ERASE);
+  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
+  return cc_save();
+}
+
+bool cc_save() {
+  HAL_FLASH_Unlock();
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
+  // loop through all elements of the config
   for (int i = 0; i < sizeof(cats_config_t) / sizeof(uint32_t); i++) {
     uint32_t tmp;
     EE_ReadVariable32bits(i + 1, &tmp);
+    // Compare the value from ram to the value from flash
     if (tmp != global_cats_config.config_array[i]) {
-      EE_Status ee_status = EE_WriteVariable32bits(i + 1, global_cats_config.config_array[i]);
+      // If different override the value in flash
+      EE_Status ee_status;
+      int errors = 0;
+      do {
+        ee_status = EE_WriteVariable32bits(i + 1, global_cats_config.config_array[i]);
+        errors++;
+      } while((ee_status & EE_STATUSMASK_ERROR) == EE_STATUSMASK_ERROR && errors < 5);
       if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
+      // If writing failed 5 times, stop and return an error
+      if (errors == 5) {
+        HAL_FLASH_Lock();
+        return false;
+      }
     }
   }
+  HAL_FLASH_Lock();
+  return true;
 }
 
 /**
@@ -63,31 +100,14 @@ void cc_save() {
  * @return number of actions mapped to event
  */
 int16_t cc_get_action_number(cats_event_e event) {
-  int i = 0;
-  bool found = false;
+  int16_t i = 0;
   int16_t nr_actions;
-
-  do {
-    // Loop until we find the event or until we run out of config to read from
-    cats_event_e tmp = global_cats_config.config.action_array[i];
-
-    // Check for event, stop immediately when config is empty
-    if (tmp > 0) {
-      if (tmp == event) {
-        found = true;
-      }
-    } else
-      return 0;
-
-    // Read the number of actions from the array
-    nr_actions = global_cats_config.config.action_array[i + 1];
-    // Increment the action array pointer to the next action, return when number is 0
-    if (nr_actions > 0)
-      i = i + (2 * nr_actions) + 2;
-    else
-      return 0;
-  } while (i < 128 && found == false);
-
+  if (event > (NUM_EVENTS-1)) return 0;
+  // Count the number of entries
+  while((global_cats_config.config.action_array[event][i] != 0) && (i < 16)) {
+    i+=2;
+  }
+  nr_actions = i/2;
   return nr_actions;
 }
 
@@ -100,22 +120,15 @@ int16_t cc_get_action_number(cats_event_e event) {
  */
 bool cc_get_action(cats_event_e event, int16_t id, config_action_t* action) {
   if (cc_get_action_number(event) < (id + 1)) return false;
-  int i = 0;
-  do {
-    // Loop until we find the event
-    if (global_cats_config.config.action_array[i] == event) {
-      action->action_pointer = global_cats_config.config.action_array[i + (2 * (id + 1))];
-      action->arg = global_cats_config.config.action_array[i + (2 * (id + 1)) + 1];
-      return true;
-    }
 
-    // Read the number of actions from the array
-    int nr_actions = global_cats_config.config.action_array[i + 1];
+  int16_t p = global_cats_config.config.action_array[event][id*2];
+  int16_t a = global_cats_config.config.action_array[event][id*2+1];
 
-    // Increment the action array pointer to the next action, return when number is 0
-    i += (2 * nr_actions) + 2;
-
-  } while (i < 128);
+  if(p > 0 && p <= NUM_ACTION_FUNCTIONS){
+    action->action_pointer = p;
+    action->arg = a;
+    return true;
+  }
   return false;
 }
 /** debug functions **/
