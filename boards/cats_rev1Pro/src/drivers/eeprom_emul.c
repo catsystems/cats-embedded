@@ -58,8 +58,9 @@
 
 /* Private define -----------------------------------------------------------*/
 #ifdef DUALCORE_FLASH_SHARING
-#define HSEM_PROCESS_1 12U /* Number taken randomly to identify the process locking a semaphore in the driver context \
-                            */
+#define HSEM_PROCESS_1                                                                           \
+  12U /* Number taken randomly to identify the process locking a semaphore in the driver context \
+       */
 #endif
 /* Private typedef -----------------------------------------------------------*/
 /** @defgroup EEPROM_Private_Structures EEPROM Private Structures
