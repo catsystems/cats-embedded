@@ -1,11 +1,22 @@
 /*
- * util.h
+ * CATS Flight Software
+ * Copyright (C) 2021 Control and Telemetry Systems
  *
- *  Created on: Feb 24, 2020
- *      Author: stoja
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Logging inspired by https://github.com/rxi/log.c
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+/* Logging inspired by https://github.com/rxi/log.c */
 
 #pragma once
 
@@ -77,7 +88,7 @@ void log_rawr(const char *format, ...) __attribute__((format(printf, 1, 2)));
 #define DIR_SEPARATOR '/'
 #endif
 
-#define GET_FILENAME   (strrchr(__FILE__, DIR_SEPARATOR) ? strrchr(__FILE__, DIR_SEPARATOR) + 1 : __FILE__)
+#define GET_FILENAME (strrchr(__FILE__, DIR_SEPARATOR) ? strrchr(__FILE__, DIR_SEPARATOR) + 1 : __FILE__)
 
 #define log_trace(...) log_log(LOG_TRACE, GET_FILENAME, __LINE__, __VA_ARGS__)
 #define log_debug(...) log_log(LOG_DEBUG, GET_FILENAME, __LINE__, __VA_ARGS__)
