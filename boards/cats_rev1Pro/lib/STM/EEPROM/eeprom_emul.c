@@ -50,7 +50,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "drivers/eeprom_emul.h"
+#include "eeprom_emul.h"
 
 /** @defgroup EEPROM_Emulation EEPROM_Emulation
  * @{
