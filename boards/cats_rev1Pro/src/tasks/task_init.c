@@ -22,7 +22,7 @@
 #include "util/log.h"
 #include "drivers/adc.h"
 #include "drivers/spi.h"
-#include "drivers/eeprom_emul.h"
+#include "eeprom_emul.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "util/actions.h"

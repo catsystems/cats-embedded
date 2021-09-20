@@ -18,8 +18,8 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "drivers/eeprom_emul.h"
-#include "drivers/flash_interface.h"
+#include "eeprom_emul.h"
+#include "flash_interface.h"
 
 /** @addtogroup EEPROM_Emulation
  * @{
