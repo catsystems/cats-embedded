@@ -68,6 +68,7 @@ include_directories(
         lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
         lib/STM/USB/USB_DEVICE/App
         lib/STM/USB/USB_DEVICE/Target
+        lib/STM/EEPROM
         lib/CMSIS/Device/ST/STM32L4xx/Include
         lib/CMSIS/Include
         lib/CMSIS/DSP/Inc

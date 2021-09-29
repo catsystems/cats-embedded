@@ -9,10 +9,10 @@ fi
 
 format_file() {
   file="${1}"
-  if [ -f $file ]; then
+  if [ -f "$file" ]; then
     echo "Formatting $file"
-    clang-format -i ${STYLEARG} ${1}
-    git add ${1}
+    clang-format -i "${STYLEARG}" "${1}"
+    git add "${1}"
   fi
 }
 
@@ -21,7 +21,7 @@ case "${1}" in
     echo "Runs clang-format on source files"
     ;;
   * )
-    for file in `git diff-index --cached --name-only HEAD | grep -iE '/(Core|USB_DEVICE)/.*\.(c|cc|cpp|h|hpp)$' ` ; do
+    for file in $(git diff-index --cached --name-only HEAD | grep -iE '/src/.*\.(c|cc|cpp|h|hpp)$') ; do
       format_file "${file}"
     done
     ;;

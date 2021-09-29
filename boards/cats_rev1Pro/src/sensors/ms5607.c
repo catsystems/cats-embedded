@@ -1,6 +1,22 @@
-// MS5607 Barometer Device Library
-// Author: Luca Jost
-// 11.06.2020
+/*
+ * CATS Flight Software
+ * Copyright (C) 2021 Control and Telemetry Systems
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/* MS5607 Barometer Device Library */
 
 #include "sensors/ms5607.h"
 #include "util/types.h"
@@ -88,9 +104,7 @@ static void ms_read_bytes(MS5607 *dev, uint8_t command, uint8_t *pData, uint16_t
 }
 
 // Write command
-static void ms_write_command(MS5607 *dev, uint8_t command) {
-	spi_transmit(dev->spi_bus, &command, 1);
-}
+static void ms_write_command(MS5607 *dev, uint8_t command) { spi_transmit(dev->spi_bus, &command, 1); }
 
 static void read_calibration(MS5607 *dev) {
   for (int i = 0; i < 6; i++) {
