@@ -14,6 +14,7 @@
 #include "config/globals.h"
 #include "lfs/lfs_custom.h"
 #include "util/actions.h"
+#include "util/battery.h"
 #include "drivers/w25q.h"
 
 #include <string.h>
@@ -68,7 +69,6 @@ static void cliSave(const char *cmdName, char *cmdline);
 static void cliDump(const char *cmdName, char *cmdline);
 static void cliExit(const char *cmdName, char *cmdline);
 static void cliGet(const char *cmdName, char *cmdline);
-static void cliMcuId(const char *cmdName, char *cmdline);
 static void cliSet(const char *cmdName, char *cmdline);
 static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
@@ -106,7 +106,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
-    CLI_COMMAND_DEF("mcu_id", "id of the microcontroller", NULL, cliMcuId),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
@@ -256,8 +255,6 @@ static void cliExit(const char *cmdName, char *cmdline) {
   NVIC_SystemReset();
 }
 
-static void cliMcuId(const char *cmdName, char *cmdline) {}
-
 static void cliSave(const char *cmdName, char *cmdline) {
   if (cc_save() == false){
     cliPrintLine("Saving unsuccessful, trying force save...");
@@ -337,6 +334,15 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value) {
   }
 }
 
+static void print_sensor_state(){
+  const lookupTableEntry_t *p_boot_table = &lookupTables[TABLE_BOOTSTATE];
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  cliPrintf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
+  cliPrintf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state-1]);
+  cliPrintf("Voltage: %d.%02dV\n",(int)battery_voltage(),(int)(battery_voltage()*100)%100);
+  cliPrintf("h: %dm, v: %dm/s, a: %dm/s^2", (int)global_kf_data.height, (int)global_kf_data.velocity, (int)global_kf_data.acceleration);
+}
+
 static void print_action_config() {
   const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
   const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
@@ -358,7 +364,6 @@ static void print_action_config() {
 
 static void print_timer_config() {
   const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
-  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
 
   cliPrintf("\n\n * TIMER CONFIGURATION *\n");
   for (int i = 0; i < num_timers; i++) {
@@ -776,7 +781,9 @@ static void cliSet(const char *cmdName, char *cmdline) {
   }
 }
 
-static void cliStatus(const char *cmdName, char *cmdline) {}
+static void cliStatus(const char *cmdName, char *cmdline) {
+  print_sensor_state();
+}
 
 static void cliVersion(const char *cmdName, char *cmdline) {}
 
