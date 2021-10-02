@@ -46,12 +46,13 @@ extern "C" {
   2U /*!< Number of 10Kcycles requested, minimum 1 for 10Kcycles (default), \
         for instance 10 to reach 100Kcycles. This factor will increase      \
         pages number */
-#define GUARD_PAGES_NUMBER 2U /*!< Number of guard pages avoiding frequent transfers (must be multiple of 2): 0,2,4.. \
-                               */
+#define GUARD_PAGES_NUMBER                                                                   \
+  2U /*!< Number of guard pages avoiding frequent transfers (must be multiple of 2): 0,2,4.. \
+      */
 
 /* Configuration of crc calculation for eeprom emulation in flash */
 #define CRC_POLYNOMIAL_LENGTH LL_CRC_POLYLENGTH_16B /* CRC polynomial lenght 16 bits */
-#define CRC_POLYNOMIAL_VALUE  0x8005U /* Polynomial to use for CRC calculation */
+#define CRC_POLYNOMIAL_VALUE  0x8005U               /* Polynomial to use for CRC calculation */
 
 /**
  * @}

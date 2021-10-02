@@ -1,14 +1,30 @@
-// MS5607 Barometer Device Library
-// Author: Luca Jost
-// 11.06.2020
+/*
+ * CATS Flight Software
+ * Copyright (C) 2021 Control and Telemetry Systems
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
-#ifndef CATS_MS5607_H
-#define CATS_MS5607_H
+/* MS5607 Barometer Device Library */
+
+#pragma once
 
 #include "stm32l4xx_hal.h"
 #include "cmsis_os.h"
-#include <stdbool.h>
 #include "drivers/spi.h"
+
+#include <stdbool.h>
 
 /** Exported Defines **/
 
@@ -64,5 +80,3 @@ void ms5607_prepare_temp(MS5607 *dev);
 void ms5607_prepare_pres(MS5607 *dev);
 void ms5607_read_raw(MS5607 *dev);
 bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature, int32_t *pressure);
-
-#endif

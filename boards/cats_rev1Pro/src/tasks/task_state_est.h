@@ -1,8 +1,19 @@
 /*
- * task_state_est.h
+ * CATS Flight Software
+ * Copyright (C) 2021 Control and Telemetry Systems
  *
- *  Created on: Nov 1, 2019
- *      Author: Jonas
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -14,7 +25,7 @@ _Noreturn void task_state_est(void *argument);
 #define OFFSET_IMU
 #define OFFSET_SENSOR_CHOICE 1
 #define OFFSET_P             1500 /* Pa */
-#define OFFSET_ACC           5 /* m/s^2 */
+#define OFFSET_ACC           5    /* m/s^2 */
 
 /* Spike Settings */
 #define SPIKE_BARO
@@ -24,5 +35,5 @@ _Noreturn void task_state_est(void *argument);
 #define SPIKE_THRESHOLD 0.01f
 
 /* Noise Settings */
-#define ACC_NOISE_MAX_AMPL      0.2f /* In m/s^2 */
+#define ACC_NOISE_MAX_AMPL      0.2f  /* In m/s^2 */
 #define PRESSURE_NOISE_MAX_AMPL 10.0f /* In Pa */
