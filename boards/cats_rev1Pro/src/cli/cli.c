@@ -1,6 +1,7 @@
 /*
- * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * This file was part of Cleanflight and Betaflight.
+ * https://github.com/betaflight/betaflight
+ * It is modified for the CATS Flight Software.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
