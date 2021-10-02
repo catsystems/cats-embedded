@@ -32,3 +32,4 @@ void error_handler(cats_error_e err) {
     //    record(ERROR_INFO, &error_info);
   }
 }
+

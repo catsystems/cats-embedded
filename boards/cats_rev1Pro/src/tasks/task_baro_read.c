@@ -55,8 +55,6 @@ void task_baro_read(void *argument) {
   osDelay(5);
   while (1) {
     tick_count += tick_update;
-    // Phase 1, get the temperature
-
     // Readout the register
     read_baro();
 
@@ -69,7 +67,6 @@ void task_baro_read(void *argument) {
       stage = READ_BARO_TEMPERATURE;
 
       get_temp_pres(temperature, pressure);
-
       // log_info("P1: %ld; P2: %ld; P3: %ld; T1: %ld; T2: %ld; T3: %ld", pressure[0], pressure[1], pressure[2],
       // temperature[0], temperature[1], temperature[2]);
 

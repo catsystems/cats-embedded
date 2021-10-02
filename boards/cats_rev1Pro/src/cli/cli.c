@@ -1,6 +1,7 @@
 /*
- * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * This file was part of Cleanflight and Betaflight.
+ * https://github.com/betaflight/betaflight
+ * It is modified for the CATS Flight Software.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@
 #include "config/globals.h"
 #include "lfs/lfs_custom.h"
 #include "util/actions.h"
+#include "util/battery.h"
 #include "drivers/w25q.h"
 
 #include <string.h>
@@ -31,12 +33,13 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <ctype.h>
-#define CLI_IN_BUFFER_SIZE  256
+#define CLI_IN_BUFFER_SIZE  128
 #define CLI_OUT_BUFFER_SIZE 256
 
 static uint32_t bufferIndex = 0;
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
+static char oldCliBuffer[CLI_IN_BUFFER_SIZE];
 
 static fifo_t *cli_in;
 static fifo_t *cli_out;
@@ -77,10 +80,10 @@ static void cliSave(const char *cmdName, char *cmdline);
 static void cliDump(const char *cmdName, char *cmdline);
 static void cliExit(const char *cmdName, char *cmdline);
 static void cliGet(const char *cmdName, char *cmdline);
-static void cliMcuId(const char *cmdName, char *cmdline);
 static void cliSet(const char *cmdName, char *cmdline);
 static void cliStatus(const char *cmdName, char *cmdline);
 static void cliVersion(const char *cmdName, char *cmdline);
+static void cliConfig(const char *cmdName, char *cmdline);
 static void cliEraseFlash(const char *cmdName, char *cmdline);
 static void cliEraseRecordings(const char *cmdName, char *cmdline);
 static void cliRecInfo(const char *cmdName, char *cmdline);
@@ -109,13 +112,12 @@ static void cliEnable(const char *cmdName, char *cmdline);
 
 const clicmd_t cmdTable[] = {
     // CLI_COMMAND_DEF("bl", "reboot into bootloader", "[rom]", cliBootloader),
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave|show]", cliDefaults),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
-    CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
+    CLI_COMMAND_DEF("exit", "reboot without saving", NULL, cliExit),
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
-    CLI_COMMAND_DEF("mcu_id", "id of the microcontroller", NULL, cliMcuId),
-    CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+    CLI_COMMAND_DEF("save", "save configuration", NULL, cliSave),
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
@@ -130,6 +132,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
     CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cliLfsFormat),
+    CLI_COMMAND_DEF("config", "print the flight config", NULL, cliConfig),
 };
 
 static void cliLfsFormat(const char *cmdName, char *cmdline) {
@@ -217,7 +220,6 @@ static void cliPrintFlight(const char *cmdName, char *cmdline) {
       log_raw("\nFlight %lu doesn't exist", flight_idx);
       log_raw("Number of recorded flights: %lu", flight_counter);
     } else {
-      log_raw("");
       dump_recording(flight_idx);
     }
   } else {
@@ -259,13 +261,19 @@ static void cliDefaults(const char *cmdName, char *cmdline) {
 
 static void cliDump(const char *cmdName, char *cmdline) {}
 
-static void cliExit(const char *cmdName, char *cmdline) {}
-
-static void cliMcuId(const char *cmdName, char *cmdline) {}
+static void cliExit(const char *cmdName, char *cmdline) {
+  NVIC_SystemReset();
+}
 
 static void cliSave(const char *cmdName, char *cmdline) {
-  cc_save();
-  NVIC_SystemReset();
+  if (cc_save() == false){
+    cliPrintLine("Saving unsuccessful, trying force save...");
+    if (cc_format_save() == false){
+      cliPrintLine("Force save failed!");
+      return;
+    }
+  }
+  cliPrintLine("Successfully written to flash");
 }
 
 static char *skipSpace(char *buffer) {
@@ -333,6 +341,48 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value) {
       case VAR_UINT32:
         *(uint32_t *)ptr = value;
         break;
+    }
+  }
+}
+
+static void print_sensor_state(){
+  const lookupTableEntry_t *p_boot_table = &lookupTables[TABLE_BOOTSTATE];
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  cliPrintf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
+  cliPrintf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state-1]);
+  cliPrintf("Voltage: %d.%02dV\n",(int)battery_voltage(),(int)(battery_voltage()*100)%100);
+  cliPrintf("h: %dm, v: %dm/s, a: %dm/s^2", (int)global_kf_data.height, (int)global_kf_data.velocity, (int)global_kf_data.acceleration);
+}
+
+static void print_action_config() {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+  const lookupTableEntry_t *p_action_table = &lookupTables[TABLE_ACTIONS];
+
+  cliPrintf("\n * ACTION CONFIGURATION *\n");
+  config_action_t action;
+  for (int i = 0; i < NUM_EVENTS; i++) {
+    int nr_actions = cc_get_num_actions(i);
+    if (nr_actions > 0) {
+      cliPrintf("\n%s\n", p_event_table->values[i]);
+      cliPrintf("   Number of Actions: %d\n", nr_actions);
+      for (int j = 0; j < nr_actions; j++) {
+        cc_get_action(i, j, &action);
+        cliPrintf("     %s - %d\n", p_action_table->values[action.action_idx], action.arg);
+      }
+    }
+  }
+}
+
+static void print_timer_config() {
+  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
+
+  cliPrintf("\n\n * TIMER CONFIGURATION *\n");
+  for (int i = 0; i < NUM_TIMERS; i++) {
+    if (global_cats_config.config.timers[i].duration > 0) {
+      cliPrintf("\nTIMER %d\n", i + 1);
+      cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
+      cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
+      cliPrintf("  Duration: %d ms\n", global_cats_config.config.timers[i].duration);
     }
   }
 }
@@ -473,6 +523,15 @@ uint16_t cliGetSettingIndex(char *name, uint8_t length) {
   return valueTableEntryCount;
 }
 
+static const char *nextArg(const char *currentArg) {
+  const char *ptr = strchr(currentArg, ' ');
+  while (ptr && *ptr == ' ') {
+    ptr++;
+  }
+
+  return ptr;
+}
+
 static void cliPrintVarRange(const clivalue_t *var) {
   switch (var->type & VALUE_MODE_MASK) {
     case (MODE_DIRECT): {
@@ -544,6 +603,11 @@ static void cliGet(const char *cmdName, char *cmdline) {
   }
 }
 
+static void cliConfig(const char *cmdName, char *cmdline) {
+  print_action_config();
+  print_timer_config();
+}
+
 static void cliSet(const char *cmdName, char *cmdline) {
   const uint32_t len = strlen(cmdline);
   char *eqptr;
@@ -575,7 +639,7 @@ static void cliSet(const char *cmdName, char *cmdline) {
     const clivalue_t *val = &valueTable[index];
 
     bool valueChanged = false;
-    int16_t value = 0;
+
     switch (val->type & VALUE_MODE_MASK) {
       case MODE_DIRECT: {
         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
@@ -614,13 +678,77 @@ static void cliSet(const char *cmdName, char *cmdline) {
           matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
           if (matched) {
-            value = tableValueIndex;
-
-            cliSetVar(val, value);
+            cliSetVar(val, tableValueIndex);
             valueChanged = true;
           }
         }
       } break;
+      case MODE_ARRAY: {
+        const uint8_t arrayLength = val->config.array.length;
+        char *valPtr = eqptr;
+
+        int i = 0;
+        while (i < arrayLength && valPtr != NULL) {
+          // skip spaces
+          valPtr = skipSpace(valPtr);
+
+          // process substring starting at valPtr
+          // note: no need to copy substrings for atoi()
+          //       it stops at the first character that cannot be converted...
+          switch (val->type & VALUE_TYPE_MASK) {
+            default:
+            case VAR_UINT8: {
+              // fetch data pointer
+              uint8_t *data = (uint8_t *)val->pdata + i;
+              // store value
+              *data = (uint8_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_INT8: {
+              // fetch data pointer
+              int8_t *data = (int8_t *)val->pdata + i;
+              // store value
+              *data = (int8_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_UINT16: {
+              // fetch data pointer
+              uint16_t *data = (uint16_t *)val->pdata + i;
+              // store value
+              *data = (uint16_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_INT16: {
+              // fetch data pointer
+              int16_t *data = (int16_t *)val->pdata + i;
+              // store value
+              *data = (int16_t)atoi((const char *)valPtr);
+            }
+
+            break;
+            case VAR_UINT32: {
+              // fetch data pointer
+              uint32_t *data = (uint32_t *)val->pdata + i;
+              // store value
+              *data = (uint32_t)strtoul((const char *)valPtr, NULL, 10);
+            }
+
+            break;
+          }
+
+          // find next comma (or end of string)
+          valPtr = strchr(valPtr, ',') + 1;
+
+          i++;
+        }
+      }
+        // mark as changed
+        valueChanged = true;
+
+        break;
     }
 
     if (valueChanged) {
@@ -638,7 +766,9 @@ static void cliSet(const char *cmdName, char *cmdline) {
   }
 }
 
-static void cliStatus(const char *cmdName, char *cmdline) {}
+static void cliStatus(const char *cmdName, char *cmdline) {
+  print_sensor_state();
+}
 
 static void cliVersion(const char *cmdName, char *cmdline) {}
 
@@ -675,8 +805,8 @@ static void cliHelp(const char *cmdName, char *cmdline) {
 void cliPrint(const char *str) {
   while (*str) {
     while (fifo_write(cli_out, *str++) == false) {
-      osDelay(10);
-      *str--;
+      osDelay(1);
+      str--;
     }
   }
 }
@@ -806,7 +936,7 @@ static void processCharacter(const char c) {
       }
       bufferIndex = 0;
     }
-
+    strncpy(oldCliBuffer, cliBuffer, sizeof(cliBuffer));
     memset(cliBuffer, 0, sizeof(cliBuffer));
     cliPrompt();
 
@@ -820,6 +950,12 @@ static void processCharacter(const char c) {
 }
 
 static void processCharacterInteractive(const char c) {
+  // We ignore a few characters, this is only used for the up arrow
+  static uint16_t ignore = 0;
+  if (ignore) {
+    ignore--;
+    return;
+  }
   if (c == '\t' || c == '?') {
     // do tab completion
     const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -873,6 +1009,18 @@ static void processCharacterInteractive(const char c) {
       cliBuffer[--bufferIndex] = 0;
       cliPrint("\010 \010");
     }
+  } else if (c == 27) { // ESC character is called from the up arrow, we only look at the first of 3 characters
+    // up arrow
+    while (bufferIndex) {
+      cliBuffer[--bufferIndex] = 0;
+      cliPrint("\010 \010");
+    }
+    for (int i = 0; i < sizeof(oldCliBuffer); i++) {
+      if (oldCliBuffer[i] == 0) break;
+      processCharacter(oldCliBuffer[i]);
+    }
+    // Ignore the following characters
+    ignore = 2;
   } else {
     processCharacter(c);
   }
