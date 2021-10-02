@@ -14,8 +14,19 @@
 ## Configuration Tool
 Currently the configuration tool is still under development.
 
+## Contribution
+Contributions are welcome and encouraged. You can contribute in many ways:
+
+* Implement a new feature in the firmware
+* Bug reporting & fixes
+* New feature ideas & suggestions
+
+The best way to get started is to join our [Discord](https://discord.gg/H9Caj8XeBj) server.
+
 ## Open Source
 All CATS code is open source and can be used free of charge without warranty. 
+
+The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betaflight), so thanks goes to all those whom have contributed to Cleanflight and Betaflight. 
 
 ## Pushing to Remote Repository
 In order to ensure consistency and easier diff review between commits,
