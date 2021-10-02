@@ -47,7 +47,8 @@ const struct lfs_config lfs_cfg = {
     .read_size = 256,
     .prog_size = 256,
     .block_size = 4096,
-    .block_count = 1024,
+    // 8k pages for 256 Mbit flash
+    .block_count = 8192,
     .cache_size = LFS_CACHE_SIZE,
     .lookahead_size = LFS_LOOKAHEAD_SIZE,
     .block_cycles = 500,
@@ -117,7 +118,7 @@ static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_
   if (w25q_read_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
     return 0;
   }
-  return -1;
+  return LFS_ERR_CORRUPT;
 }
 static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
                          lfs_size_t size) {

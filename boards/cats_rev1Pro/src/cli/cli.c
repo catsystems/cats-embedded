@@ -44,6 +44,7 @@ static char oldCliBuffer[CLI_IN_BUFFER_SIZE];
 static fifo_t *cli_in;
 static fifo_t *cli_out;
 
+/* TODO: change the signature of this function so that it accepts const char cmdline */
 typedef void cliCommandFn(const char *name, char *cmdline);
 
 typedef struct {
@@ -87,12 +88,15 @@ static void cliConfig(const char *cmdName, char *cmdline);
 static void cliEraseFlash(const char *cmdName, char *cmdline);
 static void cliEraseRecordings(const char *cmdName, char *cmdline);
 static void cliRecInfo(const char *cmdName, char *cmdline);
-static void cliPrintFlight(const char *cmdName, char *cmdline);
+static void cliDumpFlight(const char *cmdName, char *cmdline);
+static void cliParseFlight(const char *cmdName, char *cmdline);
 static void cliFlashWrite(const char *cmdName, char *cmdline);
 static void cliFlashStop(const char *cmdName, char *cmdline);
 static void cliLfsFormat(const char *cmdName, char *cmdline);
 static void cliLs(const char *cmdName, char *cmdline);
 static void cliCd(const char *cmdName, char *cmdline);
+static void cliRm(const char *cmdName, char *cmdline);
+static void cliFlashTest(const char *cmdName, char *cmdline);
 
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);
@@ -107,7 +111,6 @@ void cliPrintLinef(const char *format, ...) __attribute__((format(printf, 1, 2))
 static void cliPrintErrorVa(const char *cmdName, const char *format, va_list va);
 static void cliPrintError(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
 static void cliPrintErrorLinef(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
-static void cliRead(const char *cmdName, char *cmdline);
 static void cliEnable(const char *cmdName, char *cmdline);
 
 const clicmd_t cmdTable[] = {
@@ -121,28 +124,117 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
-    CLI_COMMAND_DEF("read", "readout the flash", NULL, cliRead),
     CLI_COMMAND_DEF("flash_erase", "erase the flash", NULL, cliEraseFlash),
     CLI_COMMAND_DEF("rec_erase", "erase the recordings", NULL, cliEraseRecordings),
     CLI_COMMAND_DEF("rec_info", "get the flight recorder info", NULL, cliRecInfo),
-    CLI_COMMAND_DEF("rec_print_flight", "print a specific flight", "[flight_number]", cliPrintFlight),
+    CLI_COMMAND_DEF("flight_dump", "print a specific flight", "<flight_number>", cliDumpFlight),
+    CLI_COMMAND_DEF("flight_parse", "print a specific flight", "<flight_number>", cliParseFlight),
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cliEnable),
     CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cliFlashWrite),
     CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cliFlashStop),
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
+    CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cliRm),
     CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cliLfsFormat),
     CLI_COMMAND_DEF("config", "print the flight config", NULL, cliConfig),
+    CLI_COMMAND_DEF("flash_test", "test the flash", NULL, cliFlashTest),
 };
 
+static void cliRm(const char *cmdName, char *cmdline) {
+  if (cmdline != NULL) {
+    if (strlen(cmdline) > LFS_NAME_MAX) {
+      cliPrintLine("File name too long!");
+      return;
+    }
+    /* first +1 for the path separator (/), second +1 for the null terminator */
+    char *full_path = malloc(strlen(cwd) + 1 + strlen(cmdline) + 1);
+    strcpy(full_path, cwd);
+    strcat(full_path, "/");
+    strcat(full_path, cmdline);
+    struct lfs_info info;
+    int32_t stat_err = lfs_stat(&lfs, full_path, &info);
+    if (stat_err < 0) {
+      cliPrintLinef("lfs_stat failed with %ld", stat_err);
+      free(full_path);
+      return;
+    }
+    if (info.type != LFS_TYPE_REG) {
+      cliPrintLine("This is not a file!");
+      free(full_path);
+      return;
+    }
+    int32_t rm_err = lfs_remove(&lfs, full_path);
+    if (rm_err < 0) {
+      cliPrintLinef("File removal failed with %ld", rm_err);
+    }
+    cliPrintf("File %s removed!", cmdline);
+    free(full_path);
+  } else {
+    cliPrintLine("Argument not provided!");
+  }
+}
+
+static void fill_buf(uint8_t *buf, size_t buf_sz) {
+  for (uint32_t i = 0; i < buf_sz / 2; ++i) {
+    buf[i] = i * 2;
+    buf[buf_sz - i - 1] = i * 2 + 1;
+  }
+}
+
+static void cliFlashTest(const char *cmdName, char *cmdline) {
+  uint8_t write_buf[256] = {0};
+  uint8_t read_buf[256] = {0};
+  fill_buf(write_buf, 256);
+  cliPrintLine("\nStep 1: Erasing the chip sector by sector...");
+  w25q_chip_erase();
+  for (uint32_t i = 0; i < w25q.sector_count; ++i) {
+    if (i % 100 == 0) {
+      cliPrintLinef("%lu / %lu sectors erased...", i, w25q.sector_count);
+    }
+    w25q_status_e sector_erase_status = w25q_sector_erase(i);
+    if (sector_erase_status != W25Q_OK) {
+      cliPrintLinef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
+      osDelay(5000);
+    }
+  }
+  cliPrintLine("Step 2: Sequential write test");
+  for (uint32_t i = 0; i < w25q.page_count; ++i) {
+    if (i % 100 == 0) {
+      cliPrintLinef("%lu / %lu pages written...", i, w25q.page_count);
+    }
+    w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
+    if (write_status != W25Q_OK) {
+      cliPrintLinef("Write error encountered at page %lu; status %d", i, write_status);
+      osDelay(5000);
+    }
+  }
+  cliPrintLine("Step 3: Sequential read test");
+  for (uint32_t i = 0; i < w25q.page_count; ++i) {
+    memset(read_buf, 0, 256);
+    if (i % 100 == 0) {
+      cliPrintLinef("%lu / %lu pages read...", i, w25q.page_count);
+    }
+    w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
+    if (read_status != W25Q_OK) {
+      cliPrintLinef("Read error encountered at page %lu; status %d", i, read_status);
+      osDelay(5000);
+    }
+    if (memcmp(write_buf, read_buf, 256) != 0) {
+      cliPrintLinef("Buffer mismatch at page %lu", i);
+      osDelay(5000);
+    }
+  }
+  cliPrintLine("Test complete!");
+}
+
 static void cliLfsFormat(const char *cmdName, char *cmdline) {
-  log_raw("\nTrying LFS format");
+  cliPrintLine("\nTrying LFS format");
   lfs_format(&lfs, &lfs_cfg);
   int err = lfs_mount(&lfs, &lfs_cfg);
   if (err != 0) {
-    log_raw("LFS mounting failed with error %d!", err);
+    cliPrintLinef("LFS mounting failed with error %d!", err);
   } else {
-    log_raw("Mounting successful!");
+    cliPrintLine("Mounting successful!");
     /* create the flights directory */
     lfs_mkdir(&lfs, "flights");
 
@@ -170,24 +262,24 @@ static void cliCd(const char *cmdName, char *cmdline) {
 static void cliEnable(const char *cmdName, char *cmdline) { log_enable(); }
 
 static void cliEraseFlash(const char *cmdName, char *cmdline) {
-  log_raw("\nErasing the flash, this might take a while...");
+  cliPrintLine("\nErasing the flash, this might take a while...");
   w25q_chip_erase();
-  log_raw("Flash erased!");
-  log_raw("Mounting LFS");
+  cliPrintLine("Flash erased!");
+  cliPrintLine("Mounting LFS");
 
   int err = lfs_mount(&lfs, &lfs_cfg);
   if (err == 0) {
-    log_raw("LFS mounted successfully!");
+    cliPrintLine("LFS mounted successfully!");
   } else {
-    log_raw("LFS mounting failed with error %d!", err);
-    log_raw("Trying LFS format");
+    cliPrintLinef("LFS mounting failed with error %d!", err);
+    cliPrintLine("Trying LFS format");
     lfs_format(&lfs, &lfs_cfg);
     int err2 = lfs_mount(&lfs, &lfs_cfg);
     if (err2 != 0) {
-      log_raw("LFS mounting failed again with error %d!", err2);
+      cliPrintLinef("LFS mounting failed again with error %d!", err2);
       return;
     } else {
-      log_raw("Mounting successful!");
+      cliPrintLine("Mounting successful!");
     }
   }
   flight_counter = 0;
@@ -198,18 +290,18 @@ static void cliEraseFlash(const char *cmdName, char *cmdline) {
 }
 
 static void cliEraseRecordings(const char *cmdName, char *cmdline) {
-  log_raw("\nErasing the flight recordings, this might not take much...");
+  cliPrintLine("\nErasing the flight recordings, this might not take much...");
   erase_recordings();
-  log_raw("Recordings erased!");
+  cliPrintLine("Recordings erased!");
 }
 
 static void cliRecInfo(const char *cmdName, char *cmdline) {
   // implement a "ls" here
-  log_raw("\nNumber of recorded flights: %lu", flight_counter);
+  cliPrintLinef("\nNumber of recorded flights: %lu", flight_counter);
   lfs_ls("flights/");
 }
 
-static void cliPrintFlight(const char *cmdName, char *cmdline) {
+static void cliDumpFlight(const char *cmdName, char *cmdline) {
   /* TODO - count how many files in a directory here */
   char *endptr;
   uint32_t flight_idx = strtoul(cmdline, &endptr, 10);
@@ -217,58 +309,59 @@ static void cliPrintFlight(const char *cmdName, char *cmdline) {
   if (cmdline != endptr) {
     // A number was found
     if (flight_idx > flight_counter) {
-      log_raw("\nFlight %lu doesn't exist", flight_idx);
-      log_raw("Number of recorded flights: %lu", flight_counter);
+      cliPrintLinef("\nFlight %lu doesn't exist", flight_idx);
+      cliPrintLinef("Number of recorded flights: %lu", flight_counter);
     } else {
+      cliPrint("\n");
       dump_recording(flight_idx);
     }
   } else {
-    log_raw("\nArgument not provided!");
+    cliPrintLine("\nArgument not provided!");
+  }
+}
+
+static void cliParseFlight(const char *cmdName, char *cmdline) {
+  /* TODO - count how many files in a directory here */
+  char *endptr;
+  uint32_t flight_idx = strtoul(cmdline, &endptr, 10);
+
+  if (cmdline != endptr) {
+    // A number was found
+    if (flight_idx > flight_counter) {
+      cliPrintLinef("\nFlight %lu doesn't exist", flight_idx);
+      cliPrintLinef("Number of recorded flights: %lu", flight_counter);
+    } else {
+      cliPrint("\n");
+      parse_recording(flight_idx);
+    }
+  } else {
+    cliPrintLine("\nArgument not provided!");
   }
 }
 
 static void cliFlashWrite(const char *cmdName, char *cmdline) {
-  log_raw("\nSetting recorder state to REC_WRITE_TO_FLASH");
+  cliPrintLine("\nSetting recorder state to REC_WRITE_TO_FLASH");
   set_recorder_state(REC_WRITE_TO_FLASH);
 }
 
 static void cliFlashStop(const char *cmdName, char *cmdline) {
-  log_raw("\nSetting recorder state to REC_FILL_QUEUE");
+  cliPrintLine("\nSetting recorder state to REC_FILL_QUEUE");
   set_recorder_state(REC_FILL_QUEUE);
-}
-
-static void cliRead(const char *cmdName, char *cmdline) {
-  osDelay(2000);
-  /* Remember the current logging state so that we can revert back to it after we read out the flash */
-  bool log_was_enabled = log_is_enabled();
-  log_disable();
-  /* iterate through all recordings in the /flights dir */
-  uint16_t num_recorded_flights = 0;
-  if (num_recorded_flights == 0)
-    log_raw("No recordings found");
-  else
-    log_raw("Number of recorded flights: %hu", num_recorded_flights);
-  for (int i = 0; i < num_recorded_flights; i++) {
-    dump_recording(i);
-  }
-  if (log_was_enabled) log_enable();
 }
 
 static void cliDefaults(const char *cmdName, char *cmdline) {
   cc_defaults();
-  cliPrint("Reset to default values");
+  cliPrintLine("Reset to default values");
 }
 
 static void cliDump(const char *cmdName, char *cmdline) {}
 
-static void cliExit(const char *cmdName, char *cmdline) {
-  NVIC_SystemReset();
-}
+static void cliExit(const char *cmdName, char *cmdline) { NVIC_SystemReset(); }
 
 static void cliSave(const char *cmdName, char *cmdline) {
-  if (cc_save() == false){
+  if (cc_save() == false) {
     cliPrintLine("Saving unsuccessful, trying force save...");
-    if (cc_format_save() == false){
+    if (cc_format_save() == false) {
       cliPrintLine("Force save failed!");
       return;
     }
@@ -345,13 +438,14 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value) {
   }
 }
 
-static void print_sensor_state(){
+static void print_sensor_state() {
   const lookupTableEntry_t *p_boot_table = &lookupTables[TABLE_BOOTSTATE];
   const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
   cliPrintf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
-  cliPrintf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state-1]);
-  cliPrintf("Voltage: %d.%02dV\n",(int)battery_voltage(),(int)(battery_voltage()*100)%100);
-  cliPrintf("h: %dm, v: %dm/s, a: %dm/s^2", (int)global_kf_data.height, (int)global_kf_data.velocity, (int)global_kf_data.acceleration);
+  cliPrintf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state - 1]);
+  cliPrintf("Voltage: %d.%02dV\n", (int)battery_voltage(), (int)(battery_voltage() * 100) % 100);
+  cliPrintf("h: %dm, v: %dm/s, a: %dm/s^2", (int)global_kf_data.height, (int)global_kf_data.velocity,
+            (int)global_kf_data.acceleration);
 }
 
 static void print_action_config() {
@@ -538,16 +632,13 @@ static void cliPrintVarRange(const clivalue_t *var) {
       switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT32:
           cliPrintLinef("Allowed range: 0 - %lu", var->config.u32Max);
-
           break;
         case VAR_UINT8:
         case VAR_UINT16:
           cliPrintLinef("Allowed range: %d - %d", var->config.minmaxUnsigned.min, var->config.minmaxUnsigned.max);
-
           break;
         default:
           cliPrintLinef("Allowed range: %d - %d", var->config.minmax.min, var->config.minmax.max);
-
           break;
       }
     } break;
@@ -766,9 +857,7 @@ static void cliSet(const char *cmdName, char *cmdline) {
   }
 }
 
-static void cliStatus(const char *cmdName, char *cmdline) {
-  print_sensor_state();
-}
+static void cliStatus(const char *cmdName, char *cmdline) { print_sensor_state(); }
 
 static void cliVersion(const char *cmdName, char *cmdline) {}
 
@@ -802,14 +891,7 @@ static void cliHelp(const char *cmdName, char *cmdline) {
   }
 }
 
-void cliPrint(const char *str) {
-  while (*str) {
-    while (fifo_write(cli_out, *str++) == false) {
-      osDelay(1);
-      str--;
-    }
-  }
-}
+void cliPrint(const char *str) { fifo_write_str(cli_out, str); }
 
 static void cliPrompt(void) { cliPrintf("\r\n^._.^:%s> ", cwd); }
 
@@ -1009,7 +1091,7 @@ static void processCharacterInteractive(const char c) {
       cliBuffer[--bufferIndex] = 0;
       cliPrint("\010 \010");
     }
-  } else if (c == 27) { // ESC character is called from the up arrow, we only look at the first of 3 characters
+  } else if (c == 27) {  // ESC character is called from the up arrow, we only look at the first of 3 characters
     // up arrow
     while (bufferIndex) {
       cliBuffer[--bufferIndex] = 0;

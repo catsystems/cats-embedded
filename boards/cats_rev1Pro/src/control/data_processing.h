@@ -18,4 +18,9 @@
 
 #pragma once
 
+#include <stdint.h>
+
 float median(float array[], int array_size);
+
+/* */
+int32_t log2_32(uint32_t value);

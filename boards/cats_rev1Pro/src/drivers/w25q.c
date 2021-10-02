@@ -326,7 +326,7 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
   return W25Q_OK;
 }
 
-w25q_status_e w25q_sector_erase(uint32_t sector_address) {
+w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressSize = QSPI_ADDRESS_32_BITS,
@@ -337,7 +337,7 @@ w25q_status_e w25q_sector_erase(uint32_t sector_address) {
       .AddressMode = QSPI_ADDRESS_1_LINE,
       .DataMode = QSPI_DATA_NONE,
       .DummyCycles = 0,
-      .Address = sector_address,
+      .Address = sector_idx * w25q.sector_size,
       .Instruction = W25Q_CMD_SECTOR_ERASE,
   };
 
@@ -357,11 +357,11 @@ w25q_status_e w25q_sector_erase(uint32_t sector_address) {
   return W25Q_OK;
 }
 
-bool w25q_is_sector_empty(uint32_t sector_address) {
+bool w25q_is_sector_empty(uint32_t sector_idx) {
   uint8_t buf[32] = {};
   uint32_t i;
   bool sector_empty = true;
-  uint32_t curr_address = sector_address;
+  uint32_t curr_address = sector_idx * w25q.sector_size;
   for (i = 0; (i < w25q.sector_size) && sector_empty; i += 32) {
     w25q_read_buffer(buf, curr_address, 32);
     for (uint32_t x = 0; x < 32; x++) {
@@ -375,7 +375,9 @@ bool w25q_is_sector_empty(uint32_t sector_address) {
   return sector_empty;
 }
 
-w25q_status_e w25q_block_erase_32k(uint32_t sector_address) {
+/* TODO: Since blocks on W25Q are 64k and this function accepts a block index this means that it can only erase the
+ * first halves of 64k blocks. This should be fixed if this function gets used at some point. */
+w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
   QSPI_CommandTypeDef s_command = {.InstructionMode = QSPI_INSTRUCTION_1_LINE,
                                    .AddressSize = QSPI_ADDRESS_32_BITS,
                                    .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
@@ -385,7 +387,7 @@ w25q_status_e w25q_block_erase_32k(uint32_t sector_address) {
                                    .AddressMode = QSPI_ADDRESS_1_LINE,
                                    .DataMode = QSPI_DATA_NONE,
                                    .DummyCycles = 0,
-                                   .Address = sector_address,
+                                   .Address = block_idx * w25q.block_size,
                                    .Instruction = W25Q_CMD_BLOCK_ERASE_32K};
 
   if (w25q_write_enable() != W25Q_OK) {
@@ -404,7 +406,7 @@ w25q_status_e w25q_block_erase_32k(uint32_t sector_address) {
   return W25Q_OK;
 }
 
-w25q_status_e w25q_block_erase_64k(uint32_t sector_address) {
+w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
   QSPI_CommandTypeDef s_command = {
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressSize = QSPI_ADDRESS_32_BITS,
@@ -415,7 +417,7 @@ w25q_status_e w25q_block_erase_64k(uint32_t sector_address) {
       .AddressMode = QSPI_ADDRESS_1_LINE,
       .DataMode = QSPI_DATA_NONE,
       .DummyCycles = 0,
-      .Address = sector_address,
+      .Address = block_idx * w25q.block_size,
       .Instruction = W25Q_CMD_BLOCK_ERASE_64K,
   };
 
@@ -503,7 +505,7 @@ w25q_status_e w25q_write_page(uint8_t *buf, uint32_t write_addr, uint16_t num_by
   }
   // Write command
   if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-    return W25Q_ERR_TRANSMIT;
+    return W25Q_ERR_TRANSMIT_CMD;
   }
   // Start data transfer
   if (HAL_QSPI_Transmit(&hqspi, buf, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -533,6 +535,7 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
   end_addr = write_addr + num_bytes_to_write;
   write_data = buf;
 
+  w25q_status_e write_err = W25Q_OK;
   do {
     // Send write enable
     if (w25q_write_enable() != W25Q_OK) {
@@ -540,8 +543,8 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
     }
 
     // Write data by page
-    else if (w25q_write_page(write_data, current_addr, current_size) != W25Q_OK) {
-      return W25Q_ERR_TRANSMIT;
+    else if ((write_err = w25q_write_page(write_data, current_addr, current_size)) != W25Q_OK) {
+      return write_err;
     }
     // Use the automatic polling flag bit to wait for the end of the write
     else if (w25q_auto_polling_mem_ready() != W25Q_OK) {
@@ -577,7 +580,7 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
 
   // Send read command
   if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-    return W25Q_ERR_TRANSMIT;
+    return W25Q_ERR_TRANSMIT_CMD;
   }
 
   //	receive data
@@ -592,6 +595,6 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
   return W25Q_OK;
 }
 
-uint32_t w25q_sector_to_page(uint32_t sector_num) { return (sector_num * w25q.sector_size) / w25q.page_size; }
+uint32_t w25q_sector_to_page(uint32_t sector_idx) { return (sector_idx * w25q.sector_size) / w25q.page_size; }
 
-uint32_t w25q_block_to_page(uint32_t block_num) { return (block_num * w25q.block_size) / w25q.page_size; }
+uint32_t w25q_block_to_page(uint32_t block_idx) { return (block_idx * w25q.block_size) / w25q.page_size; }

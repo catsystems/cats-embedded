@@ -41,3 +41,5 @@ bool fifo_read_bytes(fifo_t *fifo, uint8_t *data, uint32_t count);
 uint32_t fifo_read_until(fifo_t *fifo, uint8_t *data, uint8_t delimiter, uint32_t count);
 
 bool fifo_write_bytes(fifo_t *fifo, uint8_t *data, uint32_t count);
+
+void fifo_write_str(fifo_t *fifo, const char *str);
