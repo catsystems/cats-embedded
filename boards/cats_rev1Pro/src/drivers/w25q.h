@@ -62,6 +62,7 @@ typedef enum {
   W25Q_ERR_AUTOPOLLING,
   W25Q_ERR_ERASE,
   W25Q_ERR_TRANSMIT,
+  W25Q_ERR_TRANSMIT_CMD,
   W25Q_ERR_INVALID_PARAM
 } w25q_status_e;
 
@@ -88,29 +89,28 @@ w25q_status_e w25q_reset(void);
 w25q_status_e w25q_read_id(uint32_t *device_id);
 
 /**
- * Erases a 4K sector on the given address.
- * The addresses should be given
+ * Erases a given 4K sector.
  *
- * @param sector_address - Address of the sector to be erased
+ * @param sector_idx - Index of the sector to be erased
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_sector_erase(uint32_t sector_address);
+w25q_status_e w25q_sector_erase(uint32_t sector_idx);
 
 /**
- * Erases a 32K block on the given address.
+ * Erases a given 32K block.
  *
- * @param sector_address - Address of the 32K block to be deleted
+ * @param block_idx - Address of the 32K block to be deleted
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_block_erase_32k(uint32_t sector_address);
+w25q_status_e w25q_block_erase_32k(uint32_t block_idx);
 
 /**
- * Erases a 64K block on the given address.
+ * Erases a given 64K block.
  *
- * @param sector_address - Address of the 64K block to be delted
+ * @param block_idx - Address of the 64K block to be deleted
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_block_erase_64k(uint32_t sector_address);
+w25q_status_e w25q_block_erase_64k(uint32_t block_idx);
 
 /**
  * Erase the entire chip.
@@ -165,9 +165,9 @@ uint32_t w25q_block_to_page(uint32_t block_num);
 /**
  * Check whether a given sector is empty.
  *
- * @param sector_address - Address of the sector
+ * @param sector_idx - Index of the sector
  * @return true if the sector is empty, false otherwise
  */
-bool w25q_is_sector_empty(uint32_t sector_address);
+bool w25q_is_sector_empty(uint32_t sector_idx);
 
 extern w25q_t w25q;

@@ -114,7 +114,7 @@ uint32_t fifo_read_until(fifo_t *fifo, uint8_t *data, uint8_t delimiter, uint32_
 }
 
 bool fifo_write_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
-  // If there is not enough space return 0
+  // If there is not enough space return false
   if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
     if ((fifo->size - fifo->used) < count) {
       osSemaphoreRelease(fifo->semaphore_id);
@@ -134,4 +134,13 @@ bool fifo_write_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
     return true;
   }
   return false;
+}
+
+void fifo_write_str(fifo_t *fifo, const char *str) {
+  while (*str) {
+    while (fifo_write(fifo, *str++) == false) {
+      osDelay(1);
+      str--;
+    }
+  }
 }
