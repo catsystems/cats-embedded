@@ -26,7 +26,7 @@ The best way to get started is to join our [Discord](https://discord.gg/H9Caj8Xe
 ## Open Source
 All CATS code is open source and can be used free of charge without warranty. 
 
-The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betaflight), so thanks goes to all those whom have contributed to Cleanflight and Betaflight. 
+The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betaflight), so thanks goes to all the contributors of Cleanflight and Betaflight. 
 
 ## Pushing to Remote Repository
 In order to ensure consistency and easier diff review between commits,
