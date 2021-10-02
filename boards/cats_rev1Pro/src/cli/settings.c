@@ -58,24 +58,23 @@ const clivalue_t valueTable[] = {
     {"timer1_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[0].end_event},
     {"timer1_duration", VAR_UINT16, .config.minmaxUnsigned = {0, 60000}, &global_cats_config.config.timers[0].duration},
-
     {"timer2_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[1].start_event},
     {"timer2_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[1].end_event},
     {"timer2_duration", VAR_UINT16, .config.minmaxUnsigned = {0, 60000}, &global_cats_config.config.timers[1].duration},
-
     {"timer3_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[2].start_event},
     {"timer3_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[2].end_event},
     {"timer3_duration", VAR_UINT16, .config.minmaxUnsigned = {0, 60000}, &global_cats_config.config.timers[2].duration},
-
     {"timer4_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[3].start_event},
     {"timer4_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[3].end_event},
     {"timer4_duration", VAR_UINT16, .config.minmaxUnsigned = {0, 60000}, &global_cats_config.config.timers[3].duration},
+
+    // Events
     {"ev_moving", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_MOVING]},
     {"ev_ready", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_IDLE]},
     {"ev_liftoff", VAR_INT16 | MODE_ARRAY, .config.array.length = 16,
@@ -90,6 +89,8 @@ const clivalue_t valueTable[] = {
      global_cats_config.config.action_array[EV_CUSTOM_1]},
     {"ev_custom2", VAR_INT16 | MODE_ARRAY, .config.array.length = 16,
      global_cats_config.config.action_array[EV_CUSTOM_2]},
+
+    // Servo position
     {"servo1_init_pos", VAR_INT16, .config.minmaxUnsigned = {0, 180},
      &global_cats_config.config.initial_servo_position[0]},
     {"servo2_init_pos", VAR_INT16, .config.minmaxUnsigned = {0, 180},
