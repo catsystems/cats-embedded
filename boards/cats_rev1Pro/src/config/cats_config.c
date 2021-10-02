@@ -18,7 +18,7 @@
 
 #include "config/cats_config.h"
 #include "util/log.h"
-#include "drivers/eeprom_emul.h"
+#include "eeprom_emul.h"
 #include "util/actions.h"
 
 const cats_config_u DEFAULT_CONFIG = {

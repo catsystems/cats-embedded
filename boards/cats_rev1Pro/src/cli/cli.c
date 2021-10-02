@@ -38,7 +38,7 @@
 static uint32_t bufferIndex = 0;
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
-static char oldcliBuffer[CLI_IN_BUFFER_SIZE];
+static char oldCliBuffer[CLI_IN_BUFFER_SIZE];
 
 static fifo_t *cli_in;
 static fifo_t *cli_out;
@@ -961,7 +961,7 @@ static void processCharacter(const char c) {
       }
       bufferIndex = 0;
     }
-    memcpy(oldcliBuffer, cliBuffer, sizeof(cliBuffer));
+    memcpy(oldCliBuffer, cliBuffer, sizeof(cliBuffer));
     memset(cliBuffer, 0, sizeof(cliBuffer));
     cliPrompt();
 
@@ -975,6 +975,7 @@ static void processCharacter(const char c) {
 }
 
 static void processCharacterInteractive(const char c) {
+  // We ignore a few characters, this is only used for the up arrow
   static uint16_t ignore = 0;
   if (ignore) {
     ignore--;
@@ -1033,16 +1034,17 @@ static void processCharacterInteractive(const char c) {
       cliBuffer[--bufferIndex] = 0;
       cliPrint("\010 \010");
     }
-  } else if (c == 27) {
+  } else if (c == 27) { // ESC character is called from the up arrow, we only look at the first of 3 characters
     // up arrow
     while (bufferIndex) {
       cliBuffer[--bufferIndex] = 0;
       cliPrint("\010 \010");
     }
-    for (int i = 0; i < sizeof(oldcliBuffer); i++) {
-      if (oldcliBuffer[i] == 0) break;
-      processCharacter(oldcliBuffer[i]);
+    for (int i = 0; i < sizeof(oldCliBuffer); i++) {
+      if (oldCliBuffer[i] == 0) break;
+      processCharacter(oldCliBuffer[i]);
     }
+    // Ignore the following characters
     ignore = 2;
   } else {
     processCharacter(c);
