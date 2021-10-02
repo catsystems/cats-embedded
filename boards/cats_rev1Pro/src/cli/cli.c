@@ -33,7 +33,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <ctype.h>
-#define CLI_IN_BUFFER_SIZE  256
+#define CLI_IN_BUFFER_SIZE  128
 #define CLI_OUT_BUFFER_SIZE 256
 
 static uint32_t bufferIndex = 0;
@@ -112,12 +112,12 @@ static void cliEnable(const char *cmdName, char *cmdline);
 
 const clicmd_t cmdTable[] = {
     // CLI_COMMAND_DEF("bl", "reboot into bootloader", "[rom]", cliBootloader),
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave|show]", cliDefaults),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
-    CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
+    CLI_COMMAND_DEF("exit", "reboot without saving", NULL, cliExit),
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
-    CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+    CLI_COMMAND_DEF("save", "save configuration", NULL, cliSave),
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
@@ -132,8 +132,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cliLs),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cliCd),
     CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cliLfsFormat),
-    CLI_COMMAND_DEF("config", "print and edit the flight config", "[print|reset|add] {event} {action} {arg}",
-                    cliConfig),
+    CLI_COMMAND_DEF("config", "print the flight config", NULL, cliConfig),
 };
 
 static void cliLfsFormat(const char *cmdName, char *cmdline) {
@@ -271,6 +270,7 @@ static void cliSave(const char *cmdName, char *cmdline) {
     cliPrintLine("Saving unsuccessful, trying force save...");
     if (cc_format_save() == false){
       cliPrintLine("Force save failed!");
+      return;
     }
   }
   cliPrintLine("Successfully written to flash");
@@ -361,13 +361,13 @@ static void print_action_config() {
   cliPrintf("\n * ACTION CONFIGURATION *\n");
   config_action_t action;
   for (int i = 0; i < NUM_EVENTS; i++) {
-    int nr_actions = cc_get_action_number(i);
+    int nr_actions = cc_get_num_actions(i);
     if (nr_actions > 0) {
       cliPrintf("\n%s\n", p_event_table->values[i]);
       cliPrintf("   Number of Actions: %d\n", nr_actions);
       for (int j = 0; j < nr_actions; j++) {
-        cc_get_action(i, (int16_t)j, &action);
-        cliPrintf("     %s - %d\n", p_action_table->values[action.action_pointer], action.arg);
+        cc_get_action(i, j, &action);
+        cliPrintf("     %s - %d\n", p_action_table->values[action.action_idx], action.arg);
       }
     }
   }
@@ -377,7 +377,7 @@ static void print_timer_config() {
   const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
 
   cliPrintf("\n\n * TIMER CONFIGURATION *\n");
-  for (int i = 0; i < num_timers; i++) {
+  for (int i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.config.timers[i].duration > 0) {
       cliPrintf("\nTIMER %d\n", i + 1);
       cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
@@ -509,32 +509,6 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd) {
   }
 
   return bufEnd - bufBegin;
-}
-
-uint16_t cli_get_event_index(char *name, uint8_t length) {
-  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
-  for (uint32_t i = 0; i < 9; i++) {
-    const char *settingName = p_event_table->values[i];
-
-    // ensure exact match when setting to prevent setting variables with shorter names
-    if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
-      return i;
-    }
-  }
-  return valueTableEntryCount;
-}
-
-uint16_t cli_get_action_index(char *name, uint8_t length) {
-  const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_ACTIONS];
-  for (uint32_t i = 0; i < 17; i++) {
-    const char *settingName = p_event_table->values[i];
-
-    // ensure exact match when setting to prevent setting variables with shorter names
-    if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
-      return i;
-    }
-  }
-  return valueTableEntryCount;
 }
 
 uint16_t cliGetSettingIndex(char *name, uint8_t length) {
@@ -962,7 +936,7 @@ static void processCharacter(const char c) {
       }
       bufferIndex = 0;
     }
-    memcpy(oldCliBuffer, cliBuffer, sizeof(cliBuffer));
+    strncpy(oldCliBuffer, cliBuffer, sizeof(cliBuffer));
     memset(cliBuffer, 0, sizeof(cliBuffer));
     cliPrompt();
 

@@ -111,8 +111,8 @@ MMC5983MA MAG = {
     .sample_rate = MMC5983MA_ODR_100Hz,
     .bandwidth = MMC5983MA_BW_100Hz,
     .setreset = MMC5983MA_SET_1000,
-    .mag_bias = {0.0108642578, 0.0267333984, 0.0308837891},
-    .mag_scale = {0.986369789, 1.03176177, 0.983317614},
+    .mag_bias = {0.0108642578f, 0.0267333984f, 0.0308837891f},
+    .mag_scale = {0.986369789f, 1.03176177f, 0.983317614f},
 };
 
 fifo_t usb_input_fifo;
@@ -140,8 +140,7 @@ drop_test_fsm_t global_drop_test_state = {.flight_state = DT_IDLE};
 dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
 /** Timers **/
-uint32_t num_timers = 8;
-cats_timer_t ev_timers[8] = {};
+cats_timer_t ev_timers[NUM_TIMERS] = {};
 
 /** Recorder Queue **/
 osMessageQueueId_t rec_queue;

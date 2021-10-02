@@ -112,9 +112,9 @@ bool cc_save() {
  * @param event -
  * @return number of actions mapped to event
  */
-int16_t cc_get_action_number(cats_event_e event) {
-  int16_t i = 0;
-  int16_t nr_actions;
+uint16_t cc_get_num_actions(cats_event_e event) {
+  uint16_t i = 0;
+  uint16_t nr_actions;
   if (event > (NUM_EVENTS-1)) return 0;
   // Count the number of entries
   while((global_cats_config.config.action_array[event][i] != 0) && (i < 16)) {
@@ -131,15 +131,15 @@ int16_t cc_get_action_number(cats_event_e event) {
  * @param action
  * @return
  */
-bool cc_get_action(cats_event_e event, int16_t id, config_action_t* action) {
-  if (cc_get_action_number(event) < (id + 1)) return false;
+bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action) {
+  if ((action == NULL) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
 
-  int16_t p = global_cats_config.config.action_array[event][id*2];
-  int16_t a = global_cats_config.config.action_array[event][id*2+1];
+  int16_t idx = global_cats_config.config.action_array[event][act_idx*2];
+  int16_t arg = global_cats_config.config.action_array[event][act_idx*2+1];
 
-  if(p > 0 && p <= NUM_ACTION_FUNCTIONS){
-    action->action_pointer = p;
-    action->arg = a;
+  if(idx > 0 && idx <= NUM_ACTION_FUNCTIONS){
+    action->action_idx = idx;
+    action->arg = arg;
     return true;
   }
   return false;

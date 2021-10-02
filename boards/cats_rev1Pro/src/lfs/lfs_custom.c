@@ -139,7 +139,7 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
   return LFS_ERR_CORRUPT;
 }
 static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block) {
-  if (w25q_sector_erase(block * w25q.sector_size) == W25Q_OK) {
+  if (w25q_sector_erase(block) == W25Q_OK) {
     return 0;
   }
   return LFS_ERR_CORRUPT;

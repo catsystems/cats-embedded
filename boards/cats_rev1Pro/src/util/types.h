@@ -24,6 +24,11 @@
 #include "cmsis_os2.h"
 #include "config/control_config.h"
 
+/** DEFINES **/
+
+#define NUM_EVENTS 9
+#define NUM_TIMERS 4
+
 /** BASIC TYPES **/
 
 /* Timestamp */
@@ -215,7 +220,7 @@ typedef struct {
 } config_timer_t;
 
 typedef struct {
-  int16_t action_pointer;
+  int16_t action_idx;
   int16_t arg;
 } config_action_t;
 
@@ -227,13 +232,13 @@ typedef enum {
   CATS_BUZZ_CHANGED_READY,
 } buzzer_status_e;
 
-typedef bool (*peripheral_act_fp)(int32_t);
+typedef bool (*peripheral_act_fp)(int16_t);
 
 typedef struct {
   /* Action function pointer */
   peripheral_act_fp func_ptr;
   /* Action function argument */
-  int32_t func_arg;
+  int16_t func_arg;
 } peripheral_act_t;
 
 typedef struct {
@@ -242,8 +247,6 @@ typedef struct {
   /* List of actions tied to an event */
   peripheral_act_t *action_list;
 } event_action_map_elem_t;
-
-#define NUM_EVENTS 9
 
 typedef enum {
   EV_MOVING = 0,
