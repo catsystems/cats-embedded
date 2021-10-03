@@ -52,6 +52,8 @@ const clivalue_t valueTable[] = {
      &global_cats_config.config.control_settings.main_altitude},
     {"acc_threshhold", VAR_UINT16, .config.minmaxUnsigned = {1500, 8000},
      &global_cats_config.config.control_settings.liftoff_acc_threshold},
+    {"mach_timer_duration", VAR_UINT16, .config.minmaxUnsigned = {0, 60000},
+            &global_cats_config.config.control_settings.mach_timer_duration},
 
     // Timers
     {"timer1_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},

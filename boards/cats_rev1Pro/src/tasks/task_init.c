@@ -374,8 +374,15 @@ static void init_timers() {
     }
   }
 
+  /* Init mach Timer */
+  mach_timer.timer_init_event = EV_LIFTOFF;
+  mach_timer.execute_event = EV_MACHTIMER;
+  mach_timer.timer_duration_ticks = global_cats_config.config.control_settings.mach_timer_duration;
+
   /* Create Timers */
   for (uint32_t i = 0; i < used_timers; i++) {
     ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
   }
+  /* Create mach timer */
+  mach_timer.timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
 }
