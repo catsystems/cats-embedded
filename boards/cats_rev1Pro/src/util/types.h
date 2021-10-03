@@ -210,6 +210,7 @@ typedef struct {
 
 typedef struct {
   uint16_t liftoff_acc_threshold;
+  uint16_t mach_timer_duration;
   uint16_t main_altitude;
 } control_settings_t;
 
@@ -258,6 +259,7 @@ typedef enum {
   EV_TOUCHDOWN,
   EV_CUSTOM_1,
   EV_CUSTOM_2,
+  EV_MACHTIMER,
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 

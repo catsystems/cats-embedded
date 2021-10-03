@@ -70,7 +70,6 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
       if (max_a < global_kf_data.acceleration) max_a = global_kf_data.acceleration;
       if (max_h < global_kf_data.height) max_h = global_kf_data.height;
     }
-
     if (global_flight_state.state_changed == 1) {
       log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);
       flight_state_t flight_state = {.ts = osKernelGetTickCount(),

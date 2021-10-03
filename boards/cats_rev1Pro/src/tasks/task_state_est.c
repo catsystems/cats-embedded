@@ -130,27 +130,29 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     transform_data(&state_data, &filter, &calibration, &new_fsm_enum);
     raw_accel = 0;
     raw_altitude_AGL = 0;
-    for (int i = 0; i < 3; i++) {
-      if (elimination.faulty_accel[i] == 0) {
-        raw_accel += state_data.acceleration[i] / (float)(elimination.num_faulty_accel);
+      uint8_t num_faulty_imus = 0;
+      if (elimination.faulty_accel[HIGH_G_ACC_INDEX] == 1) {
+          num_faulty_imus = elimination.num_faulty_accel - 1;
+      } else {
+          num_faulty_imus = elimination.num_faulty_accel;
       }
-      if (elimination.faulty_baro[i] == 0) {
-        raw_altitude_AGL += state_data.calculated_AGL[i] / (float)(elimination.num_faulty_baros);
+      for (uint8_t i = 0; i < NUM_IMU; i++) {
+          if (elimination.faulty_accel[i] == 0) {
+              raw_accel += state_data.acceleration[i] / (float)(NUM_IMU - num_faulty_imus);
+          }
       }
-    }
+      for (uint8_t i = 0; i < NUM_PRESSURE; i++) {
+          if (elimination.faulty_baro[i] == 0) {
+              raw_altitude_AGL += state_data.calculated_AGL[i] / (float)(NUM_PRESSURE - elimination.num_faulty_baros);
+          }
+      }
 
     /* Filter Data */
 #ifdef USE_MEDIAN_FILTER
     median_filter(&filter_data, &state_data);
     float filtered_acc = 0;
     float filtered_AGL = 0;
-    uint8_t num_faulty_imus;
 
-    if (elimination.faulty_accel[HIGH_G_ACC_INDEX] == 1) {
-      num_faulty_imus = elimination.num_faulty_accel - 1;
-    } else {
-      num_faulty_imus = elimination.num_faulty_accel;
-    }
     for (uint8_t i = 0; i < NUM_IMU; i++) {
       if (elimination.faulty_accel[i] == 0) {
         filtered_acc += state_data.acceleration[i] / (float)(NUM_IMU - num_faulty_imus);
@@ -219,11 +221,12 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 #endif
 #ifdef USE_ORIENTATION_FILTER
     /* DO ORIENTATION Filter */
+    /*
     log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", (int32_t)(orientation_filter.estimate_data[0] * 1000),
               (int32_t)(orientation_filter.estimate_data[1] * 1000),
               (int32_t)(orientation_filter.estimate_data[2] * 1000),
               (int32_t)(orientation_filter.estimate_data[3] * 1000));
-
+    */
     for (uint8_t i = 0; i < 4; i++) {
       orientation_info.raw_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
       orientation_info.estimated_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
@@ -231,7 +234,6 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 
     record(ORIENTATION_INFO, &orientation_info);
 #endif
-
     /* Log Covariance Data of KF */
     covariance_info_t cov_info = {.ts = ts, .height_cov = filter.P_bar.pData[1], .velocity_cov = filter.P_bar.pData[5]};
     record(COVARIANCE_INFO, &cov_info);

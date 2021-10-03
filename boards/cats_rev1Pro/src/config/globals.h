@@ -83,6 +83,7 @@ extern dt_telemetry_trigger_t dt_telemetry_trigger;
 
 /** Timers **/
 extern cats_timer_t ev_timers[NUM_TIMERS];
+extern cats_timer_t mach_timer;
 
 /** Recorder Queue **/
 extern osMessageQueueId_t rec_queue;

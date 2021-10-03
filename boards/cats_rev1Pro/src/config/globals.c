@@ -141,6 +141,7 @@ dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};
+cats_timer_t mach_timer = {};
 
 /** Recorder Queue **/
 osMessageQueueId_t rec_queue;

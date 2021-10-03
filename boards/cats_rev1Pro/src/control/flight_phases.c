@@ -160,7 +160,6 @@ static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, cont
   if (fsm_state->memory[1] > TIME_THRESHOLD_IDLE_TO_MOV) {
     trigger_event(EV_MOVING);
     fsm_state->flight_state = MOVING;
-    fsm_state->state_changed = 1;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -238,6 +237,11 @@ static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t
 }
 
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+
+    if(osTimerIsRunning(mach_timer.timer_id)){
+        return;
+    }
+
   if (state_data->velocity < 0) {
     fsm_state->memory[1]++;
   }
