@@ -140,6 +140,12 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   init_lfs();
 
+
+  adc_init();
+  osDelay(100);
+  battery_monitor_init();
+
+
   create_event_map();
   init_timers();
 
@@ -151,12 +157,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   servo_start(&SERVO1);
   servo_start(&SERVO2);
-  // adc test
-  adc_init();
-  osDelay(100);
-  battery_monitor_init();
-  buzzer_queue_status(CATS_BUZZ_BOOTUP);
 
+  buzzer_queue_status(CATS_BUZZ_BOOTUP);
   // Fifo init
   fifo_init(&usb_input_fifo, usb_fifo_in_buffer, USB_INPUT_BUFFER_SIZE);
   fifo_init(&usb_output_fifo, usb_fifo_out_buffer, USB_OUTPUT_BUFFER_SIZE);
@@ -307,9 +309,9 @@ static void init_imu() {
   //#define CALIBRATE_ACCEL
 
 #ifdef CALIBRATE_ACCEL
-  icm20601_accel_calib(&ICM1, 2);  // Axis 0 = x, 1 = y, 2 = z
-  icm20601_accel_calib(&ICM2, 2);
-  icm20601_accel_calib(&ICM3, 2);
+  osDelay(100);
+  icm20601_accel_calib(&ICM1);  // Axis 0 = x, 1 = y, 2 = z
+  icm20601_accel_calib(&ICM2);
 #endif
 }
 
@@ -329,7 +331,7 @@ static void init_magneto() {
 }
 
 static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 3500);
+  buzzer_set_freq(&BUZZER, 3200);
   buzzer_set_volume(&BUZZER, 60);
 }
 

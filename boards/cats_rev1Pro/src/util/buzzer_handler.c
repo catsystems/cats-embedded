@@ -21,6 +21,7 @@
 #include "util/types.h"
 #include "config/globals.h"
 #include "util/error_handler.h"
+#include "control/data_processing.h"
 
 // TODO right now this file only supports errors, should be updated to support
 // all buzzer things
@@ -29,6 +30,7 @@
 
 uint8_t status_buzzer(buzzer_status_e status);
 
+// Never buzz bellow 1000Hz and above 3400Hz!
 uint32_t pitch_lookup[8] = {
     2349,  // D A
     2489,  // D# B
@@ -36,11 +38,11 @@ uint32_t pitch_lookup[8] = {
     2793,  // F D
     2959,  // F# E
     3135,  // G F
-    880,   // Error G
+    1200,   // Error G
     2217,  // C#  H
 };
 
-const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH] = {
+const char cats_error_codes[16][BUZZER_COMMAND_MAX_LENGTH] = {
     "gGgGgG",  // Error start
     "G",       // no config
     "GG",      // no pyro detected
@@ -48,19 +50,28 @@ const char cats_error_codes[11][BUZZER_COMMAND_MAX_LENGTH] = {
     "ggGG",    // usb connected
     "gG",      // battery low
     "ggG",     // battery critical
-    "gGG",     // imu error
-    "gGGG",    // baro error
+    "gGG",     // imu0 error
+    "gGG",     // imu1 error
+    "gGG",     // imu2 error
+    "gGGG",    // baro0 error
+    "gGGG",    // baro1 error
+    "gGGG",    // baro2 error
     "gGGGG",   // filter error
     "ggggg"    // hard fault
 };
 
 const char cats_status_codes[5][BUZZER_COMMAND_MAX_LENGTH] = {
-    " ", "caef", "aa", "Eca", "ace",
+    " ",
+    "caef", // bootup
+    "aa",   // ready
+    "Eca",  // ready -> moving
+    "ace",  // moving -> ready
 };
 
 static uint32_t status_queue_index = 0;
 static uint32_t status_queue_elements = 0;
 static buzzer_status_e status_queue[BUZZER_MAX_STATUS_QUEUE];
+uint8_t error_buzzer(cats_error_e error);
 
 bool buzzer_queue_status(buzzer_status_e status) {
   if (status_queue_elements < BUZZER_MAX_STATUS_QUEUE) {
@@ -72,11 +83,14 @@ bool buzzer_queue_status(buzzer_status_e status) {
 }
 
 void buzzer_handler_update() {
-  if (status_queue_elements > 0) {
+  static uint8_t error_started = 0;
+  if (status_queue_elements > 0 && get_error_count() == 0 && error_started == 0) {
     if (status_buzzer(status_queue[status_queue_index]) == 0) {
       status_queue_index = (status_queue_index + 1) % BUZZER_MAX_STATUS_QUEUE;
       status_queue_elements--;
     }
+  } else if(get_error_count()>0 || error_started == 1){
+    error_started = error_buzzer(log2_32(get_error_by_priority(0)));
   }
   buzzer_update(&BUZZER);
 }
@@ -141,8 +155,8 @@ uint8_t error_buzzer(cats_error_e error) {
   if (error) error_started = 1;
 
   if ((timeout < osKernelGetTickCount()) && error_started) {
-    buzzer_set_freq(&BUZZER, pitch_lookup[4]);
-    uint32_t duration;
+    buzzer_set_freq(&BUZZER, pitch_lookup[6]);
+    uint32_t duration = 0;
     if (stage == 0) {  // Beep error start
       if (i < 6) {
         if (cats_error_codes[0][i] == 'g')

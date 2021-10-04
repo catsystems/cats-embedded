@@ -109,14 +109,13 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (1) {
-    cats_error_e err = CATS_ERR_OK;
     new_fsm_enum = global_flight_state.flight_state;
     if (global_flight_state.flight_state == INVALID) {
       log_error("Invalid FSM state!");
     }
 
-    /* Reset IMU when we go from moving to IDLE */
-    if ((new_fsm_enum == IDLE) && (new_fsm_enum != old_fsm_enum)) {
+    /* Reset IMU when we go from moving to READY */
+    if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       reset_kalman(&filter, average_pressure);
       calibrate_imu(&average_imu, &calibration);
     }
@@ -273,7 +272,6 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 
     old_fsm_enum = new_fsm_enum;
 
-    error_handler(err);
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
@@ -402,7 +400,7 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
   /* If all accels are eliminated output Hard Fault */
   /* Todo: If we are already flying this not a hard fault! It is only a hard fault if we are in moving */
   if (elimination->num_faulty_accel == NUM_ACC) {
-    error_handler(CATS_ERR_HARD_FAULT);
+    add_error(CATS_ERR_FILTER);
   }
   /* If both IMU's were filtered out use accelerometer */
   /* Todo: This assumes that the index of the accel is larger than the index of the IMU's */
@@ -447,9 +445,9 @@ static void average_data(imu_data_t *rolling_imu, uint8_t *imu_counter, int32_t 
   /* First average the 3 Baro measurements if no Baros have been eliminated
    */
   int32_t global_average_pressure = 0;
-  /* If all Baros are eliminated this is a HardFault, always!*/
+  /* If all Baros are eliminated this is a Filter error, always!*/
   if (elimination->num_faulty_baros == NUM_PRESSURE) {
-    error_handler(CATS_ERR_HARD_FAULT);
+    add_error(CATS_ERR_FILTER);
   }
   for (int i = 0; i < NUM_PRESSURE; i++) {
     if (elimination->faulty_baro[i] == 0)

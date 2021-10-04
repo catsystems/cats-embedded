@@ -443,9 +443,9 @@ static void print_sensor_state() {
   const lookupTableEntry_t *p_event_table = &lookupTables[TABLE_EVENTS];
   cliPrintf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
   cliPrintf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state - 1]);
-  cliPrintf("Voltage: %d.%02dV\n", (int)battery_voltage(), (int)(battery_voltage() * 100) % 100);
-  cliPrintf("h: %dm, v: %dm/s, a: %dm/s^2", (int)global_kf_data.height, (int)global_kf_data.velocity,
-            (int)global_kf_data.acceleration);
+  cliPrintf("Voltage: %.2fV\n", (double)battery_voltage());
+  cliPrintf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_kf_data.height, (double)global_kf_data.velocity,
+            (double)global_kf_data.acceleration);
 }
 
 static void print_action_config() {

@@ -22,14 +22,52 @@
 
 #include <stdint.h>
 
-void error_handler(cats_error_e err) {
-  /* TODO: see if it makes sense to log from which task the error came from */
-  // osThreadId_t task_id = osThreadGetId();
+static uint32_t errors = 0;
+
+void add_error(cats_error_e err) {
   if (err != CATS_ERR_OK) {
-    log_error("Encountered error 0x%x", err);
-    // uint32_t ts = osKernelGetTickCount();
-    //    error_info_t error_info = {.ts = ts, .error = err};
-    //    record(ERROR_INFO, &error_info);
+    if(errors != (errors | err)){
+      log_error("Encountered error 0x%x", err);
+
+      errors |= err;
+
+      uint32_t ts = osKernelGetTickCount();
+      error_info_t error_info = {.ts = ts, .error = errors};
+      record(ERROR_INFO, &error_info);
+    }
   }
 }
+
+void clear_error(cats_error_e err) {
+  if(errors & err){
+    errors &= ~err;
+
+    uint32_t ts = osKernelGetTickCount();
+    error_info_t error_info = {.ts = ts, .error = errors};
+    record(ERROR_INFO, &error_info);
+  }
+}
+
+uint32_t get_error_count(){
+  uint32_t count = 0;
+  uint32_t mask = 0x00000001;
+  for(int i = 0; i < 32; i++){
+    if(errors & (mask << i)) count++;
+  }
+  return count;
+}
+
+cats_error_e get_error_by_priority(uint32_t id){
+  uint32_t count = 0;
+  uint32_t mask = 0x00000001;
+  for(int i = 31; i >= 0; i--){
+    if(errors & (mask << i)) {
+      count++;
+    }
+    if(count == (id+1))
+      return (cats_error_e)(mask << i);
+  }
+  return CATS_ERR_OK;
+}
+
 

@@ -20,6 +20,7 @@
 #include "tasks/task_imu_read.h"
 #include "sensors/icm20601.h"
 #include "sensors/mmc5983ma.h"
+#include "sensors/h3lis100dl.h"
 #include "util/recorder.h"
 #include "config/globals.h"
 #include "util/log.h"
@@ -83,6 +84,11 @@ void task_imu_read(void *argument) {
 
     /* Read and Save High-G IMU Data */
     /* Todo: Read High-G IMU Data */
+    int8_t tmp_data [3];
+    h3lis100dl_read_raw(&ACCEL, tmp_data);
+    accel_data.acc_x = tmp_data[0];
+    accel_data.acc_y = tmp_data[1];
+    accel_data.acc_z = tmp_data[2];
     memcpy(&(global_accel.acc_x), &(accel_data.acc_x), 3 * sizeof(int8_t));
     global_accel.ts = tick_count;
     record(ACCELEROMETER, &(global_accel));
@@ -114,11 +120,6 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *tem
       icm20601_read_accel_raw(&ICM2, acceleration);
       icm20601_read_gyro_raw(&ICM2, gyroscope);
       // icm20601_read_temp_raw(&ICM2, temperature);
-      break;
-    case 2:
-      icm20601_read_accel_raw(&ICM3, acceleration);
-      icm20601_read_gyro_raw(&ICM3, gyroscope);
-      // icm20601_read_temp_raw(&ICM3, temperature);
       break;
     default:
       break;

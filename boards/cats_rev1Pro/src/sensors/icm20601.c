@@ -21,6 +21,7 @@
 // *** Includes *** //
 
 #include "sensors/icm20601.h"
+#include <stdlib.h>
 
 /** Private Defines **/
 
@@ -102,9 +103,9 @@ static float get_accel_sensitivity(enum icm20601_accel_g accel_g);
 // Used to convert raw gyroscope readings to degrees per second.
 static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps);
 // Read bytes from MEMS
-static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData, uint16_t size);
+static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length);
 // Write bytes to MEMS
-static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData, uint16_t size);
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length);
 
 /** Exported Function Definitions **/
 
@@ -282,36 +283,53 @@ void icm20601_read_temp(const ICM20601 *dev, float *temp) {
                   // + 25degC
 }
 
-void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis) {
-  if (axis > 2) return;
+void icm20601_accel_calib(const ICM20601 *dev) {
+
   uint8_t accel_offset_8bit[2] = {0};
   int16_t accel_real[3] = {0};
-  uint8_t reg = REG_XA_OFFSET_H + (3 * axis);
+
+  int16_t accel_offset[3];
 
   // Read current offset
-  icm_read_bytes(dev, reg, accel_offset_8bit, 2);
-  int16_t accel_offset = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
+  for(int i = 0; i < 3; i++){
+    uint8_t reg = REG_XA_OFFSET_H + (3 * i);
+    icm_read_bytes(dev, reg, accel_offset_8bit, 2);
+    accel_offset[i] = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
 
-  // Remove first bit as it is reserved and not used
-  accel_offset = (int16_t)(accel_offset >> 1);
+    // Remove first bit as it is reserved and not used
+    accel_offset[i] = (int16_t)(accel_offset[i] >> 1);
+  }
 
   // Read acceleration from device
   icm20601_read_accel_raw(dev, accel_real);
 
+  uint8_t down_axis;
+  // Decide which axis is down
+  if(abs(accel_real[0]) > abs(accel_real[1]) && abs(accel_real[0]) > abs(accel_real[2])) down_axis = 0;
+  else if(abs(accel_real[1]) > abs(accel_real[0]) && abs(accel_real[1]) > abs(accel_real[2])) down_axis = 1;
+  else if(abs(accel_real[2]) > abs(accel_real[1]) && abs(accel_real[2]) > abs(accel_real[0])) down_axis = 2;
+
+
   // Do some calculations, the offset register is +- 16g
-  float diff = get_accel_sensitivity(dev->accel_g) - (float)accel_real[axis];
-  float scale = get_accel_sensitivity(dev->accel_g) / 2048.0f;
-  accel_offset = (int16_t)(accel_offset + (int16_t)(diff * scale));
+  for(int i = 0; i < 3; i++) {
+    float diff;
+    if (i == down_axis)
+      diff = get_accel_sensitivity(dev->accel_g) - (float)accel_real[i];
+    else
+      diff = -(float)accel_real[i];
+    float scale = get_accel_sensitivity(dev->accel_g) / 2048.0f;
+    accel_offset[i] = (int16_t)(accel_offset[i] + (int16_t)(diff * scale));
 
-  // Add the reserved bit back before setting the register
-  accel_offset = (int16_t)(accel_offset << 1);
+    // Add the reserved bit back before setting the register
+    accel_offset[i] = (int16_t)(accel_offset[i] << 1);
 
-  accel_offset_8bit[0] = ((accel_offset & 0xFF00) >> 8);
-  accel_offset_8bit[1] = (accel_offset & 0xFF);
+    accel_offset_8bit[0] = ((accel_offset[i] & 0xFF00) >> 8);
+    accel_offset_8bit[1] = (accel_offset[i] & 0xFF);
 
-  // Write to offset register
-  reg = REG_XA_OFFSET_H + (3 * axis);
-  icm_write_bytes(dev, reg, accel_offset_8bit, 2);
+    // Write to offset register
+    uint8_t reg = REG_XA_OFFSET_H + (3 * i);
+    icm_write_bytes(dev, reg, accel_offset_8bit, 2);
+  }
 }
 
 void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data) {
@@ -354,18 +372,17 @@ static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps) {
 }
 
 // Read bytes from MEMS
-static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData, uint16_t size) {
+static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length) {
   reg = reg | 0x80;
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
-  HAL_SPI_Receive(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
+  spi_transmit_receive(dev->spi, &reg, 1, data, length);
 }
 
 // Write bytes to MEMS
-static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *pData, uint16_t size) {
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(dev->spi_bus, &reg, 1, IMU20601_SPI_TIMEOUT);
-  HAL_SPI_Transmit(dev->spi_bus, pData, size, IMU20601_SPI_TIMEOUT);
-  HAL_GPIO_WritePin(dev->cs_port, dev->cs_pin, GPIO_PIN_SET);
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length) {
+  uint8_t tmp[8];
+  tmp[0] = reg;
+  if(length < 8){
+    memcpy(&tmp[1], data, length);
+    spi_transmit(dev->spi, tmp, length+1);
+  }
 }
