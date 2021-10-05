@@ -54,7 +54,8 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
           }
       }
       peripheral_act_t* action_list = event_action_map[curr_event].action_list;
-      for (uint32_t i = 0; i < event_action_map[curr_event].num_actions; ++i) {
+      uint8_t num_actions = event_action_map[curr_event].num_actions;
+      for (uint32_t i = 0; i < num_actions; ++i) {
         timestamp_t curr_ts = osKernelGetTickCount();
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_list[i].func_ptr;
@@ -65,6 +66,11 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
           event_info_t event_info = {.ts = curr_ts, .event = curr_event, .action_idx = i};
           record(EVENT_INFO, &event_info);
         }
+      }
+      if (num_actions == 0){
+        timestamp_t curr_ts = osKernelGetTickCount();
+        event_info_t event_info = {.ts = curr_ts, .event = curr_event, .action_idx = 0xFF};
+        record(EVENT_INFO, &event_info);
       }
     }
   }
