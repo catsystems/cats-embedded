@@ -54,10 +54,12 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
       clear_error(CATS_ERR_BAT_CRITICAL);
       add_error(CATS_ERR_BAT_LOW);
     }
-    else {
+    else if (level_changed){
       clear_error(CATS_ERR_BAT_LOW);
       clear_error(CATS_ERR_BAT_CRITICAL);
     }
+
+    old_level = battery_level();
 
     // Periodically check pyros channels as long as we are on the ground
     if ((global_flight_state.flight_state < THRUSTING_1) && (pyro_check_timer >= 200)) {
