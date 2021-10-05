@@ -38,9 +38,10 @@ cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *
   for (uint8_t i = 0; i < NUM_ACC; i++) {
     status |= check_sensor_bounds(data, elimination, i, false);
     // Only check freezing on non high G accels
-    if(i != 2) status |= check_sensor_freezing(data, elimination, i, false);
+    if(i != HIGH_G_ACC_INDEX) status |= check_sensor_freezing(data, elimination, i, false);
     /* Accel is not faulty anymore */
     if (elimination->faulty_accel[i] == 1) {
+
       if (status == CATS_ERR_OK) {
         elimination->faulty_accel[i] = 0;
       }
@@ -168,7 +169,7 @@ static cats_error_e check_sensor_bounds(state_estimation_data_t *data, sensor_el
         status = error_status;
       }
       /* check if we are in high acceleration mode */
-      else if ((data->acceleration[index] > UPPER_BOUND_ACC) && (data->acceleration[index] < LOWER_BOUND_HIGH_G_ACC)) {
+      else if ((data->acceleration[index] > UPPER_BOUND_ACC) && (data->acceleration[index] < UPPER_BOUND_HIGH_G_ACC)) {
         elimination->high_acc = true;
       } else {
         elimination->high_acc = false;

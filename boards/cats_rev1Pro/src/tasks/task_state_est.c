@@ -146,6 +146,9 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
           }
       }
 
+      /* Check Sensor Readings (The Sensor Readings are checked before the median Filter!)*/
+      check_sensors(&state_data, &elimination);
+
     /* Filter Data */
 #ifdef USE_MEDIAN_FILTER
     median_filter(&filter_data, &state_data);
@@ -170,8 +173,7 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     record(FILTERED_DATA_INFO, &filtered_data_info);
 #endif
 
-    /* Check Sensor Readings (The Sensor Readings are checked after the median Filter!)*/
-    check_sensors(&state_data, &elimination);
+
 
     /* Write the elimination Data into the global variable */
     global_elimination_data = elimination;
@@ -305,7 +307,7 @@ static void transform_data(state_estimation_data_t *state_data, kalman_filter_t 
       /* Fill up state data with IMU and once this is done, continue filling up with accel data */
       for (uint8_t i = 0; i < NUM_ACC; i++) {
         if (i == HIGH_G_ACC_INDEX) {
-          state_data->acceleration[i] = (float)(global_accel.acc_y) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+          state_data->acceleration[i] = (float)(global_accel.acc_y) * (7.6640625f) / calibration->angle - GRAVITY;
         } else {
           state_data->acceleration[i] = (float)(global_imu[i].acc_y) / (1024) * GRAVITY / calibration->angle - GRAVITY;
         }
