@@ -86,8 +86,8 @@ void task_imu_read(void *argument) {
     /* Todo: Read High-G IMU Data */
     int8_t tmp_data [3];
     h3lis100dl_read_raw(&ACCEL, tmp_data);
-    accel_data.acc_x = tmp_data[0];
-    accel_data.acc_y = tmp_data[1];
+    accel_data.acc_x = tmp_data[1];
+    accel_data.acc_y = -tmp_data[0];
     accel_data.acc_z = tmp_data[2];
     memcpy(&(global_accel.acc_x), &(accel_data.acc_x), 3 * sizeof(int8_t));
     global_accel.ts = tick_count;

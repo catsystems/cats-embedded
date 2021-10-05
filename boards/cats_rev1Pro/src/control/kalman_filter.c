@@ -237,7 +237,10 @@ void kalman_prediction(kalman_filter_t *filter, state_estimation_data_t *data, s
       }
     }
   }
-  /* Todo: Scary >*/
+  if(counter_acc == 0){
+      return;
+  }
+
   if (fsm_state > APOGEE) {
     u = 0;
   } else {

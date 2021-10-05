@@ -296,7 +296,7 @@ static void transform_data(state_estimation_data_t *state_data, kalman_filter_t 
       /* Fill up state data with IMU and once this is done, continue filling up with accel data */
       for (uint8_t i = 0; i < NUM_ACC; i++) {
         if (i == HIGH_G_ACC_INDEX) {
-          state_data->acceleration[i] = (float)(global_accel.acc_x) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+          state_data->acceleration[i] = (float)(global_accel.acc_x) * (7.6640625f) / calibration->angle - GRAVITY;
         } else {
           state_data->acceleration[i] = (float)(global_imu[i].acc_x) / (1024) * GRAVITY / calibration->angle - GRAVITY;
         }
@@ -318,7 +318,7 @@ static void transform_data(state_estimation_data_t *state_data, kalman_filter_t 
       /* Fill up state data with IMU and once this is done, continue filling up with accel data */
       for (uint8_t i = 0; i < NUM_ACC; i++) {
         if (i == HIGH_G_ACC_INDEX) {
-          state_data->acceleration[i] = (float)(global_accel.acc_z) / (1024) * GRAVITY / calibration->angle - GRAVITY;
+          state_data->acceleration[i] = (float)(global_accel.acc_z) * (7.6640625f) / calibration->angle - GRAVITY;
         } else {
           state_data->acceleration[i] = (float)(global_imu[i].acc_z) / (1024) * GRAVITY / calibration->angle - GRAVITY;
         }
