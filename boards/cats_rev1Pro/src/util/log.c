@@ -117,7 +117,7 @@ void log_rawr(const char *format, ...) {
     va_end(argptr);
     CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
     osMutexRelease(print_mutex);
-    osDelay(2);
+    osDelay(5);
   }
 #endif
 }

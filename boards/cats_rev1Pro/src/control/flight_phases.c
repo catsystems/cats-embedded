@@ -226,6 +226,7 @@ static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t
   }
 
   if (fsm_state->memory[1] > COASTING_SAFETY_COUNTER) {
+    trigger_event(EV_MAX_V);
     fsm_state->flight_state = COASTING;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
