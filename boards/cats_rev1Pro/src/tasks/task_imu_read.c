@@ -83,8 +83,7 @@ void task_imu_read(void *argument) {
     record(MAGNETO, &magneto_data);
 
     /* Read and Save High-G IMU Data */
-    /* Todo: Read High-G IMU Data */
-    int8_t tmp_data [3];
+    int8_t tmp_data[3];
     h3lis100dl_read_raw(&ACCEL, tmp_data);
     accel_data.acc_x = tmp_data[1];
     accel_data.acc_y = -tmp_data[0];

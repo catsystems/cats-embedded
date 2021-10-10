@@ -36,6 +36,7 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
   uint32_t tick_count, tick_update;
   tick_count = osKernelGetTickCount();
   tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
   uint32_t pyro_check_timer = 0;
   flight_fsm_e old_fsm_state = MOVING;
@@ -46,15 +47,13 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
     battery_level_e level = battery_level();
     bool level_changed = (old_level != level);
 
-    if ((level == BATTERY_CRIT) && level_changed){
+    if ((level == BATTERY_CRIT) && level_changed) {
       clear_error(CATS_ERR_BAT_LOW);
       add_error(CATS_ERR_BAT_CRITICAL);
-    }
-    else if ((level == BATTERY_LOW) && level_changed){
+    } else if ((level == BATTERY_LOW) && level_changed) {
       clear_error(CATS_ERR_BAT_CRITICAL);
       add_error(CATS_ERR_BAT_LOW);
-    }
-    else if (level_changed){
+    } else if (level_changed) {
       clear_error(CATS_ERR_BAT_LOW);
       clear_error(CATS_ERR_BAT_CRITICAL);
     }
@@ -101,7 +100,7 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
 }
 
 /** Private Function Definitions **/
-static void check_high_current_channels(){
+static void check_high_current_channels() {
   bool error_encountered = false;
   // Loop over all events
   for (int ev_idx = 0; ev_idx < NUM_EVENTS; ev_idx++) {
@@ -111,28 +110,28 @@ static void check_high_current_channels(){
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
         config_action_t action;
-        if (cc_get_action(ev_idx, act_idx, &action) == true){
-          switch (action.action_idx){
+        if (cc_get_action(ev_idx, act_idx, &action) == true) {
+          switch (action.action_idx) {
             case ACT_HIGH_CURRENT_ONE:
-              if(adc_get(ADC_PYRO1) < 500) {
+              if (adc_get(ADC_PYRO1) < 500) {
                 add_error(CATS_ERR_NO_PYRO);
                 error_encountered = true;
               }
               break;
-              case ACT_HIGH_CURRENT_TWO:
-                if(adc_get(ADC_PYRO2) < 500) {
-                  add_error(CATS_ERR_NO_PYRO);
-                  error_encountered = true;
-                }
-                break;
-              case ACT_HIGH_CURRENT_THREE:
-                if(adc_get(ADC_PYRO3) < 500) {
-                  add_error(CATS_ERR_NO_PYRO);
-                  error_encountered = true;
-                }
-                break;
-              default:
-                break;
+            case ACT_HIGH_CURRENT_TWO:
+              if (adc_get(ADC_PYRO2) < 500) {
+                add_error(CATS_ERR_NO_PYRO);
+                error_encountered = true;
+              }
+              break;
+            case ACT_HIGH_CURRENT_THREE:
+              if (adc_get(ADC_PYRO3) < 500) {
+                add_error(CATS_ERR_NO_PYRO);
+                error_encountered = true;
+              }
+              break;
+            default:
+              break;
           }
         }
       }

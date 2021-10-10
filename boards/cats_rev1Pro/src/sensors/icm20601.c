@@ -284,14 +284,13 @@ void icm20601_read_temp(const ICM20601 *dev, float *temp) {
 }
 
 void icm20601_accel_calib(const ICM20601 *dev) {
-
   uint8_t accel_offset_8bit[2] = {0};
   int16_t accel_real[3] = {0};
 
   int16_t accel_offset[3];
 
   // Read current offset
-  for(int i = 0; i < 3; i++){
+  for (int i = 0; i < 3; i++) {
     uint8_t reg = REG_XA_OFFSET_H + (3 * i);
     icm_read_bytes(dev, reg, accel_offset_8bit, 2);
     accel_offset[i] = uint8_to_int16(accel_offset_8bit[0], accel_offset_8bit[1]);
@@ -303,15 +302,17 @@ void icm20601_accel_calib(const ICM20601 *dev) {
   // Read acceleration from device
   icm20601_read_accel_raw(dev, accel_real);
 
-  uint8_t down_axis;
+  uint8_t down_axis = 0;
   // Decide which axis is down
-  if(abs(accel_real[0]) > abs(accel_real[1]) && abs(accel_real[0]) > abs(accel_real[2])) down_axis = 0;
-  else if(abs(accel_real[1]) > abs(accel_real[0]) && abs(accel_real[1]) > abs(accel_real[2])) down_axis = 1;
-  else if(abs(accel_real[2]) > abs(accel_real[1]) && abs(accel_real[2]) > abs(accel_real[0])) down_axis = 2;
-
+  if (abs(accel_real[0]) > abs(accel_real[1]) && abs(accel_real[0]) > abs(accel_real[2]))
+    down_axis = 0;
+  else if (abs(accel_real[1]) > abs(accel_real[0]) && abs(accel_real[1]) > abs(accel_real[2]))
+    down_axis = 1;
+  else if (abs(accel_real[2]) > abs(accel_real[1]) && abs(accel_real[2]) > abs(accel_real[0]))
+    down_axis = 2;
 
   // Do some calculations, the offset register is +- 16g
-  for(int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     float diff;
     if (i == down_axis)
       diff = get_accel_sensitivity(dev->accel_g) - (float)accel_real[i];
@@ -381,8 +382,8 @@ static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint
 static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length) {
   uint8_t tmp[8];
   tmp[0] = reg;
-  if(length < 8){
+  if (length < 8) {
     memcpy(&tmp[1], data, length);
-    spi_transmit(dev->spi, tmp, length+1);
+    spi_transmit(dev->spi, tmp, length + 1);
   }
 }

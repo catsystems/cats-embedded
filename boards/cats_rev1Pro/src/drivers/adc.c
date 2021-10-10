@@ -26,6 +26,7 @@ void adc_init() {
 }
 
 uint32_t adc_get(adc_channels_e channel) {
+  // If data of the first and last adc channel is frozen, reset the hardware
   if ((adc_value[0] | adc_value[ADC_BATTERY]) == 0) {
     HAL_ADC_Stop_DMA(&hadc1);
     HAL_ADC_Start_DMA(&hadc1, adc_value, ADC_NUM_CHANNELS);
