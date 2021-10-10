@@ -39,7 +39,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, estimatio
     case MOVING:
       check_moving_phase(fsm_state, imu_data);
       break;
-    case IDLE:
+    case READY:
       check_idle_phase(fsm_state, imu_data, settings);
       break;
     case THRUSTING_1:
@@ -94,7 +94,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Check if we reached the threshold */
   if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_IDLE) {
     trigger_event(EV_IDLE);
-    fsm_state->flight_state = IDLE;
+    fsm_state->flight_state = READY;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
@@ -128,7 +128,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
 }
 
 static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_settings_t *settings) {
-  /* Check if we move from IDLE Back to MOVING */
+  /* Check if we move from READY Back to MOVING */
 
   /* Check if the IMU moved between two timesteps */
   if ((abs(fsm_state->old_imu_data.acc_x - imu_data->acc_x) > ALLOWED_ACC_ERROR) ||
@@ -195,7 +195,7 @@ static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, cont
     fsm_state->angular_movement[2] = 0;
   }
 
-  /* Check if we move from IDLE To THRUSTING_1 */
+  /* Check if we move from READY To THRUSTING_1 */
   /* The absolut value of the acceleration is used here to make sure that we detect liftoff */
   int32_t acceleration =
       imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
@@ -226,6 +226,7 @@ static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t
   }
 
   if (fsm_state->memory[1] > COASTING_SAFETY_COUNTER) {
+    trigger_event(EV_MAX_V);
     fsm_state->flight_state = COASTING;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;

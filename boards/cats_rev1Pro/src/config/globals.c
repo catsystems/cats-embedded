@@ -22,38 +22,25 @@
 
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
-extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim15;
 
 /** Device Handles **/
 
-SPI_BUS SPI1_CS1 = {.cs_port = GPIOB, .cs_pin = GPIO_PIN_0, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
+SPI_BUS SPI1_ICM1 = {.cs_port = CS_IMU1_GPIO_Port, .cs_pin = CS_IMU1_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
 
 const ICM20601 ICM1 = {
-    .cs_port = CS_IMU1_GPIO_Port,
-    .cs_pin = CS_IMU1_Pin,
-    .spi_bus = &hspi1,
-    .spi = &SPI1_CS1,
+    .spi = &SPI1_ICM1,
     .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
     .accel_g = ICM20601_ACCEL_RANGE_32G,
     .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
     .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
 };
+
+SPI_BUS SPI1_ICM2 = {.cs_port = CS_IMU2_GPIO_Port, .cs_pin = CS_IMU2_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
+
 const ICM20601 ICM2 = {
-    .cs_port = CS_IMU2_GPIO_Port,
-    .cs_pin = CS_IMU2_Pin,
-    .spi_bus = &hspi1,
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
-    .accel_g = ICM20601_ACCEL_RANGE_32G,
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
-};
-const ICM20601 ICM3 = {
-    .cs_port = GPIOB,
-    .cs_pin = GPIO_PIN_2,
-    .spi_bus = &hspi1,
+    .spi = &SPI1_ICM2,
     .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
     .accel_g = ICM20601_ACCEL_RANGE_32G,
     .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,

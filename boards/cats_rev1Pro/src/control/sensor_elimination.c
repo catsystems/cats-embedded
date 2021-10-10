@@ -34,11 +34,14 @@ cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *
   sensor_elimination_t old_elimination = *elimination;
 
   /* Accelerometers */
+
   for (uint8_t i = 0; i < NUM_ACC; i++) {
     status |= check_sensor_bounds(data, elimination, i, false);
-    status |= check_sensor_freezing(data, elimination, i, false);
+    // Only check freezing on non high G accels
+    if(i != HIGH_G_ACC_INDEX) status |= check_sensor_freezing(data, elimination, i, false);
     /* Accel is not faulty anymore */
     if (elimination->faulty_accel[i] == 1) {
+
       if (status == CATS_ERR_OK) {
         elimination->faulty_accel[i] = 0;
       }
@@ -139,7 +142,7 @@ cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *
       }
     }
   }
-  error_handler(log_status);
+  add_error(log_status);
 
   return status;
 }
@@ -161,7 +164,7 @@ static cats_error_e check_sensor_bounds(state_estimation_data_t *data, sensor_el
     if (index == HIGH_G_ACC_INDEX) {
       /* check Bound of High G accel */
       if ((data->acceleration[index] > UPPER_BOUND_HIGH_G_ACC) ||
-          (data->acceleration[index] < UPPER_BOUND_HIGH_G_ACC)) {
+          (data->acceleration[index] < LOWER_BOUND_HIGH_G_ACC)) {
         elimination->faulty_accel[index] = 1;
         status = error_status;
       }

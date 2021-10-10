@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+
 typedef enum {
   CATS_ERR_OK = 0,
   CATS_ERR_NO_CONFIG = 0x01,
@@ -39,4 +40,7 @@ typedef enum {
   CATS_ERR_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_error_e;
 
-void error_handler(cats_error_e err);
+void add_error(cats_error_e err);
+void clear_error(cats_error_e err);
+uint32_t get_error_count();
+cats_error_e get_error_by_priority(uint32_t id);

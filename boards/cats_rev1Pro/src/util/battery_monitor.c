@@ -19,8 +19,9 @@
 #include "drivers/adc.h"
 #include "util/battery.h"
 
-#define ADC_BATTERY_A 0.00500571f
-#define ADC_BATTERY_B 0.222025f
+
+#define ADC_LINFIT_A 0.00818474f
+#define ADC_LINFIT_B 0.476469f
 
 // TODO The battery type needs to be defined in the config
 
@@ -30,13 +31,13 @@ battery_type_e battery_type = LIPO;
 
 static uint32_t cell_count = 1;
 
-/*Supported batteries
- * ------------------------------------
- * BATTERY		MIN		LOW		MAX
- * Li-Ion		3.2		3.4		4.3
- * Li-Po		3.4		3.6		4.3
- * Alkaline (9V)	7.0		7.5		9.5
- * ------------------------------------
+/* Supported batteries
+ * --------------------------------
+ * BATTERY        MIN   LOW   MAX
+ * Li-Ion         3.2   3.4   4.3
+ * Li-Po          3.4   3.6   4.3
+ * Alkaline (9V)  7.0   7.5   9.5
+ * --------------------------------
  */
 const float voltage_lookup[3][3] = {{3.3f, 3.5f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
 
@@ -53,13 +54,12 @@ void battery_monitor_init() {
 
 // Returns battery voltage
 float battery_voltage() {
-  // https://www.wolframalpha.com/input/?i=linear+fit+%281215%2C6.35%29%2C%281840%2C9.35%29%2C%282342%2C11.96%29%2C%282820%2C14.36%29
-  // TODO remove the +0.65 when there is a final solution (ideal diode, diode etc.)
-  return (float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65f;
+  // https://www.wolframalpha.com/input/?i=linear+fit+%28675%2C6%29%2C%28919%2C8%29%2C%281408%2C12%29%2C%282141%2C18%29
+  return (float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B;
 }
 
 float battery_cell_voltage() {
-  return ((float)adc_get(ADC_BATTERY) * ADC_BATTERY_A + ADC_BATTERY_B + 0.65f) / (float)cell_count;
+  return ((float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B) / (float)cell_count;
 }
 
 battery_level_e battery_level() {

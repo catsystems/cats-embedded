@@ -76,16 +76,15 @@ enum icm20601_gyro_dps {
 
 typedef struct icm20601_dev {
   // Hardware Configuration
-  GPIO_TypeDef *const cs_port;
-  uint16_t cs_pin;
-  SPI_HandleTypeDef *const spi_bus;
-
   SPI_BUS *spi;
   // Sensor Configuration
   enum icm20601_accel_dlpf accel_dlpf;
   enum icm20601_accel_g accel_g;
   enum icm20601_gyro_dlpf gyro_dlpf;
   enum icm20601_gyro_dps gyro_dps;
+
+  // Offsets
+  int16_t accel_offset[3];
 } ICM20601;
 
 /** Exported Functions **/
@@ -96,5 +95,5 @@ void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel);
 void icm20601_read_gyro(const ICM20601 *dev, float *gyro);
 void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro);
 void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp);
-void icm20601_accel_calib(const ICM20601 *dev, uint8_t axis);
+void icm20601_accel_calib(const ICM20601 *dev);
 void icm20601_gyro_cal(const ICM20601 *dev, uint8_t *data);

@@ -111,7 +111,7 @@ extern const char *drop_test_fsm_map[7];
 typedef enum {
   INVALID = 0,
   MOVING = 1,
-  IDLE,
+  READY,
   THRUSTING_1,
   THRUSTING_2,
   COASTING,
@@ -224,14 +224,6 @@ typedef struct {
   int16_t action_idx;
   int16_t arg;
 } config_action_t;
-
-typedef enum {
-  CATS_BUZZ_NONE = 0,
-  CATS_BUZZ_BOOTUP,
-  CATS_BUZZ_READY,
-  CATS_BUZZ_CHANGED_MOVING,
-  CATS_BUZZ_CHANGED_READY,
-} buzzer_status_e;
 
 typedef bool (*peripheral_act_fp)(int16_t);
 

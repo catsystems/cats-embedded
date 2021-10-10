@@ -31,7 +31,7 @@ typedef struct spi_bus {
   GPIO_TypeDef* const cs_port;
   uint16_t cs_pin;
   cs_type_e cs_type;
-  SPI_HandleTypeDef* const spi_handle;
+  const SPI_HandleTypeDef* spi_handle;
   uint8_t initialized;
   bool busy;
 } SPI_BUS;
@@ -42,4 +42,4 @@ uint8_t spi_receive(SPI_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
 void spi_init(SPI_BUS* bus);
 
 #define MAX_INSTANCES 10
-#define SPI_TIMEOUT   20
+#define SPI_TIMEOUT   5
