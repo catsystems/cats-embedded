@@ -37,19 +37,19 @@ const clivalue_t valueTable[] = {
 	// Timers
 	{ "timer1_start", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[0].start_event},
 	{ "timer1_end", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[0].end_event},
-	{ "timer1_duration", VAR_UINT16, .config.minmaxUnsigned = { 1000, 60000 }, &global_cats_config.config.timers[0].duration},
+	{ "timer1_duration", VAR_UINT32, .config.u32Max = 1200000, &global_cats_config.config.timers[0].duration},
 
 	{ "timer2_start", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[1].start_event},
 	{ "timer2_end", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[1].end_event},
-	{ "timer2_duration", VAR_UINT16, .config.minmaxUnsigned = { 1000, 60000 }, &global_cats_config.config.timers[1].duration},
+	{ "timer2_duration", VAR_UINT32, .config.u32Max = 1200000, &global_cats_config.config.timers[1].duration},
 
 	{ "timer3_start", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[2].start_event},
 	{ "timer3_end", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[2].end_event},
-	{ "timer3_duration", VAR_UINT16, .config.minmaxUnsigned = { 1000, 60000 }, &global_cats_config.config.timers[2].duration},
+	{ "timer3_duration", VAR_UINT32, .config.u32Max = 1200000, &global_cats_config.config.timers[2].duration},
 
 	{ "timer4_start", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[3].start_event},
 	{ "timer4_end", VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_EVENTS }, &global_cats_config.config.timers[3].end_event},
-	{ "timer4_duration", VAR_UINT16, .config.minmaxUnsigned = { 1000, 60000 }, &global_cats_config.config.timers[3].duration},
+	{ "timer4_duration", VAR_UINT32, .config.u32Max = 1200000, &global_cats_config.config.timers[3].duration},
 
 
 };

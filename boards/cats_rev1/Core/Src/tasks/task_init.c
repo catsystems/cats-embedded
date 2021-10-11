@@ -372,7 +372,7 @@ static void init_timers() {
     if (global_cats_config.config.timers[i].start_event && global_cats_config.config.timers[i].end_event) {
       ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
       ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
-      ev_timers[i].timer_duration_ticks = (uint32_t)global_cats_config.config.timers[i].duration;
+      ev_timers[i].timer_duration_ticks = global_cats_config.config.timers[i].duration;
       used_timers++;
     }
   }

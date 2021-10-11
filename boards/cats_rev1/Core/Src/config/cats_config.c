@@ -58,8 +58,7 @@ void cc_init() {
           EE_CleanUp();
 }
 void cc_defaults() {
-	// TODO get this working!
-	//memset(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
+	memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
 }
 
 /** persistence functions **/
