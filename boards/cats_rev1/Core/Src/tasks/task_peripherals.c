@@ -36,6 +36,12 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
           osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks);
         }
       }
+      /* start Mach timer if needed */
+      if (curr_event == mach_timer.timer_init_event) {
+        if (mach_timer.timer_duration_ticks > 0) {
+          osTimerStart(mach_timer.timer_id, mach_timer.timer_duration_ticks);
+        }
+      }
       peripheral_act_t* action_list = event_action_map[curr_event].action_list;
       for (uint32_t i = 0; i < event_action_map[curr_event].num_actions; ++i) {
         timestamp_t curr_ts = osKernelGetTickCount();

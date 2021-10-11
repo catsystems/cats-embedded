@@ -310,7 +310,7 @@ static void create_event_map() {
   /* number of event types + 0th element */
   /* TODO: move number of events to a constant */
   /* TODO: where to free this? */
-  event_action_map = calloc(9, sizeof(event_action_map_elem_t));
+  event_action_map = calloc(10, sizeof(event_action_map_elem_t));
 
   // Moving
   /*vent_action_map[EV_MOVING].num_actions = 1;
@@ -333,50 +333,60 @@ static void create_event_map() {
   // Apogee / Drogue
   event_action_map[EV_APOGEE].num_actions = 1;
   event_action_map[EV_APOGEE].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_APOGEE].action_list[0].func_arg = 1;
+  event_action_map[EV_APOGEE].action_list[0].func_ptr = action_table[ACT_SERVO_ONE];
+  event_action_map[EV_APOGEE].action_list[0].func_arg = 180;
 
   // Low Altitude / Main
-  event_action_map[EV_POST_APOGEE].num_actions = 1;
-  event_action_map[EV_POST_APOGEE].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_POST_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_TWO];
+  event_action_map[EV_POST_APOGEE].num_actions = 2;
+  event_action_map[EV_POST_APOGEE].action_list = calloc(2, sizeof(peripheral_act_t));
+  event_action_map[EV_POST_APOGEE].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
   event_action_map[EV_POST_APOGEE].action_list[0].func_arg = 1;
+  event_action_map[EV_POST_APOGEE].action_list[1].func_ptr = action_table[ACT_SERVO_TWO];
+  event_action_map[EV_POST_APOGEE].action_list[1].func_arg = 180;
 
   // Timer 1 / Drogue
   event_action_map[EV_TIMER_1].num_actions = 1;
   event_action_map[EV_TIMER_1].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
-  event_action_map[EV_TIMER_1].action_list[0].func_arg = 1;
+  event_action_map[EV_TIMER_1].action_list[0].func_ptr = action_table[ACT_SERVO_ONE];
+  event_action_map[EV_TIMER_1].action_list[0].func_arg = 180;
 
   // Timer 2 / Main
-  event_action_map[EV_TIMER_2].num_actions = 1;
-  event_action_map[EV_TIMER_2].action_list = calloc(1, sizeof(peripheral_act_t));
-  event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_TWO];
+  event_action_map[EV_TIMER_2].num_actions = 2;
+  event_action_map[EV_TIMER_2].action_list = calloc(2, sizeof(peripheral_act_t));
+  event_action_map[EV_TIMER_2].action_list[0].func_ptr = action_table[ACT_HIGH_CURRENT_ONE];
   event_action_map[EV_TIMER_2].action_list[0].func_arg = 1;
+  event_action_map[EV_TIMER_2].action_list[1].func_ptr = action_table[ACT_SERVO_TWO];
+  event_action_map[EV_TIMER_2].action_list[1].func_arg = 180;
 
   // Touchdown
   event_action_map[EV_TOUCHDOWN].num_actions = 1;
   event_action_map[EV_TOUCHDOWN].action_list = calloc(1, sizeof(peripheral_act_t));
   event_action_map[EV_TOUCHDOWN].action_list[0].func_ptr = action_table[ACT_SET_RECORDER_STATE];
   event_action_map[EV_TOUCHDOWN].action_list[0].func_arg = REC_OFF;
-  /* ................ */
 }
 
 static void init_timers() {
-
-  uint32_t used_timers = 2;
+  uint32_t used_timers = 0;
   /* Init timers*/
-  for(uint32_t i = 0; i < num_timers; i++){
-	  if(global_cats_config.config.timers[i].start_event && global_cats_config.config.timers[i].end_event){
-		  ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
-		  ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
-		  ev_timers[i].timer_duration_ticks = (uint32_t)global_cats_config.config.timers[i].duration;
-		  used_timers++;
-		}
+  for (uint32_t i = 0; i < num_timers; i++) {
+    if (global_cats_config.config.timers[i].start_event && global_cats_config.config.timers[i].end_event) {
+      ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
+      ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
+      ev_timers[i].timer_duration_ticks = (uint32_t)global_cats_config.config.timers[i].duration;
+      used_timers++;
+    }
   }
+
+  /* Init mach Timer */
+  mach_timer.timer_init_event = EV_LIFTOFF;
+  mach_timer.execute_event = EV_MAX_V;
+  mach_timer.timer_duration_ticks = 15000;
 
   /* Create Timers */
   for (uint32_t i = 0; i < used_timers; i++) {
     ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
   }
+
+  /* Create mach timer */
+  mach_timer.timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
 }
