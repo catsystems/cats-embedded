@@ -476,7 +476,7 @@ static void print_timer_config() {
       cliPrintf("\nTIMER %d\n", i + 1);
       cliPrintf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
       cliPrintf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
-      cliPrintf("  Duration: %d ms\n", global_cats_config.config.timers[i].duration);
+      cliPrintf("  Duration: %lu ms\n", global_cats_config.config.timers[i].duration);
     }
   }
 }

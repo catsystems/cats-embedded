@@ -29,7 +29,7 @@ typedef struct {
   uint32_t recorder_mask;
 
   //Timers
-  config_timer_t timers[8];
+  config_timer_t timers[4];
   // Event action map
   config_event_actions_t event_actions[9];
 } cats_config_t;

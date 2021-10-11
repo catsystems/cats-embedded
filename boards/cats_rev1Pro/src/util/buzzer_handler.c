@@ -38,7 +38,7 @@ uint32_t pitch_lookup[8] = {
     2793,  // F D
     2959,  // F# E
     3135,  // G F
-    1200,   // Error G
+    1200,  // Error G
     2217,  // C#  H
 };
 
@@ -62,10 +62,10 @@ const char cats_error_codes[16][BUZZER_COMMAND_MAX_LENGTH] = {
 
 const char cats_status_codes[5][BUZZER_COMMAND_MAX_LENGTH] = {
     " ",
-    "caef", // bootup
-    "aa",   // ready
-    "Eca",  // ready -> moving
-    "ace",  // moving -> ready
+    "caef",  // bootup
+    "aa",    // ready
+    "Eca",   // ready -> moving
+    "ace",   // moving -> ready
 };
 
 static uint32_t status_queue_index = 0;
@@ -83,15 +83,15 @@ bool buzzer_queue_status(buzzer_status_e status) {
 }
 
 void buzzer_handler_update() {
-  static uint8_t error_started = 0;
-  if (status_queue_elements > 0 && get_error_count() == 0 && error_started == 0) {
+  if (status_queue_elements > 0) {
     if (status_buzzer(status_queue[status_queue_index]) == 0) {
       status_queue_index = (status_queue_index + 1) % BUZZER_MAX_STATUS_QUEUE;
       status_queue_elements--;
     }
-  } else if(get_error_count()>0 || error_started == 1){
-    error_started = error_buzzer(log2_32(get_error_by_priority(0)));
   }
+  // else if(get_error_count()>0 || error_started == 1){
+  //   error_started = error_buzzer(log2_32(get_error_by_priority(0)));
+  // }
   buzzer_update(&BUZZER);
 }
 

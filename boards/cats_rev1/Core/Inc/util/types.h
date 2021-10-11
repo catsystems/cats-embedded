@@ -188,7 +188,7 @@ typedef struct {
 } control_settings_t;
 
 typedef struct {
-  uint16_t duration;
+  uint32_t duration;
   uint8_t start_event;
   uint8_t end_event;
 } config_timer_t;
