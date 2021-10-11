@@ -95,8 +95,10 @@ void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Check if we move from MOVING To THRUSTING_1 */
   /* To Make sure that the timers start any acceleration direction is accepted
    * here */
-  int32_t acceleration =
-      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+  int32_t accel_x = (int32_t)imu_data->acc_x * (int32_t)imu_data->acc_x;
+  int32_t accel_y = (int32_t)imu_data->acc_y * (int32_t)imu_data->acc_y;
+  int32_t accel_z = (int32_t)imu_data->acc_z * (int32_t)imu_data->acc_z;
+  int32_t acceleration = accel_x + accel_y + accel_z;
 
   if ((float)acceleration > (MOV_LIFTOFF_THRESHOLD * MOV_LIFTOFF_THRESHOLD)) {
     fsm_state->memory[2]++;
@@ -188,8 +190,10 @@ void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, control_set
   /* Check if we move from IDLE To THRUSTING_1 */
   /* To Make sure that the timers start any acceleration direction is accepted
    * here */
-  int32_t acceleration =
-      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+  int32_t accel_x = (int32_t)imu_data->acc_x * (int32_t)imu_data->acc_x;
+  int32_t accel_y = (int32_t)imu_data->acc_y * (int32_t)imu_data->acc_y;
+  int32_t accel_z = (int32_t)imu_data->acc_z * (int32_t)imu_data->acc_z;
+  int32_t acceleration = accel_x + accel_y + accel_z;
 
   if ((float)acceleration > (float)settings->liftoff_acc_threshold * (float)settings->liftoff_acc_threshold) {
     fsm_state->memory[2]++;

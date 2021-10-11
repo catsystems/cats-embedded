@@ -106,8 +106,10 @@ static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   /* Check if we move from MOVING To THRUSTING_1 */
   /* To Make sure that the timers start any acceleration direction is accepted
    * here */
-  int32_t acceleration =
-      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+  int32_t accel_x = (int32_t)imu_data->acc_x * (int32_t)imu_data->acc_x;
+  int32_t accel_y = (int32_t)imu_data->acc_y * (int32_t)imu_data->acc_y;
+  int32_t accel_z = (int32_t)imu_data->acc_z * (int32_t)imu_data->acc_z;
+  int32_t acceleration = accel_x + accel_y + accel_z;
 
   if ((float)acceleration > (MOV_LIFTOFF_THRESHOLD * MOV_LIFTOFF_THRESHOLD)) {
     fsm_state->memory[2]++;
@@ -197,10 +199,12 @@ static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, cont
 
   /* Check if we move from READY To THRUSTING_1 */
   /* The absolut value of the acceleration is used here to make sure that we detect liftoff */
-  int32_t acceleration =
-      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+  int32_t accel_x = (int32_t)imu_data->acc_x * (int32_t)imu_data->acc_x;
+  int32_t accel_y = (int32_t)imu_data->acc_y * (int32_t)imu_data->acc_y;
+  int32_t accel_z = (int32_t)imu_data->acc_z * (int32_t)imu_data->acc_z;
+  int32_t acceleration = accel_x + accel_y + accel_z;
 
-  if ((float)acceleration > (float)settings->liftoff_acc_threshold * (float)settings->liftoff_acc_threshold) {
+  if ((float)acceleration > ((float)settings->liftoff_acc_threshold * (float)settings->liftoff_acc_threshold)) {
     fsm_state->memory[2]++;
   } else {
     fsm_state->memory[2] = 0;
@@ -238,10 +242,9 @@ static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t
 }
 
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-
-    if(osTimerIsRunning(mach_timer.timer_id)){
-        return;
-    }
+  if (osTimerIsRunning(mach_timer.timer_id)) {
+    return;
+  }
 
   if (state_data->velocity < 0) {
     fsm_state->memory[1]++;
