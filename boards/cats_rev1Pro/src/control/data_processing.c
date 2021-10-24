@@ -22,8 +22,16 @@
 #include <stdint.h>
 
 /* a temporary variable "tmp" must be defined beforehand to use these macros */
-#define SWAP(a,b,tmp) { tmp=(a);(a)=(b);(b)=tmp; }
-#define SORT_TWO(a,b,tmp) { if ((a)>(b)) SWAP((a),(b),(tmp)); }
+#define SWAP(a, b, tmp) \
+  {                     \
+    tmp = (a);          \
+    (a) = (b);          \
+    (b) = tmp;          \
+  }
+#define SORT_TWO(a, b, tmp)               \
+  {                                       \
+    if ((a) > (b)) SWAP((a), (b), (tmp)); \
+  }
 
 /* this function returns the median of an array of size MEDIAN_FILTER_SIZE
  * it assumes that the size of "input_array" is equal to MEDIAN_FILTER_SIZE */
@@ -32,7 +40,8 @@ float median(float input_array[]) {
   memcpy(array, input_array, MEDIAN_FILTER_SIZE * sizeof(float));
 
 #if MEDIAN_FILTER_SIZE == 9
-  /* hardwired algorithm - see https://web.archive.org/web/20060613213236/https://www.xilinx.com/xcell/xl23/xl23_16.pdf */
+  /* hardwired algorithm - see https://web.archive.org/web/20060613213236/https://www.xilinx.com/xcell/xl23/xl23_16.pdf
+   */
   float tmp;
   SORT_TWO(array[1], array[2], tmp);
   SORT_TWO(array[4], array[5], tmp);
@@ -60,7 +69,7 @@ float median(float input_array[]) {
   int32_t i, j, m, k = (MEDIAN_FILTER_SIZE >> 1);
   int32_t l = 0, r = MEDIAN_FILTER_SIZE - 1;
 
-  while (r > l + 1) {  /* keep iterating until our partition is of size less than two */
+  while (r > l + 1) { /* keep iterating until our partition is of size less than two */
     m = (l + r) >> 1;
 
     /* we want the inequalities array[l] <= array[l + 1] <= array[r] to hold */

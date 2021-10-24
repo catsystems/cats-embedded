@@ -86,9 +86,6 @@ void record(rec_entry_type_e rec_type_with_id, const void *rec_value) {
       case FLIGHT_STATE:
         e.u.flight_state = *((flight_state_t *)rec_value);
         break;
-      case COVARIANCE_INFO:
-        e.u.covariance_info = *((covariance_info_t *)rec_value);
-        break;
       case SENSOR_INFO:
         e.u.sensor_info = *((sensor_info_t *)rec_value);
         break;

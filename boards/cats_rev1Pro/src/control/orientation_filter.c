@@ -107,10 +107,21 @@ static void compute_gravity_error(orientation_filter_t* filter) {
   quaternion_mat(&filter->propagation_estimate_conj, &filter->acceleration, &holder_mat);
   quaternion_mat(&holder_mat, &filter->propagation_estimate, &filter->gravity_estimate);
 
-  filter->gravity_error_data[0] = sqrtf((filter->gravity_estimate_data[3] + 1) / 2);
-  filter->gravity_error_data[1] = -filter->gravity_estimate_data[2] / sqrtf(2 * (filter->gravity_estimate_data[3] + 1));
-  filter->gravity_error_data[2] = filter->gravity_estimate_data[1] / sqrtf(2 * (filter->gravity_estimate_data[3] + 1));
-  filter->gravity_error_data[3] = 0;
+  if (filter->gravity_estimate_data[3] >= 0) {
+    filter->gravity_error_data[0] = sqrtf((filter->gravity_estimate_data[3] + 1) / 2);
+    filter->gravity_error_data[1] =
+        -filter->gravity_estimate_data[2] / sqrtf(2 * (filter->gravity_estimate_data[3] + 1));
+    filter->gravity_error_data[2] =
+        filter->gravity_estimate_data[1] / sqrtf(2 * (filter->gravity_estimate_data[3] + 1));
+    filter->gravity_error_data[3] = 0;
+  } else {
+    filter->gravity_error_data[0] =
+        -filter->gravity_estimate_data[2] / sqrtf(2 * (1 - filter->gravity_estimate_data[3]));
+    filter->gravity_error_data[1] = sqrtf((1 - filter->gravity_estimate_data[3]) / 2);
+    filter->gravity_error_data[2] =
+        filter->gravity_estimate_data[1] / sqrtf(2 * (1 - filter->gravity_estimate_data[3]));
+    filter->gravity_error_data[3] = 0;
+  }
 }
 
 static void interpolation(orientation_filter_t* filter, bool ismagneto) {

@@ -69,7 +69,7 @@ void cc_load() {
   }
 }
 
-bool cc_format_save(){
+bool cc_format_save() {
   HAL_FLASH_Unlock();
   __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
   EE_Status ee_status = EE_Format(EE_FORCED_ERASE);
@@ -92,7 +92,7 @@ bool cc_save() {
       do {
         ee_status = EE_WriteVariable32bits(i + 1, global_cats_config.config_array[i]);
         errors++;
-      } while((ee_status & EE_STATUSMASK_ERROR) == EE_STATUSMASK_ERROR && errors < 5);
+      } while ((ee_status & EE_STATUSMASK_ERROR) == EE_STATUSMASK_ERROR && errors < 5);
       if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
       // If writing failed 5 times, stop and return an error
       if (errors == 5) {
@@ -113,12 +113,12 @@ bool cc_save() {
 uint16_t cc_get_num_actions(cats_event_e event) {
   uint16_t i = 0;
   uint16_t nr_actions;
-  if (event > (NUM_EVENTS-1)) return 0;
+  if (event > (NUM_EVENTS - 1)) return 0;
   // Count the number of entries
-  while((global_cats_config.config.action_array[event][i] != 0) && (i < 16)) {
-    i+=2;
+  while ((global_cats_config.config.action_array[event][i] != 0) && (i < 16)) {
+    i += 2;
   }
-  nr_actions = i/2;
+  nr_actions = i / 2;
   return nr_actions;
 }
 
@@ -132,10 +132,10 @@ uint16_t cc_get_num_actions(cats_event_e event) {
 bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action) {
   if ((action == NULL) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
 
-  int16_t idx = global_cats_config.config.action_array[event][act_idx*2];
-  int16_t arg = global_cats_config.config.action_array[event][act_idx*2+1];
+  int16_t idx = global_cats_config.config.action_array[event][act_idx * 2];
+  int16_t arg = global_cats_config.config.action_array[event][act_idx * 2 + 1];
 
-  if(idx > 0 && idx <= NUM_ACTION_FUNCTIONS){
+  if (idx > 0 && idx <= NUM_ACTION_FUNCTIONS) {
     action->action_idx = idx;
     action->arg = arg;
     return true;

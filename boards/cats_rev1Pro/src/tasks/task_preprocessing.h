@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_baro_read(void *argument);
+_Noreturn void task_preprocessing(void *argument);
