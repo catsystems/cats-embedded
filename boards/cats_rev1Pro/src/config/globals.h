@@ -74,7 +74,7 @@ extern uint8_t usb_fifo_out_buffer[USB_OUTPUT_BUFFER_SIZE];
 extern baro_data_t global_baro[NUM_BARO];
 extern imu_data_t global_imu[NUM_IMU];
 extern accel_data_t global_accel;
-extern magneto_data_t global_magneto;
+extern magneto_data_t global_magneto[NUM_MAGNETO];
 extern flight_fsm_t global_flight_state;
 extern drop_test_fsm_t global_drop_test_state;
 extern sensor_elimination_t global_elimination_data;

@@ -119,7 +119,7 @@ SERVO SERVO2 = {.timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .star
 baro_data_t global_baro[NUM_BARO] = {0};
 imu_data_t global_imu[NUM_IMU] = {0};
 accel_data_t global_accel = {0};
-magneto_data_t global_magneto = {0};
+magneto_data_t global_magneto[NUM_MAGNETO] = {0};
 estimation_output_t global_kf_data = {0};
 sensor_elimination_t global_elimination_data = {0};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};

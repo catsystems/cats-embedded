@@ -23,8 +23,6 @@
 #include "lfs/lfs_custom.h"
 #include "util/recorder.h"
 #include "config/cats_config.h"
-#include "config/globals.h"
-#include "main.h"
 
 #include <stdlib.h>
 
@@ -181,15 +179,11 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
 
 static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
   uint_fast8_t rec_elem_size = sizeof(rec_elem->rec_type);
-  switch (rec_elem->rec_type) {
-    case IMU0:
-    case IMU1:
-    case IMU2:
+  switch (get_record_type_without_id(rec_elem->rec_type)) {
+    case IMU:
       rec_elem_size += sizeof(rec_elem->u.imu);
       break;
-    case BARO0:
-    case BARO1:
-    case BARO2:
+    case BARO:
       rec_elem_size += sizeof(rec_elem->u.baro);
       break;
     case MAGNETO:
@@ -239,111 +233,3 @@ static inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const 
   }
   *rec_buffer_idx += *rec_elem_size;
 }
-
-#ifdef FLASH_READ_TEST
-uint8_t print_page(uint8_t *rec_buffer, uint8_t print_offset, char prefix, const rec_elem_t *const break_elem) {
-  uint8_t bytes_remaining = 0;
-  uint32_t i = print_offset;
-  rec_elem_t curr_elem;
-  if (i > 0) {
-    memcpy(((uint8_t *)(break_elem)) + bytes_remaining, &rec_buffer[0], print_offset);
-  }
-  while (i <= (REC_BUFFER_LEN - sizeof(curr_elem))) {
-    curr_elem.rec_type = rec_buffer[i];
-    i += sizeof(curr_elem.rec_type);
-    log_rawr("%cType: %s, ", prefix, rec_type_map[curr_elem.rec_type]);
-    switch (curr_elem.rec_type) {
-      case IMU0:
-      case IMU1:
-      case IMU2:
-        memcpy(&(curr_elem.u.imu), &(rec_buffer[i]), sizeof(curr_elem.u.imu));
-        i += sizeof(curr_elem.u.imu);
-        log_raw("TS: %lu, %d, %d, %d, %d, %d, %d", curr_elem.u.imu.ts, curr_elem.u.imu.gyro_x, curr_elem.u.imu.gyro_y,
-                curr_elem.u.imu.gyro_z, curr_elem.u.imu.acc_x, curr_elem.u.imu.acc_y, curr_elem.u.imu.acc_z);
-        break;
-      case BARO0:
-      case BARO1:
-      case BARO2:
-        memcpy(&(curr_elem.u.baro), &(rec_buffer[i]), sizeof(curr_elem.u.baro));
-        i += sizeof(curr_elem.u.baro);
-        log_raw("TS: %lu, %ld, %ld", curr_elem.u.baro.ts, curr_elem.u.baro.pressure, curr_elem.u.baro.temperature);
-        break;
-      case FLIGHT_INFO:
-        memcpy(&(curr_elem.u.flight_info), &(rec_buffer[i]), sizeof(curr_elem.u.flight_info));
-        i += sizeof(curr_elem.u.flight_info);
-        log_raw("TS: %lu, %f, %f, %f", curr_elem.u.flight_info.ts, (double)curr_elem.u.flight_info.height,
-                (double)curr_elem.u.flight_info.velocity, (double)curr_elem.u.flight_info.measured_altitude_AGL);
-        break;
-      case FLIGHT_STATE:
-        memcpy(&(curr_elem.u.flight_state), &(rec_buffer[i]), sizeof(curr_elem.u.flight_state));
-        i += sizeof(curr_elem.u.flight_state);
-        log_raw("TS: %lu, %d", curr_elem.u.flight_state.ts, curr_elem.u.flight_state.flight_state);
-        break;
-      case COVARIANCE_INFO:
-        memcpy(&(curr_elem.u.covariance_info), &(rec_buffer[i]), sizeof(curr_elem.u.covariance_info));
-        i += sizeof(curr_elem.u.covariance_info);
-        log_raw("TS: %lu, %f, %f", curr_elem.u.covariance_info.ts, (double)curr_elem.u.covariance_info.height_cov,
-                (double)curr_elem.u.covariance_info.velocity_cov);
-        break;
-      case SENSOR_INFO:
-        memcpy(&(curr_elem.u.sensor_info), &(rec_buffer[i]), sizeof(curr_elem.u.sensor_info));
-        i += sizeof(curr_elem.u.sensor_info);
-        log_raw("TS: %lu, %u, %u, %u, %u, %u, %u, %u, %u", curr_elem.u.sensor_info.ts,
-                curr_elem.u.sensor_info.faulty_imu[0], curr_elem.u.sensor_info.faulty_imu[1],
-                curr_elem.u.sensor_info.faulty_imu[2], curr_elem.u.sensor_info.faulty_baro[0],
-                curr_elem.u.sensor_info.faulty_baro[1], curr_elem.u.sensor_info.faulty_baro[2]);
-        break;
-      default:
-        log_fatal("Impossible recorder entry type!");
-        break;
-    }
-  }
-  if (REC_BUFFER_LEN - i > 0) {
-    bytes_remaining = (REC_BUFFER_LEN - i);
-    memcpy(break_elem, &rec_buffer[i], bytes_remaining);
-  }
-  if (i > REC_BUFFER_LEN) {
-    log_fatal("log struct broken, %lu", i);
-  }
-  return bytes_remaining;
-}
-
-static inline void print_elem(const rec_elem_t *const rec_elem, char prefix) {
-  char buf[100];
-  uint8_t len = sprintf(buf, "%cType: %s, ", prefix, rec_type_map[rec_elem->rec_type]);
-  switch (rec_elem->rec_type) {
-    case IMU0:
-    case IMU1:
-    case IMU2:
-      sprintf(buf + len, "TS: %lu, %d, %d, %d, %d, %d, %d\n", rec_elem->u.imu.ts, rec_elem->u.imu.gyro_x,
-              rec_elem->u.imu.gyro_y, rec_elem->u.imu.gyro_z, rec_elem->u.imu.acc_x, rec_elem->u.imu.acc_y,
-              rec_elem->u.imu.acc_z);
-      //      sprintf(buf + len, "TS: %lu, %d, %d\n", rec_elem->u.imu.ts,
-      //              rec_elem->u.imu.gyro_x, rec_elem->u.imu.acc_x);
-      break;
-    case BARO0:
-    case BARO1:
-    case BARO2:
-      sprintf(buf + len, "TS: %lu, %ld, %ld\n", rec_elem->u.baro.ts, rec_elem->u.baro.pressure,
-              rec_elem->u.baro.temperature);
-      break;
-    case FLIGHT_INFO:
-      // sprintf(buf + len, "TS: %lu\n", rec_elem->u.flight_info.ts);
-      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.flight_info.ts, (double)rec_elem->u.flight_info.height,
-              (double)rec_elem->u.flight_info.velocity);
-      break;
-    case FLIGHT_STATE:
-      sprintf(buf + len, "TS: %lu, %d\n", rec_elem->u.flight_state.ts, rec_elem->u.flight_state.flight_state);
-      break;
-    case COVARIANCE_INFO:
-      sprintf(buf + len, "TS: %lu, %f, %f\n", rec_elem->u.covariance_info.ts,
-              (double)rec_elem->u.covariance_info.height_cov, (double)rec_elem->u.covariance_info.velocity_cov);
-      break;
-    default:
-      log_fatal("Impossible recorder entry type!");
-      break;
-  }
-  log_rawr("%s", buf);
-}
-
-#endif

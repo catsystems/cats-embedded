@@ -112,10 +112,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(100);
   /* In order to change what is logged just remove it from the following OR:
-   * In the given example, BARO1 and FLIGHT_STATE ARE MISSING */
-  //    uint32_t selected_entry_types = IMU0 | IMU1 | IMU2 | BARO0 | BARO2 |
-  //                                    FLIGHT_INFO | COVARIANCE_INFO |
-  //                                    SENSOR_INFO;
+   * In the given example, BARO and FLIGHT_STATE ARE MISSING */
+  //    uint32_t selected_entry_types = IMU | FLIGHT_INFO | COVARIANCE_INFO | SENSOR_INFO;
   //    cc_set_recorder_mask(selected_entry_types);
   cc_init();
 
@@ -140,11 +138,9 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   init_lfs();
 
-
   adc_init();
   osDelay(100);
   battery_monitor_init();
-
 
   create_event_map();
   init_timers();
@@ -351,7 +347,7 @@ static void create_event_map() {
       event_action_map[ev_idx].action_list = calloc(nr_actions, sizeof(peripheral_act_t));
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
-        if (cc_get_action(ev_idx, act_idx, &action) == true){
+        if (cc_get_action(ev_idx, act_idx, &action) == true) {
           event_action_map[ev_idx].action_list[act_idx].func_ptr = action_table[action.action_idx];
           event_action_map[ev_idx].action_list[act_idx].func_arg = action.arg;
         } else {

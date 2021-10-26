@@ -93,22 +93,18 @@ void parse_recording(uint16_t number) {
     }
     rec_entry_type_e rec_type;
     while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_type, 4) > 0) {
-      switch (rec_type) {
-        case IMU0:
-        case IMU1:
-        case IMU2: {
+      switch (get_record_type_without_id(rec_type)) {
+        case IMU: {
           size_t elem_sz = sizeof(rec_elem.u.imu);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|IMU%ld|%d|%d|%d|%d|%d|%d", rec_elem.u.imu.ts, log2_32(rec_type) - log2_32(IMU0),
+          log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.u.imu.ts, get_id_from_record_type(rec_type),
                   rec_elem.u.imu.acc_x, rec_elem.u.imu.acc_y, rec_elem.u.imu.acc_z, rec_elem.u.imu.gyro_x,
                   rec_elem.u.imu.gyro_y, rec_elem.u.imu.gyro_z);
         } break;
-        case BARO0:
-        case BARO1:
-        case BARO2: {
+        case BARO: {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|BARO%ld|%lu|%lu", rec_elem.u.baro.ts, log2_32(rec_type) - log2_32(BARO0),
+          log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.u.baro.ts, get_id_from_record_type(rec_type),
                   rec_elem.u.baro.pressure, rec_elem.u.baro.temperature);
         } break;
         case MAGNETO: {

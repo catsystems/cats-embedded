@@ -41,27 +41,30 @@
 #define REC_QUEUE_PRE_THRUSTING_FILL_RATIO 0.75f
 #define REC_QUEUE_PRE_THRUSTING_LIMIT      (uint32_t)(REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE)
 
+/**
+ * A bit mask that specifies where the IDs are located. The IDs occupy the first four bits of the rec_entry_type_e enum.
+ */
+#define REC_ID_MASK 0x0000000F
+
 /** Exported Types **/
 
+// clang-format off
 typedef enum {
-  IMU0 = 0x01,
-  IMU1 = 0x02,
-  IMU2 = 0x04,
-  BARO0 = 0x08,
-  BARO1 = 0x10,
-  BARO2 = 0x20,
-  MAGNETO = 0x40,
-  ACCELEROMETER = 0x80,
-  FLIGHT_INFO = 0x100,
-  ORIENTATION_INFO = 0x200,
-  FILTERED_DATA_INFO = 0x400,
-  FLIGHT_STATE = 0x800,
-  COVARIANCE_INFO = 0x1000,
-  SENSOR_INFO = 0x2000,
-  EVENT_INFO = 0x4000,
-  ERROR_INFO = 0x8000,
-  HEHE = 0xFFFFFFFF,
+  IMU                = 1 << 4,   // 0x20
+  BARO               = 1 << 5,   // 0x40
+  MAGNETO            = 1 << 6,   // 0x80
+  ACCELEROMETER      = 1 << 7,   // 0x100
+  FLIGHT_INFO        = 1 << 8,   // 0x200
+  ORIENTATION_INFO   = 1 << 9,   // 0x400
+  FILTERED_DATA_INFO = 1 << 10,  // 0x800
+  FLIGHT_STATE       = 1 << 11,  // 0x1000
+  COVARIANCE_INFO    = 1 << 12,  // 0x2000
+  SENSOR_INFO        = 1 << 13,  // 0x4000
+  EVENT_INFO         = 1 << 14,  // 0x8000
+  ERROR_INFO         = 1 << 15,  // 0x10000
+  HEHE               = 0xFFFFFFFF,
 } rec_entry_type_e;
+// clang-format on
 
 typedef enum {
   REC_CMD_INVALID = 0,
@@ -149,4 +152,31 @@ typedef struct {
 
 /** Exported Functions **/
 
-void record(rec_entry_type_e rec_type, const void *rec_value);
+void record(rec_entry_type_e rec_type_with_id, const void *rec_value);
+
+/**
+ * Extract only the pure record type by clearing the ID mask bits.
+ *
+ * @param rec_type record type with or without ID
+ * @return record type without ID
+ */
+inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) { return rec_type & ~REC_ID_MASK; }
+
+/**
+ * Add the ID information to the given record type.
+ *
+ * @param rec_type record type without ID
+ * @param id - identifier of the record element; should be between 0 & 15
+ * @return record type with ID
+ */
+inline rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t id) {
+  return rec_type | (id & REC_ID_MASK);
+}
+
+/**
+ * Strip REC_ID_MASK from the rec_entry_type_e enum and return the pure record type.
+ *
+ * @param rec_type record type information with ID
+ * @return ID of the record element without record type information
+ */
+inline uint8_t get_id_from_record_type(rec_entry_type_e rec_type) { return rec_type & REC_ID_MASK; }
