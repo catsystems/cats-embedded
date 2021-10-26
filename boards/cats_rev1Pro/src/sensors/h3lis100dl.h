@@ -70,7 +70,7 @@ typedef struct h3lis100dl_dev {
 bool h3lis100dl_init(const H3LIS100DL *dev);
 
 /**
- * Read out the raw sensor data, 8 bit data
+ * Read out the raw sensor data, 3 x 8 bit
  * LSB is 0.78g -> 7.6518m/s^2
  *
  * @param dev - sensor definition struct

@@ -197,7 +197,7 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 
     /* Do Orientation Kalman */
 #if defined(USE_ORIENTATION_KF) || defined(USE_ORIENTATION_FILTER)
-    read_sensor_data(&global_magneto, &global_imu[0], &orientation_filter);
+    read_sensor_data(&global_magneto[0], &global_imu[0], &orientation_filter);
     orientation_filter_step(&orientation_filter);
     orientation_info_t orientation_info;
     orientation_info.ts = ts;

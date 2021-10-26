@@ -75,7 +75,7 @@ void task_baro_read(void *argument) {
         global_baro[i].temperature = temperature[i];
         global_baro[i].ts = tick_count;
 
-        record(BARO0 << i, &(global_baro[i]));
+        record(add_id_to_record_type(BARO, i), &(global_baro[i]));
       }
     }
 
