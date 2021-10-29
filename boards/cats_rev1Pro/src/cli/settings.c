@@ -79,7 +79,7 @@ const clivalue_t valueTable[] = {
 
     // Events
     {"ev_moving", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_MOVING]},
-    {"ev_ready", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_IDLE]},
+    {"ev_ready", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_READY]},
     {"ev_liftoff", VAR_INT16 | MODE_ARRAY, .config.array.length = 16,
      global_cats_config.config.action_array[EV_LIFTOFF]},
     {"ev_burnout", VAR_INT16 | MODE_ARRAY, .config.array.length = 16, global_cats_config.config.action_array[EV_MAX_V]},

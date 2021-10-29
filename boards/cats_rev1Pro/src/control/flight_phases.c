@@ -92,8 +92,8 @@ static void check_moving_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data) {
   fsm_state->old_imu_data = *imu_data;
 
   /* Check if we reached the threshold */
-  if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_IDLE) {
-    trigger_event(EV_IDLE);
+  if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_READY) {
+    trigger_event(EV_READY);
     fsm_state->flight_state = READY;
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
@@ -147,7 +147,7 @@ static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, cont
 
   /* Half of the samples have to be over the specified threshold to detect
    * movement */
-  if (fsm_state->clock_memory > 2 * TIME_THRESHOLD_IDLE_TO_MOV) {
+  if (fsm_state->clock_memory > 2 * TIME_THRESHOLD_READY_TO_MOV) {
     fsm_state->clock_memory = 0;
     fsm_state->memory[1] = 0;
     fsm_state->angular_movement[0] = 0;
@@ -159,7 +159,7 @@ static void check_idle_phase(flight_fsm_t *fsm_state, imu_data_t *imu_data, cont
   fsm_state->old_imu_data = *imu_data;
 
   /* Check if we reached the threshold */
-  if (fsm_state->memory[1] > TIME_THRESHOLD_IDLE_TO_MOV) {
+  if (fsm_state->memory[1] > TIME_THRESHOLD_READY_TO_MOV) {
     trigger_event(EV_MOVING);
     fsm_state->flight_state = MOVING;
     fsm_state->clock_memory = 0;

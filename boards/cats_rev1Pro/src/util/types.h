@@ -137,7 +137,7 @@ typedef struct {
 
 typedef enum {
   DT_INVALID = 0,
-  DT_IDLE,
+  DT_READY,
   DT_WAITING,
   DT_DROGUE,
   DT_MAIN,
@@ -243,7 +243,7 @@ typedef struct {
 
 typedef enum {
   EV_MOVING = 0,
-  EV_IDLE,
+  EV_READY,
   EV_LIFTOFF,
   EV_MAX_V,
   EV_APOGEE,

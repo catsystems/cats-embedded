@@ -20,7 +20,7 @@
 #include "tasks/task_peripherals.h"
 #include "cmsis_os.h"
 
-void check_dt_idle_phase(drop_test_fsm_t *fsm_state, dt_telemetry_trigger_t *telemetry_trigger);
+void check_dt_ready_phase(drop_test_fsm_t *fsm_state, dt_telemetry_trigger_t *telemetry_trigger);
 void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
                             dt_telemetry_trigger_t *telemetry_trigger);
 void check_dt_drogue_phase(drop_test_fsm_t *fsm_state, dt_telemetry_trigger_t *telemetry_trigger);
@@ -33,8 +33,8 @@ void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   drop_test_fsm_t old_fsm_state = *fsm_state;
 
   switch (fsm_state->flight_state) {
-    case DT_IDLE:
-      check_dt_idle_phase(fsm_state, telemetry_trigger);
+    case DT_READY:
+      check_dt_ready_phase(fsm_state, telemetry_trigger);
       break;
     case DT_WAITING:
       check_dt_waiting_phase(fsm_state, imu_data, telemetry_trigger);
@@ -58,9 +58,9 @@ void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 }
 
-void check_dt_idle_phase(drop_test_fsm_t *fsm_state, dt_telemetry_trigger_t *telemetry_trigger) {
+void check_dt_ready_phase(drop_test_fsm_t *fsm_state, dt_telemetry_trigger_t *telemetry_trigger) {
   if (telemetry_trigger->set_waiting == 1) {
-    trigger_event(EV_IDLE);
+    trigger_event(EV_READY);
     fsm_state->flight_state = DT_WAITING;
     fsm_state->timer_start_drogue = osKernelGetTickCount();
     fsm_state->memory = 0;
@@ -100,7 +100,7 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   /* Check if Disarming */
   if (telemetry_trigger->set_waiting == 0) {
     trigger_event(EV_TOUCHDOWN);
-    fsm_state->flight_state = DT_IDLE;
+    fsm_state->flight_state = DT_READY;
   }
 }
 
