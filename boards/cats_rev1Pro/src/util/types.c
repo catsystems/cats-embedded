@@ -28,5 +28,5 @@ const char *flight_fsm_map[14] = {"INVALID",   "MOVING",      "READY",       "TH
                                   "COASTING",  "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
                                   "PARACHUTE", "BALLISTIC",   "TOUCHDOWN",  "HEHE"};
 
-const char *drop_test_fsm_map[7] = {"DT_INVALID", "DT_IDLE",      "DT_WAITING", "DT_DROGUE",
+const char *drop_test_fsm_map[7] = {"DT_INVALID", "DT_READY",      "DT_WAITING", "DT_DROGUE",
                                     "DT_MAIN",    "DT_TOUCHDOWN", "HEHE"};

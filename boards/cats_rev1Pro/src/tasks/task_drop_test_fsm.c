@@ -38,7 +38,7 @@ _Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  drop_test_fsm_t fsm_state = {.flight_state = DT_IDLE};
+  drop_test_fsm_t fsm_state = {.flight_state = DT_READY};
   imu_data_t local_imu;
 
   tick_count = osKernelGetTickCount();
