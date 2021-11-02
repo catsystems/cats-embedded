@@ -18,16 +18,17 @@
  */
 
 #pragma once
+
 #include <stdbool.h>
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS } lookupTableIndex_e;
+typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS } lookup_table_index_e;
 
 typedef struct lookupTableEntry_s {
   const char *const *values;
-  const uint8_t valueCount;
-} lookupTableEntry_t;
+  const uint8_t value_count;
+} lookup_table_entry_t;
 
 #define VALUE_TYPE_OFFSET    0
 #define VALUE_SECTION_OFFSET 3
@@ -47,58 +48,57 @@ typedef enum {
   MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
   MODE_BITSET = (3 << VALUE_MODE_OFFSET),
   MODE_STRING = (4 << VALUE_MODE_OFFSET),
-} cliValueFlag_e;
+} cli_value_flag_e;
 
 #define VALUE_TYPE_MASK    (0x07)
 #define VALUE_SECTION_MASK (0x18)
 #define VALUE_MODE_MASK    (0xE0)
 
-typedef struct cliMinMaxConfig_s {
+typedef struct cli_minmax_config {
   const int16_t min;
   const int16_t max;
-} cliMinMaxConfig_t;
+} cli_minmax_config_t;
 
-typedef struct cliMinMaxUnsignedConfig_s {
+typedef struct cli_minmax_unsigned_config {
   const uint16_t min;
   const uint16_t max;
-} cliMinMaxUnsignedConfig_t;
+} cli_minmax_unsigned_config_t;
 
-typedef struct cliLookupTableConfig_s {
-  const lookupTableIndex_e tableIndex;
-} cliLookupTableConfig_t;
+typedef struct cli_lookup_table_config {
+  const lookup_table_index_e table_index;
+} cli_lookup_table_config_t;
 
-typedef struct cliArrayLengthConfig_s {
+typedef struct cli_array_length_config {
   const uint8_t length;
-} cliArrayLengthConfig_t;
+} cli_array_length_config_t;
 
-typedef struct cliStringLengthConfig_s {
-  const uint8_t minlength;
-  const uint8_t maxlength;
+typedef struct cli_string_length_config {
+  const uint8_t min_length;
+  const uint8_t max_length;
   const uint8_t flags;
-} cliStringLengthConfig_t;
+} cli_string_length_config_t;
 
 #define STRING_FLAGS_NONE      (0)
 #define STRING_FLAGS_WRITEONCE (1 << 0)
 
 typedef union {
-  cliLookupTableConfig_t lookup;             // used for MODE_LOOKUP excl. VAR_UINT32
-  cliMinMaxConfig_t minmax;                  // used for MODE_DIRECT with signed parameters
-  cliMinMaxUnsignedConfig_t minmaxUnsigned;  // used for MODE_DIRECT with unsigned parameters
-  cliArrayLengthConfig_t array;              // used for MODE_ARRAY
-  cliStringLengthConfig_t string;            // used for MODE_STRING
-  uint8_t bitpos;                            // used for MODE_BITSET
-  uint32_t u32Max;                           // used for MODE_DIRECT with VAR_UINT32
-} cliValueConfig_t;
+  cli_lookup_table_config_t lookup;              // used for MODE_LOOKUP excl. VAR_UINT32
+  cli_minmax_config_t minmax;                    // used for MODE_DIRECT with signed parameters
+  cli_minmax_unsigned_config_t minmax_unsigned;  // used for MODE_DIRECT with unsigned parameters
+  cli_array_length_config_t array;               // used for MODE_ARRAY
+  cli_string_length_config_t string;             // used for MODE_STRING
+  uint8_t bitpos;                                // used for MODE_BITSET
+  uint32_t u32_max;                              // used for MODE_DIRECT with VAR_UINT32
+} cli_value_config_t;
 
-typedef struct clivalue_s {
+typedef struct cli_value {
   const char *name;
-  const uint8_t type;  // see cliValueFlag_e
-  const cliValueConfig_t config;
-
+  const uint8_t type;  // see cli_value_flag_e
+  const cli_value_config_t config;
   void *pdata;
-} __attribute__((packed)) clivalue_t;
+} __attribute__((packed)) cli_value_t;
 
-extern const lookupTableEntry_t lookupTables[];
-extern const uint16_t valueTableEntryCount;
+extern const lookup_table_entry_t lookup_tables[];
+extern const uint16_t value_table_entry_count;
 
-extern const clivalue_t valueTable[];
+extern const cli_value_t value_table[];

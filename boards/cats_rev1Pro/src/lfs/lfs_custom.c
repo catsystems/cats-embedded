@@ -34,7 +34,7 @@ static uint8_t read_buffer[LFS_CACHE_SIZE] = {};
 static uint8_t prog_buffer[LFS_CACHE_SIZE] = {};
 static uint8_t lookahead_buffer[LFS_LOOKAHEAD_SIZE] = {};
 
-/* File System Handle  -- NOT THREAD SAFE!!! */
+/* File System Handle  -- NOT THREAD-SAFE!!! */
 lfs_t lfs;
 const struct lfs_config lfs_cfg = {
     // block device operations
@@ -81,13 +81,13 @@ int lfs_ls(const char *path) {
 
     switch (info.type) {
       case LFS_TYPE_REG:
-        cliPrint("file ");
+        cli_print("file ");
         break;
       case LFS_TYPE_DIR:
-        cliPrint(" dir ");
+        cli_print(" dir ");
         break;
       default:
-        cliPrint("   ? ");
+        cli_print("   ? ");
         break;
     }
 
@@ -95,15 +95,15 @@ int lfs_ls(const char *path) {
     if (info.type == LFS_TYPE_REG) {
       for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--) {
         if (info.size >= (1 << 10 * i) - 1) {
-          cliPrintf("%*lu%sB ", 4 - (i != 0), info.size >> 10 * i, prefixes[i]);
+          cli_printf("%*lu%sB ", 4 - (i != 0), info.size >> 10 * i, prefixes[i]);
           break;
         }
       }
     } else {
-      cliPrint("      ");
+      cli_print("      ");
     }
 
-    cliPrintf("%s\n", info.name);
+    cli_printf("%s\n", info.name);
   }
 
   err = lfs_dir_close(&lfs, &dir);
