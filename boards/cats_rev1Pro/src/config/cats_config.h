@@ -56,8 +56,6 @@ typedef union {
 
 extern cats_config_u global_cats_config;
 
-extern const uint32_t CATS_STATUS_SECTOR;
-
 /** cats config initialization **/
 void cc_init();
 void cc_defaults();

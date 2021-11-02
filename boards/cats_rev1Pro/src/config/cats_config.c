@@ -49,8 +49,6 @@ const cats_config_u DEFAULT_CONFIG = {
 
 cats_config_u global_cats_config = {};
 
-const uint32_t CATS_STATUS_SECTOR = 1;
-
 /** cats config initialization **/
 
 void cc_init() {
