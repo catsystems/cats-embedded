@@ -55,6 +55,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args);
 
 static void cli_cmd_dump_flight(const char *cmd_name, char *args);
 static void cli_cmd_parse_flight(const char *cmd_name, char *args);
+static void cli_cmd_parse_stats(const char *cmd_name, char *args);
 
 static void cli_cmd_lfs_format(const char *cmd_name, char *args);
 static void cli_cmd_erase_flash(const char *cmd_name, char *args);
@@ -85,6 +86,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
+    CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
     CLI_COMMAND_DEF("status", "show status", NULL, cli_cmd_status),
     CLI_COMMAND_DEF("version", "show version", NULL, cli_cmd_version),
 };
@@ -422,7 +424,7 @@ static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
       cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
       cli_print_linef("Number of recorded flights: %lu", flight_counter);
     } else {
-      cli_print("\n");
+      cli_print_linefeed();
       dump_recording(flight_idx);
     }
   } else {
@@ -441,8 +443,26 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
       cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
       cli_print_linef("Number of recorded flights: %lu", flight_counter);
     } else {
-      cli_print("\n");
+      cli_print_linefeed();
       parse_recording(flight_idx);
+    }
+  } else {
+    cli_print_line("\nArgument not provided!");
+  }
+}
+static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
+  /* TODO - count how many files in a directory here */
+  char *endptr;
+  uint32_t flight_idx = strtoul(args, &endptr, 10);
+
+  if (args != endptr) {
+    // A number was found
+    if (flight_idx > flight_counter) {
+      cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
+      cli_print_linef("Number of recorded flights: %lu", flight_counter);
+    } else {
+      cli_print_linefeed();
+      parse_stats(flight_idx);
     }
   } else {
     cli_print_line("\nArgument not provided!");
@@ -459,6 +479,7 @@ static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
     cli_print_line("Mounting successful!");
     /* create the flights directory */
     lfs_mkdir(&lfs, "flights");
+    lfs_mkdir(&lfs, "stats");
 
     strncpy(cwd, "/", sizeof(cwd));
   }
@@ -488,6 +509,7 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   flight_counter = 0;
   /* create the flights directory */
   lfs_mkdir(&lfs, "flights");
+  lfs_mkdir(&lfs, "stats");
 
   strncpy(cwd, "/", sizeof(cwd));
 }

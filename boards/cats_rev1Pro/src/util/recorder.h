@@ -38,6 +38,8 @@
 
 #define REC_CMD_QUEUE_SIZE 16
 
+#define MAX_FILENAME_SIZE 32
+
 #define REC_QUEUE_PRE_THRUSTING_FILL_RATIO 0.75f
 #define REC_QUEUE_PRE_THRUSTING_LIMIT      (uint32_t)(REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE)
 
@@ -150,9 +152,38 @@ typedef struct {
   rec_elem_u u;
 } rec_elem_t;
 
+/* Flight Statistics */
+
+typedef struct {
+  struct {
+    timestamp_t ts;
+    float val;
+  } max_height;
+
+  struct {
+    timestamp_t ts;
+    float val;
+  } max_velocity;
+
+  struct {
+    timestamp_t ts;
+    float val;
+  } max_acceleration;
+} flight_stats_t;
+
+/** Exported Variables **/
+extern flight_stats_t global_flight_stats;
+
 /** Exported Functions **/
 
 void record(rec_entry_type_e rec_type_with_id, const void *rec_value);
+
+inline void reset_global_flight_stats() {
+  memset(&global_flight_stats, 0, sizeof(flight_stats_t));
+  global_flight_stats.max_height.val = -INFINITY;
+  global_flight_stats.max_velocity.val = -INFINITY;
+  global_flight_stats.max_acceleration.val = -INFINITY;
+}
 
 /**
  * Extract only the pure record type by clearing the ID mask bits.

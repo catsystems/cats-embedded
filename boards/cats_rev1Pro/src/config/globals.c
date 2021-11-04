@@ -147,6 +147,6 @@ volatile bool usb_communication_complete = false;
 
 volatile recorder_status_e global_recorder_status = REC_OFF;
 
-event_action_map_elem_t *event_action_map = NULL;
+event_action_map_elem_t* event_action_map = NULL;
 
 const char* code_version = "2.0.0+";

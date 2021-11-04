@@ -21,6 +21,11 @@
 #include "config/globals.h"
 #include "config/cats_config.h"
 
+#include <math.h>
+
+flight_stats_t global_flight_stats = {
+    .max_height.val = -INFINITY, .max_velocity.val = -INFINITY, .max_acceleration.val = -INFINITY};
+
 /**
  * Checks whether the given rec_type should be recorded.
  *
@@ -29,6 +34,26 @@
  */
 static inline bool should_record(rec_entry_type_e rec_type) {
   return (global_cats_config.config.recorder_mask & rec_type) > 0;
+}
+
+/* TODO: See whether this is optimized in assembler. Here we copy the entire struct but the alternative is to pass a
+ * pointer and this will cause too many indirect accesses. */
+static inline void collect_flight_info_stats(flight_info_t flight_info) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    /* TODO: We need to offset the timestamps in the flight stats struct by subtracting the timestamp at EV_LIFTOFF. */
+    if ((flight_info.height > global_flight_stats.max_height.val)) {
+      global_flight_stats.max_height.ts = flight_info.ts;
+      global_flight_stats.max_height.val = flight_info.height;
+    }
+    if (flight_info.velocity > global_flight_stats.max_velocity.val) {
+      global_flight_stats.max_velocity.ts = flight_info.ts;
+      global_flight_stats.max_velocity.val = flight_info.velocity;
+    }
+    if (flight_info.acceleration > global_flight_stats.max_acceleration.val) {
+      global_flight_stats.max_acceleration.ts = flight_info.ts;
+      global_flight_stats.max_acceleration.val = flight_info.acceleration;
+    }
+  }
 }
 
 void record(rec_entry_type_e rec_type_with_id, const void *rec_value) {
@@ -50,6 +75,7 @@ void record(rec_entry_type_e rec_type_with_id, const void *rec_value) {
         break;
       case FLIGHT_INFO:
         e.u.flight_info = *((flight_info_t *)rec_value);
+        collect_flight_info_stats(e.u.flight_info);
         break;
       case ORIENTATION_INFO:
         e.u.orientation_info = *((orientation_info_t *)rec_value);

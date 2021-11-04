@@ -36,6 +36,8 @@ static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
 static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
                                uint_fast8_t *rec_elem_size);
 
+static void create_stats_file();
+
 /** Exported Function Definitions **/
 
 _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
@@ -50,7 +52,7 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
   uint32_t max_elem_count = 0;
 
   lfs_file_t current_flight_file;
-  char current_flight_filename[32] = {};
+  char current_flight_filename[MAX_FILENAME_SIZE] = {};
 
   while (1) {
     rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
@@ -105,8 +107,11 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
         lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
         lfs_file_close(&lfs, &fc_file);
 
+        /* reset flight stats */
+        reset_global_flight_stats();
+
         /* open a new file */
-        snprintf(current_flight_filename, 32, "flights/flight_%05lu", flight_counter);
+        snprintf(current_flight_filename, MAX_FILENAME_SIZE, "flights/flight_%05lu", flight_counter);
         lfs_file_open(&lfs, &current_flight_file, current_flight_filename, LFS_O_WRONLY | LFS_O_CREAT);
         rec_elem_t curr_log_elem;
         uint32_t sync_counter = 0;
@@ -166,6 +171,9 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
         /* reset recording buffer index and queue */
         rec_buffer_idx = 0;
         osMessageQueueReset(rec_queue);
+
+        /* create flight stats file */
+        create_stats_file();
       } break;
       default:
         log_error("Unknown command value: %u", curr_rec_cmd);
@@ -232,4 +240,17 @@ static inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const 
     memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem, *rec_elem_size);
   }
   *rec_buffer_idx += *rec_elem_size;
+}
+
+static void create_stats_file() {
+  lfs_file_t current_stats_file;
+  char current_stats_filename[MAX_FILENAME_SIZE] = {};
+
+  snprintf(current_stats_filename, MAX_FILENAME_SIZE, "stats/stats_%05lu", flight_counter);
+  lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
+
+  /* This will as long as there are no pointers in the global_flight_stats struct */
+  lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
+
+  lfs_file_close(&lfs, &current_stats_file);
 }

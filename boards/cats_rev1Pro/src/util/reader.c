@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "util/reader.h"
+#include "util/recorder.h"
 #include "util/log.h"
 #include "config/globals.h"
 #include "lfs/lfs_custom.h"
@@ -35,8 +36,8 @@ void dump_recording(uint16_t number) {
   char *string_buffer2 = calloc(400, sizeof(char));
   uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
 
-  char filename[32] = {};
-  snprintf(filename, 32, "flights/flight_%05d", number);
+  char filename[MAX_FILENAME_SIZE] = {};
+  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);
 
   log_raw("Dumping file: %s", filename);
 
@@ -78,8 +79,8 @@ void parse_recording(uint16_t number) {
     return;
   }
 
-  char filename[32] = {};
-  snprintf(filename, 32, "flights/flight_%05d", number);
+  char filename[MAX_FILENAME_SIZE] = {};
+  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);
 
   log_raw("Reading file: %s", filename);
 
@@ -184,6 +185,45 @@ void parse_recording(uint16_t number) {
     lfs_file_close(&lfs, &curr_file);
   } else {
     log_raw("Flight %d not found!", number);
+  }
+
+  lfs_file_close(&lfs, &curr_file);
+}
+
+void parse_stats(uint16_t number) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    log_raw("The recorder is currently active, stop it first!");
+    return;
+  }
+
+  char filename[MAX_FILENAME_SIZE] = {};
+  snprintf(filename, MAX_FILENAME_SIZE, "stats/stats_%05d", number);
+
+  log_raw("Reading file: %s", filename);
+
+  lfs_file_t curr_file;
+
+  if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
+    flight_stats_t local_flight_stats = {};
+    if (lfs_file_read(&lfs, &curr_file, &local_flight_stats, sizeof(flight_stats_t)) > 0) {
+      log_raw("Flight Stats %d", number);
+      log_raw("========================");
+      log_raw("  Height");
+      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_height.ts);
+      log_raw("    Max. Height [m]: %f", (double)local_flight_stats.max_height.val);
+      log_raw("========================");
+      log_raw("  Velocity");
+      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_velocity.ts);
+      log_raw("    Max. Velocity [m/s]: %f", (double)local_flight_stats.max_velocity.val);
+      log_raw("========================");
+      log_raw("  Acceleration");
+      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_acceleration.ts);
+      log_raw("    Max. Acceleration [m/s^2]: %f", (double)local_flight_stats.max_acceleration.val);
+    } else {
+      log_raw("Error while reading Stats %d", number);
+    }
+  } else {
+    log_raw("Stats %d not found!", number);
   }
 
   lfs_file_close(&lfs, &curr_file);
