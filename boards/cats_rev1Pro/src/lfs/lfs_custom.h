@@ -20,6 +20,7 @@
 
 #include "lfs.h"
 
+/* TODO: Wrap lfs functions where you always pass this lfs variable instead of making it visible globally */
 extern lfs_t lfs;
 extern const struct lfs_config lfs_cfg;
 

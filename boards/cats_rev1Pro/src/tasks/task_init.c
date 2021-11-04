@@ -223,8 +223,10 @@ static void init_lfs() {
   }
   lfs_file_close(&lfs, &fc_file);
 
+  /* TODO: create a single function for this, it's used in multiple places */
   /* create the flights directory */
   lfs_mkdir(&lfs, "flights");
+  lfs_mkdir(&lfs, "stats");
 
   strncpy(cwd, "/", sizeof(cwd));
 }

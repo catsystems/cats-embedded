@@ -39,7 +39,7 @@
 #define RECEIVER_SAMPLING_FREQ 50
 
 #define USB_OUTPUT_BUFFER_SIZE 256
-#define USB_INPUT_BUFFER_SIZE 256
+#define USB_INPUT_BUFFER_SIZE  256
 
 /** Device Handles **/
 
@@ -104,6 +104,6 @@ extern volatile bool usb_communication_complete;
 /* recorder status is controlled by output functions, do not set manually! */
 extern volatile recorder_status_e global_recorder_status;
 
-extern event_action_map_elem_t *event_action_map;
+extern event_action_map_elem_t* event_action_map;
 
 extern const char* code_version;
