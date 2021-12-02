@@ -485,17 +485,17 @@ static void median_filter(median_filter_t *filter_data, state_estimation_data_t 
   filter_data->counter++;
   filter_data->counter = filter_data->counter % MEDIAN_FILTER_SIZE;
 
-  state_data->acceleration[0] = median(*(filter_data->acc_data + 0), MEDIAN_FILTER_SIZE);
+  state_data->acceleration[0] = median(*(filter_data->acc_data + 0));
 
-  state_data->acceleration[1] = median(*(filter_data->acc_data + 1), MEDIAN_FILTER_SIZE);
+  state_data->acceleration[1] = median(*(filter_data->acc_data + 1));
 
-  state_data->acceleration[2] = median(*(filter_data->acc_data + 2), MEDIAN_FILTER_SIZE);
+  state_data->acceleration[2] = median(*(filter_data->acc_data + 2));
 
-  state_data->calculated_AGL[0] = median(*(filter_data->height_AGL_data + 0), MEDIAN_FILTER_SIZE);
+  state_data->calculated_AGL[0] = median(*(filter_data->height_AGL_data + 0));
 
-  state_data->calculated_AGL[1] = median(*(filter_data->height_AGL_data + 1), MEDIAN_FILTER_SIZE);
+  state_data->calculated_AGL[1] = median(*(filter_data->height_AGL_data + 1));
 
-  state_data->calculated_AGL[2] = median(*(filter_data->height_AGL_data + 2), MEDIAN_FILTER_SIZE);
+  state_data->calculated_AGL[2] = median(*(filter_data->height_AGL_data + 2));
 }
 
 #endif
