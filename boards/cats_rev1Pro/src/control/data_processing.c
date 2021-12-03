@@ -17,81 +17,86 @@
  */
 
 #include "control/data_processing.h"
+#include "config/control_config.h"
 #include <string.h>
 #include <stdint.h>
 
-#define SWAP(a,b) { float temp=(a);(a)=(b);(b)=temp; }
-#define SORT_TWO(a,b) { if ((a)>(b)) SWAP((a),(b)); }
+/* a temporary variable "tmp" must be defined beforehand to use these macros */
+#define SWAP(a,b,tmp) { tmp=(a);(a)=(b);(b)=tmp; }
+#define SORT_TWO(a,b,tmp) { if ((a)>(b)) SWAP((a),(b),(tmp)); }
 
-float median(float input_array[], int32_t array_size) {
-  float array[array_size];
-  memcpy(array, input_array, array_size * sizeof(float));
+/* this function returns the median of an array of size MEDIAN_FILTER_SIZE
+ * it assumes that the size of "input_array" is equal to MEDIAN_FILTER_SIZE */
+float median(float input_array[]) {
+  float array[MEDIAN_FILTER_SIZE];
+  memcpy(array, input_array, MEDIAN_FILTER_SIZE * sizeof(float));
 
-  if (array_size == 9) {
-    // see https://web.archive.org/web/20060613213236/https://www.xilinx.com/xcell/xl23/xl23_16.pdf
-    SORT_TWO(array[1], array[2]);
-    SORT_TWO(array[4], array[5]);
-    SORT_TWO(array[7], array[8]);
-    SORT_TWO(array[0], array[1]);
-    SORT_TWO(array[3], array[4]);
-    SORT_TWO(array[6], array[7]);
-    SORT_TWO(array[1], array[2]);
-    SORT_TWO(array[4], array[5]);
-    SORT_TWO(array[7], array[8]);
-    SORT_TWO(array[0], array[3]);
-    SORT_TWO(array[5], array[8]);
-    SORT_TWO(array[4], array[7]);
-    SORT_TWO(array[3], array[6]);
-    SORT_TWO(array[1], array[4]);
-    SORT_TWO(array[2], array[5]);
-    SORT_TWO(array[4], array[7]);
-    SORT_TWO(array[4], array[2]);
-    SORT_TWO(array[6], array[4]);
-    SORT_TWO(array[4], array[2]);
-    return (array[4]);
-  } else {
-    // quickselect algorithm to find the median
-    float a;
-    int32_t i, j, m, k = (array_size >> 1);
-    int32_t l = 0, r = array_size - 1;
+#if MEDIAN_FILTER_SIZE == 9
+  /* hardwired algorithm - see https://web.archive.org/web/20060613213236/https://www.xilinx.com/xcell/xl23/xl23_16.pdf */
+  float tmp;
+  SORT_TWO(array[1], array[2], tmp);
+  SORT_TWO(array[4], array[5], tmp);
+  SORT_TWO(array[7], array[8], tmp);
+  SORT_TWO(array[0], array[1], tmp);
+  SORT_TWO(array[3], array[4], tmp);
+  SORT_TWO(array[6], array[7], tmp);
+  SORT_TWO(array[1], array[2], tmp);
+  SORT_TWO(array[4], array[5], tmp);
+  SORT_TWO(array[7], array[8], tmp);
+  SORT_TWO(array[0], array[3], tmp);
+  SORT_TWO(array[5], array[8], tmp);
+  SORT_TWO(array[4], array[7], tmp);
+  SORT_TWO(array[3], array[6], tmp);
+  SORT_TWO(array[1], array[4], tmp);
+  SORT_TWO(array[2], array[5], tmp);
+  SORT_TWO(array[4], array[7], tmp);
+  SORT_TWO(array[4], array[2], tmp);
+  SORT_TWO(array[6], array[4], tmp);
+  SORT_TWO(array[4], array[2], tmp);
+  return array[4];
+#else
+  /* quickselect algorithm */
+  float a, tmp;
+  int32_t i, j, m, k = (MEDIAN_FILTER_SIZE >> 1);
+  int32_t l = 0, r = MEDIAN_FILTER_SIZE - 1;
 
-    while (r > l + 1) {  // keep iterating until our partition is of size less than two
-      m = (l + r) >> 1;
+  while (r > l + 1) {  /* keep iterating until our partition is of size less than two */
+    m = (l + r) >> 1;
 
-      // we want array[l] <= array[l + 1] <= array[r]
-      SWAP(array[m], array[l + 1]);
-      SORT_TWO(array[l], array[r]);
-      SORT_TWO(array[l + 1], array[r]);
-      SORT_TWO(array[l], array[l + 1]);
+    /* we want the inequalities array[l] <= array[l + 1] <= array[r] to hold */
+    SWAP(array[m], array[l + 1], tmp);
+    SORT_TWO(array[l], array[r], tmp);
+    SORT_TWO(array[l + 1], array[r], tmp);
+    SORT_TWO(array[l], array[l + 1], tmp);
 
-      i = l + 1;
-      j = r;
-      a = array[l + 1];
+    i = l + 1;
+    j = r;
+    a = array[l + 1];
 
-      while (1) {
-        i++;
-        j--;
-        while (array[i] < a) i++;
-        while (array[j] > a) j--;
-        if (j < i) break;
-        SWAP(array[i], array[j]);
-      }
-
-      array[l + 1] = array[j];
-      array[j] = a;
-
-      // the new partition [l, r] must contain the median
-      if (j >= k) r = j - 1;
-      if (j <= k) l = i;
+    while (1) {
+      i++;
+      j--;
+      while (array[i] < a) i++;
+      while (array[j] > a) j--;
+      if (j < i) break;
+      SWAP(array[i], array[j], tmp);
     }
 
-    // we have the final partition which is of size 1 or 2
-    if (r == l + 1) {
-      SORT_TWO(array[l], array[r]);
-    }
+    array[l + 1] = array[j];
+    array[j] = a;
 
-    return array[k];
+    /* the partition for the next iteration [l, r] must contain the median */
+    if (j >= k) r = j - 1;
+    if (j <= k) l = i;
   }
+
+  /* we have the final partition which is of size 1 or 2 */
+  if (r == l + 1) {
+    SORT_TWO(array[l], array[r], tmp);
+  }
+
+  return array[k];
+#endif
 }
 
 const int log2_tab32[32] = {0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
