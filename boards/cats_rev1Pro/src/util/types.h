@@ -32,71 +32,90 @@
 /** BASIC TYPES **/
 
 /* Timestamp */
-typedef uint32_t timestamp_t;
+typedef uint32_t timestamp_t;  // ms
 
 /** SENSOR DATA TYPES **/
 
 /* IMU data */
 typedef struct {
   timestamp_t ts;
-  int16_t gyro_x, gyro_y, gyro_z;
-  int16_t acc_x, acc_y, acc_z;
+  int16_t gyro_x, gyro_y, gyro_z;  // IMU unit
+  int16_t acc_x, acc_y, acc_z;     // IMU unit
 } imu_data_t;
 
-/* IMU data */
+/* Accel data */
 typedef struct {
   timestamp_t ts;
-  int8_t acc_x, acc_y, acc_z;
+  int8_t acc_x, acc_y, acc_z;  // Accel unit
 } accel_data_t;
 
 /* Barometer data */
 typedef struct {
   timestamp_t ts;
-  int32_t pressure;
-  int32_t temperature;
+  int32_t pressure;     // Baro unit
+  int32_t temperature;  // Baro unit
 } baro_data_t;
 
 /* Magnetometer data */
 typedef struct {
   timestamp_t ts;
-  float magneto_x, magneto_y, magneto_z;
+  float magneto_x, magneto_y, magneto_z;  // Mag unit
 } magneto_data_t;
 
 /* Estimator Data */
 typedef struct {
-  float pressure[3];
-  float temperature[3];
-  float acceleration[3];
-  float calculated_AGL[3];
-  timestamp_t ts;
-} state_estimation_data_t;
+  float32_t acceleration_z;  // m/s^2
+  float32_t height_AGL;      // m
+} state_estimation_input_t;
+
+/* Sensor Data */
+
+typedef struct {
+  float32_t x, y, z;  // m/s^2
+} vec_t;
+
+typedef struct {
+  float32_t v;  // hPa
+} scalar_t;
+
+/* Todo: #if on SI data */
+typedef struct {
+  vec_t accel;        // m/s^2
+  vec_t gyro;         // dps
+  vec_t mag;          // mG
+  scalar_t pressure;  // hPa
+} SI_data_t;
 
 /* Elimination Data */
 typedef struct {
-  int32_t num_freeze[9];
-  int32_t num_maj_vote[9];
-  float last_value[9];
-  uint8_t faulty_accel[3];
-  uint8_t faulty_baro[3];
-  uint8_t num_faulty_accel;
-  uint8_t num_faulty_baros;
-  bool high_acc;
+  int16_t freeze_counter_imu[NUM_IMU];
+  int16_t freeze_counter_baro[NUM_BARO];
+  int16_t freeze_counter_magneto[NUM_MAGNETO];
+  int16_t freeze_counter_accel[NUM_ACCELEROMETER];
+  int16_t last_value_imu[NUM_IMU];
+  int32_t last_value_baro[NUM_BARO];
+  float32_t last_value_magneto[NUM_MAGNETO];
+  int8_t last_value_accel[NUM_ACCELEROMETER];
+  uint8_t faulty_imu[NUM_IMU];
+  uint8_t faulty_baro[NUM_BARO];
+  uint8_t faulty_mag[NUM_MAGNETO];
+  uint8_t faulty_acc[NUM_ACCELEROMETER];
 } sensor_elimination_t;
 
 typedef struct {
-  float acc_data[3][MEDIAN_FILTER_SIZE];
-  float height_AGL_data[3][MEDIAN_FILTER_SIZE];
+  float32_t acc[MEDIAN_FILTER_SIZE];         // m/s^2
+  float32_t height_AGL[MEDIAN_FILTER_SIZE];  // m
   uint8_t counter;
 } median_filter_t;
 
 typedef struct {
-  float height;
-  float velocity;
-  float acceleration;
+  float32_t height;        // m
+  float32_t velocity;      // m/s
+  float32_t acceleration;  // m/s^2
 } estimation_output_t;
 
 typedef struct {
-  float angle;
+  float32_t angle;
   uint8_t axis;
 } calibration_data_t;
 
@@ -127,7 +146,8 @@ typedef enum {
 
 typedef struct {
   flight_fsm_e flight_state;
-  imu_data_t old_imu_data;
+  vec_t old_acc_data;
+  vec_t old_gyro_data;
   float old_height;
   float angular_movement[3];
   uint32_t clock_memory;
@@ -162,50 +182,30 @@ typedef struct {
 typedef struct {
   float32_t Ad_data[9];
   float32_t Ad_T_data[9];
-  float32_t Gd_data[6];
   float32_t Bd_data[3];
-  float32_t Q_data[4];
   float32_t GdQGd_T_data[9];
-  float32_t H_full_data[9];
-  float32_t H_full_T_data[9];
-  float32_t H_eliminated_data[6];
-  float32_t H_eliminated_T_data[6];
-  float32_t H_2_eliminated_data[3];
-  float32_t H_2_eliminated_T_data[3];
-  float32_t R_full_data[9];
-  float32_t R_eliminated_data[4];
-  float32_t R_2_eliminated_data[1];
-  float32_t K_full_data[9];
-  float32_t K_eliminated_data[6];
-  float32_t K_2_eliminated_data[3];
+  float32_t H_data[3];
+  float32_t H_T_data[3];
+  float32_t K_data[3];
   float32_t x_bar_data[3];
-  float32_t P_bar_data[9];
   float32_t x_hat_data[3];
+  float32_t P_bar_data[9];
   float32_t P_hat_data[9];
   arm_matrix_instance_f32 Ad;
   arm_matrix_instance_f32 Ad_T;
-  arm_matrix_instance_f32 Gd;
-  arm_matrix_instance_f32 Bd;
-  arm_matrix_instance_f32 Q;
   arm_matrix_instance_f32 GdQGd_T;
-  arm_matrix_instance_f32 H_full;
-  arm_matrix_instance_f32 H_full_T;
-  arm_matrix_instance_f32 H_eliminated;
-  arm_matrix_instance_f32 H_eliminated_T;
-  arm_matrix_instance_f32 H_2_eliminated;
-  arm_matrix_instance_f32 H_2_eliminated_T;
-  arm_matrix_instance_f32 R_full;
-  arm_matrix_instance_f32 R_eliminated;
-  arm_matrix_instance_f32 R_2_eliminated;
-  arm_matrix_instance_f32 K_full;
-  arm_matrix_instance_f32 K_eliminated;
-  arm_matrix_instance_f32 K_2_eliminated;
+  arm_matrix_instance_f32 Bd;
+  arm_matrix_instance_f32 H;
+  arm_matrix_instance_f32 H_T;
+  arm_matrix_instance_f32 K;
   arm_matrix_instance_f32 x_bar;
-  arm_matrix_instance_f32 P_bar;
   arm_matrix_instance_f32 x_hat;
+  arm_matrix_instance_f32 P_bar;
   arm_matrix_instance_f32 P_hat;
-  float pressure_0;
-  float t_sampl;
+  float32_t measured_acceleration;
+  float32_t measured_AGL;
+  float32_t R;
+  float32_t t_sampl;
 } kalman_filter_t;
 
 typedef struct {

@@ -26,10 +26,9 @@
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "util/actions.h"
-#include "tasks/task_baro_read.h"
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_drop_test_fsm.h"
-#include "tasks/task_imu_read.h"
+#include "tasks/task_sensor_read.h"
 #include "tasks/task_init.h"
 #include "tasks/task_recorder.h"
 #include "tasks/task_state_est.h"
@@ -37,6 +36,7 @@
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_receiver.h"
 #include "tasks/task_health_monitor.h"
+#include "tasks/task_preprocessing.h"
 #include "lfs.h"
 #include "lfs/lfs_custom.h"
 #include "util/fifo.h"
@@ -60,16 +60,21 @@
       .priority = (osPriority_t)osPriorityNormal, \
   };
 
-SET_TASK_PARAMS(task_baro_read, 256)
-SET_TASK_PARAMS(task_imu_read, 256)
+/* Todo: Check with Trace if can be reduced */
+SET_TASK_PARAMS(task_sensor_read, 512)
+/* Todo: Check with Trace if can be reduced */
+SET_TASK_PARAMS(task_preprocessing, 512)
 
 // SET_TASK_PARAMS(task_receiver, 256)
-SET_TASK_PARAMS(task_state_est, 1300)
+/* Todo: Check with Trace if can be reduced */
+SET_TASK_PARAMS(task_state_est, 512)
 SET_TASK_PARAMS(task_health_monitor, 256)
 
+/* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_flight_fsm, 512)
 // SET_TASK_PARAMS(task_drop_test_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 256)
+/* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1592)
 SET_TASK_PARAMS(task_usb_communicator, 512)
 
@@ -254,14 +259,14 @@ static void init_tasks() {
 
       osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
-      /* creation of task_baro_read */
-      osThreadNew(task_baro_read, NULL, &task_baro_read_attributes);
-
       /* creation of receiver */
       // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
       /* creation of task_imu_read */
-      osThreadNew(task_imu_read, NULL, &task_imu_read_attributes);
+      osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
+
+      /* creation of task_preprocessing */
+      osThreadNew(task_preprocessing, NULL, &task_preprocessing_attributes);
 
       /* creation of task_flight_fsm */
       osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);

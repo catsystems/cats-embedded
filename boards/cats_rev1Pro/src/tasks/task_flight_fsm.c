@@ -39,8 +39,6 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   /* For periodic update */
   uint32_t tick_count, tick_update;
 
-  imu_data_t local_imu = {0};
-
   control_settings_t settings = global_cats_config.config.control_settings;
 
   tick_count = osKernelGetTickCount();
@@ -53,22 +51,15 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   // osDelay(1000);
 
   while (1) {
-    /* Update Imu data depending on the sensor elimination data */
-    for (int i = 0; i < 3; i++) {
-      if (global_elimination_data.faulty_accel[i] == 0) {
-        local_imu = global_imu[i + 1];
-        break;
-      }
-    }
 
     /* Check Flight Phases */
-    check_flight_phase(&global_flight_state, &local_imu, &global_kf_data, &settings);
+    check_flight_phase(&global_flight_state, &global_SI_data.accel, &global_SI_data.gyro, &global_estimation_data, &settings);
 
     // Keep track of max speed, velocity and acceleration for flight stats
     if (global_flight_state.flight_state >= THRUSTING_1 && global_flight_state.flight_state <= APOGEE) {
-      if (max_v < global_kf_data.velocity) max_v = global_kf_data.velocity;
-      if (max_a < global_kf_data.acceleration) max_a = global_kf_data.acceleration;
-      if (max_h < global_kf_data.height) max_h = global_kf_data.height;
+      if (max_v < global_estimation_data.velocity) max_v = global_estimation_data.velocity;
+      if (max_a < global_estimation_data.acceleration) max_a = global_estimation_data.acceleration;
+      if (max_h < global_estimation_data.height) max_h = global_estimation_data.height;
     }
     if (global_flight_state.state_changed == 1) {
       log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);

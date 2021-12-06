@@ -73,12 +73,14 @@ extern uint8_t usb_fifo_out_buffer[USB_OUTPUT_BUFFER_SIZE];
 /* Index of high G Accel */
 extern baro_data_t global_baro[NUM_BARO];
 extern imu_data_t global_imu[NUM_IMU];
-extern accel_data_t global_accel;
+extern accel_data_t global_accel[NUM_ACCELEROMETER];
 extern magneto_data_t global_magneto[NUM_MAGNETO];
+
+extern state_estimation_input_t global_estimation_input;
+extern SI_data_t global_SI_data;
 extern flight_fsm_t global_flight_state;
 extern drop_test_fsm_t global_drop_test_state;
-extern sensor_elimination_t global_elimination_data;
-extern estimation_output_t global_kf_data;
+extern estimation_output_t global_estimation_data;
 extern dt_telemetry_trigger_t dt_telemetry_trigger;
 
 /** Timers **/

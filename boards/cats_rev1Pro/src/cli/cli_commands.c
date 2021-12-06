@@ -347,8 +347,8 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
   cli_printf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
   cli_printf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state - 1]);
   cli_printf("Voltage: %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_kf_data.height, (double)global_kf_data.velocity,
-             (double)global_kf_data.acceleration);
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height, (double)global_estimation_data.velocity,
+             (double)global_estimation_data.acceleration);
 }
 
 static void cli_cmd_version(const char *cmd_name, char *args) {

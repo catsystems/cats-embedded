@@ -78,12 +78,6 @@ typedef enum {
 
 typedef struct {
   timestamp_t ts;
-  float height_cov;
-  float velocity_cov;
-} covariance_info_t;
-
-typedef struct {
-  timestamp_t ts;
   float height;
   float velocity;
   float acceleration; /* Acceleration with removed offset from inside the KF */
@@ -92,14 +86,10 @@ typedef struct {
 typedef struct {
   timestamp_t ts;
   int16_t estimated_orientation[4];
-  int16_t raw_orientation[4];
 } orientation_info_t;
 
 typedef struct {
   timestamp_t ts;
-  float measured_altitude_AGL; /* Raw Altitude computed from Baro Data averaged */
-  float measured_acceleration; /* Raw Altitude computed from Acceleration Data averaged but turned into the right
-                                  coordinate frame averaged */
   float filtered_altitude_AGL; /* Median Filtered Values from Baro Data averaged */
   float filtered_acceleration; /* Median Filtered Values from the acceleration but turned into the right coordinate
                                   frame averaged */
@@ -141,7 +131,6 @@ typedef union {
   orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;
   flight_state_t flight_state;
-  covariance_info_t covariance_info;
   sensor_info_t sensor_info;
   event_info_t event_info;
   error_info_t error_info;

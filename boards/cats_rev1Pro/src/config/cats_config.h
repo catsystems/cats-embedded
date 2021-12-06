@@ -45,7 +45,7 @@ typedef struct {
   // Timers
   config_timer_t timers[8];
   // Event action map
-  int16_t action_array[NUM_EVENTS][16]; // 8 (16/2) actions for each event
+  int16_t action_array[NUM_EVENTS][16];  // 8 (16/2) actions for each event
   int16_t initial_servo_position[2];
 } cats_config_t;
 

@@ -17,361 +17,168 @@
  */
 
 #include "control/sensor_elimination.h"
-#include "util/log.h"
-#include <math.h>
-#include "config/control_config.h"
+#include "config/globals.h"
 
-static cats_error_e check_sensor_bounds(state_estimation_data_t *data, sensor_elimination_t *elimination, uint8_t index,
-                                        bool is_pressure);
-static cats_error_e check_sensor_freezing(state_estimation_data_t *data, sensor_elimination_t *elimination,
-                                          uint8_t index, bool is_pressure);
-static cats_error_e check_sensor_majority(state_estimation_data_t *data, sensor_elimination_t *elimination,
-                                          bool is_pressure);
-static cats_error_e get_error_code(uint8_t index, bool is_pressure);
+static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);
+static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index,
+                                          const sens_info_t *sens_info);
 
-cats_error_e check_sensors(state_estimation_data_t *data, sensor_elimination_t *elimination) {
+void check_sensors(sensor_elimination_t *elimination) {
   cats_error_e status = CATS_ERR_OK;
-  sensor_elimination_t old_elimination = *elimination;
 
   /* Accelerometers */
-
-  for (uint8_t i = 0; i < NUM_ACC; i++) {
-    status |= check_sensor_bounds(data, elimination, i, false);
-    // Only check freezing on non high G accels
-    if(i != HIGH_G_ACC_INDEX) status |= check_sensor_freezing(data, elimination, i, false);
-    /* Accel is not faulty anymore */
-    if (elimination->faulty_accel[i] == 1) {
-
-      if (status == CATS_ERR_OK) {
-        elimination->faulty_accel[i] = 0;
-      }
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Add Up all the faulty Accels */
-  elimination->num_faulty_accel = 0;
-  for (uint8_t i = 0; i < NUM_ACC; i++) {
-    if (elimination->faulty_accel[i] == 1) {
-      elimination->num_faulty_accel += 1;
-    }
-  }
-
-  /* If we have 3 Working Accels, check Majority voting */
-  if (elimination->num_faulty_accel == 0) {
-    status |= check_sensor_majority(data, elimination, false);
-    elimination->num_faulty_accel = 0;
-    for (uint8_t i = 0; i < NUM_ACC; i++) {
-      if (elimination->faulty_accel[i] == 1) {
-        elimination->num_faulty_accel += 1;
-      }
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Barometers */
-  for (uint8_t i = 0; i < NUM_BARO; i++) {
-    status |= check_sensor_bounds(data, elimination, i, true);
-    status |= check_sensor_freezing(data, elimination, i, true);
-    /* Baro is not faulty anymore */
-    if (elimination->faulty_baro[i] == 1) {
-      if (status == CATS_ERR_OK) {
-        elimination->faulty_baro[i] = 0;
-      }
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Add Up all the faulty Baros */
-  elimination->num_faulty_baros = 0;
-  for (uint8_t i = 0; i < NUM_BARO; i++) {
-    if (elimination->faulty_baro[i] == 1) {
-      elimination->num_faulty_baros += 1;
-    }
-  }
-
-  /* If we have 3 Working Baros, check Majority voting */
-  if (elimination->num_faulty_baros == 0) {
-    status |= check_sensor_majority(data, elimination, true);
-    elimination->num_faulty_baros = 0;
-    for (uint8_t i = 0; i < NUM_BARO; i++) {
-      if (elimination->faulty_baro[i] == 1) {
-        elimination->num_faulty_baros += 1;
-      }
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Error Logging */
-  cats_error_e log_status = CATS_ERR_OK;
-  for (uint8_t i = 0; i < NUM_BARO; i++) {
-    if (elimination->faulty_baro[i]) {
-      if (elimination->faulty_baro[i] != old_elimination.faulty_baro[i]) {
-        switch (i) {
-          case 0:
-            log_status |= CATS_ERR_BARO_0;
-            break;
-          case 1:
-            log_status |= CATS_ERR_BARO_1;
-            break;
-          case 2:
-            log_status |= CATS_ERR_BARO_2;
-            break;
-          default:
-            break;
-        }
-      }
-    }
-  }
-  for (uint8_t i = 0; i < NUM_ACC; i++) {
-    if (elimination->faulty_accel[i]) {
-      if (elimination->faulty_accel[i] != old_elimination.faulty_accel[i]) {
-        switch (i) {
-          case 0:
-            log_status |= CATS_ERR_IMU_0;
-            break;
-          case 1:
-            log_status |= CATS_ERR_IMU_1;
-            break;
-          case 2:
-            log_status |= CATS_ERR_IMU_2;
-            break;
-          default:
-            break;
-        }
-      }
-    }
-  }
-  add_error(log_status);
-
-  return status;
-}
-
-static cats_error_e check_sensor_bounds(state_estimation_data_t *data, sensor_elimination_t *elimination, uint8_t index,
-                                        bool is_pressure) {
-  cats_error_e status = CATS_ERR_OK;
-  cats_error_e error_status = get_error_code(index, is_pressure);
-
-  if (is_pressure) {
-    /* Check Pressure Data */
-    if ((data->pressure[index] > UPPER_BOUND_PRESSURE) || (data->pressure[index] < LOWER_BOUND_PRESSURE) ||
-        (data->temperature[index] > UPPER_BOUND_TEMPERATURE) || (data->temperature[index] < LOWER_BOUND_TEMPERATURE)) {
-      status = error_status;
-      elimination->faulty_baro[index] = 1;
-    }
-  } else {
-    /* Check Accelerometer Data */
-    if (index == HIGH_G_ACC_INDEX) {
-      /* check Bound of High G accel */
-      if ((data->acceleration[index] > UPPER_BOUND_HIGH_G_ACC) ||
-          (data->acceleration[index] < LOWER_BOUND_HIGH_G_ACC)) {
-        elimination->faulty_accel[index] = 1;
-        status = error_status;
-      }
-      /* check if we are in high acceleration mode */
-      else if ((data->acceleration[index] > UPPER_BOUND_ACC) && (data->acceleration[index] < UPPER_BOUND_HIGH_G_ACC)) {
-        elimination->high_acc = true;
-      } else {
-        elimination->high_acc = false;
-      }
+  for (uint8_t i = 0; i < NUM_ACCELEROMETER; i++) {
+    status = check_sensor_bounds(elimination, i, &acc_info[NUM_IMU + i]);
+    status |= check_sensor_freezing(elimination, i, &acc_info[NUM_IMU + i]);
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      elimination->faulty_acc[i] = 0;
+      clear_error(CATS_ERR_ACC);
     } else {
-      if ((data->acceleration[index] > UPPER_BOUND_ACC) || (data->acceleration[index] < LOWER_BOUND_ACC)) {
-        status = error_status;
-        elimination->faulty_accel[index] = 1;
-      }
+      add_error(status);
     }
+    status = CATS_ERR_OK;
   }
 
-  return status;
+  /* IMU */
+  for (uint8_t i = 0; i < NUM_IMU; i++) {
+    status = check_sensor_bounds(elimination, i, &acc_info[i]);
+    status |= check_sensor_freezing(elimination, i, &acc_info[i]);
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      elimination->faulty_imu[i] = 0;
+      clear_error(CATS_ERR_IMU);
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+
+  /* Barometer */
+  for (uint8_t i = 0; i < NUM_BARO; i++) {
+    status = check_sensor_bounds(elimination, i, &baro_info[i]);
+    status |= check_sensor_freezing(elimination, i, &baro_info[i]);
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      elimination->faulty_baro[i] = 0;
+      clear_error(CATS_ERR_BARO);
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+
+  /* Magneto */
+  for (uint8_t i = 0; i < NUM_MAGNETO; i++) {
+    status = check_sensor_bounds(elimination, i, &mag_info[i]);
+    status |= check_sensor_freezing(elimination, i, &mag_info[i]);
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      elimination->faulty_mag[i] = 0;
+      clear_error(CATS_ERR_MAG);
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
 }
 
-static cats_error_e check_sensor_freezing(state_estimation_data_t *data, sensor_elimination_t *elimination,
-                                          uint8_t index, bool is_pressure) {
+static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index,
+                                        const sens_info_t *sens_info) {
   cats_error_e status = CATS_ERR_OK;
-  cats_error_e error_status = get_error_code(index, is_pressure);
 
-  if (is_pressure) {
-    /* Pressure */
-    if (data->pressure[index] == elimination->last_value[index + 3]) {
-      elimination->num_freeze[index + 3] += 1;
-      if (elimination->num_freeze[index + 3] > MAX_NUM_SAME_VALUE_PRESSURE) {
-        status = error_status;
+  switch (sens_info->sens_type) {
+    case MS5607_ID:
+      if ((((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_baro[index] = 1;
-      }
-    } else {
-      elimination->last_value[index + 3] = data->pressure[index];
-      elimination->num_freeze[index + 3] = 0;
-    }
-    /* Temperature */
-    if (data->temperature[index] == elimination->last_value[index + 6]) {
-      elimination->num_freeze[index + 6] += 1;
-      if (elimination->num_freeze[index + 6] > MAX_NUM_SAME_VALUE_TEMPERATURE) {
-        status = error_status;
-        elimination->faulty_baro[index] = 1;
-      }
-    } else {
-      elimination->last_value[index + 6] = data->temperature[index];
-      elimination->num_freeze[index + 6] = 0;
-    }
-  } else {
-    /* Check imu */
-    if (data->acceleration[index] == elimination->last_value[index]) {
-      elimination->num_freeze[index] += 1;
-      if (elimination->num_freeze[index] > MAX_NUM_SAME_VALUE_IMU) {
-        status = error_status;
-        elimination->faulty_accel[index] = 1;
-      }
-    } else {
-      elimination->last_value[index] = data->acceleration[index];
-      elimination->num_freeze[index] = 0;
-    }
-  }
-
-  return status;
-}
-
-static cats_error_e check_sensor_majority(state_estimation_data_t *data, sensor_elimination_t *elimination,
-                                          bool is_pressure) {
-  cats_error_e status = CATS_ERR_OK;
-
-  /* Do Majority Voting */
-  float error[3] = {0};
-
-  if (is_pressure) {
-    /* Barometer */
-    error[0] = fabsf(data->pressure[0] - data->pressure[1]);
-    error[1] = fabsf(data->pressure[1] - data->pressure[2]);
-    error[2] = fabsf(data->pressure[0] - data->pressure[2]);
-    if ((error[0] > MAJ_VOTE_PRESSURE_ERROR) && (error[2] > MAJ_VOTE_PRESSURE_ERROR)) {
-      /* Baro 0 probably faulty */
-      elimination->num_maj_vote[3] += 1;
-      if (elimination->num_maj_vote[3] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_0;
-        elimination->faulty_baro[0] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[3] = 0;
-    }
-    if ((error[0] > MAJ_VOTE_PRESSURE_ERROR) && (error[1] > MAJ_VOTE_PRESSURE_ERROR)) {
-      /* Baro 1 probably faulty */
-      elimination->num_maj_vote[4] += 1;
-      if (elimination->num_maj_vote[4] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_1;
-        elimination->faulty_baro[1] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[4] = 0;
-    }
-    if ((error[1] > MAJ_VOTE_PRESSURE_ERROR) && (error[2] > MAJ_VOTE_PRESSURE_ERROR)) {
-      /* Baro 2 probably faulty */
-      elimination->num_maj_vote[5] += 1;
-      if (elimination->num_maj_vote[5] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_2;
-        elimination->faulty_baro[2] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[5] = 0;
-    }
-
-    /* Temperature */
-    error[0] = fabsf(data->temperature[0] - data->temperature[1]);
-    error[1] = fabsf(data->temperature[1] - data->temperature[2]);
-    error[2] = fabsf(data->temperature[0] - data->temperature[2]);
-    if ((error[0] > MAJ_VOTE_TEMPERATURE_ERROR) && (error[2] > MAJ_VOTE_TEMPERATURE_ERROR)) {
-      /* Baro 0 probably faulty */
-      elimination->num_maj_vote[6] += 1;
-      if (elimination->num_maj_vote[6] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_0;
-        elimination->faulty_baro[0] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[6] = 0;
-    }
-    if ((error[0] > MAJ_VOTE_TEMPERATURE_ERROR) && (error[1] > MAJ_VOTE_TEMPERATURE_ERROR)) {
-      /* Baro 1 probably faulty */
-      elimination->num_maj_vote[7] += 1;
-      if (elimination->num_maj_vote[7] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_1;
-        elimination->faulty_baro[1] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[7] = 0;
-    }
-    if ((error[1] > MAJ_VOTE_TEMPERATURE_ERROR) && (error[2] > MAJ_VOTE_TEMPERATURE_ERROR)) {
-      /* Baro 2 probably faulty */
-      elimination->num_maj_vote[8] += 1;
-      if (elimination->num_maj_vote[8] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_BARO_2;
-        elimination->faulty_baro[2] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[8] = 0;
-    }
-  } else {
-    /* Acceleration */
-    error[0] = fabsf(data->acceleration[0] - data->acceleration[1]);
-    error[1] = fabsf(data->acceleration[1] - data->acceleration[2]);
-    error[2] = fabsf(data->acceleration[0] - data->acceleration[2]);
-    if ((error[0] > MAJ_VOTE_IMU_ERROR) && (error[2] > MAJ_VOTE_IMU_ERROR)) {
-      /* IMU 0 probably faulty */
-      elimination->num_maj_vote[0] += 1;
-      if (elimination->num_maj_vote[0] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_IMU_0;
-        elimination->faulty_accel[0] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[0] = 0;
-    }
-    if ((error[0] > MAJ_VOTE_IMU_ERROR) && (error[1] > MAJ_VOTE_IMU_ERROR)) {
-      /* IMU 1 probably faulty */
-      elimination->num_maj_vote[1] += 1;
-      if (elimination->num_maj_vote[1] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_IMU_1;
-        elimination->faulty_accel[1] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[1] = 0;
-    }
-    if ((error[1] > MAJ_VOTE_IMU_ERROR) && (error[2] > MAJ_VOTE_IMU_ERROR)) {
-      /* IMU 2 probably faulty */
-      elimination->num_maj_vote[2] += 1;
-      if (elimination->num_maj_vote[2] > MAJ_VOTE_NUM_VALUES) {
-        status = CATS_ERR_IMU_2;
-        elimination->faulty_accel[2] = 1;
-      }
-    } else {
-      elimination->num_maj_vote[2] = 0;
-    }
-  }
-
-  return status;
-}
-
-static cats_error_e get_error_code(uint8_t index, bool is_pressure) {
-  switch (index) {
-    case 0:
-      if (is_pressure) {
-        return CATS_ERR_BARO_0;
-      } else {
-        return CATS_ERR_IMU_0;
+        status = CATS_ERR_BARO;
       }
       break;
-    case 1:
-      if (is_pressure) {
-        return CATS_ERR_BARO_1;
-      } else {
-        return CATS_ERR_IMU_1;
+    case MMC5983MA_ID:
+      if (((global_magneto[index].magneto_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          ((global_magneto[index].magneto_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+        elimination->faulty_mag[index] = 1;
+        status = CATS_ERR_MAG;
       }
       break;
-    case 2:
-      if (is_pressure) {
-        return CATS_ERR_BARO_2;
-      } else {
-        return CATS_ERR_IMU_2;
+    case ICM20601_ID_ACC:
+      if ((((float32_t)global_imu[index].acc_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)global_imu[index].acc_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+        elimination->faulty_imu[index] = 1;
+        status = CATS_ERR_IMU;
+      }
+      break;
+    case H3LIS100DL_ID:
+      if ((((float32_t)global_accel[index].acc_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)global_accel[index].acc_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+        elimination->faulty_acc[index] = 1;
+        status = CATS_ERR_ACC;
       }
       break;
     default:
-      return CATS_ERR_HARD_FAULT;
       break;
   }
+
+  return status;
+}
+
+static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index,
+                                          const sens_info_t *sens_info) {
+  cats_error_e status = CATS_ERR_OK;
+
+  switch (sens_info->sens_type) {
+    case MS5607_ID:
+      if (global_baro[index].pressure == elimination->last_value_baro[index]) {
+        elimination->freeze_counter_baro[index]++;
+        if (elimination->freeze_counter_baro[index] > MAX_NUM_SAME_VALUE) {
+          elimination->faulty_baro[index] = 1;
+          status = CATS_ERR_BARO;
+        }
+      } else {
+        elimination->last_value_baro[index] = global_baro[index].pressure;
+        elimination->freeze_counter_baro[index] = 0;
+      }
+      break;
+    case MMC5983MA_ID:
+      if (global_magneto[index].magneto_x == elimination->last_value_magneto[index]) {
+        elimination->freeze_counter_magneto[index]++;
+        if (elimination->freeze_counter_magneto[index] > MAX_NUM_SAME_VALUE) {
+          elimination->faulty_mag[index] = 1;
+          status = CATS_ERR_MAG;
+        }
+      } else {
+        elimination->last_value_magneto[index] = global_magneto[index].magneto_x;
+        elimination->freeze_counter_magneto[index] = 0;
+      }
+      break;
+    case ICM20601_ID_ACC:
+      if (global_imu[index].acc_x == elimination->last_value_imu[index]) {
+        elimination->freeze_counter_imu[index]++;
+        if (elimination->freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
+          elimination->faulty_imu[index] = 1;
+          status = CATS_ERR_IMU;
+        }
+      } else {
+        elimination->last_value_imu[index] = global_imu[index].acc_x;
+        elimination->freeze_counter_imu[index] = 0;
+      }
+      break;
+    case H3LIS100DL_ID:
+      if (global_accel[index].acc_x == elimination->last_value_accel[index]) {
+        elimination->freeze_counter_accel[index]++;
+        if (elimination->freeze_counter_accel[index] > MAX_NUM_SAME_VALUE) {
+          elimination->faulty_acc[index] = 1;
+          status = CATS_ERR_ACC;
+        }
+      } else {
+        elimination->last_value_accel[index] = global_accel[index].acc_x;
+        elimination->freeze_counter_accel[index] = 0;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return status;
 }

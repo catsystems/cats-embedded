@@ -129,9 +129,7 @@ void parse_recording(uint16_t number) {
         case ORIENTATION_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.orientation_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d|%d|%d|%d|%d", rec_elem.u.orientation_info.ts,
-                  rec_elem.u.orientation_info.raw_orientation[0], rec_elem.u.orientation_info.raw_orientation[1],
-                  rec_elem.u.orientation_info.raw_orientation[2], rec_elem.u.orientation_info.raw_orientation[3],
+          log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.u.orientation_info.ts,
                   rec_elem.u.orientation_info.estimated_orientation[0],
                   rec_elem.u.orientation_info.estimated_orientation[1],
                   rec_elem.u.orientation_info.estimated_orientation[2],
@@ -140,9 +138,7 @@ void parse_recording(uint16_t number) {
         case FILTERED_DATA_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.filtered_data_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FILTERED_DATA_INFO|%f|%f|%f|%f", rec_elem.u.filtered_data_info.ts,
-                  (double)rec_elem.u.filtered_data_info.measured_altitude_AGL,
-                  (double)rec_elem.u.filtered_data_info.measured_acceleration,
+          log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.u.filtered_data_info.ts,
                   (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
                   (double)rec_elem.u.filtered_data_info.filtered_acceleration);
         } break;
@@ -151,12 +147,6 @@ void parse_recording(uint16_t number) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           log_raw("%lu|FLIGHT_STATE|%u", rec_elem.u.flight_state.ts,
                   rec_elem.u.flight_state.flight_or_drop_state.flight_state);
-        } break;
-        case COVARIANCE_INFO: {
-          size_t elem_sz = sizeof(rec_elem.u.covariance_info);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|COVARIANCE_INFO|%f|%f", rec_elem.u.covariance_info.ts,
-                  (double)rec_elem.u.covariance_info.height_cov, (double)rec_elem.u.covariance_info.velocity_cov);
         } break;
         case SENSOR_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.sensor_info);

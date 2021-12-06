@@ -20,13 +20,11 @@
 #include "util/recorder.h"
 #include "util/log.h"
 
-#include <stdint.h>
-
 static uint32_t errors = 0;
 
 void add_error(cats_error_e err) {
   if (err != CATS_ERR_OK) {
-    if(errors != (errors | err)){
+    if (errors != (errors | err)) {
       log_error("Encountered error 0x%x", err);
 
       errors |= err;
@@ -39,7 +37,7 @@ void add_error(cats_error_e err) {
 }
 
 void clear_error(cats_error_e err) {
-  if(errors & err){
+  if (errors & err) {
     errors &= ~err;
 
     uint32_t ts = osKernelGetTickCount();
@@ -48,26 +46,33 @@ void clear_error(cats_error_e err) {
   }
 }
 
-uint32_t get_error_count(){
+uint32_t get_error_count() {
   uint32_t count = 0;
   uint32_t mask = 0x00000001;
-  for(int i = 0; i < 32; i++){
-    if(errors & (mask << i)) count++;
+  for (int i = 0; i < 32; i++) {
+    if (errors & (mask << i)) count++;
   }
   return count;
 }
 
-cats_error_e get_error_by_priority(uint32_t id){
+cats_error_e get_error_by_priority(uint32_t id) {
   uint32_t count = 0;
   uint32_t mask = 0x00000001;
-  for(int i = 31; i >= 0; i--){
-    if(errors & (mask << i)) {
+  for (int i = 31; i >= 0; i--) {
+    if (errors & (mask << i)) {
       count++;
     }
-    if(count == (id+1))
-      return (cats_error_e)(mask << i);
+    if (count == (id + 1)) return (cats_error_e)(mask << i);
   }
   return CATS_ERR_OK;
 }
 
-
+bool get_error_by_tag(cats_error_e err) {
+  if ((errors & err) != 0) {
+    /* return true if error is present */
+    return true;
+  } else {
+    /* return false if error is not present */
+    return false;
+  }
+}

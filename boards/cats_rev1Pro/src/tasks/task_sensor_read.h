@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_imu_read(void *argument);
+_Noreturn void task_sensor_read(void *argument);

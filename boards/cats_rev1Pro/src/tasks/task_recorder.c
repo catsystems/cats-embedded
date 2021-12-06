@@ -212,9 +212,6 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case FLIGHT_STATE:
       rec_elem_size += sizeof(rec_elem->u.flight_state);
       break;
-    case COVARIANCE_INFO:
-      rec_elem_size += sizeof(rec_elem->u.covariance_info);
-      break;
     case SENSOR_INFO:
       rec_elem_size += sizeof(rec_elem->u.sensor_info);
       break;
