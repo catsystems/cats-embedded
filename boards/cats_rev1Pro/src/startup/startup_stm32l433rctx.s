@@ -15,13 +15,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Apache License, Version 2.0,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/Apache-2.0
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -66,32 +65,35 @@ Reset_Handler:
     bl  SystemInit
 
 /* Copy the data segment initializers from flash to SRAM */
-  movs	r1, #0
-  b	LoopCopyDataInit
+  ldr r0, =_sdata
+  ldr r1, =_edata
+  ldr r2, =_sidata
+  movs r3, #0
+  b LoopCopyDataInit
 
 CopyDataInit:
-	ldr	r3, =_sidata
-	ldr	r3, [r3, r1]
-	str	r3, [r0, r1]
-	adds	r1, r1, #4
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
 
 LoopCopyDataInit:
-	ldr	r0, =_sdata
-	ldr	r3, =_edata
-	adds	r2, r0, r1
-	cmp	r2, r3
-	bcc	CopyDataInit
-	ldr	r2, =_sbss
-	b	LoopFillZerobss
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyDataInit
+
 /* Zero fill the bss segment. */
+  ldr r2, =_sbss
+  ldr r4, =_ebss
+  movs r3, #0
+  b LoopFillZerobss
+
 FillZerobss:
-	movs	r3, #0
-	str	r3, [r2], #4
+  str  r3, [r2]
+  adds r2, r2, #4
 
 LoopFillZerobss:
-	ldr	r3, = _ebss
-	cmp	r2, r3
-	bcc	FillZerobss
+  cmp r2, r4
+  bcc FillZerobss
 
 /* Call static constructors */
     bl __libc_init_array
@@ -100,7 +102,7 @@ LoopFillZerobss:
 
 LoopForever:
     b LoopForever
-    
+
 .size	Reset_Handler, .-Reset_Handler
 
 /**
@@ -414,52 +416,51 @@ g_pfnVectors:
 
 	.weak	COMP_IRQHandler
 	.thumb_set COMP_IRQHandler,Default_Handler
-	
+
 	.weak	LPTIM1_IRQHandler
 	.thumb_set LPTIM1_IRQHandler,Default_Handler
-	
+
 	.weak	LPTIM2_IRQHandler
-	.thumb_set LPTIM2_IRQHandler,Default_Handler	
-	
+	.thumb_set LPTIM2_IRQHandler,Default_Handler
+
 	.weak	USB_IRQHandler
-	.thumb_set USB_IRQHandler,Default_Handler	
-	
+	.thumb_set USB_IRQHandler,Default_Handler
+
 	.weak	DMA2_Channel6_IRQHandler
-	.thumb_set DMA2_Channel6_IRQHandler,Default_Handler	
-	
+	.thumb_set DMA2_Channel6_IRQHandler,Default_Handler
+
 	.weak	DMA2_Channel7_IRQHandler
-	.thumb_set DMA2_Channel7_IRQHandler,Default_Handler	
-	
+	.thumb_set DMA2_Channel7_IRQHandler,Default_Handler
+
 	.weak	LPUART1_IRQHandler
-	.thumb_set LPUART1_IRQHandler,Default_Handler	
-	
+	.thumb_set LPUART1_IRQHandler,Default_Handler
+
 	.weak	QUADSPI_IRQHandler
-	.thumb_set QUADSPI_IRQHandler,Default_Handler	
-	
+	.thumb_set QUADSPI_IRQHandler,Default_Handler
+
 	.weak	I2C3_EV_IRQHandler
-	.thumb_set I2C3_EV_IRQHandler,Default_Handler	
-	
+	.thumb_set I2C3_EV_IRQHandler,Default_Handler
+
 	.weak	I2C3_ER_IRQHandler
-	.thumb_set I2C3_ER_IRQHandler,Default_Handler	
-	
+	.thumb_set I2C3_ER_IRQHandler,Default_Handler
+
 	.weak	SAI1_IRQHandler
 	.thumb_set SAI1_IRQHandler,Default_Handler
-	
+
 	.weak	SWPMI1_IRQHandler
 	.thumb_set SWPMI1_IRQHandler,Default_Handler
-	
+
 	.weak	TSC_IRQHandler
 	.thumb_set TSC_IRQHandler,Default_Handler
-	
+
 	.weak	LCD_IRQHandler
 	.thumb_set LCD_IRQHandler,Default_Handler
-	
+
 	.weak	RNG_IRQHandler
 	.thumb_set RNG_IRQHandler,Default_Handler
-	
+
 	.weak	FPU_IRQHandler
 	.thumb_set FPU_IRQHandler,Default_Handler
-	
+
 	.weak	CRS_IRQHandler
 	.thumb_set CRS_IRQHandler,Default_Handler
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
