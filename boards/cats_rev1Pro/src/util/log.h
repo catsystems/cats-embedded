@@ -22,6 +22,7 @@
 
 #include "trcRecorder.h"
 #include "cmsis_os.h"
+#include "util/debug.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -48,22 +49,9 @@ void log_enable();
 void log_disable();
 bool log_is_enabled();
 
-/* Read In Fake Sensor Data */
-#define USB_DATA_ENABLE 0
-
-/* Debug flag */
-#ifdef CATS_DEBUG
-#undef CATS_DEBUG
-#endif
-/* Comment the next line in order to disable debug mode */
-#define CATS_DEBUG
 #define CATS_RAINBOW_LOG
 
-#if (configUSE_TRACE_FACILITY == 1) && defined(CATS_DEBUG)
-#undef CATS_DEBUG
-#endif
-
-/* remove the rainbow flag if CATS_DEBUG isn't active */
+/* Remove the rainbow flag if CATS_DEBUG isn't active. */
 #ifndef CATS_DEBUG
 #undef CATS_RAINBOW_LOG
 #endif

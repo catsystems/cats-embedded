@@ -43,8 +43,9 @@ extern "C" {
  * See http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
-/* Ensure definitions are only used by the compiler, and not by the assembler.
- */
+#include "util/debug.h"
+
+/* Ensure definitions are only used by the compiler, and not by the assembler. */
 #if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
 #include <stdint.h>
 extern uint32_t SystemCoreClock;
@@ -59,7 +60,7 @@ extern uint32_t SystemCoreClock;
 #define configTICK_RATE_HZ                      ((TickType_t)1000)
 #define configMAX_PRIORITIES                    (56)  // TODO: check if this can be reduced
 #define configMINIMAL_STACK_SIZE                ((uint16_t)128)
-#define configMAX_TASK_NAME_LEN                 (16)
+#define configMAX_TASK_NAME_LEN                 (24)
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1  // added
 #define configUSE_MUTEXES                       1
@@ -74,23 +75,29 @@ extern uint32_t SystemCoreClock;
 //#define configTASK_NOTIFICATION_ARRAY_ENTRIES 1 // dependant on above
 
 /* Memory allocation related definitions. */
-#define configSUPPORT_STATIC_ALLOCATION           1
-#define configSUPPORT_DYNAMIC_ALLOCATION          1
+#define configSUPPORT_STATIC_ALLOCATION  1
+#define configSUPPORT_DYNAMIC_ALLOCATION 1
 //#define configAPPLICATION_ALLOCATED_HEAP          1
 //#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP 1
-#define configTOTAL_HEAP_SIZE                     ((size_t)18 * 1024)
+#define configTOTAL_HEAP_SIZE ((size_t)18 * 1024)
 
 /* Hook function related definitions. */
-#define configUSE_IDLE_HOOK                0
-#define configUSE_TICK_HOOK                0
-#define configCHECK_FOR_STACK_OVERFLOW     0  // TODO: we should probably use this
+#define configUSE_IDLE_HOOK 0
+#define configUSE_TICK_HOOK 0
+
 #define configUSE_MALLOC_FAILED_HOOK       0
 #define configUSE_DAEMON_TASK_STARTUP_HOOK 0
 
 /* Run time and task stats gathering related definitions. */
 #define configGENERATE_RUN_TIME_STATS        0
 #define configUSE_STATS_FORMATTING_FUNCTIONS 0
-#define configUSE_TRACE_FACILITY             0
+
+
+#ifdef CATS_DEBUG
+#define configCHECK_FOR_STACK_OVERFLOW 2
+#else
+#define configCHECK_FOR_STACK_OVERFLOW 0
+#endif
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES           0
@@ -134,8 +141,8 @@ extern uint32_t SystemCoreClock;
 #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY 15
 
 /* The highest interrupt priority that can be used by any interrupt service routine that makes calls to interrupt safe
-FreeRTOS API functions.  DO NOT CALL INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER PRIORITY
-THAN THIS! (higher priorities are lower numeric values. */
+ * FreeRTOS API functions. DO NOT CALL INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
+ * PRIORITY THAN THIS! (higher priorities are lower numeric values. */
 #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5
 
 /* Interrupt priorities used by the kernel port layer itself.  These are generic to all Cortex-M ports, and do not rely
@@ -145,8 +152,7 @@ THAN THIS! (higher priorities are lower numeric values. */
 See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
-/* Normal assert() semantics without relying on the provision of an assert.h
-header file. */
+/* Normal assert() semantics without relying on the provision of an assert.h header file. */
 /* USER CODE BEGIN 1 */
 #define configASSERT(x)       \
   if ((x) == 0) {             \
@@ -156,20 +162,17 @@ header file. */
   }
 /* USER CODE END 1 */
 
-/* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
-standard names. */
+/* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS standard names. */
 #define vPortSVCHandler    SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
 
-/* IMPORTANT: This define is commented when used with STM32Cube firmware, when
-   the timebase source is SysTick, to prevent overwriting SysTick_Handler
-   defined within STM32Cube HAL */
+/* IMPORTANT: This define is commented when used with STM32Cube firmware, when the timebase source is SysTick, to
+ * prevent overwriting SysTick_Handler defined within STM32Cube HAL */
 
 #define xPortSysTickHandler SysTick_Handler
 
 /* USER CODE BEGIN Defines */
-/* Section where parameter definitions can be added (for instance, to override
- * default ones in FreeRTOS.h) */
+/* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 /* Integrates the Tracealyzer recorder with FreeRTOS */
 #if (configUSE_TRACE_FACILITY == 1)
 #undef xPortSysTickHandler
