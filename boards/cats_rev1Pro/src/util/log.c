@@ -17,6 +17,8 @@
  */
 
 #include "util/log.h"
+#include "util/debug.h"
+
 #ifdef CATS_DEBUG
 #include "usbd_cdc_if.h"
 #include "cmsis_os.h"

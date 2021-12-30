@@ -344,9 +344,10 @@ static void cli_cmd_defaults(const char *cmd_name, char *args) {
 static void cli_cmd_status(const char *cmd_name, char *args) {
   const lookup_table_entry_t *p_boot_table = &lookup_tables[TABLE_BOOTSTATE];
   const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
-  cli_printf("Mode:\t%s\n", p_boot_table->values[global_cats_config.config.boot_state]);
-  cli_printf("State:\t%s\n", p_event_table->values[global_flight_state.flight_state - 1]);
-  cli_printf("Voltage: %.2fV\n", (double)battery_voltage());
+  cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
+  cli_printf("Mode:        %s\n", p_boot_table->values[global_cats_config.config.boot_state]);
+  cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
+  cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height, (double)global_estimation_data.velocity,
              (double)global_estimation_data.acceleration);
 }
