@@ -26,18 +26,15 @@
 #define FAILSAFE_TIME 250
 
 _Noreturn void task_receiver(__attribute__((unused)) void *argument) {
-  uint32_t tick_count, tick_update;
-
   static receiver_data_t receiver_data = {0};
   uint8_t armed = 0;
   uint32_t failsafe_timer = 0;
 
   /* initialize data variables */
   sbus_init();
-  /* Infinite loop */
-  tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / RECEIVER_SAMPLING_FREQ;
 
+  uint32_t tick_count = osKernelGetTickCount();
+  uint32_t tick_update = osKernelGetTickFreq() / RECEIVER_SAMPLING_FREQ;
   while (1) {
     sbus_update(&receiver_data);
 

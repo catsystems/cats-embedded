@@ -41,11 +41,11 @@ void mmc5983ma_read_raw(const MMC5983MA *dev, uint32_t *destination) {
   uint8_t rawData[7];                                     // x/y/z mag register data stored here
   read_data(dev->spi, MMC5983MA_XOUT_0, &rawData[0], 7);  // Read the 7 raw data registers into data array
   destination[0] = (uint32_t)(rawData[0] << 10 | rawData[1] << 2 |
-                              (rawData[6] & 0xC0) >> 6);  // Turn the 18 bits into a unsigned 32-bit value
+                              (rawData[6] & 0xC0) >> 6);  // Turn the 18 bits into an unsigned 32-bit value
   destination[1] = (uint32_t)(rawData[2] << 10 | rawData[3] << 2 |
-                              (rawData[6] & 0x30) >> 4);  // Turn the 18 bits into a unsigned 32-bit value
+                              (rawData[6] & 0x30) >> 4);  // Turn the 18 bits into an unsigned 32-bit value
   destination[2] = (uint32_t)(rawData[4] << 10 | rawData[5] << 2 |
-                              (rawData[6] & 0x0C) >> 2);  // Turn the 18 bits into a unsigned 32-bit value
+                              (rawData[6] & 0x0C) >> 2);  // Turn the 18 bits into an unsigned 32-bit value
 }
 
 void mmc5983ma_read_real(const MMC5983MA *dev, float *destination) {
@@ -103,13 +103,13 @@ bool mmc5983ma_selftest(const MMC5983MA *dev) {
 void mmc5983_calibration(MMC5983MA *dev) {
   int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
   int32_t mag_max[3] = {-262143, -262143, -262143}, mag_min[3] = {262143, 262143, 262143};
-  uint32_t mag_temp[3] = {0, 0, 0}, magOffset = 131072;
+  uint32_t mag_temp[3] = {0, 0, 0}, mag_offset = 131072;
 
   for (int ii = 0; ii < 4000; ii++) {
     mmc5983ma_read_raw(dev, mag_temp);
     for (int jj = 0; jj < 3; jj++) {
-      if ((int32_t)(mag_temp[jj] - magOffset) > mag_max[jj]) mag_max[jj] = (int32_t)(mag_temp[jj] - magOffset);
-      if ((int32_t)(mag_temp[jj] - magOffset) < mag_min[jj]) mag_min[jj] = (int32_t)(mag_temp[jj] - magOffset);
+      if ((int32_t)(mag_temp[jj] - mag_offset) > mag_max[jj]) mag_max[jj] = (int32_t)(mag_temp[jj] - mag_offset);
+      if ((int32_t)(mag_temp[jj] - mag_offset) < mag_min[jj]) mag_min[jj] = (int32_t)(mag_temp[jj] - mag_offset);
     }
     HAL_Delay(12);
   }

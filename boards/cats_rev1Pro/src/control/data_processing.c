@@ -28,9 +28,10 @@
     (a) = (b);          \
     (b) = tmp;          \
   }
-#define SORT_TWO(a, b, tmp)               \
-  {                                       \
-    if ((a) > (b)) SWAP((a), (b), (tmp)); \
+
+#define SORT_TWO(a, b, tmp)              \
+  {                                      \
+    if ((a) > (b)) SWAP((a), (b), (tmp)) \
   }
 
 /* this function returns the median of an array of size MEDIAN_FILTER_SIZE
@@ -106,16 +107,4 @@ float median(float input_array[]) {
 
   return array[k];
 #endif
-}
-
-const int log2_tab32[32] = {0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
-                            8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31};
-
-int32_t log2_32(uint32_t value) {
-  value |= value >> 1;
-  value |= value >> 2;
-  value |= value >> 4;
-  value |= value >> 8;
-  value |= value >> 16;
-  return log2_tab32[(uint32_t)(value * 0x07C4ACDD) >> 27];
 }

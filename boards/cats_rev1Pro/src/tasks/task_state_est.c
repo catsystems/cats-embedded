@@ -35,9 +35,6 @@
  * @retval None
  */
 _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
-  /* For periodic update */
-  uint32_t tick_count, tick_update;
-
   /* End Initialization */
   osDelay(1000);
 
@@ -58,10 +55,8 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
   reset_orientation_filter(&orientation_filter);
 #endif
 
-  /* Infinite loop */
-  tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-
+  uint32_t tick_count = osKernelGetTickCount();
+  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* update fsm enum */
     new_fsm_enum = global_flight_state.flight_state;

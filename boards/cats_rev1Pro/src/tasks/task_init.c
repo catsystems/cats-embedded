@@ -177,6 +177,15 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 /** Private Function Definitions **/
 
 static void init_system() {
+#ifdef CATS_DEBUG
+  const osMutexAttr_t print_mutex_attr = {
+      "print_mutex",       // human readable mutex name
+      osMutexPrioInherit,  // attr_bits
+      NULL,                // memory for control block
+      0U                   // size for control block
+  };
+  print_mutex = osMutexNew(&print_mutex_attr);
+#endif
   log_set_level(LOG_TRACE);
   log_enable();
 }
@@ -248,7 +257,7 @@ static void init_tasks() {
       baro_channel = xTraceRegisterString("Baro Channel");
       flash_channel = xTraceRegisterString("Flash Channel");
 #endif
-      /* creation of task_recorder */
+
       // TODO: Check rec_queue for validity here
       rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
       rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), NULL);
@@ -259,28 +268,21 @@ static void init_tasks() {
 
       osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
-      /* creation of receiver */
-      // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
-
-      /* creation of task_imu_read */
       osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
 
-      /* creation of task_preprocessing */
       osThreadNew(task_preprocessing, NULL, &task_preprocessing_attributes);
 
-      /* creation of task_flight_fsm */
       osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
 
-      /* creation of task_drop_test_fsm */
-      // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
-      /* creation of task_peripherals */
       osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
 
-      /* creation of task_state_est */
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
-      /* creation of task_health_monitor */
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
+
+      // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
+
+      // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
     } break;
     case CATS_CONFIG:
       break;

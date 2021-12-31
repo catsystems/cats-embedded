@@ -52,9 +52,9 @@ void check_drop_test_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
   }
 
   if (old_fsm_state.flight_state != fsm_state->flight_state) {
-    fsm_state->state_changed = 1;
+    fsm_state->state_changed = true;
   } else {
-    fsm_state->state_changed = 0;
+    fsm_state->state_changed = false;
   }
 }
 

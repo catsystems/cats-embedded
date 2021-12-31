@@ -39,8 +39,6 @@ inline static float calculate_height(float pressure_initial, float pressure);
  * @retval None
  */
 void task_preprocessing(void *argument) {
-  uint32_t tick_count, tick_update;
-
   /* Create data structs */
   static SI_data_t SI_data = {0};
   static SI_data_t SI_data_old = {0};
@@ -57,12 +55,9 @@ void task_preprocessing(void *argument) {
   flight_fsm_e old_fsm_enum = MOVING;
 
   /* Infinite loop */
-  tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-
+  uint32_t tick_count = osKernelGetTickCount();
+  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
-    tick_count += tick_update;
-
     /* update fsm enum */
     new_fsm_enum = global_flight_state.flight_state;
 
@@ -97,6 +92,7 @@ void task_preprocessing(void *argument) {
     /* write input data into global struct */
     global_estimation_input = state_est_input;
 
+    tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }

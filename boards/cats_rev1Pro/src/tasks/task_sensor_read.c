@@ -53,9 +53,7 @@ static void read_baro();
  * @retval None
  */
 void task_sensor_read(void *argument) {
-  uint32_t tick_count, tick_update;
-
-  /* initialize IMU data variables */
+  /* Initialize IMU data variables */
   int16_t gyroscope[3] = {0};    /* 0 = x, 1 = y, 2 = z */
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */
   int16_t temperature_imu = {0};
@@ -70,14 +68,11 @@ void task_sensor_read(void *argument) {
   /* initialize MAGNETO data variables */
   float mag_data[3] = {0};
 
-  /* Infinite loop */
-  tick_count = osKernelGetTickCount();
+  uint32_t tick_count = osKernelGetTickCount();
   /* This task is sampled with 2 times the control sampling frequency to maximize speed of the barometer. In one
    * timestep the Baro pressure is read out and then the Baro Temperature. The other sensors are only read out one in
    * two times. */
-
-  tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
-
+  uint32_t tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
   while (1) {
     // Readout the baro register
     read_baro();

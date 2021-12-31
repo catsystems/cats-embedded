@@ -32,16 +32,15 @@ static void check_high_current_channels();
 /** Exported Function Definitions **/
 
 _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
-  /* For periodic update */
-  uint32_t tick_count, tick_update;
-  tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
   uint32_t pyro_check_timer = 0;
   flight_fsm_e old_fsm_state = MOVING;
   battery_level_e old_level = BATTERY_OK;
   static uint8_t print_buffer[USB_OUTPUT_BUFFER_SIZE];
+
+  uint32_t tick_count = osKernelGetTickCount();
+  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     // Check battery level
     battery_level_e level = battery_level();

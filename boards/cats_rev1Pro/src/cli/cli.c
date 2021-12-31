@@ -225,8 +225,8 @@ static void process_character_interactive(const char c) {
       i = 0; /* Redraw prompt */
     }
     for (; i < buffer_index; i++) cli_write(cli_buffer[i]);
-  } else if (c == 4) {  // CTRL-D - clear screen
-    // clear screen
+  } else if (c == 4) {
+    // CTRL-D - clear screen
     cli_print("\033[2J\033[1;1H");
     cli_prompt();
   } else if (c == 12) {  // CTRL-L - toggle logging
