@@ -31,7 +31,7 @@ typedef struct spi_bus {
   GPIO_TypeDef* const cs_port;
   uint16_t cs_pin;
   cs_type_e cs_type;
-  const SPI_HandleTypeDef* spi_handle;
+  SPI_HandleTypeDef* const spi_handle;
   uint8_t initialized;
   bool busy;
 } SPI_BUS;

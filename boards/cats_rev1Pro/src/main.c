@@ -1,4 +1,3 @@
-/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -16,33 +15,16 @@
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-#include "util/types.h"
-#include "util/log.h"
-#include "util/recorder.h"
-/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
@@ -62,21 +44,17 @@ TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart1;
 
-/* Definitions for task_init_name */
-osThreadId_t task_init_nameHandle;
-uint32_t task_init_buffer[512];
+/* Definitions for task_init */
+uint32_t task_init_buffer[256];
 osStaticThreadDef_t task_init_control_block;
-const osThreadAttr_t task_init_name_attributes = {
-    .name = "task_init_name",
+const osThreadAttr_t task_init_attributes = {
+    .name = "task_init",
     .stack_mem = &task_init_buffer[0],
     .stack_size = sizeof(task_init_buffer),
     .cb_mem = &task_init_control_block,
     .cb_size = sizeof(task_init_control_block),
     .priority = (osPriority_t)osPriorityNormal,
 };
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -93,50 +71,18 @@ static void MX_TIM15_Init(void);
 static void MX_USART1_UART_Init(void);
 void task_init(void *argument);
 
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-float Q_rsqrt(float number) {
-  const float x2 = number * 0.5F;
-  const float threehalfs = 1.5F;
-
-  union {
-    float f;
-    uint32_t i;
-  } conv = {.f = number};
-  conv.i = 0x5f3759df - (conv.i >> 1);
-  conv.f *= threehalfs - (x2 * conv.f * conv.f);
-  return conv.f;
-}
-/* USER CODE END 0 */
-
 /**
  * @brief  The application entry point.
  * @retval int
  */
 int main(void) {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -150,52 +96,17 @@ int main(void) {
   MX_TIM2_Init();
   MX_TIM15_Init();
   MX_USART1_UART_Init();
-  /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
+
 #if (configUSE_TRACE_FACILITY == 1)
   vTraceEnable(TRC_INIT);
 #endif
-  /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-#ifdef CATS_DEBUG
-  const osMutexAttr_t print_mutex_attr = {
-      "print_mutex",       // human readable mutex name
-      osMutexPrioInherit,  // attr_bits
-      NULL,                // memory for control block
-      0U                   // size for control block
-  };
-  print_mutex = osMutexNew(&print_mutex_attr);
-#endif
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
   /* creation of defaultTask */
-  task_init_nameHandle = osThreadNew(task_init, NULL, &task_init_name_attributes);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+  osThreadNew(task_init, NULL, &task_init_attributes);
 
   /* Start scheduler */
   osKernelStart();
@@ -402,17 +313,6 @@ static void MX_QUADSPI_Init(void) {
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
   // Application configuration
   HAL_QSPI_Init(&hqspi);
-
-  /* USER CODE BEGIN QUADSPI_Init */
-  //  hqspi.Init.ClockPrescaler = 1;
-  //  hqspi.Init.FifoThreshold = 4;
-  //  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-  //  hqspi.Init.FlashSize = 25;
-  //  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
-  //  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
-  //  hqspi.Init.FlashID = QSPI_FLASH_ID_1;
-  //  hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-  /* USER CODE END QUADSPI_Init */
 }
 
 /**
@@ -811,5 +711,3 @@ void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

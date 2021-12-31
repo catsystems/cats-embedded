@@ -152,7 +152,7 @@ typedef struct {
   float angular_movement[3];
   uint32_t clock_memory;
   uint32_t memory[3];
-  uint8_t state_changed;
+  bool state_changed;
 } flight_fsm_t;
 
 typedef enum {
@@ -170,7 +170,7 @@ typedef struct {
   uint32_t timer_start_drogue;
   uint32_t timer_start_main;
   uint32_t memory;
-  uint8_t state_changed;
+  bool state_changed;
 } drop_test_fsm_t;
 
 typedef struct {

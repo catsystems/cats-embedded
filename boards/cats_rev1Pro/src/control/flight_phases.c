@@ -70,9 +70,9 @@ void check_flight_phase(flight_fsm_t *fsm_state, vec_t *acc_data, vec_t *gyro_da
   }
 
   if (old_fsm_state.flight_state != fsm_state->flight_state) {
-    fsm_state->state_changed = 1;
+    fsm_state->state_changed = true;
   } else {
-    fsm_state->state_changed = 0;
+    fsm_state->state_changed = false;
   }
 }
 

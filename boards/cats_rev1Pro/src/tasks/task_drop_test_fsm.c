@@ -35,15 +35,12 @@
  * @retval None
  */
 _Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
-  /* For periodic update */
-  uint32_t tick_count, tick_update;
 
   drop_test_fsm_t fsm_state = {.flight_state = DT_READY};
   imu_data_t local_imu;
 
-  tick_count = osKernelGetTickCount();
-  tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-
+  uint32_t tick_count = osKernelGetTickCount();
+  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* Todo: Do not take that IMU */
     local_imu = global_imu[1];
@@ -52,7 +49,7 @@ _Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
 
     global_drop_test_state = fsm_state;
 
-    if (fsm_state.state_changed == 1) {
+    if (fsm_state.state_changed) {
       log_error("State Changed to %s", drop_test_fsm_map[fsm_state.flight_state]);
       flight_state_t flight_state = {.ts = osKernelGetTickCount(),
                                      .flight_or_drop_state.drop_state = fsm_state.flight_state};
