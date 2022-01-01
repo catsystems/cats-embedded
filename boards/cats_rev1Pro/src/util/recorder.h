@@ -60,10 +60,9 @@ typedef enum {
   ORIENTATION_INFO   = 1 << 9,   // 0x400
   FILTERED_DATA_INFO = 1 << 10,  // 0x800
   FLIGHT_STATE       = 1 << 11,  // 0x1000
-  COVARIANCE_INFO    = 1 << 12,  // 0x2000
-  SENSOR_INFO        = 1 << 13,  // 0x4000
-  EVENT_INFO         = 1 << 14,  // 0x8000
-  ERROR_INFO         = 1 << 15,  // 0x10000
+  SENSOR_INFO        = 1 << 12,  // 0x2000
+  EVENT_INFO         = 1 << 13,  // 0x4000
+  ERROR_INFO         = 1 << 14,  // 0x8000
   HEHE               = 0xFFFFFFFF,
 } rec_entry_type_e;
 // clang-format on
@@ -77,22 +76,19 @@ typedef enum {
 } rec_cmd_type_e;
 
 typedef struct {
-  timestamp_t ts;
   float height;
   float velocity;
   float acceleration; /* Acceleration with removed offset from inside the KF */
 } flight_info_t;
 
 typedef struct {
-  timestamp_t ts;
   int16_t estimated_orientation[4];
 } orientation_info_t;
 
 typedef struct {
-  timestamp_t ts;
-  float filtered_altitude_AGL; /* Median Filtered Values from Baro Data averaged */
-  float filtered_acceleration; /* Median Filtered Values from the acceleration but turned into the right coordinate
-                                  frame averaged */
+  float filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
+  float filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the right coordinate
+                                  frame. */
 } filtered_data_info_t;
 
 typedef union {
@@ -101,24 +97,20 @@ typedef union {
 } flight_state_u;
 
 typedef struct {
-  timestamp_t ts;
   flight_state_u flight_or_drop_state;
 } flight_state_t;
 
 typedef struct {
-  timestamp_t ts;
   uint8_t faulty_imu[3];
   uint8_t faulty_baro[3];
 } sensor_info_t;
 
 typedef struct {
-  timestamp_t ts;
   cats_event_e event;
   uint8_t action_idx;
 } event_info_t;
 
 typedef struct {
-  timestamp_t ts;
   cats_error_e error;
 } error_info_t;
 
@@ -137,6 +129,7 @@ typedef union {
 } rec_elem_u;
 
 typedef struct {
+  timestamp_t ts;
   rec_entry_type_e rec_type;
   rec_elem_u u;
 } rec_elem_t;
@@ -165,7 +158,7 @@ extern flight_stats_t global_flight_stats;
 
 /** Exported Functions **/
 
-void record(rec_entry_type_e rec_type_with_id, const void *rec_value);
+void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_value);
 
 inline void reset_global_flight_stats() {
   memset(&global_flight_stats, 0, sizeof(flight_stats_t));

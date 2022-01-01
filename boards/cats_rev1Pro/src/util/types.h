@@ -38,27 +38,23 @@ typedef uint32_t timestamp_t;  // ms
 
 /* IMU data */
 typedef struct {
-  timestamp_t ts;
   int16_t gyro_x, gyro_y, gyro_z;  // IMU unit
   int16_t acc_x, acc_y, acc_z;     // IMU unit
 } imu_data_t;
 
 /* Accel data */
 typedef struct {
-  timestamp_t ts;
   int8_t acc_x, acc_y, acc_z;  // Accel unit
 } accel_data_t;
 
 /* Barometer data */
 typedef struct {
-  timestamp_t ts;
   int32_t pressure;     // Baro unit
   int32_t temperature;  // Baro unit
 } baro_data_t;
 
 /* Magnetometer data */
 typedef struct {
-  timestamp_t ts;
   float magneto_x, magneto_y, magneto_z;  // Mag unit
 } magneto_data_t;
 

@@ -95,7 +95,6 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     read_sensor_data(&global_magneto[0], &global_imu[0], &orientation_filter);
     orientation_filter_step(&orientation_filter);
     orientation_info_t orientation_info;
-    orientation_info.ts = osKernelGetTickCount();
     /* DO ORIENTATION Filter */
     /*
     log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", (int32_t)(orientation_filter.estimate_data[0] * 1000),
@@ -107,25 +106,23 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
       orientation_info.estimated_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
     }
 
-    record(ORIENTATION_INFO, &orientation_info);
+    record(tick_count, ORIENTATION_INFO, &orientation_info);
 #endif
 
     /* record filtered data */
-    filtered_data_info_t filtered_data_info = {.ts = osKernelGetTickCount(),
-                                               .filtered_acceleration = filter.measured_acceleration,
+    filtered_data_info_t filtered_data_info = {.filtered_acceleration = filter.measured_acceleration,
                                                .filtered_altitude_AGL = filter.measured_AGL};
 
-    record(FILTERED_DATA_INFO, &filtered_data_info);
+    record(tick_count, FILTERED_DATA_INFO, &filtered_data_info);
 
     /* Log KF outputs */
-    flight_info_t flight_info = {.ts = osKernelGetTickCount(),
-                                 .height = filter.x_bar_data[0],
+    flight_info_t flight_info = {.height = filter.x_bar_data[0],
                                  .velocity = filter.x_bar_data[1],
                                  .acceleration = filter.measured_acceleration + filter.x_bar_data[2]};
     if (global_flight_state.flight_state >= APOGEE) {
       flight_info.acceleration = filter.x_bar_data[2];
     }
-    record(FLIGHT_INFO, &flight_info);
+    record(tick_count, FLIGHT_INFO, &flight_info);
 
     // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
     //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *

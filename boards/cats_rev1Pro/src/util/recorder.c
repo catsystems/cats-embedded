@@ -38,28 +38,28 @@ static inline bool should_record(rec_entry_type_e rec_type) {
 
 /* TODO: See whether this is optimized in assembler. Here we copy the entire struct but the alternative is to pass a
  * pointer and this will cause too many indirect accesses. */
-static inline void collect_flight_info_stats(flight_info_t flight_info) {
+static inline void collect_flight_info_stats(timestamp_t ts, flight_info_t flight_info) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
     /* TODO: We need to offset the timestamps in the flight stats struct by subtracting the timestamp at EV_LIFTOFF. */
     if ((flight_info.height > global_flight_stats.max_height.val)) {
-      global_flight_stats.max_height.ts = flight_info.ts;
+      global_flight_stats.max_height.ts = ts;
       global_flight_stats.max_height.val = flight_info.height;
     }
     if (flight_info.velocity > global_flight_stats.max_velocity.val) {
-      global_flight_stats.max_velocity.ts = flight_info.ts;
+      global_flight_stats.max_velocity.ts = ts;
       global_flight_stats.max_velocity.val = flight_info.velocity;
     }
     if (flight_info.acceleration > global_flight_stats.max_acceleration.val) {
-      global_flight_stats.max_acceleration.ts = flight_info.ts;
+      global_flight_stats.max_acceleration.ts = ts;
       global_flight_stats.max_acceleration.val = flight_info.acceleration;
     }
   }
 }
 
-void record(rec_entry_type_e rec_type_with_id, const void *rec_value) {
+void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_value) {
   rec_entry_type_e pure_rec_type = get_record_type_without_id(rec_type_with_id);
   if (global_recorder_status >= REC_FILL_QUEUE && should_record(pure_rec_type)) {
-    rec_elem_t e = {.rec_type = rec_type_with_id};
+    rec_elem_t e = {.ts = ts, .rec_type = rec_type_with_id};
     switch (pure_rec_type) {
       case IMU:
         e.u.imu = *((imu_data_t *)rec_value);
@@ -75,7 +75,7 @@ void record(rec_entry_type_e rec_type_with_id, const void *rec_value) {
         break;
       case FLIGHT_INFO:
         e.u.flight_info = *((flight_info_t *)rec_value);
-        collect_flight_info_stats(e.u.flight_info);
+        collect_flight_info_stats(ts, e.u.flight_info);
         break;
       case ORIENTATION_INFO:
         e.u.orientation_info = *((orientation_info_t *)rec_value);

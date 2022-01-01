@@ -92,44 +92,45 @@ void parse_recording(uint16_t number) {
       log_raw("Invalid file size %ld!", file_size);
       return;
     }
-    rec_entry_type_e rec_type;
-    while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_type, 4) > 0) {
+
+    while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem, 8) > 0) {
+      const rec_entry_type_e rec_type = rec_elem.rec_type;
       switch (get_record_type_without_id(rec_type)) {
         case IMU: {
           size_t elem_sz = sizeof(rec_elem.u.imu);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.u.imu.ts, get_id_from_record_type(rec_type),
+          log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.ts, get_id_from_record_type(rec_type),
                   rec_elem.u.imu.acc_x, rec_elem.u.imu.acc_y, rec_elem.u.imu.acc_z, rec_elem.u.imu.gyro_x,
                   rec_elem.u.imu.gyro_y, rec_elem.u.imu.gyro_z);
         } break;
         case BARO: {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.u.baro.ts, get_id_from_record_type(rec_type),
+          log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.ts, get_id_from_record_type(rec_type),
                   rec_elem.u.baro.pressure, rec_elem.u.baro.temperature);
         } break;
         case MAGNETO: {
           size_t elem_sz = sizeof(rec_elem.u.magneto_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.u.magneto_info.ts, (double)rec_elem.u.magneto_info.magneto_x,
+          log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.ts,  (double)rec_elem.u.magneto_info.magneto_x,
                   (double)rec_elem.u.magneto_info.magneto_y, (double)rec_elem.u.magneto_info.magneto_z);
         } break;
         case ACCELEROMETER: {
           size_t elem_sz = sizeof(rec_elem.u.accel_data);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ACC|%d|%d|%d", rec_elem.u.accel_data.ts, rec_elem.u.accel_data.acc_x,
+          log_raw("%lu|ACC|%d|%d|%d", rec_elem.ts, rec_elem.u.accel_data.acc_x,
                   rec_elem.u.accel_data.acc_y, rec_elem.u.accel_data.acc_z);
         } break;
         case FLIGHT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.flight_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.u.flight_info.ts, (double)rec_elem.u.flight_info.acceleration,
+          log_raw("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.ts,  (double)rec_elem.u.flight_info.acceleration,
                   (double)rec_elem.u.flight_info.height, (double)rec_elem.u.flight_info.velocity);
         } break;
         case ORIENTATION_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.orientation_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.u.orientation_info.ts,
+          log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.ts,
                   rec_elem.u.orientation_info.estimated_orientation[0],
                   rec_elem.u.orientation_info.estimated_orientation[1],
                   rec_elem.u.orientation_info.estimated_orientation[2],
@@ -138,20 +139,20 @@ void parse_recording(uint16_t number) {
         case FILTERED_DATA_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.filtered_data_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.u.filtered_data_info.ts,
+          log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.ts,
                   (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
                   (double)rec_elem.u.filtered_data_info.filtered_acceleration);
         } break;
         case FLIGHT_STATE: {
           size_t elem_sz = sizeof(rec_elem.u.flight_state);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FLIGHT_STATE|%u", rec_elem.u.flight_state.ts,
+          log_raw("%lu|FLIGHT_STATE|%u", rec_elem.ts,
                   rec_elem.u.flight_state.flight_or_drop_state.flight_state);
         } break;
         case SENSOR_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.sensor_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|SENSOR_INFO|%u|%u|%u|%u|%u|%u", rec_elem.u.sensor_info.ts, rec_elem.u.sensor_info.faulty_imu[0],
+          log_raw("%lu|SENSOR_INFO|%u|%u|%u|%u|%u|%u", rec_elem.ts, rec_elem.u.sensor_info.faulty_imu[0],
                   rec_elem.u.sensor_info.faulty_imu[1], rec_elem.u.sensor_info.faulty_imu[2],
                   rec_elem.u.sensor_info.faulty_baro[0], rec_elem.u.sensor_info.faulty_baro[1],
                   rec_elem.u.sensor_info.faulty_baro[2]);
@@ -159,13 +160,13 @@ void parse_recording(uint16_t number) {
         case EVENT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.event_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|EVENT_INFO|%d|%u", rec_elem.u.event_info.ts, rec_elem.u.event_info.event,
+          log_raw("%lu|EVENT_INFO|%d|%u", rec_elem.ts, rec_elem.u.event_info.event,
                   rec_elem.u.event_info.action_idx);
         } break;
         case ERROR_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.error_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ERROR_INFO|%d", rec_elem.u.error_info.ts, rec_elem.u.error_info.error);
+          log_raw("%lu|ERROR_INFO|%d", rec_elem.ts,  rec_elem.u.error_info.error);
         } break;
         default:
           log_raw("Impossible recorder entry type!");

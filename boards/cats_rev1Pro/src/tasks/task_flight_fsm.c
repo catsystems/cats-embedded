@@ -58,9 +58,8 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
     }
     if (global_flight_state.state_changed) {
       log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);
-      flight_state_t flight_state = {.ts = osKernelGetTickCount(),
-                                     .flight_or_drop_state.flight_state = global_flight_state.flight_state};
-      record(FLIGHT_STATE, &flight_state);
+      flight_state_t flight_state = {.flight_or_drop_state.flight_state = global_flight_state.flight_state};
+      record(tick_count, FLIGHT_STATE, &flight_state);
 
       // When we are in any flight state update the flash sector with last flight phase
       if (global_flight_state.flight_state == TOUCHDOWN) {

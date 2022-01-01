@@ -29,9 +29,8 @@ void add_error(cats_error_e err) {
 
       errors |= err;
 
-      uint32_t ts = osKernelGetTickCount();
-      error_info_t error_info = {.ts = ts, .error = errors};
-      record(ERROR_INFO, &error_info);
+      error_info_t error_info = {.error = errors};
+      record(osKernelGetTickCount(), ERROR_INFO, &error_info);
     }
   }
 }
@@ -40,15 +39,14 @@ void clear_error(cats_error_e err) {
   if (errors & err) {
     errors &= ~err;
 
-    uint32_t ts = osKernelGetTickCount();
-    error_info_t error_info = {.ts = ts, .error = errors};
-    record(ERROR_INFO, &error_info);
+    error_info_t error_info = {.error = errors};
+    record(osKernelGetTickCount(), ERROR_INFO, &error_info);
   }
 }
 
 uint32_t get_error_count() {
   uint32_t count = 0;
-  uint32_t mask = 0x00000001;
+  const uint32_t mask = 0x00000001;
   for (int i = 0; i < 32; i++) {
     if (errors & (mask << i)) count++;
   }
@@ -57,7 +55,7 @@ uint32_t get_error_count() {
 
 cats_error_e get_error_by_priority(uint32_t id) {
   uint32_t count = 0;
-  uint32_t mask = 0x00000001;
+  const uint32_t mask = 0x00000001;
   for (int i = 31; i >= 0; i--) {
     if (errors & (mask << i)) {
       count++;
