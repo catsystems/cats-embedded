@@ -117,8 +117,8 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(100);
   /* In order to change what is logged just remove it from the following OR:
-   * In the given example, BARO and FLIGHT_STATE ARE MISSING */
-  //    uint32_t selected_entry_types = IMU | FLIGHT_INFO | COVARIANCE_INFO | SENSOR_INFO;
+   * In the given example, BARO and FLIGHT_STATE are missing, among others. */
+  //    uint32_t selected_entry_types = IMU | FLIGHT_INFO | SENSOR_INFO;
   //    cc_set_recorder_mask(selected_entry_types);
   cc_init();
 

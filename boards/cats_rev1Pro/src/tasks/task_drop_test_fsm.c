@@ -35,7 +35,6 @@
  * @retval None
  */
 _Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
-
   drop_test_fsm_t fsm_state = {.flight_state = DT_READY};
   imu_data_t local_imu;
 
@@ -51,9 +50,8 @@ _Noreturn void task_drop_test_fsm(__attribute__((unused)) void *argument) {
 
     if (fsm_state.state_changed) {
       log_error("State Changed to %s", drop_test_fsm_map[fsm_state.flight_state]);
-      flight_state_t flight_state = {.ts = osKernelGetTickCount(),
-                                     .flight_or_drop_state.drop_state = fsm_state.flight_state};
-      record(FLIGHT_STATE, &flight_state);
+      flight_state_t flight_state = {.flight_or_drop_state.drop_state = fsm_state.flight_state};
+      record(tick_count, FLIGHT_STATE, &flight_state);
     }
 
     tick_count += tick_update;

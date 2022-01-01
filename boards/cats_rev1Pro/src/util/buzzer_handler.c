@@ -23,15 +23,21 @@
 #include "util/error_handler.h"
 #include "control/data_processing.h"
 
-// TODO right now this file only supports errors, should be updated to support
-// all buzzer things
+// TODO right now this file only supports errors, should be updated to support all buzzer things
+
+#define BUZZER_COMMAND_MAX_LENGTH 9
+
+#define BUZZER_SHORT_BEEP  100
+#define BUZZER_LONG_BEEP   400
+#define BUZZER_SHORT_PAUSE 200
+#define BUZZER_LONG_PAUSE  1000
 
 #define BUZZER_MAX_STATUS_QUEUE 5
 
 uint8_t status_buzzer(buzzer_status_e status);
 
 // Never buzz bellow 1000Hz and above 3400Hz!
-uint32_t pitch_lookup[8] = {
+const uint32_t pitch_lookup[8] = {
     2349,  // D A
     2489,  // D# B
     2637,  // E C

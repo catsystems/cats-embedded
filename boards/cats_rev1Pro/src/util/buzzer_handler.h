@@ -22,13 +22,6 @@
 
 #include <stdbool.h>
 
-#define BUZZER_COMMAND_MAX_LENGTH 9
-
-#define BUZZER_SHORT_BEEP  100
-#define BUZZER_LONG_BEEP   400
-#define BUZZER_SHORT_PAUSE 200
-#define BUZZER_LONG_PAUSE  1000
-
 typedef enum {
   CATS_BUZZ_NONE = 0,
   CATS_BUZZ_BOOTUP,

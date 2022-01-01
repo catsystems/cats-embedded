@@ -91,16 +91,14 @@ void task_sensor_read(void *argument) {
       for (int i = 0; i < NUM_BARO; i++) {
         global_baro[i].pressure = pressure[i];
         global_baro[i].temperature = temperature_baro[i];
-        global_baro[i].ts = tick_count;
-        record(add_id_to_record_type(BARO, i), &(global_baro[i]));
+        record(tick_count, add_id_to_record_type(BARO, i), &(global_baro[i]));
       }
 
       /* Read and Save Magnetometer Data */
       for (int i = 0; i < NUM_MAGNETO; i++) {
         mmc5983ma_read_calibrated(&MAG, mag_data);
         memcpy(&(global_magneto[i].magneto_x), &mag_data, 3 * sizeof(float));
-        global_magneto[i].ts = tick_count;
-        record(add_id_to_record_type(MAGNETO, i), &(global_magneto[i]));
+        record(tick_count, add_id_to_record_type(MAGNETO, i), &(global_magneto[i]));
       }
 
       /* Read and Save High-G ACC Data */
@@ -108,8 +106,7 @@ void task_sensor_read(void *argument) {
         int8_t tmp_data[3];
         h3lis100dl_read_raw(&ACCEL, tmp_data);
         memcpy(&(global_accel[i].acc_x), &tmp_data, 3 * sizeof(int8_t));
-        global_accel[i].ts = tick_count;
-        record(add_id_to_record_type(ACCELEROMETER, i), &(global_accel[i]));
+        record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(global_accel[i]));
       }
 
       /* Read and Save IMU Data */
@@ -117,8 +114,7 @@ void task_sensor_read(void *argument) {
         read_imu(gyroscope, acceleration, &temperature_imu, i);
         memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
-        global_imu[i].ts = tick_count;
-        record(add_id_to_record_type(IMU, i), &(global_imu[i]));
+        record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
       }
     }
 

@@ -186,7 +186,7 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
 /** Private Function Definitions **/
 
 static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
-  uint_fast8_t rec_elem_size = sizeof(rec_elem->rec_type);
+  uint_fast8_t rec_elem_size = sizeof(rec_elem->rec_type) + sizeof(rec_elem->ts);
   switch (get_record_type_without_id(rec_elem->rec_type)) {
     case IMU:
       rec_elem_size += sizeof(rec_elem->u.imu);

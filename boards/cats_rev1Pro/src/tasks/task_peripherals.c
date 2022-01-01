@@ -47,10 +47,10 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
         }
       }
       /* start Mach timer if needed */
-      if(curr_event == mach_timer.timer_init_event){
-          if(mach_timer.timer_duration_ticks > 0) {
-              osTimerStart(mach_timer.timer_id, mach_timer.timer_duration_ticks);
-          }
+      if (curr_event == mach_timer.timer_init_event) {
+        if (mach_timer.timer_duration_ticks > 0) {
+          osTimerStart(mach_timer.timer_id, mach_timer.timer_duration_ticks);
+        }
       }
       peripheral_act_t* action_list = event_action_map[curr_event].action_list;
       uint8_t num_actions = event_action_map[curr_event].num_actions;
@@ -62,14 +62,14 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
           log_warn("EXECUTING EVENT: %d, action_idx: %lu", curr_event, i);
           /* call the actuator function */
           curr_fp(action_list[i].func_arg);
-          event_info_t event_info = {.ts = curr_ts, .event = curr_event, .action_idx = i};
-          record(EVENT_INFO, &event_info);
+          event_info_t event_info = {.event = curr_event, .action_idx = i};
+          record(curr_ts, EVENT_INFO, &event_info);
         }
       }
-      if (num_actions == 0){
+      if (num_actions == 0) {
         timestamp_t curr_ts = osKernelGetTickCount();
-        event_info_t event_info = {.ts = curr_ts, .event = curr_event, .action_idx = 0xFF};
-        record(EVENT_INFO, &event_info);
+        event_info_t event_info = {.event = curr_event, .action_idx = 0xFF};
+        record(curr_ts,EVENT_INFO, &event_info);
       }
     }
   }
