@@ -26,19 +26,6 @@
 
 #include <stdbool.h>
 
-/** Exported Defines **/
-
-#define BARO_I2C_TIMEOUT 10
-
-// Commands
-#define COMMAND_RESET           0x1E
-#define COMMAND_CONVERT_D1_BASE 0x40
-#define COMMAND_CONVERT_D2_BASE 0x50
-#define COMMAND_ADC_READ        0x00
-#define COMMAND_PROM_READ_BASE  0xA0
-
-// Conversion time
-#define BARO_CONVERSION_TIME_OSR_BASE 0.6f
 
 /** Exported Types **/
 

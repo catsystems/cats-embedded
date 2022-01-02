@@ -18,8 +18,6 @@
 
 #pragma once
 
-#define ADC_NUM_CHANNELS 4
-
 #include "stm32l4xx_hal.h"
 
 typedef enum {ADC_PYRO1 = 0, ADC_PYRO2, ADC_PYRO3, ADC_BATTERY} adc_channels_e;
@@ -27,4 +25,3 @@ typedef enum {ADC_PYRO1 = 0, ADC_PYRO2, ADC_PYRO3, ADC_BATTERY} adc_channels_e;
 void adc_init();
 uint32_t adc_get(adc_channels_e channel);
 
-extern ADC_HandleTypeDef hadc1;
