@@ -18,6 +18,10 @@
 
 #include "drivers/adc.h"
 
+#define ADC_NUM_CHANNELS 4
+
+extern ADC_HandleTypeDef hadc1;
+
 static uint32_t adc_value[ADC_NUM_CHANNELS];
 
 void adc_init() {

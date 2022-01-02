@@ -20,21 +20,6 @@
 
 #include "drivers/spi.h"
 
-#define MMC5983MA_XOUT_0     0x00
-#define MMC5983MA_XOUT_1     0x01
-#define MMC5983MA_YOUT_0     0x02
-#define MMC5983MA_YOUT_1     0x03
-#define MMC5983MA_ZOUT_0     0x04
-#define MMC5983MA_ZOUT_1     0x05
-#define MMC5983MA_XYZOUT_2   0x06
-#define MMC5983MA_TOUT       0x07
-#define MMC5983MA_STATUS     0x08
-#define MMC5983MA_CONTROL_0  0x09
-#define MMC5983MA_CONTROL_1  0x0A
-#define MMC5983MA_CONTROL_2  0x0B
-#define MMC5983MA_CONTROL_3  0x0C
-#define MMC5983MA_PRODUCT_ID 0x2F  // Answer should be 0x30
-
 enum mmc5983ma_sample_rate {
   MMC5983MA_ODR_ONESHOT = 0x00,
   MMC5983MA_ODR_1Hz = 0x01,
@@ -63,9 +48,6 @@ enum mmc5983ma_setreset {
   MMC5983MA_SET_1000 = 0x06,
   MMC5983MA_SET_2000 = 0x07,
 };
-
-#define MMC5983MA_OFFSET 131072.0f
-#define MMC5983MA_RES    (1.0f / 16384.0f)
 
 typedef struct mmc5983ma_dev {
   // Hardware Configuration
