@@ -34,18 +34,32 @@
 /* Timestamp */
 typedef uint32_t timestamp_t;  // ms
 
+/* 3D vector types */
+typedef struct {
+  int8_t x, y, z;
+} vi8_t;
+
+typedef struct {
+  int16_t x, y, z;
+} vi16_t;
+
+typedef struct {
+  float32_t x, y, z;
+} vf32_t;
+
 /** SENSOR DATA TYPES **/
+
+/* Accelerometer data */
+typedef vi8_t accel_data_t;  // Accelerometer units
 
 /* IMU data */
 typedef struct {
-  int16_t gyro_x, gyro_y, gyro_z;  // IMU unit
-  int16_t acc_x, acc_y, acc_z;     // IMU unit
+  vi16_t acc;   // IMU unit
+  vi16_t gyro;  // IMU unit
 } imu_data_t;
 
-/* Accel data */
-typedef struct {
-  int8_t acc_x, acc_y, acc_z;  // Accel unit
-} accel_data_t;
+/* Magnetometer data */
+typedef vf32_t magneto_data_t;  // Magnetometer units
 
 /* Barometer data */
 typedef struct {
@@ -53,33 +67,18 @@ typedef struct {
   int32_t temperature;  // Baro unit
 } baro_data_t;
 
-/* Magnetometer data */
-typedef struct {
-  float magneto_x, magneto_y, magneto_z;  // Mag unit
-} magneto_data_t;
-
 /* Estimator Data */
 typedef struct {
   float32_t acceleration_z;  // m/s^2
   float32_t height_AGL;      // m
 } state_estimation_input_t;
 
-/* Sensor Data */
-
-typedef struct {
-  float32_t x, y, z;  // m/s^2
-} vec_t;
-
-typedef struct {
-  float32_t v;  // hPa
-} scalar_t;
-
 /* Todo: #if on SI data */
 typedef struct {
-  vec_t accel;        // m/s^2
-  vec_t gyro;         // dps
-  vec_t mag;          // mG
-  scalar_t pressure;  // hPa
+  vf32_t accel;        // m/s^2
+  vf32_t gyro;         // dps
+  vf32_t mag;          // mG
+  float32_t pressure;  // hPa
 } SI_data_t;
 
 /* Elimination Data */
@@ -142,8 +141,8 @@ typedef enum {
 
 typedef struct {
   flight_fsm_e flight_state;
-  vec_t old_acc_data;
-  vec_t old_gyro_data;
+  vf32_t old_acc_data;
+  vf32_t old_gyro_data;
   float old_height;
   float angular_movement[3];
   uint32_t clock_memory;

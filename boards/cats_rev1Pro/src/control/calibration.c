@@ -19,7 +19,7 @@
 #include "control/calibration.h"
 #include "util/log.h"
 
-void calibrate_imu(const vec_t *accel_data, calibration_data_t *calibration) {
+void calibrate_imu(const vf32_t *accel_data, calibration_data_t *calibration) {
   /* first get the largest vector */
   if (fabsf(accel_data->x) >= fabsf(accel_data->y)) {
     if (fabsf(accel_data->x) >= fabsf(accel_data->z)) {
@@ -65,11 +65,10 @@ void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t 
     for (int bias_x_i = 0; bias_x_i < 10; bias_x_i++) {
       for (int bias_y_i = 0; bias_y_i < 10; bias_y_i++) {
         for (int bias_z_i = 0; bias_z_i < 10; bias_z_i++) {
-          value = test_radii[radius_i] * test_radii[radius_i] - magneto_data->magneto_x * magneto_data->magneto_x -
-                  magneto_data->magneto_y * magneto_data->magneto_y - magneto_data->magneto_z * magneto_data->magneto_z;
-          value += -2.0f * magneto_data->magneto_x * test_bias[bias_x_i] -
-                   2.0f * magneto_data->magneto_y * test_bias[bias_y_i] -
-                   2.0f * magneto_data->magneto_z * test_bias[bias_z_i];
+          value = test_radii[radius_i] * test_radii[radius_i] - magneto_data->x * magneto_data->x -
+                  magneto_data->y * magneto_data->y - magneto_data->z * magneto_data->z;
+          value += -2.0f * magneto_data->x * test_bias[bias_x_i] - 2.0f * magneto_data->y * test_bias[bias_y_i] -
+                   2.0f * magneto_data->z * test_bias[bias_z_i];
           value += -test_bias[bias_x_i] * test_bias[bias_x_i] - test_bias[bias_y_i] * test_bias[bias_y_i] -
                    test_bias[bias_z_i] * test_bias[bias_z_i];
           if (value < smallest_value) {
