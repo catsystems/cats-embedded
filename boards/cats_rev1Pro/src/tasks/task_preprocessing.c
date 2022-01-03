@@ -72,7 +72,7 @@ void task_preprocessing(void *argument) {
 
     /* Compute gravity when changing to IDLE */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
-      calibrate_imu(&SI_data.accel, &calibration);
+      calibrate_imu(&SI_data.acc, &calibration);
       pressure_0 = SI_data.pressure;
     }
 
@@ -101,9 +101,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
   float32_t counter = 0;
 #if NUM_IMU > 0
   /* Reset SI data */
-  SI_data->accel.x = 0;
-  SI_data->accel.y = 0;
-  SI_data->accel.z = 0;
+  SI_data->acc.x = 0;
+  SI_data->acc.y = 0;
+  SI_data->acc.z = 0;
   SI_data->gyro.x = 0;
   SI_data->gyro.y = 0;
   SI_data->gyro.z = 0;
@@ -112,9 +112,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
   for (int i = 0; i < NUM_IMU; i++) {
     if (elimination_data->faulty_imu[i] == 0) {
       counter++;
-      SI_data->accel.x += (float32_t)global_imu[i].acc.x * acc_info[i].conversion_to_SI;
-      SI_data->accel.y += (float32_t)global_imu[i].acc.y * acc_info[i].conversion_to_SI;
-      SI_data->accel.z += (float32_t)global_imu[i].acc.z * acc_info[i].conversion_to_SI;
+      SI_data->acc.x += (float32_t)global_imu[i].acc.x * acc_info[i].conversion_to_SI;
+      SI_data->acc.y += (float32_t)global_imu[i].acc.y * acc_info[i].conversion_to_SI;
+      SI_data->acc.z += (float32_t)global_imu[i].acc.z * acc_info[i].conversion_to_SI;
       SI_data->gyro.x += (float32_t)global_imu[i].gyro.x * gyro_info[i].conversion_to_SI;
       SI_data->gyro.y += (float32_t)global_imu[i].gyro.y * gyro_info[i].conversion_to_SI;
       SI_data->gyro.z += (float32_t)global_imu[i].gyro.z * gyro_info[i].conversion_to_SI;
@@ -127,9 +127,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
     for (int i = 0; i < NUM_ACCELEROMETER; i++) {
       if (elimination_data->faulty_acc[i] == 0) {
         counter++;
-        SI_data->accel.x += (float32_t)global_imu[i].acc.x * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->accel.y += (float32_t)global_imu[i].acc.y * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->accel.z += (float32_t)global_imu[i].acc.z * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.x += (float32_t)global_imu[i].acc.x * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.y += (float32_t)global_imu[i].acc.y * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.z += (float32_t)global_imu[i].acc.z * acc_info[NUM_IMU + i].conversion_to_SI;
       }
     }
   }
@@ -137,15 +137,15 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 
   /* average for SI data */
   if (counter > 0) {
-    SI_data->accel.x /= counter;
-    SI_data->accel.y /= counter;
-    SI_data->accel.z /= counter;
+    SI_data->acc.x /= counter;
+    SI_data->acc.y /= counter;
+    SI_data->acc.z /= counter;
     SI_data->gyro.x /= counter;
     SI_data->gyro.y /= counter;
     SI_data->gyro.z /= counter;
     clear_error(CATS_ERR_FILTER_ACC);
   } else {
-    SI_data->accel = SI_data_old->accel;
+    SI_data->acc = SI_data_old->acc;
     SI_data->gyro = SI_data_old->gyro;
     add_error(CATS_ERR_FILTER_ACC);
   }
@@ -215,15 +215,15 @@ static void transform_data(float32_t pressure_0, state_estimation_input_t *state
   switch (calibration->axis) {
     case 0:
       /* Choose X Axis */
-      state_data->acceleration_z = SI_data->accel.x / calibration->angle - GRAVITY;
+      state_data->acceleration_z = SI_data->acc.x / calibration->angle - GRAVITY;
       break;
     case 1:
       /* Choose Y Axis */
-      state_data->acceleration_z = SI_data->accel.y / calibration->angle - GRAVITY;
+      state_data->acceleration_z = SI_data->acc.y / calibration->angle - GRAVITY;
       break;
     case 2:
       /* Choose Z Axis */
-      state_data->acceleration_z = SI_data->accel.z / calibration->angle - GRAVITY;
+      state_data->acceleration_z = SI_data->acc.z / calibration->angle - GRAVITY;
       break;
     default:
       break;

@@ -75,7 +75,7 @@ typedef struct {
 
 /* Todo: #if on SI data */
 typedef struct {
-  vf32_t accel;        // m/s^2
+  vf32_t acc;          // m/s^2
   vf32_t gyro;         // dps
   vf32_t mag;          // mG
   float32_t pressure;  // hPa

@@ -47,7 +47,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* Check Flight Phases */
-    check_flight_phase(&global_flight_state, &global_SI_data.accel, &global_SI_data.gyro, &global_estimation_data,
+    check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data,
                        &settings);
 
     // Keep track of max speed, velocity and acceleration for flight stats
