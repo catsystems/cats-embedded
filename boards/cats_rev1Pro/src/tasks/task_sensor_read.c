@@ -97,7 +97,7 @@ void task_sensor_read(void *argument) {
       /* Read and Save Magnetometer Data */
       for (int i = 0; i < NUM_MAGNETO; i++) {
         mmc5983ma_read_calibrated(&MAG, mag_data);
-        memcpy(&(global_magneto[i].magneto_x), &mag_data, 3 * sizeof(float));
+        memcpy(&(global_magneto[i].x), &mag_data, 3 * sizeof(float));
         record(tick_count, add_id_to_record_type(MAGNETO, i), &(global_magneto[i]));
       }
 
@@ -105,15 +105,15 @@ void task_sensor_read(void *argument) {
       for (int i = 0; i < NUM_ACCELEROMETER; i++) {
         int8_t tmp_data[3];
         h3lis100dl_read_raw(&ACCEL, tmp_data);
-        memcpy(&(global_accel[i].acc_x), &tmp_data, 3 * sizeof(int8_t));
+        memcpy(&(global_accel[i].x), &tmp_data, 3 * sizeof(int8_t));
         record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(global_accel[i]));
       }
 
       /* Read and Save IMU Data */
       for (int i = 0; i < NUM_IMU; i++) {
         read_imu(gyroscope, acceleration, &temperature_imu, i);
-        memcpy(&(global_imu[i].acc_x), &acceleration, 3 * sizeof(int16_t));
-        memcpy(&(global_imu[i].gyro_x), &gyroscope, 3 * sizeof(int16_t));
+        memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
+        memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
         record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
       }
     }

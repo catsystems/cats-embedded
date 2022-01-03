@@ -70,7 +70,7 @@ void check_dt_waiting_phase(drop_test_fsm_t *fsm_state, imu_data_t *imu_data,
                             dt_telemetry_trigger_t *telemetry_trigger) {
   /* Check IMU */
   int32_t acceleration =
-      imu_data->acc_x * imu_data->acc_x + imu_data->acc_y * imu_data->acc_y + imu_data->acc_z * imu_data->acc_z;
+      imu_data->acc.x * imu_data->acc.x + imu_data->acc.y * imu_data->acc.y + imu_data->acc.z * imu_data->acc.z;
   if (acceleration < FREE_FALL_DET_ACC_SQ) {
     fsm_state->memory++;
   } else {

@@ -73,7 +73,7 @@ void task_preprocessing(void *argument) {
     /* Compute gravity when changing to IDLE */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       calibrate_imu(&SI_data.accel, &calibration);
-      pressure_0 = SI_data.pressure.v;
+      pressure_0 = SI_data.pressure;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -112,12 +112,12 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
   for (int i = 0; i < NUM_IMU; i++) {
     if (elimination_data->faulty_imu[i] == 0) {
       counter++;
-      SI_data->accel.x += (float32_t)global_imu[i].acc_x * acc_info[i].conversion_to_SI;
-      SI_data->accel.y += (float32_t)global_imu[i].acc_y * acc_info[i].conversion_to_SI;
-      SI_data->accel.z += (float32_t)global_imu[i].acc_z * acc_info[i].conversion_to_SI;
-      SI_data->gyro.x += (float32_t)global_imu[i].gyro_x * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.y += (float32_t)global_imu[i].gyro_y * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.z += (float32_t)global_imu[i].gyro_z * gyro_info[i].conversion_to_SI;
+      SI_data->accel.x += (float32_t)global_imu[i].acc.x * acc_info[i].conversion_to_SI;
+      SI_data->accel.y += (float32_t)global_imu[i].acc.y * acc_info[i].conversion_to_SI;
+      SI_data->accel.z += (float32_t)global_imu[i].acc.z * acc_info[i].conversion_to_SI;
+      SI_data->gyro.x += (float32_t)global_imu[i].gyro.x * gyro_info[i].conversion_to_SI;
+      SI_data->gyro.y += (float32_t)global_imu[i].gyro.y * gyro_info[i].conversion_to_SI;
+      SI_data->gyro.z += (float32_t)global_imu[i].gyro.z * gyro_info[i].conversion_to_SI;
     }
   }
 
@@ -127,9 +127,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
     for (int i = 0; i < NUM_ACCELEROMETER; i++) {
       if (elimination_data->faulty_acc[i] == 0) {
         counter++;
-        SI_data->accel.x += (float32_t)global_imu[i].acc_x * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->accel.y += (float32_t)global_imu[i].acc_y * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->accel.z += (float32_t)global_imu[i].acc_z * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->accel.x += (float32_t)global_imu[i].acc.x * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->accel.y += (float32_t)global_imu[i].acc.y * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->accel.z += (float32_t)global_imu[i].acc.z * acc_info[NUM_IMU + i].conversion_to_SI;
       }
     }
   }
@@ -154,15 +154,15 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 
 #if NUM_BARO > 0
   counter = 0;
-  SI_data->pressure.v = 0;
+  SI_data->pressure = 0;
   for (int i = 0; i < NUM_BARO; i++) {
     if (elimination_data->faulty_baro[i] == 0) {
       counter++;
-      SI_data->pressure.v += (float32_t)global_baro[i].pressure * baro_info[i].conversion_to_SI;
+      SI_data->pressure += (float32_t)global_baro[i].pressure * baro_info[i].conversion_to_SI;
     }
   }
   if (counter > 0) {
-    SI_data->pressure.v /= counter;
+    SI_data->pressure /= counter;
     clear_error(CATS_ERR_FILTER_HEIGHT);
   } else {
     SI_data->pressure = SI_data_old->pressure;
@@ -178,9 +178,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
   for (int i = 0; i < NUM_MAGNETO; i++) {
     if (elimination_data->faulty_mag[i] == 0) {
       counter++;
-      SI_data->mag.x += (float32_t)global_magneto[i].magneto_x * mag_info[i].conversion_to_SI;
-      SI_data->mag.y += (float32_t)global_magneto[i].magneto_y * mag_info[i].conversion_to_SI;
-      SI_data->mag.z += (float32_t)global_magneto[i].magneto_z * mag_info[i].conversion_to_SI;
+      SI_data->mag.x += (float32_t)global_magneto[i].x * mag_info[i].conversion_to_SI;
+      SI_data->mag.y += (float32_t)global_magneto[i].y * mag_info[i].conversion_to_SI;
+      SI_data->mag.z += (float32_t)global_magneto[i].z * mag_info[i].conversion_to_SI;
     }
   }
   if (counter > 0) {
@@ -228,7 +228,7 @@ static void transform_data(float32_t pressure_0, state_estimation_input_t *state
     default:
       break;
   }
-  state_data->height_AGL = calculate_height(pressure_0, SI_data->pressure.v);
+  state_data->height_AGL = calculate_height(pressure_0, SI_data->pressure);
 }
 
 inline static float calculate_height(float32_t pressure_initial, float32_t pressure) {

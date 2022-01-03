@@ -96,22 +96,22 @@ static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8
       }
       break;
     case MMC5983MA_ID:
-      if (((global_magneto[index].magneto_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
-          ((global_magneto[index].magneto_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+      if (((global_magneto[index].x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          ((global_magneto[index].x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_mag[index] = 1;
         status = CATS_ERR_MAG;
       }
       break;
     case ICM20601_ID_ACC:
-      if ((((float32_t)global_imu[index].acc_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
-          (((float32_t)global_imu[index].acc_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+      if ((((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_imu[index] = 1;
         status = CATS_ERR_IMU;
       }
       break;
     case H3LIS100DL_ID:
-      if ((((float32_t)global_accel[index].acc_x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
-          (((float32_t)global_accel[index].acc_x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+      if ((((float32_t)global_accel[index].x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)global_accel[index].x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_acc[index] = 1;
         status = CATS_ERR_ACC;
       }
@@ -141,38 +141,38 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
       }
       break;
     case MMC5983MA_ID:
-      if (global_magneto[index].magneto_x == elimination->last_value_magneto[index]) {
+      if (global_magneto[index].x == elimination->last_value_magneto[index]) {
         elimination->freeze_counter_magneto[index]++;
         if (elimination->freeze_counter_magneto[index] > MAX_NUM_SAME_VALUE) {
           elimination->faulty_mag[index] = 1;
           status = CATS_ERR_MAG;
         }
       } else {
-        elimination->last_value_magneto[index] = global_magneto[index].magneto_x;
+        elimination->last_value_magneto[index] = global_magneto[index].x;
         elimination->freeze_counter_magneto[index] = 0;
       }
       break;
     case ICM20601_ID_ACC:
-      if (global_imu[index].acc_x == elimination->last_value_imu[index]) {
+      if (global_imu[index].acc.x == elimination->last_value_imu[index]) {
         elimination->freeze_counter_imu[index]++;
         if (elimination->freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
           elimination->faulty_imu[index] = 1;
           status = CATS_ERR_IMU;
         }
       } else {
-        elimination->last_value_imu[index] = global_imu[index].acc_x;
+        elimination->last_value_imu[index] = global_imu[index].acc.x;
         elimination->freeze_counter_imu[index] = 0;
       }
       break;
     case H3LIS100DL_ID:
-      if (global_accel[index].acc_x == elimination->last_value_accel[index]) {
+      if (global_accel[index].x == elimination->last_value_accel[index]) {
         elimination->freeze_counter_accel[index]++;
         if (elimination->freeze_counter_accel[index] > MAX_NUM_SAME_VALUE) {
           elimination->faulty_acc[index] = 1;
           status = CATS_ERR_ACC;
         }
       } else {
-        elimination->last_value_accel[index] = global_accel[index].acc_x;
+        elimination->last_value_accel[index] = global_accel[index].x;
         elimination->freeze_counter_accel[index] = 0;
       }
       break;

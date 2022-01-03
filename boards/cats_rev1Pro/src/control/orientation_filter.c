@@ -59,23 +59,22 @@ static inline float32_t gain_factor(float32_t error) {
   }
 }
 
-static void inject_data(magneto_data_t* magneto, imu_data_t* imu, orientation_filter_t* filter) {
-  float32_t abs_value = sqrtf(magneto->magneto_x * magneto->magneto_x + magneto->magneto_y * magneto->magneto_y +
-                              magneto->magneto_z * magneto->magneto_z);
+static void inject_data(const magneto_data_t* magneto, const imu_data_t* imu, orientation_filter_t* filter) {
+  float32_t abs_value = sqrtf(magneto->x * magneto->x + magneto->y * magneto->y + magneto->z * magneto->z);
   filter->magneto_data[0] = 0.0f;
-  filter->magneto_data[1] = magneto->magneto_x / abs_value;
-  filter->magneto_data[2] = magneto->magneto_y / abs_value;
-  filter->magneto_data[3] = magneto->magneto_z / abs_value;
+  filter->magneto_data[1] = magneto->x / abs_value;
+  filter->magneto_data[2] = magneto->y / abs_value;
+  filter->magneto_data[3] = magneto->z / abs_value;
 
   filter->gyro_data[0] = 0.0f;
-  filter->gyro_data[1] = ((float32_t)(imu->gyro_x) / 16.4f) * (PI / 180.0f);
-  filter->gyro_data[2] = ((float32_t)(imu->gyro_y) / 16.4f) * (PI / 180.0f);
-  filter->gyro_data[3] = ((float32_t)(imu->gyro_z) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[1] = ((float32_t)(imu->gyro.x) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[2] = ((float32_t)(imu->gyro.y) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[3] = ((float32_t)(imu->gyro.z) / 16.4f) * (PI / 180.0f);
 
   filter->acceleration_data[0] = 0.0f;
-  filter->acceleration_data[1] = ((float32_t)(imu->acc_x) / 1024.0f);
-  filter->acceleration_data[2] = ((float32_t)(imu->acc_y) / 1024.0f);
-  filter->acceleration_data[3] = ((float32_t)(imu->acc_z) / 1024.0f);
+  filter->acceleration_data[1] = ((float32_t)(imu->gyro.x) / 1024.0f);
+  filter->acceleration_data[2] = ((float32_t)(imu->gyro.y) / 1024.0f);
+  filter->acceleration_data[3] = ((float32_t)(imu->gyro.z) / 1024.0f);
 }
 
 static void quaternion_kinematics(orientation_filter_t* filter) {
@@ -225,22 +224,21 @@ static void orientation_filter(orientation_filter_t* filter) {
 
 #ifdef USE_ORIENTATION_KF
 static void inject_kf_sensor_data(magneto_data_t* magneto, imu_data_t* imu, orientation_kf_t* filter) {
-  float32_t abs_value = sqrtf(magneto->magneto_x * magneto->magneto_x + magneto->magneto_y * magneto->magneto_y +
-                              magneto->magneto_z * magneto->magneto_z);
+  float32_t abs_value = sqrtf(magneto->x * magneto->x + magneto->y * magneto->y + magneto->z * magneto->z);
   filter->magneto_data[0] = 0.0f;
-  filter->magneto_data[1] = magneto->magneto_x / abs_value;
-  filter->magneto_data[2] = magneto->magneto_y / abs_value;
-  filter->magneto_data[3] = magneto->magneto_z / abs_value;
+  filter->magneto_data[1] = magneto->x / abs_value;
+  filter->magneto_data[2] = magneto->y / abs_value;
+  filter->magneto_data[3] = magneto->z / abs_value;
 
   filter->gyro_data[0] = 0.0f;
-  filter->gyro_data[1] = ((float32_t)(imu->gyro_x) / 16.4f) * (PI / 180.0f);
-  filter->gyro_data[2] = ((float32_t)(imu->gyro_y) / 16.4f) * (PI / 180.0f);
-  filter->gyro_data[3] = ((float32_t)(imu->gyro_z) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[1] = ((float32_t)(imu->gyro.x) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[2] = ((float32_t)(imu->gyro.y) / 16.4f) * (PI / 180.0f);
+  filter->gyro_data[3] = ((float32_t)(imu->gyro.z) / 16.4f) * (PI / 180.0f);
 
   filter->accel_data[0] = 0.0f;
-  filter->accel_data[1] = ((float32_t)(imu->acc_x) / 1024.0f);
-  filter->accel_data[2] = ((float32_t)(imu->acc_y) / 1024.0f);
-  filter->accel_data[3] = ((float32_t)(imu->acc_z) / 1024.0f);
+  filter->accel_data[1] = ((float32_t)(imu->acc.x) / 1024.0f);
+  filter->accel_data[2] = ((float32_t)(imu->acc.y) / 1024.0f);
+  filter->accel_data[3] = ((float32_t)(imu->acc.z) / 1024.0f);
 }
 
 static void init_orientation_kf_struct(orientation_kf_t* const filter) {
