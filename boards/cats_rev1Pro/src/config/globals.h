@@ -34,9 +34,9 @@
 #include "sensor_config.h"
 
 /** Sampling Frequencies **/
-#define CONTROL_SAMPLING_FREQ 100
+#define CONTROL_SAMPLING_FREQ 100 // in Hz
 
-#define RECEIVER_SAMPLING_FREQ 50
+#define RECEIVER_SAMPLING_FREQ 50 // in Hz
 
 #define USB_OUTPUT_BUFFER_SIZE 256
 #define USB_INPUT_BUFFER_SIZE  256

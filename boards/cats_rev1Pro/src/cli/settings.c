@@ -20,26 +20,29 @@
 #include "config/cats_config.h"
 #include "cli/settings.h"
 
-const char* const lookupTableBootState[] = {
+const char* const lookup_table_boot_state[] = {
     "CATS_INVALID", "CATS_IDLE", "CATS_CONFIG", "CATS_TIMER", "CATS_DROP", "CATS_FLIGHT",
 };
 
-const char* const lookupTableEvents[] = {
+const char* const lookup_table_events[] = {
     "MOVING", "READY", "LIFTOFF", "MAX_V", "APOGEE", "POST_APOGEE", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
 };
 
-const char* const lookupTableActions[] = {
+const char* const lookup_table_actions[] = {
     "NONE",   "DELAY",   "HC_ONE",  "HC_TWO",    "HC_THREE",  "HC_FOUR",     "HC_FIVE",    "HC_SIX",   "LL_ONE",
     "LL_TWO", "LL_TREE", "LL_FOUR", "SERVO_ONE", "SERVO_TWO", "SERVO_THREE", "SERVO_FOUR", "RECORDER",
 };
+
+char* lookup_table_speeds[NUM_REC_SPEEDS] = {};
 
 #define LOOKUP_TABLE_ENTRY(name) \
   { name, ARRAYLEN(name) }
 
 const lookup_table_entry_t lookup_tables[] = {
-    LOOKUP_TABLE_ENTRY(lookupTableBootState),
-    LOOKUP_TABLE_ENTRY(lookupTableEvents),
-    LOOKUP_TABLE_ENTRY(lookupTableActions),
+    LOOKUP_TABLE_ENTRY(lookup_table_boot_state),
+    LOOKUP_TABLE_ENTRY(lookup_table_events),
+    LOOKUP_TABLE_ENTRY(lookup_table_actions),
+    {(const char* const*)lookup_table_speeds, NUM_REC_SPEEDS},
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -98,6 +101,8 @@ const cli_value_t value_table[] = {
      &global_cats_config.config.initial_servo_position[0]},
     {"servo2_init_pos", VAR_INT16, .config.minmax_unsigned = {0, 180},
      &global_cats_config.config.initial_servo_position[1]},
-};
+
+    {"rec_elements", VAR_UINT32, .config.u32_max = UINT32_MAX, &global_cats_config.config.rec_mask},
+    {"rec_speed", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_SPEEDS}, &global_cats_config.config.rec_speed_idx}};
 
 const uint16_t value_table_entry_count = ARRAYLEN(value_table);

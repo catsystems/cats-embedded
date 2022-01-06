@@ -44,6 +44,7 @@ void clear_error(cats_error_e err) {
   }
 }
 
+//TODO: use __builtin_popcount(errors)
 uint32_t get_error_count() {
   uint32_t count = 0;
   const uint32_t mask = 0x00000001;

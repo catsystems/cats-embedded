@@ -166,8 +166,6 @@ void parse_recording(uint16_t number) {
   } else {
     log_raw("Flight %d not found!", number);
   }
-
-  lfs_file_close(&lfs, &curr_file);
 }
 
 void parse_stats(uint16_t number) {

@@ -24,6 +24,9 @@
 
 /* Exported types */
 
+/* Number supported recording speeds */
+#define NUM_REC_SPEEDS 10
+
 typedef enum {
   CATS_INVALID,
   CATS_IDLE,
@@ -40,13 +43,14 @@ typedef struct {
 
   control_settings_t control_settings;
   /* A bit mask that specifies which readings to log to the flash */
-  uint32_t recorder_mask;
+  uint32_t rec_mask;
 
   // Timers
-  config_timer_t timers[8];
+  config_timer_t timers[NUM_TIMERS];
   // Event action map
   int16_t action_array[NUM_EVENTS][16];  // 8 (16/2) actions for each event
   int16_t initial_servo_position[2];
+  uint8_t rec_speed_idx;  // == inverse recording rate - 1
 } cats_config_t;
 
 typedef union {
@@ -64,9 +68,6 @@ void cc_defaults();
 void cc_load();
 bool cc_save();
 bool cc_format_save();
-
-/** debug functions **/
-void cc_print();
 
 /** action map functions **/
 uint16_t cc_get_num_actions(cats_event_e event);
