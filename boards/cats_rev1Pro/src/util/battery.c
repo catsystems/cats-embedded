@@ -22,11 +22,11 @@
 #define ADC_LINFIT_A 0.00818474f
 #define ADC_LINFIT_B 0.476469f
 
+
+typedef enum { LI_ION = 0, LI_PO, ALKALINE } battery_type_e;
+
 // TODO The battery type needs to be defined in the config
-
-typedef enum { LIION = 0, LIPO, ALKALINE } battery_type_e;
-
-battery_type_e battery_type = LIPO;
+const battery_type_e battery_type = LI_PO;
 
 static uint32_t cell_count = 1;
 
@@ -57,9 +57,7 @@ float battery_voltage() {
   return (float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B;
 }
 
-float battery_cell_voltage() {
-  return ((float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B) / (float)cell_count;
-}
+float battery_cell_voltage() { return ((float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B) / (float)cell_count; }
 
 battery_level_e battery_level() {
   float voltage;

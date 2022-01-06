@@ -54,4 +54,4 @@
 #define TOUCHDOWN_SAFETY_COUNTER 100   // num iterations
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,
-                        control_settings_t *settings);
+                        const control_settings_t *settings);

@@ -24,23 +24,14 @@
 #include "config/cats_config.h"
 #include "tasks/task_peripherals.h"
 
-/** Private Constants **/
-
-/** Private Function Declarations **/
-
-/** Exported Function Definitions **/
-
 /**
- * @brief Function implementing the task_state_est thread.
+ * @brief Function implementing the task_flight_fsm thread.
  * @param argument: Not used
  * @retval None
  */
 _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
-  control_settings_t settings = global_cats_config.config.control_settings;
+  const control_settings_t settings = global_cats_config.config.control_settings;
 
-  float max_v = 0;
-  float max_a = 0;
-  float max_h = 0;
   trigger_event(EV_MOVING);
 
   uint32_t tick_count = osKernelGetTickCount();
@@ -50,26 +41,10 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
     check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data,
                        &settings);
 
-    // Keep track of max speed, velocity and acceleration for flight stats
-    if (global_flight_state.flight_state >= THRUSTING_1 && global_flight_state.flight_state <= APOGEE) {
-      if (max_v < global_estimation_data.velocity) max_v = global_estimation_data.velocity;
-      if (max_a < global_estimation_data.acceleration) max_a = global_estimation_data.acceleration;
-      if (max_h < global_estimation_data.height) max_h = global_estimation_data.height;
-    }
     if (global_flight_state.state_changed) {
       log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);
       flight_state_t flight_state = {.flight_or_drop_state.flight_state = global_flight_state.flight_state};
       record(tick_count, FLIGHT_STATE, &flight_state);
-
-      // When we are in any flight state update the flash sector with last flight phase
-      if (global_flight_state.flight_state == TOUCHDOWN) {
-        // TODO - create a stats file
-        //        cs_set_flight_phase(fsm_state.flight_state);
-        //        cs_set_max_altitude(max_h);
-        //        cs_set_max_velocity(max_v);
-        //        cs_set_max_acceleration(max_a);
-        //        cs_save();
-      }
     }
 
     tick_count += tick_update;
