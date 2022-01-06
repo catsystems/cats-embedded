@@ -22,7 +22,6 @@
 #include "util/log.h"
 #include "drivers/adc.h"
 #include "drivers/spi.h"
-#include "eeprom_emul.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "util/actions.h"
@@ -40,7 +39,6 @@
 #include "lfs.h"
 #include "lfs/lfs_custom.h"
 #include "util/fifo.h"
-#include "main.h"
 #include "cmsis_os.h"
 
 #include <stdlib.h>
@@ -116,20 +114,10 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   log_info("Device initialization complete.");
 
   osDelay(100);
-  /* In order to change what is logged just remove it from the following OR:
-   * In the given example, BARO and FLIGHT_STATE are missing, among others. */
-  //    uint32_t selected_entry_types = IMU | FLIGHT_INFO;
-  //    cc_set_recorder_mask(selected_entry_types);
+
   cc_init();
 
-  // cc_defaults();
-
-  // cc_save();
   cc_load();
-
-  global_cats_config.config.recorder_mask = UINT32_MAX;
-  // global_cats_config.config.recorder_mask = 0;
-  global_cats_config.config.boot_state = CATS_FLIGHT;
 
   osDelay(10);
 

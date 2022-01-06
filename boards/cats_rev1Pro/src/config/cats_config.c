@@ -17,41 +17,50 @@
  */
 
 #include "config/cats_config.h"
-#include "util/log.h"
+#include "config/globals.h"
+#include "cli/settings.h"
 #include "eeprom_emul.h"
 #include "util/actions.h"
 
-const cats_config_u DEFAULT_CONFIG = {
-    .config.boot_state = CATS_FLIGHT,
-    .config.control_settings.main_altitude = 150,
-    .config.control_settings.liftoff_acc_threshold = 1500,
-    .config.timers[0].duration = 0,
-    .config.timers[0].start_event = 0,
-    .config.timers[0].end_event = 0,
-    .config.timers[1].duration = 0,
-    .config.timers[1].start_event = 0,
-    .config.timers[1].end_event = 0,
-    .config.timers[2].duration = 0,
-    .config.timers[2].start_event = 0,
-    .config.timers[2].end_event = 0,
-    .config.timers[3].duration = 0,
-    .config.timers[3].start_event = 0,
-    .config.timers[3].end_event = 0,
-    .config.action_array[EV_READY][0] = ACT_SET_RECORDER_STATE,
-    .config.action_array[EV_READY][1] = REC_FILL_QUEUE,
-    .config.action_array[EV_LIFTOFF][0] = ACT_SET_RECORDER_STATE,
-    .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
-    .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
-    .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
-    .config.initial_servo_position[0] = 0,
-    .config.initial_servo_position[1] = 0,
-};
+const cats_config_u DEFAULT_CONFIG = {.config.boot_state = CATS_FLIGHT,
+                                      .config.control_settings.main_altitude = 150,
+                                      .config.control_settings.liftoff_acc_threshold = 1500,
+                                      .config.timers[0].duration = 0,
+                                      .config.timers[0].start_event = 0,
+                                      .config.timers[0].end_event = 0,
+                                      .config.timers[1].duration = 0,
+                                      .config.timers[1].start_event = 0,
+                                      .config.timers[1].end_event = 0,
+                                      .config.timers[2].duration = 0,
+                                      .config.timers[2].start_event = 0,
+                                      .config.timers[2].end_event = 0,
+                                      .config.timers[3].duration = 0,
+                                      .config.timers[3].start_event = 0,
+                                      .config.timers[3].end_event = 0,
+                                      .config.action_array[EV_READY][0] = ACT_SET_RECORDER_STATE,
+                                      .config.action_array[EV_READY][1] = REC_FILL_QUEUE,
+                                      .config.action_array[EV_LIFTOFF][0] = ACT_SET_RECORDER_STATE,
+                                      .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
+                                      .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
+                                      .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
+                                      .config.initial_servo_position[0] = 0,
+                                      .config.initial_servo_position[1] = 0,
+                                      .config.rec_speed_idx = 0,
+                                      .config.rec_mask = UINT32_MAX};
 
 cats_config_u global_cats_config = {};
 
 /** cats config initialization **/
 
 void cc_init() {
+  /* Fill lookup_table_speeds with the string representation of the available speeds. The speeds are placed in the array
+   * in descending order and are dependent on CONTROL_SAMPLING_FREQ. */
+  for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
+    // TODO: free this memory
+    lookup_table_speeds[i] = calloc(14, sizeof(char));
+    // TODO: assert that lookupTableSpeeds[i] is not NULL
+    snprintf(lookup_table_speeds[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
+  }
   HAL_FLASH_Unlock();
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
@@ -141,11 +150,4 @@ bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action
     return true;
   }
   return false;
-}
-/** debug functions **/
-
-void cc_print() {
-  static const char* BOOT_STATE_STRING[] = {"CATS_INVALID", "CATS_IDLE", "CATS_CONFIG",
-                                            "CATS_TIMER",   "CATS_DROP", "CATS_FLIGHT"};
-  log_info("Boot State: %s", BOOT_STATE_STRING[global_cats_config.config.boot_state]);
 }

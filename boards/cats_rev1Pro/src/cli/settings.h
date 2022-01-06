@@ -19,13 +19,15 @@
 
 #pragma once
 
+#include "config/cats_config.h"
+
 #include <stdbool.h>
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS } lookup_table_index_e;
+typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS, TABLE_SPEEDS } lookup_table_index_e;
 
-typedef struct lookupTableEntry_s {
+typedef struct {
   const char *const *values;
   const uint8_t value_count;
 } lookup_table_entry_t;
@@ -54,25 +56,25 @@ typedef enum {
 #define VALUE_SECTION_MASK (0x18)
 #define VALUE_MODE_MASK    (0xE0)
 
-typedef struct cli_minmax_config {
+typedef struct {
   const int16_t min;
   const int16_t max;
 } cli_minmax_config_t;
 
-typedef struct cli_minmax_unsigned_config {
+typedef struct {
   const uint16_t min;
   const uint16_t max;
 } cli_minmax_unsigned_config_t;
 
-typedef struct cli_lookup_table_config {
+typedef struct {
   const lookup_table_index_e table_index;
 } cli_lookup_table_config_t;
 
-typedef struct cli_array_length_config {
+typedef struct {
   const uint8_t length;
 } cli_array_length_config_t;
 
-typedef struct cli_string_length_config {
+typedef struct {
   const uint8_t min_length;
   const uint8_t max_length;
   const uint8_t flags;
@@ -91,14 +93,20 @@ typedef union {
   uint32_t u32_max;                              // used for MODE_DIRECT with VAR_UINT32
 } cli_value_config_t;
 
+struct cli_value;
+typedef void (*callback_f)(const struct cli_value *arg);
+
 typedef struct cli_value {
   const char *name;
   const uint8_t type;  // see cli_value_flag_e
   const cli_value_config_t config;
   void *pdata;
+  callback_f cb;
 } __attribute__((packed)) cli_value_t;
 
 extern const lookup_table_entry_t lookup_tables[];
 extern const uint16_t value_table_entry_count;
+
+extern char *lookup_table_speeds[NUM_REC_SPEEDS];
 
 extern const cli_value_t value_table[];
