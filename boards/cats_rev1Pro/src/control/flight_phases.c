@@ -24,7 +24,8 @@
 #include <stdlib.h>
 
 static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data);
-static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, control_settings_t *settings);
+static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data,
+                              const control_settings_t *settings);
 static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
@@ -32,7 +33,7 @@ static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
 static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,
-                        control_settings_t *settings) {
+                        const control_settings_t *settings) {
   /* Save old FSM state */
   flight_fsm_t old_fsm_state = *fsm_state;
 
@@ -131,7 +132,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t
 }
 
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data,
-                              control_settings_t *settings) {
+                              const control_settings_t *settings) {
   /* Check if we move from READY Back to MOVING */
 
   /* Check if the IMU moved between two timesteps */

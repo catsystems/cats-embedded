@@ -147,14 +147,6 @@ void parse_recording(uint16_t number) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           log_raw("%lu|FLIGHT_STATE|%u", rec_elem.ts, rec_elem.u.flight_state.flight_or_drop_state.flight_state);
         } break;
-        case SENSOR_INFO: {
-          size_t elem_sz = sizeof(rec_elem.u.sensor_info);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|SENSOR_INFO|%u|%u|%u|%u|%u|%u", rec_elem.ts, rec_elem.u.sensor_info.faulty_imu[0],
-                  rec_elem.u.sensor_info.faulty_imu[1], rec_elem.u.sensor_info.faulty_imu[2],
-                  rec_elem.u.sensor_info.faulty_baro[0], rec_elem.u.sensor_info.faulty_baro[1],
-                  rec_elem.u.sensor_info.faulty_baro[2]);
-        } break;
         case EVENT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.event_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);

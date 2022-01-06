@@ -60,9 +60,8 @@ typedef enum {
   ORIENTATION_INFO   = 1 << 9,   // 0x400
   FILTERED_DATA_INFO = 1 << 10,  // 0x800
   FLIGHT_STATE       = 1 << 11,  // 0x1000
-  SENSOR_INFO        = 1 << 12,  // 0x2000
-  EVENT_INFO         = 1 << 13,  // 0x4000
-  ERROR_INFO         = 1 << 14,  // 0x8000
+  EVENT_INFO         = 1 << 12,  // 0x2000
+  ERROR_INFO         = 1 << 13,  // 0x4000
   HEHE               = 0xFFFFFFFF,
 } rec_entry_type_e;
 // clang-format on
@@ -101,11 +100,6 @@ typedef struct {
 } flight_state_t;
 
 typedef struct {
-  uint8_t faulty_imu[3];
-  uint8_t faulty_baro[3];
-} sensor_info_t;
-
-typedef struct {
   cats_event_e event;
   uint8_t action_idx;
 } event_info_t;
@@ -123,7 +117,6 @@ typedef union {
   orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;
   flight_state_t flight_state;
-  sensor_info_t sensor_info;
   event_info_t event_info;
   error_info_t error_info;
 } rec_elem_u;
