@@ -56,7 +56,7 @@ const struct lfs_config lfs_cfg = {
     .prog_buffer = prog_buffer,
     .lookahead_buffer = lookahead_buffer};
 
-char cwd[256] = {};
+char cwd[LFS_NAME_MAX] = {};
 
 uint32_t flight_counter = 0;
 lfs_file_t fc_file;
@@ -112,6 +112,45 @@ int lfs_ls(const char *path) {
   }
 
   return 0;
+}
+
+int32_t lfs_cnt(const char *path, enum lfs_type type) {
+  if (type != LFS_TYPE_REG && type != LFS_TYPE_DIR) {
+    return -1;
+  }
+
+  int32_t cnt = 0;
+
+  lfs_dir_t dir;
+  int err = lfs_dir_open(&lfs, &dir, path);
+  if (err) {
+    return err;
+  }
+
+  struct lfs_info info;
+  /* Iterate over all the files in the current directory */
+  while (true) {
+    int32_t res = lfs_dir_read(&lfs, &dir, &info);
+    if (res < 0) {
+      return res;
+    }
+
+    if (res == 0) {
+      break;
+    }
+
+    /* Increment the counter if the type matches */
+    if (info.type == type) {
+      ++cnt;
+    }
+  }
+
+  err = lfs_dir_close(&lfs, &dir);
+  if (err) {
+    return err;
+  }
+
+  return cnt;
 }
 
 static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
