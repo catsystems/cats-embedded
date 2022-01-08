@@ -21,7 +21,7 @@
 #include "util/types.h"
 #include "util/log.h"
 #include "tasks/task_peripherals.h"
-#include "util/recorder.h"
+#include "flash/recorder.h"
 
 /** Private Constants **/
 

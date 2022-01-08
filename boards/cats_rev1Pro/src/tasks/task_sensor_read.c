@@ -23,7 +23,7 @@
 #include "sensors/h3lis100dl.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
-#include "util/recorder.h"
+#include "flash/recorder.h"
 #include "config/globals.h"
 
 #include <string.h>

@@ -20,7 +20,7 @@
 #include "cli/cli.h"
 #include "cli/cli_commands.h"
 #include "util/log.h"
-#include "lfs/lfs_custom.h"
+#include "flash/lfs_custom.h"
 
 #include <string.h>
 #include <stdio.h>

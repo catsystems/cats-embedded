@@ -19,7 +19,7 @@
 #pragma once
 
 #include "util/types.h"
-#include "util/recorder.h"
+#include "flash/recorder.h"
 #include "util/fifo.h"
 #include "sensors/icm20601.h"
 #include "sensors/ms5607.h"
