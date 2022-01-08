@@ -19,11 +19,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "util/reader.h"
-#include "util/recorder.h"
+#include "reader.h"
+#include "recorder.h"
 #include "util/log.h"
 #include "config/globals.h"
-#include "lfs/lfs_custom.h"
+#include "flash/lfs_custom.h"
 #include "control/data_processing.h"
 
 void dump_recording(uint16_t number) {

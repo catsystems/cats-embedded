@@ -21,12 +21,12 @@
 #include "cli/cli.h"
 #include "cli/cli_commands.h"
 #include "util/log.h"
-#include "util/reader.h"
+#include "flash/reader.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/actions.h"
 #include "util/battery.h"
-#include "lfs/lfs_custom.h"
+#include "flash/lfs_custom.h"
 
 #include <stdlib.h>
 #include <stdbool.h>

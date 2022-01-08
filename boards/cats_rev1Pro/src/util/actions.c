@@ -20,7 +20,7 @@
 
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "lfs/lfs_custom.h"
+#include "flash/lfs_custom.h"
 #include "drivers/servo.h"
 
 bool no_action_function(__attribute__((unused)) int16_t bummer);

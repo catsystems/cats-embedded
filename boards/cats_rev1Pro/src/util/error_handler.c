@@ -17,7 +17,7 @@
  */
 
 #include "util/error_handler.h"
-#include "util/recorder.h"
+#include "flash/recorder.h"
 #include "util/log.h"
 
 static uint32_t errors = 0;

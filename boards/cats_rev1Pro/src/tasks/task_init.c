@@ -37,7 +37,7 @@
 #include "tasks/task_health_monitor.h"
 #include "tasks/task_preprocessing.h"
 #include "lfs.h"
-#include "lfs/lfs_custom.h"
+#include "flash/lfs_custom.h"
 #include "util/fifo.h"
 #include "cmsis_os.h"
 
