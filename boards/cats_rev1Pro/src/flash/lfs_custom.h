@@ -26,14 +26,23 @@ extern const struct lfs_config lfs_cfg;
 
 extern lfs_file_t fc_file;
 
-extern char cwd[256];
+extern char cwd[LFS_NAME_MAX];
 
 extern uint32_t flight_counter;
 
 /**
- * List the contents of the directory
+ * List the contents of the directory.
  *
  * @param path - path to the directory
  * @return 0 if no error
  */
 int lfs_ls(const char *path);
+
+/**
+ * Counts the number of elements of a given type on the provided path. Not recursive.
+ *
+ * @param path directory whose elements are to be counted
+ * @param type type of the elements to count, either LFS_TYPE_REG (file) or LFS_TYPE_DIR
+ * @return number of elements, negative number in case of error
+ */
+int32_t lfs_cnt(const char *path, enum lfs_type type);

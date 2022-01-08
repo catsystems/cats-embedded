@@ -52,6 +52,7 @@ static void cli_cmd_log_enable(const char *cmd_name, char *args);
 static void cli_cmd_ls(const char *cmd_name, char *args);
 static void cli_cmd_cd(const char *cmd_name, char *args);
 static void cli_cmd_rm(const char *cmd_name, char *args);
+static void cli_cmd_rec_info(const char *cmd_name, char *args);
 
 static void cli_cmd_dump_flight(const char *cmd_name, char *args);
 static void cli_cmd_parse_flight(const char *cmd_name, char *args);
@@ -83,6 +84,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cli_cmd_ls),
     CLI_COMMAND_DEF("reboot", "reboot without saving", NULL, cli_cmd_reboot),
     CLI_COMMAND_DEF("rec_erase", "erase the recordings", NULL, cli_cmd_erase_recordings),
+    CLI_COMMAND_DEF("rec_info", "get the info about flash", NULL, cli_cmd_rec_info),
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
@@ -415,6 +417,27 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
   } else {
     cli_print_line("Argument not provided!");
   }
+}
+
+static void cli_cmd_rec_info(const char *cmd_name, char *args) {
+  const lfs_ssize_t curr_sz_blocks = lfs_fs_size(&lfs);
+  const int32_t num_flights = lfs_cnt("/flights", LFS_TYPE_REG);
+  const int32_t num_stats = lfs_cnt("/stats", LFS_TYPE_REG);
+
+  if ((curr_sz_blocks < 0) || (num_flights < 0) || (num_stats < 0)) {
+    cli_print_line("Error while accessing recorder info.");
+    return;
+  }
+
+  const lfs_size_t block_size_kb = lfs_cfg.block_size / 1024;
+  const lfs_size_t curr_sz_kb = curr_sz_blocks * block_size_kb;
+  const lfs_size_t total_sz_kb = block_size_kb * lfs_cfg.block_count;
+  const double percentage_used = (double)curr_sz_kb / total_sz_kb * 100;
+  cli_print_linef("Space:\n  Total: %lu KB\n   Used: %lu KB (%.2f%%)\n   Free: %lu KB (%.2f%%)", total_sz_kb,
+                  curr_sz_kb, percentage_used, total_sz_kb - curr_sz_kb, 100 - percentage_used);
+
+  cli_print_linef("Number of flight logs: %ld", num_flights);
+  cli_print_linef("Number of stats logs: %ld", num_stats);
 }
 
 static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
