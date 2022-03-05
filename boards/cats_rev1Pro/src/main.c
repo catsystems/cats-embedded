@@ -84,13 +84,24 @@ int main(void) {
   /* Configure the system clock */
   SystemClock_Config();
 
+  MX_RTC_Init();
+
+  /* Initialize RTC registers */
+  __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);
+  HAL_PWR_EnableBkUpAccess();
+
+  /* Jump to bootloader if RTC register matches pattern */
+  if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == BOOTLOADER_MAGIC_PATTERN){
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0); // Reset register
+    BootLoaderJump(); // Does not return!
+  }
+
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
   MX_QUADSPI_Init();
-  MX_RTC_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
   MX_TIM2_Init();

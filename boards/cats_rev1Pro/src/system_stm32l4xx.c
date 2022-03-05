@@ -194,6 +194,32 @@ const uint32_t MSIRangeTable[12] = {100000U,   200000U,   400000U,   800000U,  1
 * @retval None
 */
 
+_Noreturn void BootLoaderJump(void){
+  void (*SysMemBootJump)(void);
+
+  HAL_RCC_DeInit();
+  HAL_DeInit();
+
+  /* Disable systick timer and reset it to default values */
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
+
+   /* (Disable all interrupts) and remap system flash */
+  //__disable_irq();
+  __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+
+  /* Create system jump to bootloader */
+  SysMemBootJump = (void (*)(void)) (*((uint32_t *)(0x1FFF0004)));
+
+   /* Set main stack pointer. */
+  __set_MSP(*(uint32_t *)0x1FFF0000);
+
+   /* call our function to jump to set location */
+  SysMemBootJump();
+  while(1);
+}
+
 void SystemInit(void)
 {
 #if defined(USER_VECT_TAB_ADDRESS)

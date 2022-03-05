@@ -121,10 +121,11 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(10);
 
-  /* Check if the FSM configurations make sense */
-  if (global_cats_config.config.control_settings.liftoff_acc_threshold < 1500) {
-    log_error("Acceleration Threshold is not configured Properly!");
-    global_cats_config.config.control_settings.liftoff_acc_threshold = 1500;
+  /* Check if the configurations makes sense */
+  if (global_cats_config.config.config_version != CONFIG_VERSION) {
+    log_error("Configuration changed or error in config!");
+    cc_defaults();
+    cc_save();
   }
 
   osDelay(100);

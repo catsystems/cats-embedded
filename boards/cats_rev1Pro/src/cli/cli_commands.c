@@ -33,10 +33,10 @@
 #include <string.h>
 
 /** CLI command function declarations **/
-
 static void cli_cmd_help(const char *cmd_name, char *args);
 
 static void cli_cmd_reboot(const char *cmd_name, char *args);
+static void cli_cmd_bl(const char *cmd_name, char *args);
 static void cli_cmd_save(const char *cmd_name, char *args);
 
 static void cli_cmd_get(const char *cmd_name, char *args);
@@ -68,6 +68,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args);
 
 /* List of CLI commands; should be sorted in alphabetical order. */
 const clicmd_t cmd_table[] = {
+    CLI_COMMAND_DEF("bl", "reset into bootloader", NULL, cli_cmd_bl),
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cli_cmd_cd),
     CLI_COMMAND_DEF("config", "print the flight config", NULL, cli_cmd_config),
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cli_cmd_defaults),
@@ -138,6 +139,13 @@ static void cli_cmd_help(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_reboot(const char *cmd_name, char *args) { NVIC_SystemReset(); }
+
+extern RTC_HandleTypeDef hrtc;
+static void cli_cmd_bl(const char *cmd_name, char *args) {
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, BOOTLOADER_MAGIC_PATTERN);
+  __disable_irq();
+  NVIC_SystemReset();
+}
 
 static void cli_cmd_save(const char *cmd_name, char *args) {
   if (cc_save() == false) {

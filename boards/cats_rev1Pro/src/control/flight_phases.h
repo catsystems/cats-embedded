@@ -25,8 +25,8 @@
 
 /* MOVING */
 #define TIME_THRESHOLD_MOV_TO_READY 1000   // num iterations
-#define ALLOWED_ACC_ERROR           0.3f   // m/s^2
-#define ALLOWED_GYRO_ERROR          5.0f   // dps
+#define ALLOWED_ACC_ERROR           0.6f   // m/s^2
+#define ALLOWED_GYRO_ERROR          10.0f   // dps
 #define MOV_LIFTOFF_THRESHOLD       50.0f  // m/s^2
 #define MOV_LIFTOFF_SAFETY_COUNTER  100    // num iterations
 
