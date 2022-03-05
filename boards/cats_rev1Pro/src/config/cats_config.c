@@ -22,9 +22,10 @@
 #include "eeprom_emul.h"
 #include "util/actions.h"
 
-const cats_config_u DEFAULT_CONFIG = {.config.boot_state = CATS_FLIGHT,
+const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
+                                      .config.boot_state = CATS_FLIGHT,
                                       .config.control_settings.main_altitude = 150,
-                                      .config.control_settings.liftoff_acc_threshold = 1500,
+                                      .config.control_settings.liftoff_acc_threshold = 3500,
                                       .config.timers[0].duration = 0,
                                       .config.timers[0].start_event = 0,
                                       .config.timers[0].end_event = 0,

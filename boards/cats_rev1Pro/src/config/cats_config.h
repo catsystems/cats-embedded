@@ -22,7 +22,9 @@
 #include <stdbool.h>
 #include "util/types.h"
 
-/* Exported types */
+/* The system will reload the default config when the number changes */
+/* Config version 2 / Minor 1 */
+#define CONFIG_VERSION 201
 
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10
@@ -38,6 +40,8 @@ typedef enum {
 } cats_boot_state;
 
 typedef struct {
+  /* Needs to be in first position */
+  uint32_t config_version;
   /* State according to /concepts/v1/cats_fsm.jpg */
   cats_boot_state boot_state;
 
