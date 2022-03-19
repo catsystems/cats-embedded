@@ -259,7 +259,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
       break;
   }
 
-  /* if all ACCELS have been eliminated, only work ith the BARO */
+  /* if all ACCELS have been eliminated, only work with the BARO */
   if (get_error_by_tag(CATS_ERR_FILTER_ACC)) {
     memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
     memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
@@ -267,12 +267,19 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
     kalman_prediction(filter);
   }
 
-  /* if all BAROS have been eliminated, only work ith the ACCEL */
-  if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT)) {
+  /* if all BAROS have been eliminated, only work with the ACCEL
+   * After apogee an acceleration based state estimation does not work, so disable the state estimation
+   */
+  if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) || (flight_state >= APOGEE)) {
     memcpy(filter->x_bar_data, filter->x_hat_data, sizeof(filter->x_hat_data));
     memcpy(filter->P_bar_data, filter->P_hat_data, sizeof(filter->P_hat_data));
   } else {
     kalman_update(filter);
+  }
+
+  /* Do not update offset estimation if we took off */
+  if (flight_state >= THRUSTING_1) {
+    filter->x_bar_data[2] = filter->x_hat_data[2];
   }
 
   /* If both are eliminated, the state estimation is just stuck. It doesn't change any values anymore. */

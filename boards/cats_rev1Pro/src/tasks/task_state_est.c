@@ -80,6 +80,14 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     } else {
       filter.measured_acceleration = 0;
     }
+
+    /* When we are in coasting, the linear acceleration cannot be larger than 0 */
+    if (new_fsm_enum == COASTING) {
+      if (filter.measured_acceleration > 0) {
+        filter.measured_acceleration = 0;
+      }
+    }
+
     filter.measured_AGL = global_estimation_input.height_AGL;
 
     /* Do a Kalman Step */
@@ -124,9 +132,9 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     }
     record(tick_count, FLIGHT_INFO, &flight_info);
 
-    // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
-    //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
-    //          1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
+     //log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
+     //         (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
+     //         1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
 
     /* reset old fsm enum */
     old_fsm_enum = new_fsm_enum;

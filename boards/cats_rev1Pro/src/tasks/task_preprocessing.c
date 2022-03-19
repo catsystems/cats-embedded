@@ -46,9 +46,14 @@ void task_preprocessing(void *argument) {
   median_filter_t filter_data = {0};
 #endif
   sensor_elimination_t sensor_elimination = {0};
-  calibration_data_t calibration = {.angle = 1, .axis = 2};
+  /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
+   * the linear acceleration calibration */
+  calibration_data_t calibration = {.gyro_calib.x = 0, .gyro_calib.y = 0, .gyro_calib.z = 0, .angle = 1, .axis = 2};
   state_estimation_input_t state_est_input = {.acceleration_z = 0.0f, .height_AGL = 0.0f};
   float32_t pressure_0 = P_INITIAL;
+
+  /* Gyro Calib tag */
+  bool gyro_calibrated = false;
 
   /* local fsm enum */
   flight_fsm_e new_fsm_enum = MOVING;
@@ -67,13 +72,16 @@ void task_preprocessing(void *argument) {
     /* average and construct SI Data */
     avg_and_to_SI(&SI_data, &SI_data_old, &sensor_elimination);
 
-    /* Global SI data is only used in the fsm task */
-    global_SI_data = SI_data;
-
     /* Compute gravity when changing to IDLE */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       calibrate_imu(&SI_data.acc, &calibration);
       pressure_0 = SI_data.pressure;
+    }
+
+    if (!gyro_calibrated) {
+      gyro_calibrated = compute_gyro_calibration(&SI_data.gyro, &calibration);
+    } else {
+      calibrate_gyro(&calibration, &SI_data.gyro);
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -91,6 +99,9 @@ void task_preprocessing(void *argument) {
 
     /* write input data into global struct */
     global_estimation_input = state_est_input;
+
+    /* Global SI data is only used in the fsm task */
+    global_SI_data = SI_data;
 
     tick_count += tick_update;
     osDelayUntil(tick_count);

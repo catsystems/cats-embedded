@@ -110,6 +110,7 @@ typedef struct {
 } estimation_output_t;
 
 typedef struct {
+  vf32_t gyro_calib;
   float32_t angle;
   uint8_t axis;
 } calibration_data_t;
