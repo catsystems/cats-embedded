@@ -43,7 +43,7 @@ void servo_stop(SERVO *dev) {
 // Set Servo angle from 0 to 180 degree
 void servo_set_position(SERVO *dev, uint16_t angle) {
   if (angle > 180) angle = 180;
-  dev->pulse = (10000 / 180) * angle + 10000;
+  dev->pulse = (14000 / 180) * angle + 8000;
   if (dev->started) set_pwm(dev->timer, dev->channel, dev->pulse);
 }
 
