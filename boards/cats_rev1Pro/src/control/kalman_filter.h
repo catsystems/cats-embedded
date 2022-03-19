@@ -27,7 +27,7 @@
  * it is close to zero. The noise matrices here are therefore not agreeing to the data analysis. */
 #define STD_NOISE_BARO         900000.0f  // From data analysis: 2.6f m
 #define STD_NOISE_BARO_INITIAL 9.0f       // From data analysis: 2.6f m
-#define STD_NOISE_IMU          0.004f     // From data analysis: 0.004f m/s^2
+#define STD_NOISE_IMU          0.004f    // From data analysis: 0.004f m/s^2
 #define STD_NOISE_OFFSET       0.000001f
 
 void init_filter_struct(kalman_filter_t *filter);

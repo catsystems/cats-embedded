@@ -55,6 +55,50 @@ void calibrate_imu(const vf32_t *accel_data, calibration_data_t *calibration) {
   }
 }
 
+bool compute_gyro_calibration(const vf32_t *gyro_data, calibration_data_t *calibration) {
+  static int16_t calibration_counter = 0;
+  static vf32_t first_gyro_data = {.x = 0, .y = 0, .z = 0};
+  static vf32_t averaged_gyro_data = {.x = 0, .y = 0, .z = 0};
+
+  /* compute gyro error */
+  vf32_t vector_error;
+  vector_error.x = fabsf(first_gyro_data.x - gyro_data->x);
+  vector_error.y = fabsf(first_gyro_data.y - gyro_data->y);
+  vector_error.z = fabsf(first_gyro_data.z - gyro_data->z);
+
+  /* check if the gyro error is inside the bounds
+   * if yes, increase counter and compute averaged gyro data
+   * if not, reset counter and reset averaged gyro data
+   */
+  if ((vector_error.x < GYRO_ALLOWED_ERROR_SI) && (vector_error.y < GYRO_ALLOWED_ERROR_SI) &&
+      (vector_error.z < GYRO_ALLOWED_ERROR_SI)) {
+    calibration_counter++;
+    averaged_gyro_data.x += gyro_data->x / (float)GYRO_NUM_SAME_VALUE;
+    averaged_gyro_data.y += gyro_data->y / (float)GYRO_NUM_SAME_VALUE;
+    averaged_gyro_data.z += gyro_data->z / (float)GYRO_NUM_SAME_VALUE;
+  } else {
+    calibration_counter = 0;
+    averaged_gyro_data.x = 0;
+    averaged_gyro_data.y = 0;
+    averaged_gyro_data.z = 0;
+    first_gyro_data = *gyro_data;
+  }
+
+  /* if the counter achieved the defined value, calibrate gyro */
+  if (calibration_counter > GYRO_NUM_SAME_VALUE) {
+    memcpy(&calibration->gyro_calib, &averaged_gyro_data, sizeof(averaged_gyro_data));
+    return true;
+  }
+
+  return false;
+}
+
+void calibrate_gyro(const calibration_data_t *calibration, vf32_t *gyro_data) {
+  gyro_data->x = gyro_data->x - calibration->gyro_calib.x;
+  gyro_data->y = gyro_data->y - calibration->gyro_calib.y;
+  gyro_data->z = gyro_data->z - calibration->gyro_calib.z;
+}
+
 void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t *calibration_data) {
   float test_radii[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
   float test_bias[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
