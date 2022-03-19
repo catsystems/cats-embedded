@@ -18,8 +18,7 @@
 
 #include "drivers/w25q.h"
 #include "util/log.h"
-
-extern QSPI_HandleTypeDef hqspi;
+#include "target.h"
 
 w25q_t w25q = {.id = W25QINVALID};
 
@@ -72,7 +71,7 @@ int8_t w25q_write_enable(void) {
   };
 
   // Send write enable command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_WRITE_ENABLE;
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_WRITE_ENABLE;
   // Keep querying W25Q_CMD_READ_STATUS_REG1 register, read w25qxx in the status byte_ Status_ REG1_ Wel is compared
   // with 0x02 Read status register 1 bit 1 (read-only), WEL write enable flag bit. When the flag bit is 1, it means
   // that write operation can be performed
@@ -91,7 +90,7 @@ int8_t w25q_write_enable(void) {
   };
 
   // Send polling wait command
-  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_AutoPolling(&FLASH_QSPI_HANDLE, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_AUTOPOLLING;
 
   return W25Q_OK;
@@ -210,7 +209,7 @@ int8_t w25q_auto_polling_mem_ready(void) {
   };
 
   // Send polling wait command
-  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_AutoPolling(&FLASH_QSPI_HANDLE, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_AUTOPOLLING;
 
   return W25Q_OK;  // Communication ended normally
@@ -231,7 +230,7 @@ w25q_status_e w25q_reset(void) {
   };
 
   // Send reset enable command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_INIT;  // If the sending fails, an error message is returned
   // Use the automatic polling flag bit to wait for the end of communication
   if (w25q_auto_polling_mem_ready() != W25Q_OK) return W25Q_ERR_AUTOPOLLING;
@@ -239,7 +238,7 @@ w25q_status_e w25q_reset(void) {
   s_command.Instruction = W25Q_CMD_RESET_DEVICE;  // Reset device command
 
   // Send reset device command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_INIT;  // If the sending fails, an error message is returned
 
   // Use the automatic polling flag bit to wait for the end of communication
@@ -247,7 +246,7 @@ w25q_status_e w25q_reset(void) {
 
   s_command.Instruction = W25Q_CMD_ENTER_4_BYTE_ADDRESS_MODE;
 
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_INIT;  // If the sending fails, an error message is returned
 
   // Use the automatic polling flag bit to wait for the end of communication
@@ -274,10 +273,10 @@ w25q_status_e w25q_read_id(uint32_t *w25q_id) {
   uint8_t qspi_receive_buff[3];  // Store data read by QSPI
 
   // Send command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_INIT;  // If the sending fails, an error message is returned
   // receive data
-  if (HAL_QSPI_Receive(&hqspi, qspi_receive_buff, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_QSPI_Receive(&FLASH_QSPI_HANDLE, qspi_receive_buff, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_TRANSMIT;  // If the reception fails, an error message is returned
 
   // Combine the obtained data into ID
@@ -318,10 +317,10 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
       .Instruction = status_reg_cmd,
   };
 
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_INIT;
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_INIT;
 
   // receive data
-  if (HAL_QSPI_Receive(&hqspi, status_reg_val, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_TRANSMIT;
+  if (HAL_QSPI_Receive(&FLASH_QSPI_HANDLE, status_reg_val, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_TRANSMIT;
 
   return W25Q_OK;
 }
@@ -346,7 +345,7 @@ w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
   }
 
   // Issue erase command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_ERASE;  // Erase failed
   }
 
@@ -395,7 +394,7 @@ w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
   }
 
   // Issue erase command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_ERASE;
   }
 
@@ -426,7 +425,7 @@ w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
   }
 
   // Issue erase command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_ERASE;
   }
 
@@ -456,7 +455,7 @@ w25q_status_e w25q_chip_erase(void) {
     return W25Q_ERR_WRITE_ENABLE;
   }
   // Issue erase command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_ERASE;
   }
 
@@ -476,7 +475,7 @@ w25q_status_e w25q_chip_erase(void) {
   s_command.DataMode = QSPI_DATA_1_LINE;
   s_command.NbData = 1;
 
-  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, W25Q_CHIP_ERASE_TIMEOUT_MAX) != HAL_OK) {
+  if (HAL_QSPI_AutoPolling(&FLASH_QSPI_HANDLE, &s_command, &s_config, W25Q_CHIP_ERASE_TIMEOUT_MAX) != HAL_OK) {
     return W25Q_ERR_AUTOPOLLING;
   }
   return W25Q_OK;
@@ -504,11 +503,11 @@ w25q_status_e w25q_write_page(uint8_t *buf, uint32_t write_addr, uint16_t num_by
     return W25Q_ERR_WRITE_ENABLE;
   }
   // Write command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_TRANSMIT_CMD;
   }
   // Start data transfer
-  if (HAL_QSPI_Transmit(&hqspi, buf, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Transmit(&FLASH_QSPI_HANDLE, buf, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_TRANSMIT;
   }
   // Use the automatic polling flag bit to wait for the end of the write
@@ -579,12 +578,12 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
   };
 
   // Send read command
-  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_TRANSMIT_CMD;
   }
 
   //	receive data
-  if (HAL_QSPI_Receive(&hqspi, buf, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_Receive(&FLASH_QSPI_HANDLE, buf, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
     return W25Q_ERR_TRANSMIT;
   }
 

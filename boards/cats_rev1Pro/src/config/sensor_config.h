@@ -19,11 +19,7 @@
 #pragma once
 
 #include "arm_math.h"
-
-#define NUM_IMU           2
-#define NUM_MAGNETO       1
-#define NUM_ACCELEROMETER 1
-#define NUM_BARO          3
+#include "target.h"
 
 typedef enum {
   SENS_TYPE_INVALID = 0,

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "stm32l4xx_hal.h"
+#include "target.h"
 
 typedef enum {ADC_PYRO1 = 0, ADC_PYRO2, ADC_PYRO3, ADC_BATTERY} adc_channels_e;
 

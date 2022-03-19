@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
+#include "target.h"
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -27,22 +28,6 @@
 typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
-
-CAN_HandleTypeDef hcan1;
-
-QSPI_HandleTypeDef hqspi;
-
-RTC_HandleTypeDef hrtc;
-
-SPI_HandleTypeDef hspi1;
-SPI_HandleTypeDef hspi2;
-
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim15;
-
-UART_HandleTypeDef huart1;
 
 /* Definitions for task_init */
 uint32_t task_init_buffer[256];
@@ -58,17 +43,17 @@ const osThreadAttr_t task_init_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_CAN1_Init(void);
-static void MX_QUADSPI_Init(void);
-static void MX_RTC_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_SPI2_Init(void);
-static void MX_TIM2_Init(void);
-static void MX_TIM15_Init(void);
-static void MX_USART1_UART_Init(void);
+static void GPIO_Init(void);
+static void DMA_Init(void);
+static void ADC_Init(void);
+static void CAN_Init(void);
+static void QUADSPI_Init(void);
+static void RTC_Init(void);
+static void SPI1_Init(void);
+static void SPI2_Init(void);
+static void TIM2_Init(void);
+static void TIM15_Init(void);
+static void USART1_UART_Init(void);
 void task_init(void *argument);
 
 /**
@@ -84,29 +69,29 @@ int main(void) {
   /* Configure the system clock */
   SystemClock_Config();
 
-  MX_RTC_Init();
+  RTC_Init();
 
   /* Initialize RTC registers */
-  __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);
+  __HAL_RTC_WRITEPROTECTION_DISABLE(&RTC_HANDLE);
   HAL_PWR_EnableBkUpAccess();
 
   /* Jump to bootloader if RTC register matches pattern */
-  if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == BOOTLOADER_MAGIC_PATTERN){
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0); // Reset register
+  if(HAL_RTCEx_BKUPRead(&RTC_HANDLE, RTC_BKP_DR0) == BOOTLOADER_MAGIC_PATTERN){
+    HAL_RTCEx_BKUPWrite(&RTC_HANDLE, RTC_BKP_DR0, 0); // Reset register
     BootLoaderJump(); // Does not return!
   }
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_CAN1_Init();
-  MX_QUADSPI_Init();
-  MX_SPI1_Init();
-  MX_SPI2_Init();
-  MX_TIM2_Init();
-  MX_TIM15_Init();
-  MX_USART1_UART_Init();
+  GPIO_Init();
+  DMA_Init();
+  ADC_Init();
+  CAN_Init();
+  QUADSPI_Init();
+  SPI1_Init();
+  SPI2_Init();
+  TIM2_Init();
+  TIM15_Init();
+  USART1_UART_Init();
   MX_USB_DEVICE_Init();
 
 #if (configUSE_TRACE_FACILITY == 1)
@@ -206,16 +191,10 @@ void SystemClock_Config(void) {
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void) {
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
+static void ADC_Init(void) {
 
   ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
   /** Common config
    */
   hadc1.Instance = ADC1;
@@ -268,9 +247,6 @@ static void MX_ADC1_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
 }
 
 /**
@@ -278,14 +254,8 @@ static void MX_ADC1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_CAN1_Init(void) {
-  /* USER CODE BEGIN CAN1_Init 0 */
-
-  /* USER CODE END CAN1_Init 0 */
-
-  /* USER CODE BEGIN CAN1_Init 1 */
-
-  /* USER CODE END CAN1_Init 1 */
+static void CAN_Init(void) {
+#ifdef USE_CAN
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 16;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
@@ -301,9 +271,7 @@ static void MX_CAN1_Init(void) {
   if (HAL_CAN_Init(&hcan1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN CAN1_Init 2 */
-
-  /* USER CODE END CAN1_Init 2 */
+#endif
 }
 
 /**
@@ -311,7 +279,8 @@ static void MX_CAN1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_QUADSPI_Init(void) {
+static void QUADSPI_Init(void) {
+#ifdef USE_QSPI
   hqspi.Instance = QUADSPI;
 
   hqspi.Init.ClockPrescaler = 1;
@@ -324,6 +293,7 @@ static void MX_QUADSPI_Init(void) {
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
   // Application configuration
   HAL_QSPI_Init(&hqspi);
+#endif
 }
 
 /**
@@ -331,16 +301,7 @@ static void MX_QUADSPI_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_RTC_Init(void) {
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-  /** Initialize RTC Only
-   */
+static void RTC_Init(void) {
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -352,9 +313,6 @@ static void MX_RTC_Init(void) {
   if (HAL_RTC_Init(&hrtc) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
 }
 
 /**
@@ -362,15 +320,8 @@ static void MX_RTC_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SPI1_Init(void) {
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
+static void SPI1_Init(void) {
+  #ifdef USE_SPI1
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -388,9 +339,7 @@ static void MX_SPI1_Init(void) {
   if (HAL_SPI_Init(&hspi1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
+  #endif
 }
 
 /**
@@ -398,15 +347,8 @@ static void MX_SPI1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SPI2_Init(void) {
-  /* USER CODE BEGIN SPI2_Init 0 */
-
-  /* USER CODE END SPI2_Init 0 */
-
-  /* USER CODE BEGIN SPI2_Init 1 */
-
-  /* USER CODE END SPI2_Init 1 */
-  /* SPI2 parameter configuration*/
+static void SPI2_Init(void) {
+  #ifdef USE_SPI2
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
@@ -424,9 +366,7 @@ static void MX_SPI2_Init(void) {
   if (HAL_SPI_Init(&hspi2) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI2_Init 2 */
-
-  /* USER CODE END SPI2_Init 2 */
+  #endif
 }
 
 /**
@@ -434,17 +374,11 @@ static void MX_SPI2_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_TIM2_Init(void) {
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
+static void TIM2_Init(void) {
 
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 7;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -470,10 +404,9 @@ static void MX_TIM2_Init(void) {
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM2_Init 2 */
+
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
 }
 
@@ -482,18 +415,11 @@ static void MX_TIM2_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_TIM15_Init(void) {
-  /* USER CODE BEGIN TIM15_Init 0 */
-
-  /* USER CODE END TIM15_Init 0 */
-
+static void TIM15_Init(void) {
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
-  /* USER CODE BEGIN TIM15_Init 1 */
-
-  /* USER CODE END TIM15_Init 1 */
   htim15.Instance = TIM15;
   htim15.Init.Prescaler = 0;
   htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -529,9 +455,7 @@ static void MX_TIM15_Init(void) {
   if (HAL_TIMEx_ConfigBreakDeadTime(&htim15, &sBreakDeadTimeConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM15_Init 2 */
 
-  /* USER CODE END TIM15_Init 2 */
   HAL_TIM_MspPostInit(&htim15);
 }
 
@@ -540,14 +464,8 @@ static void MX_TIM15_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_USART1_UART_Init(void) {
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
+static void USART1_UART_Init(void) {
+#ifdef USE_UART1
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -561,12 +479,10 @@ static void MX_USART1_UART_Init(void) {
   if (HAL_UART_Init(&huart1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
+#endif
 }
 
-static void MX_DMA_Init(void) {
+static void DMA_Init(void) {
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -576,12 +492,7 @@ static void MX_DMA_Init(void) {
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 }
 
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void) {
+static void GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */

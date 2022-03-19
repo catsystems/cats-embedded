@@ -45,13 +45,8 @@
 
 extern SPI_BUS SPI2_FLASH;
 
-extern const ICM20601 ICM1;
-extern const ICM20601 ICM2;
-extern const ICM20601 ICM3;
-
-extern MS5607 MS1;
-extern MS5607 MS2;
-extern MS5607 MS3;
+extern const ICM20601 IMU_DEV[NUM_IMU];
+extern MS5607 BARO_DEV[NUM_BARO];
 
 extern MMC5983MA MAG;
 

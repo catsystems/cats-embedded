@@ -285,37 +285,27 @@ static void init_tasks() {
 
 static void init_imu() {
   /* TODO: this delay until 1000 prob. isn't needed anymore */
+  /* TODO: Add timeout for sensor init */
   osDelayUntil(1000);
-  while (!icm20601_init(&ICM1)) {
-    osDelay(10);
-    log_error("IMU 1 initialization failed");
+  for(int i = 0; i < NUM_IMU; i++){
+    while (!icm20601_init(&IMU_DEV[i])) {
+      osDelay(10);
+      log_error("IMU initialization failed");
+    }
   }
 
-  while (!icm20601_init(&ICM2)) {
-    osDelay(10);
-    log_error("IMU 2 initialization failed");
-  }
 
   while (!h3lis100dl_init(&ACCEL)) {
     osDelay(10);
     log_error("ACCEL initialization failed");
   }
-  //#define CALIBRATE_ACCEL
-
-#ifdef CALIBRATE_ACCEL
-  osDelay(100);
-  icm20601_accel_calib(&ICM1);  // Axis 0 = x, 1 = y, 2 = z
-  icm20601_accel_calib(&ICM2);
-#endif
 }
 
 static void init_baro() {
-  ms5607_init(&MS1);
-  osDelay(10);
-  ms5607_init(&MS2);
-  osDelay(10);
-  ms5607_init(&MS3);
-  osDelay(10);
+  for(int i = 0; i < NUM_BARO; i++){
+    ms5607_init(&BARO_DEV[i]);
+    osDelay(10);
+  }
 }
 
 static void init_magneto() {

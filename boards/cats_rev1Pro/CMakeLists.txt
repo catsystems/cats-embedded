@@ -13,8 +13,20 @@ set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+set(CATS_TARGET CATS_L4)
+
+if ("${CATS_TARGET}" STREQUAL "CATS_L4")
+    set(MCU_TYPE STM32L433xx)
+    set(FLASH_LD STM32L433RCTX_FLASH.ld)
+    include_directories(
+            lib/STM/STM32L4/STM32L4xx_HAL_Driver/Inc
+            lib/STM/STM32L4/STM32L4xx_HAL_Driver/Inc/Legacy
+            lib/STM/STM32L4/STM32L4xx/Include
+            target/${CATS_TARGET})
+endif()
+
 # project settings
-project(cats_rev1Pro C CXX ASM)
+project(${CATS_TARGET} C CXX ASM)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
@@ -35,7 +47,7 @@ endif ()
 add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
 add_compile_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
 add_link_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
-link_directories(lib/CMSIS/DSP/lib/)
+link_directories(lib/CMSIS/DSP/lib)
 
 #Uncomment for software floating point
 #add_compile_options(-mfloat-abi=soft)
@@ -62,14 +74,11 @@ else ()
 endif ()
 
 include_directories(
-        lib/STM/STM32L4xx_HAL_Driver/Inc
-        lib/STM/STM32L4xx_HAL_Driver/Inc/Legacy
         lib/STM/USB/STM32_USB_Device_Library/Core/Inc
         lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
         lib/STM/USB/USB_DEVICE/App
         lib/STM/USB/USB_DEVICE/Target
         lib/STM/EEPROM
-        lib/CMSIS/Device/ST/STM32L4xx/Include
         lib/CMSIS/Include
         lib/CMSIS/DSP/Inc
         lib/FreeRTOS/Source/include
@@ -78,9 +87,10 @@ include_directories(
         lib/Tracing/inc
         lib/Tracing/cfg
         lib/LittleFS
-        src/)
+        src
+        target)
 
-add_definitions(-DUSE_HAL_DRIVER -DDEBUG -DSTM32L433xx)
+add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -D${CATS_TARGET})
 
 file(GLOB_RECURSE LIB_FILES "lib/*.*")
 set_source_files_properties(
@@ -89,10 +99,18 @@ set_source_files_properties(
         COMPILE_FLAGS -O3
 )
 
+file(GLOB_RECURSE TARGET_FILES "target/*.*")
+set_source_files_properties(
+        ${TARGET_FILES}
+        PROPERTIES
+        COMPILE_FLAGS -O3
+)
 
-file(GLOB_RECURSE SOURCES "lib/*.*" "src/*.*")
 
-set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32L433RCTX_FLASH.ld)
+file(GLOB_RECURSE SOURCES "lib/*.*" "target/${CATS_TARGET}/*.*" "target/target.c" "src/*.*")
+
+
+set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/target/${CATS_TARGET}/${FLASH_LD})
 
 add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
 add_link_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)

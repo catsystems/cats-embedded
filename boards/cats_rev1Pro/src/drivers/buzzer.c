@@ -47,7 +47,6 @@ void buzzer_set_volume(BUZ *dev, uint16_t volume) {
 }
 
 // Set buzzer frequency between 200 and 10kHz
-
 void buzzer_set_freq(BUZ *dev, uint32_t frequency) {
   // FREQ = CORE_FREQ / ((AAR+1) * (PSC+1))
   uint32_t core_freq = HAL_RCC_GetHCLKFreq();
