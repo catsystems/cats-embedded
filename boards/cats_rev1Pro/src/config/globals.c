@@ -17,37 +17,52 @@
  */
 
 #include "config/globals.h"
+#include "target.h"
+#include "drivers/spi.h"
 
 /** Protocol Handles **/
 
-extern SPI_HandleTypeDef hspi1;
-extern SPI_HandleTypeDef hspi2;
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim15;
-
 /** Device Handles **/
 
-SPI_BUS SPI1_ICM1 = {.cs_port = CS_IMU1_GPIO_Port, .cs_pin = CS_IMU1_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
-
-const ICM20601 ICM1 = {
-    .spi = &SPI1_ICM1,
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
-    .accel_g = ICM20601_ACCEL_RANGE_32G,
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
+SPI_BUS SPI_IMU[NUM_IMU] = {
+#if NUM_IMU > 0
+    [0].cs_port = CS_IMU1_GPIO_Port, [0].cs_pin = CS_IMU1_Pin, [0].spi_handle = &IMU_SPI_HANDLE, [0].cs_type = LOW_ACTIVE,
+#endif
+#if NUM_IMU > 1
+    [1].cs_port = CS_IMU2_GPIO_Port, [1].cs_pin = CS_IMU2_Pin, [1].spi_handle = &IMU_SPI_HANDLE, [1].cs_type = LOW_ACTIVE,
+#endif
+#if NUM_IMU > 2
+    [2].cs_port = CS_IMU3_GPIO_Port, [2].cs_pin = CS_IMU3_Pin, [2].spi_handle = &IMU_SPI_HANDLE, [2].cs_type = LOW_ACTIVE,
+#endif
 };
 
-SPI_BUS SPI1_ICM2 = {.cs_port = CS_IMU2_GPIO_Port, .cs_pin = CS_IMU2_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
-
-const ICM20601 ICM2 = {
-    .spi = &SPI1_ICM2,
-    .accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
-    .accel_g = ICM20601_ACCEL_RANGE_32G,
-    .gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
-    .gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
+const ICM20601 IMU_DEV[NUM_IMU] = {
+#if NUM_IMU > 0
+    [0].spi = &SPI_IMU[0],
+    [0].accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
+    [0].accel_g = ICM20601_ACCEL_RANGE_32G,
+    [0].gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
+    [0].gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
+#endif
+#if NUM_IMU > 1
+    [1].spi = &SPI_IMU[1],
+    [1].accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
+    [1].accel_g = ICM20601_ACCEL_RANGE_32G,
+    [1].gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
+    [1].gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
+#endif
+#if NUM_IMU > 2
+    [2].spi = &SPI_IMU[2],
+    [2].accel_dlpf = ICM20601_ACCEL_DLPF_10_2_HZ,
+    [2].accel_g = ICM20601_ACCEL_RANGE_32G,
+    [2].gyro_dlpf = ICM20601_GYRO_DLPF_10_HZ,
+    [2].gyro_dps = ICM20601_GYRO_RANGE_2000_DPS,
+#endif
 };
 
-SPI_BUS SPI_ACCEL = {.cs_port = CS_ACC_GPIO_Port, .cs_pin = CS_ACC_Pin, .spi_handle = &hspi1, .cs_type = LOW_ACTIVE};
+
+SPI_BUS SPI_ACCEL = {
+    .cs_port = CS_ACC_GPIO_Port, .cs_pin = CS_ACC_Pin, .spi_handle = &ACCEL_SPI_HANDLE, .cs_type = LOW_ACTIVE};
 
 const H3LIS100DL ACCEL = {
     .spi = &SPI_ACCEL,
@@ -56,41 +71,38 @@ const H3LIS100DL ACCEL = {
     .filter = H3LIS100DL_NO_FILTER,
 };
 
-SPI_BUS SPI_BARO1 = {
-    .cs_port = CS_BARO1_GPIO_Port, .cs_pin = CS_BARO1_Pin, .spi_handle = &hspi2, .cs_type = LOW_ACTIVE};
-
-MS5607 MS1 = {
-    .cs_port = CS_BARO1_GPIO_Port,
-    .cs_pin = CS_BARO1_Pin,
-    .spi_bus = &SPI_BARO1,
-    .osr = MS5607_OSR_1024,
+SPI_BUS SPI_BARO[NUM_BARO] = {
+#if NUM_BARO > 0
+    [0].cs_port = CS_BARO1_GPIO_Port, [0].cs_pin = CS_BARO1_Pin,
+    [0].spi_handle = &BARO_SPI_HANDLE,    [0].cs_type = LOW_ACTIVE,
+#endif
+#if NUM_BARO > 1
+    [1].cs_port = CS_BARO2_GPIO_Port, [1].cs_pin = CS_BARO2_Pin,
+    [1].spi_handle = &BARO_SPI_HANDLE,    [1].cs_type = LOW_ACTIVE,
+#endif
+#if NUM_BARO > 2
+    [2].cs_port = CS_BARO3_GPIO_Port, [2].cs_pin = CS_BARO3_Pin,
+    [2].spi_handle = &BARO_SPI_HANDLE,    [2].cs_type = LOW_ACTIVE,
+#endif
 };
 
-SPI_BUS SPI_BARO2 = {
-    .cs_port = CS_BARO2_GPIO_Port, .cs_pin = CS_BARO2_Pin, .spi_handle = &hspi2, .cs_type = LOW_ACTIVE};
-
-MS5607 MS2 = {
-    .cs_port = CS_BARO2_GPIO_Port,
-    .cs_pin = CS_BARO2_Pin,
-    .spi_bus = &SPI_BARO2,
-    .osr = MS5607_OSR_1024,
-};
-
-SPI_BUS SPI_BARO3 = {
-    .cs_port = CS_BARO3_GPIO_Port, .cs_pin = CS_BARO3_Pin, .spi_handle = &hspi2, .cs_type = LOW_ACTIVE};
-
-MS5607 MS3 = {
-    .cs_port = CS_BARO3_GPIO_Port,
-    .cs_pin = CS_BARO3_Pin,
-    .spi_bus = &SPI_BARO3,
-    .osr = MS5607_OSR_1024,
+MS5607 BARO_DEV[NUM_BARO] = {
+#if NUM_BARO > 0
+    [0].cs_port = CS_BARO1_GPIO_Port, [0].cs_pin = CS_BARO1_Pin, [0].spi_bus = &SPI_BARO[0], [0].osr = MS5607_OSR_1024,
+#endif
+#if NUM_BARO > 1
+    [1].cs_port = CS_BARO2_GPIO_Port, [1].cs_pin = CS_BARO2_Pin, [1].spi_bus = &SPI_BARO[1], [1].osr = MS5607_OSR_1024,
+#endif
+#if NUM_BARO > 2
+    [2].cs_port = CS_BARO3_GPIO_Port, [2].cs_pin = CS_BARO3_Pin, [2].spi_bus = &SPI_BARO[2], [2].osr = MS5607_OSR_1024,
+#endif
 };
 
 SPI_BUS SPI_MAG = {
     .cs_port = CS_MAG_GPIO_Port,
     .cs_pin = CS_MAG_Pin,
     .cs_type = LOW_ACTIVE,
-    .spi_handle = &hspi1,
+    .spi_handle = &MAG_SPI_HANDLE,
 };
 
 MMC5983MA MAG = {
@@ -108,11 +120,11 @@ fifo_t usb_output_fifo;
 uint8_t usb_fifo_out_buffer[USB_OUTPUT_BUFFER_SIZE];
 uint8_t usb_fifo_in_buffer[USB_INPUT_BUFFER_SIZE];
 
-BUZ BUZZER = {.timer = &htim15, .channel = TIM_CHANNEL_2, .arr = 4000, .start = 0, .started = 0, .volume = 100};
+BUZ BUZZER = {.timer = &BUZZER_TIMER_HANDLE, .channel = BUZZER_TIMER_CHANNEL, .arr = 4000, .start = 0, .started = 0, .volume = 100};
 
-SERVO SERVO1 = {.timer = &htim2, .channel = TIM_CHANNEL_2, .pulse = 15000, .started = 0};
+SERVO SERVO1 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_1, .pulse = 15000, .started = 0};
 
-SERVO SERVO2 = {.timer = &htim2, .channel = TIM_CHANNEL_1, .pulse = 15000, .started = 0};
+SERVO SERVO2 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_2, .pulse = 15000, .started = 0};
 
 /** State Estimation **/
 

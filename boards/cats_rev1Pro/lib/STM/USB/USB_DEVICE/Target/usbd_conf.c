@@ -20,8 +20,15 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#ifdef CATS_L4
 #include "stm32l4xx.h"
 #include "stm32l4xx_hal.h"
+#endif
+#ifdef CATS_F4
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal.h"
+#endif
+
 #include "usbd_def.h"
 #include "usbd_core.h"
 #include "usbd_cdc.h"

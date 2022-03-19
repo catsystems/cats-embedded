@@ -126,42 +126,32 @@ void task_sensor_read(void *argument) {
 /** Private Function Definitions **/
 
 static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *temperature, int32_t id) {
-  switch (id) {
-    case 0:
-      icm20601_read_accel_raw(&ICM1, acceleration);
-      icm20601_read_gyro_raw(&ICM1, gyroscope);
-      // icm20601_read_temp_raw(&ICM1, temperature);
-      break;
-    case 1:
-      icm20601_read_accel_raw(&ICM2, acceleration);
-      icm20601_read_gyro_raw(&ICM2, gyroscope);
-      // icm20601_read_temp_raw(&ICM2, temperature);
-      break;
-    default:
-      break;
-  }
+      if(id >= NUM_IMU) return;
+      icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
+      icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
+      // icm20601_read_temp_raw(&IMU_DEV[id], temperature);
 }
 
 static void prepare_temp() {
-  ms5607_prepare_temp(&MS1);
-  ms5607_prepare_temp(&MS2);
-  ms5607_prepare_temp(&MS3);
+  for (int32_t i = 0; i < NUM_BARO; ++i){
+    ms5607_prepare_temp(&BARO_DEV[i]);
+  }
 }
 //
 static void prepare_pres() {
-  ms5607_prepare_pres(&MS1);
-  ms5607_prepare_pres(&MS2);
-  ms5607_prepare_pres(&MS3);
+  for (int32_t i = 0; i < NUM_BARO; ++i){
+    ms5607_prepare_pres(&BARO_DEV[i]);
+  }
 }
 
 static void read_baro() {
-  ms5607_read_raw(&MS1);
-  ms5607_read_raw(&MS2);
-  ms5607_read_raw(&MS3);
+  for (int32_t i = 0; i < NUM_BARO; ++i){
+    ms5607_read_raw(&BARO_DEV[i]);
+  }
 }
 
 static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
-  ms5607_get_temp_pres(&MS1, &temperature[0], &pressure[0]);
-  ms5607_get_temp_pres(&MS2, &temperature[1], &pressure[1]);
-  ms5607_get_temp_pres(&MS3, &temperature[2], &pressure[2]);
+  for (int32_t i = 0; i < NUM_BARO; ++i){
+    ms5607_get_temp_pres(&BARO_DEV[i], &temperature[i], &pressure[i]);
+  }
 }

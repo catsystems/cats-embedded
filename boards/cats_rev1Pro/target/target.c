@@ -16,24 +16,50 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/adc.h"
 #include "target.h"
 
-static uint32_t adc_value[ADC_NUM_CHANNELS];
+#if defined(CATS_L4)
 
-void adc_init() {
-  HAL_ADC_Stop_DMA(&ADC_HANDLE);
-  HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS);
-}
+/* ADC config */
+#ifdef USE_ADC
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
+#endif
 
-uint32_t adc_get(adc_channels_e channel) {
-  // If data of the first and last adc channel is frozen, reset the hardware
-  if ((adc_value[0] | adc_value[ADC_BATTERY]) == 0) {
-    HAL_ADC_Stop_DMA(&ADC_HANDLE);
-    HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS);
-  }
+/* CAN config */
+#ifdef USE_CAN
+CAN_HandleTypeDef hcan1;
+#endif
 
-  if ((channel < 0) || (channel > (ADC_NUM_CHANNELS - 1))) return 0;
+/* QSPI config */
+#ifdef USE_QSPI
+QSPI_HandleTypeDef hqspi;
+#endif
 
-  return adc_value[channel];
-}
+/* RTC config */
+#ifdef USE_RTC
+RTC_HandleTypeDef hrtc;
+#endif
+
+/* SPI config */
+#ifdef USE_SPI1
+SPI_HandleTypeDef hspi1;
+#endif
+
+#ifdef USE_SPI2
+SPI_HandleTypeDef hspi2;
+#endif
+
+#ifdef USE_TIMER2
+TIM_HandleTypeDef htim2;
+#endif
+
+#ifdef USE_TIMER15
+TIM_HandleTypeDef htim15;
+#endif
+
+#ifdef USE_UART
+UART_HandleTypeDef huart1;
+#endif
+
+#endif
