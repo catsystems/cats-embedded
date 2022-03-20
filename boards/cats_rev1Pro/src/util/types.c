@@ -24,9 +24,9 @@
 extern inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low);
 extern inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low);
 
-const char *flight_fsm_map[14] = {"INVALID",   "MOVING",      "READY",      "THRUSTING_1", "THRUSTING_2",
-                                  "COASTING",  "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
-                                  "PARACHUTE", "BALLISTIC",   "TOUCHDOWN",  "HEHE"};
+const char *flight_fsm_map[14] = {"INVALID",  "MOVING",      "READY",      "THRUSTING_1", "THRUSTING_2",
+                                  "COASTING", "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
+                                  "DROGUE",   "MAIN",        "TOUCHDOWN",  "HEHE"};
 
 const char *drop_test_fsm_map[7] = {"DT_INVALID", "DT_READY",     "DT_WAITING", "DT_DROGUE",
                                     "DT_MAIN",    "DT_TOUCHDOWN", "HEHE"};
