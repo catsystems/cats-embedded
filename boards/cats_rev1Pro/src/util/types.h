@@ -205,9 +205,9 @@ typedef struct {
 } kalman_filter_t;
 
 typedef struct {
-  uint16_t liftoff_acc_threshold;
-  uint16_t mach_timer_duration;
-  uint16_t main_altitude;
+  uint16_t liftoff_acc_threshold;  // m/s^2
+  uint16_t mach_timer_duration;    // s
+  uint16_t main_altitude;          // m
 } control_settings_t;
 
 typedef struct {

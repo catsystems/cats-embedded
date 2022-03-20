@@ -53,7 +53,7 @@ const cli_value_t value_table[] = {
     // Control
     {"main_altitude", VAR_UINT16, .config.minmax_unsigned = {10, 65535},
      &global_cats_config.config.control_settings.main_altitude},
-    {"acc_threshhold", VAR_UINT16, .config.minmax_unsigned = {1500, 8000},
+    {"acc_threshold", VAR_UINT16, .config.minmax_unsigned = {15, 80},
      &global_cats_config.config.control_settings.liftoff_acc_threshold},
     {"mach_timer_duration", VAR_UINT16, .config.minmax_unsigned = {0, 60000},
      &global_cats_config.config.control_settings.mach_timer_duration},

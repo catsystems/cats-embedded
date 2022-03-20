@@ -24,7 +24,7 @@
 
 /* The system will reload the default config when the number changes */
 /* Config version 2 / Minor 1 */
-#define CONFIG_VERSION 201
+#define CONFIG_VERSION 202
 
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10
