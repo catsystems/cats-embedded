@@ -260,17 +260,23 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   }
 
   /* if all ACCELS have been eliminated, only work with the BARO */
+  /* Meaning that the prediction step is only done if an accel is available */
   if (get_error_by_tag(CATS_ERR_FILTER_ACC)) {
     memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
     memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
   } else {
-    kalman_prediction(filter);
+    /* After apogee an acceleration based state estimation does not work, so disable the state estimation */
+    if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) && (flight_state >= APOGEE)) {
+      memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
+      memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
+    } else {
+      kalman_prediction(filter);
+    }
   }
 
-  /* if all BAROS have been eliminated, only work with the ACCEL
-   * After apogee an acceleration based state estimation does not work, so disable the state estimation
-   */
-  if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) || (flight_state >= APOGEE)) {
+  /* if all BAROS have been eliminated, only work with the ACCEL */
+  /* Meaning that the update step is only done if a baro is available */
+  if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT)) {
     memcpy(filter->x_bar_data, filter->x_hat_data, sizeof(filter->x_hat_data));
     memcpy(filter->P_bar_data, filter->P_hat_data, sizeof(filter->P_hat_data));
   } else {
