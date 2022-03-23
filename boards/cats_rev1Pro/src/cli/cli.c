@@ -78,7 +78,7 @@ static void cli_printf_va(const char *format, va_list va) {
 }
 
 static void cli_write(uint8_t ch) {
-  while (fifo_write(cli_out, ch) == false) osDelay(10);
+  while (fifo_write(cli_out, ch) == false) osDelay(3);
 }
 
 void cli_printf(const char *format, ...) {

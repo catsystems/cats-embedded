@@ -81,13 +81,6 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
     if (global_flight_state.flight_state == MOVING && (global_flight_state.flight_state != old_fsm_state))
       buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
 
-    // Check usb fifo and print out to usb
-    uint32_t len = fifo_get_length(&usb_output_fifo);
-    if (len) {
-      fifo_read_bytes(&usb_output_fifo, print_buffer, len);
-      CDC_Transmit_FS(print_buffer, len);
-    }
-
     // Update the buzzer
     buzzer_handler_update();
 
