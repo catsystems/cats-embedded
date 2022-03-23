@@ -27,7 +27,8 @@ typedef struct {
   uint32_t used;
   uint32_t size;
   uint8_t *data;
-  osSemaphoreId_t semaphore_id;
+  //osSemaphoreId_t semaphore_id;
+  volatile bool mutex;
 } fifo_t;
 
 void fifo_init(fifo_t *fifo, uint8_t *pdata, uint32_t size);

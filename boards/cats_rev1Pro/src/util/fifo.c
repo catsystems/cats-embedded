@@ -22,55 +22,59 @@
 void fifo_init(fifo_t *fifo, uint8_t *pdata, uint32_t size) {
   fifo->data = pdata;
   fifo->size = size;
-  fifo->semaphore_id = osSemaphoreNew(1, 1, NULL);
+  fifo->mutex = false;
   fifo_flush(fifo);
 }
 
 void fifo_flush(fifo_t *fifo) {
-  if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
+  if (fifo->mutex == false) {
+    fifo->mutex = true;
     fifo->tail = 0;
     fifo->head = 0;
     fifo->used = 0;
-    osSemaphoreRelease(fifo->semaphore_id);
+    fifo->mutex = false;
   }
 }
 
 uint32_t fifo_get_length(fifo_t *fifo) { return fifo->used; }
 
 uint8_t fifo_read(fifo_t *fifo) {
-  if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
+  if (fifo->mutex == false) {
+    fifo->mutex = true;
     if (fifo->used == 0) {
-      osSemaphoreRelease(fifo->semaphore_id);
+      fifo->mutex = false;
       return 0;
     }
     uint8_t data = fifo->data[fifo->tail];
     fifo->tail = (fifo->tail + 1) % fifo->size;
     fifo->used--;
-    osSemaphoreRelease(fifo->semaphore_id);
+    fifo->mutex = false;
     return data;
   }
   return 0;
 }
 
 bool fifo_write(fifo_t *fifo, uint8_t data) {
-  if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
+  if (fifo->mutex == false) {
+    fifo->mutex = true;
     if (fifo->used >= fifo->size) {
-      osSemaphoreRelease(fifo->semaphore_id);
+      fifo->mutex = false;
       return false;
     }
     fifo->data[fifo->head] = data;
     fifo->head = (fifo->head + 1) % fifo->size;
     fifo->used++;
-    osSemaphoreRelease(fifo->semaphore_id);
+    fifo->mutex = false;
     return true;
   }
   return false;
 }
 
 bool fifo_read_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
-  if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
+  if (fifo->mutex == false) {
+    fifo->mutex = true;
     if (fifo->used < count) {
-      osSemaphoreRelease(fifo->semaphore_id);
+      fifo->mutex = false;
       return false;
     }
     if (fifo->tail + count > fifo->size) {
@@ -83,7 +87,7 @@ bool fifo_read_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
     }
     fifo->tail = (fifo->tail + count) % fifo->size;
     fifo->used -= count;
-    osSemaphoreRelease(fifo->semaphore_id);
+    fifo->mutex = false;
     return true;
   }
   return false;
@@ -115,9 +119,10 @@ uint32_t fifo_read_until(fifo_t *fifo, uint8_t *data, uint8_t delimiter, uint32_
 
 bool fifo_write_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
   // If there is not enough space return false
-  if (osSemaphoreAcquire(fifo->semaphore_id, 0U) == osOK) {
+  if (fifo->mutex == false) {
+    fifo->mutex = true;
     if ((fifo->size - fifo->used) < count) {
-      osSemaphoreRelease(fifo->semaphore_id);
+      fifo->mutex = false;
       return false;
     }
     if (count + fifo->head > fifo->size) {
@@ -130,7 +135,7 @@ bool fifo_write_bytes(fifo_t *fifo, uint8_t *data, uint32_t count) {
     }
     fifo->head = (fifo->head + count) % fifo->size;
     fifo->used += count;
-    osSemaphoreRelease(fifo->semaphore_id);
+    fifo->mutex = false;
     return true;
   }
   return false;

@@ -43,6 +43,7 @@ static void cli_cmd_get(const char *cmd_name, char *args);
 static void cli_cmd_set(const char *cmd_name, char *args);
 static void cli_cmd_config(const char *cmd_name, char *args);
 static void cli_cmd_defaults(const char *cmd_name, char *args);
+static void cli_cmd_dump(const char *cmd_name, char *args);
 
 static void cli_cmd_status(const char *cmd_name, char *args);
 static void cli_cmd_version(const char *cmd_name, char *args);
@@ -72,6 +73,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("cd", "change current working directory", NULL, cli_cmd_cd),
     CLI_COMMAND_DEF("config", "print the flight config", NULL, cli_cmd_config),
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cli_cmd_defaults),
+    CLI_COMMAND_DEF("dump", "Dump configuration", NULL, cli_cmd_dump),
     CLI_COMMAND_DEF("flash_erase", "erase the flash", NULL, cli_cmd_erase_flash),
     CLI_COMMAND_DEF("flash_test", "test the flash", NULL, cli_cmd_flash_test),
     CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cli_cmd_flash_write),
@@ -352,6 +354,20 @@ static void cli_cmd_config(const char *cmd_name, char *args) {
 static void cli_cmd_defaults(const char *cmd_name, char *args) {
   cc_defaults();
   cli_print_line("Reset to default values");
+}
+
+static void cli_cmd_dump(const char *cmd_name, char *args) {
+  const uint32_t len = strlen(args);
+  cli_printf("#Configuration dump");
+  cli_print_linefeed();
+  for (uint32_t i = 0; i < value_table_entry_count; i++) {
+    const cli_value_t *val = &value_table[i];
+    cli_printf("set %s = ", value_table[i].name);
+    // when len is 1 (when * is passed as argument), it will print min/max values as well
+    cli_print_var(cmd_name, val, len);
+    cli_print_linefeed();
+  }
+  cli_printf("#End of configuration dump");
 }
 
 static void cli_cmd_status(const char *cmd_name, char *args) {

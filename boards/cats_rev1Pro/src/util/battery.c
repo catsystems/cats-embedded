@@ -22,6 +22,7 @@
 #define ADC_LINFIT_A 0.00818474f
 #define ADC_LINFIT_B 0.476469f
 
+#define BATTERY_VOLTAGE_HYSTERESIS 0.2f
 
 typedef enum { LI_ION = 0, LI_PO, ALKALINE } battery_type_e;
 
@@ -30,7 +31,7 @@ const battery_type_e battery_type = LI_PO;
 
 static uint32_t cell_count = 1;
 
-/* Supported batteries
+/* Supported batteries and their voltages
  * --------------------------------
  * BATTERY        MIN   LOW   MAX
  * Li-Ion         3.2   3.4   4.3
@@ -38,14 +39,15 @@ static uint32_t cell_count = 1;
  * Alkaline (9V)  7.0   7.5   9.5
  * --------------------------------
  */
-const float voltage_lookup[3][3] = {{3.3f, 3.5f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
+const float voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
+typedef enum { INDEX_MIN, INDEX_LOW, INDEX_MAX } battery_level_index_e;
 
 // Automatically check how many cells are connected
 void battery_monitor_init() {
   if (battery_type == ALKALINE) return;
   uint32_t i = 1;
   float voltage = battery_voltage();
-  while (((float)i * voltage_lookup[battery_type][2]) < voltage) {
+  while (((float)i * voltage_lookup[battery_type][INDEX_MAX]) < voltage) {
     i++;
   }
   cell_count = i;
@@ -61,9 +63,31 @@ float battery_cell_voltage() { return ((float)adc_get(ADC_BATTERY) * ADC_LINFIT_
 
 battery_level_e battery_level() {
   float voltage;
+  static battery_level_e level = BATTERY_OK;
   voltage = battery_cell_voltage();
 
-  if (voltage <= voltage_lookup[battery_type][0]) return BATTERY_CRIT;
-  if (voltage <= voltage_lookup[battery_type][1]) return BATTERY_LOW;
-  return BATTERY_OK;
+  /* Battery level can only go back up when voltage + hysteresis voltage is reached */
+  switch (level) {
+    case BATTERY_OK:
+      if (voltage <= voltage_lookup[battery_type][INDEX_LOW]) {
+        level = BATTERY_LOW;
+      }
+      break;
+    case BATTERY_LOW:
+      if (voltage <= voltage_lookup[battery_type][INDEX_MIN]) {
+        level = BATTERY_CRIT;
+      } else if (voltage > (voltage_lookup[battery_type][INDEX_LOW] + BATTERY_VOLTAGE_HYSTERESIS)) {
+        level = BATTERY_OK;
+      }
+      break;
+    case BATTERY_CRIT:
+      if (voltage > (voltage_lookup[battery_type][INDEX_LOW] + BATTERY_VOLTAGE_HYSTERESIS)) {
+        level = BATTERY_LOW;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return level;
 }

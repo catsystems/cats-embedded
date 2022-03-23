@@ -1,4 +1,3 @@
-/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : usbd_cdc_if.c
@@ -17,74 +16,25 @@
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
 #include <util/fifo.h>
 #include "usbd_cdc_if.h"
 
-/* USER CODE BEGIN INCLUDE */
 #include "cmsis_os2.h"
 #include "FreeRTOSConfig.h"
 #include "config/globals.h"
-/* USER CODE END INCLUDE */
+#include "target.h"
+
+// Timer for periodic transmission
+TIM_HandleTypeDef TimHandle;
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 
-/* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 trace_command_buffer_t trace_command_buffer;
-/* USER CODE END PV */
-
-/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
- * @brief Usb device library.
- * @{
- */
-
-/** @addtogroup USBD_CDC_IF
- * @{
- */
-
-/** @defgroup USBD_CDC_IF_Private_TypesDefinitions
- * USBD_CDC_IF_Private_TypesDefinitions
- * @brief Private types.
- * @{
- */
-
-/* USER CODE BEGIN PRIVATE_TYPES */
-
-/* USER CODE END PRIVATE_TYPES */
-
-/**
- * @}
- */
-
-/** @defgroup USBD_CDC_IF_Private_Defines USBD_CDC_IF_Private_Defines
- * @brief Private defines.
- * @{
- */
-
-/* USER CODE BEGIN PRIVATE_DEFINES */
-/* USER CODE END PRIVATE_DEFINES */
-
-/**
- * @}
- */
-
-/** @defgroup USBD_CDC_IF_Private_Macros USBD_CDC_IF_Private_Macros
- * @brief Private macros.
- * @{
- */
-
-/* USER CODE BEGIN PRIVATE_MACRO */
-
-/* USER CODE END PRIVATE_MACRO */
-
-/**
- * @}
- */
 
 /** @defgroup USBD_CDC_IF_Private_Variables USBD_CDC_IF_Private_Variables
  * @brief Private variables.
@@ -98,14 +48,6 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 /** Data to send over USB CDC are stored in this buffer   */
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
-/* USER CODE BEGIN PRIVATE_VARIABLES */
-
-/* USER CODE END PRIVATE_VARIABLES */
-
-/**
- * @}
- */
-
 /** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
  * @brief Public variables.
  * @{
@@ -113,13 +55,7 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
-/* USER CODE BEGIN EXPORTED_VARIABLES */
-
-/* USER CODE END EXPORTED_VARIABLES */
-
-/**
- * @}
- */
+static bool usb_initialized = false;
 
 /** @defgroup USBD_CDC_IF_Private_FunctionPrototypes
  * USBD_CDC_IF_Private_FunctionPrototypes
@@ -133,13 +69,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length);
 static int8_t CDC_Receive_FS(uint8_t *pbuf, uint32_t *Len);
 static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
-/* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
-
-/* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
-
-/**
- * @}
- */
+static void TIM_Config(void);
 
 USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = {CDC_Init_FS, CDC_DeInit_FS, CDC_Control_FS, CDC_Receive_FS,
                                               CDC_TransmitCplt_FS};
@@ -150,12 +80,18 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = {CDC_Init_FS, CDC_DeInit_FS, CDC_Co
  * @retval USBD_OK if all operations are OK else USBD_FAIL
  */
 static int8_t CDC_Init_FS(void) {
-  /* USER CODE BEGIN 3 */
+  TIM_Config();
+
+  if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK) {
+    /* Starting Error */
+    Error_Handler();
+  }
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 512);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+
+  usb_initialized = true;
   return (USBD_OK);
-  /* USER CODE END 3 */
 }
 
 /**
@@ -290,6 +226,7 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
  * @retval USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
  */
 uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len) {
+  if (usb_initialized == false) return 0;
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
@@ -316,7 +253,7 @@ uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len) {
  * USBD_FAIL
  */
 static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
-  uint8_t result = USBD_OK;
+  int8_t result = USBD_OK;
   /* USER CODE BEGIN 13 */
   UNUSED(Buf);
   UNUSED(Len);
@@ -325,16 +262,50 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
   return result;
 }
 
-/* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void TIMusb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
 
-/* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void CDC_Transmit_Elapsed() {
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+  if (hcdc->TxState == 0) {
+    // Check usb fifo and print out to usb
+    uint32_t len = fifo_get_length(&usb_output_fifo);
+    if (len) {
+      if (fifo_read_bytes(&usb_output_fifo, UserTxBufferFS, len)) {
+        USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, len);
+        USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+      }
+    }
+  }
+}
 
-/**
- * @}
- */
+static void TIM_Config(void) {
+  /* Set TIMusb instance */
+  TimHandle.Instance = TIMusb;
 
-/**
- * @}
- */
+  /* Initialize TIMx peripheral as follow:
+       + Period = 10000 - 1
+       + Prescaler = ((SystemCoreClock/2)/10000) - 1
+       + ClockDivision = 0
+       + Counter direction = Up
+  */
+  TimHandle.Init.Period = (CDC_POLLING_INTERVAL * 1000) - 1;
+  TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
+  TimHandle.Init.ClockDivision = 0;
+  TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+  if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK) {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Enable TIM peripherals Clock */
+  TIMusb_CLK_ENABLE();
+
+  /* Configure the NVIC for TIMx */
+  /* Set Interrupt Group Priority */
+  HAL_NVIC_SetPriority(TIMusb_IRQn, 6, 0);
+
+  /* Enable the TIMx global Interrupt */
+  HAL_NVIC_EnableIRQ(TIMusb_IRQn);
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

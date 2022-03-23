@@ -147,6 +147,13 @@ extern UART_HandleTypeDef huart1;
 #define BUZZER_TIMER_HANDLE htim15
 #define BUZZER_TIMER_CHANNEL TIM_CHANNEL_2
 
+/* USB config */
+#define TIMusb TIM7
+#define CDC_POLLING_INTERVAL 2 // ms
+#define TIMusb_CLK_ENABLE __HAL_RCC_TIM7_CLK_ENABLE
+#define TIMusb_IRQn TIM7_IRQn
+#define TIMusb_IRQHandler TIM7_IRQHandler
+
 /* Sensor config */
 #define NUM_IMU           2
 #define NUM_MAGNETO       1

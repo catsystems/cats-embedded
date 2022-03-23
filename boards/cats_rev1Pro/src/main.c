@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "usb_device.h"
 #include "target.h"
+#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -92,7 +93,9 @@ int main(void) {
   TIM2_Init();
   TIM15_Init();
   USART1_UART_Init();
-  MX_USB_DEVICE_Init();
+  if(HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)){
+    MX_USB_DEVICE_Init();
+  }
 
 #if (configUSE_TRACE_FACILITY == 1)
   vTraceEnable(TRC_INIT);
@@ -594,15 +597,13 @@ static void GPIO_Init(void) {
  * @retval None
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
-  /* USER CODE BEGIN Callback 1 */
 
-  /* USER CODE END Callback 1 */
+  if (htim->Instance == TIMusb){
+    CDC_Transmit_Elapsed();
+  }
 }
 
 /**
