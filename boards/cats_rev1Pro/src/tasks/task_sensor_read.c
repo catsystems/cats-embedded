@@ -28,8 +28,6 @@
 
 #include <string.h>
 
-//#define CALIBRATE_ACCEL
-
 /** Private Constants **/
 enum {
   READ_BARO_TEMPERATURE = 1,

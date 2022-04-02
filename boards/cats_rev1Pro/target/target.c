@@ -21,43 +21,28 @@
 #if defined(CATS_L4)
 
 /* ADC config */
-#ifdef USE_ADC
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-#endif
+
+/* QSPI config */
+QSPI_HandleTypeDef hqspi;
+
+/* RTC config */
+RTC_HandleTypeDef hrtc;
+
+/* SPI config */
+SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi2;
+
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim15;
 
 /* CAN config */
 #ifdef USE_CAN
 CAN_HandleTypeDef hcan1;
 #endif
 
-/* QSPI config */
-#ifdef USE_QSPI
-QSPI_HandleTypeDef hqspi;
-#endif
-
-/* RTC config */
-#ifdef USE_RTC
-RTC_HandleTypeDef hrtc;
-#endif
-
-/* SPI config */
-#ifdef USE_SPI1
-SPI_HandleTypeDef hspi1;
-#endif
-
-#ifdef USE_SPI2
-SPI_HandleTypeDef hspi2;
-#endif
-
-#ifdef USE_TIMER2
-TIM_HandleTypeDef htim2;
-#endif
-
-#ifdef USE_TIMER15
-TIM_HandleTypeDef htim15;
-#endif
-
+/* UART config */
 #ifdef USE_UART
 UART_HandleTypeDef huart1;
 #endif

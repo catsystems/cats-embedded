@@ -27,7 +27,7 @@
 
 #include "stm32l4xx_hal.h"
 
-/* Pin configuration */
+/***** Pin config *****/
 #define BUTTON_Pin         GPIO_PIN_13
 #define BUTTON_GPIO_Port   GPIOC
 #define V_PYRO1_Pin        GPIO_PIN_0
@@ -77,25 +77,29 @@
 #define IO1_Pin            GPIO_PIN_7
 #define IO1_GPIO_Port      GPIOB
 
-/* Device selection */
-#define USE_ADC
+/***** Peripherals config *****/
 // #define USE_CAN
-#define USE_QSPI
-#define USE_RTC
-#define USE_SPI1
-#define USE_SPI2
-//#define USE_SPI3
-#define USE_TIMER15
-#define USE_TIMER2
+// #define USE_UART
 
 /* ADC config */
-#ifdef USE_ADC
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 #define ADC_HANDLE hadc1
-
 #define ADC_NUM_CHANNELS 4
-#endif
+
+/* QSPI config */
+extern QSPI_HandleTypeDef hqspi;
+
+/* RTC config */
+extern RTC_HandleTypeDef hrtc;
+
+/* SPI config */
+extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
+
+/* Timer config */
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim15;
 
 /* CAN config */
 #ifdef USE_CAN
@@ -103,40 +107,12 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_HANDLE hcan1
 #endif
 
-/* QSPI config */
-#ifdef USE_QSPI
-extern QSPI_HandleTypeDef hqspi;
-#endif
-
-/* RTC config */
-#ifdef USE_RTC
-extern RTC_HandleTypeDef hrtc;
-#endif
-
-/* SPI config */
-#ifdef USE_SPI1
-extern SPI_HandleTypeDef hspi1;
-
-#endif
-
-#ifdef USE_SPI2
-extern SPI_HandleTypeDef hspi2;
-#endif
-
-/* Timer config */
-#ifdef USE_TIMER2
-extern TIM_HandleTypeDef htim2;
-#endif
-
-#ifdef USE_TIMER15
-extern TIM_HandleTypeDef htim15;
-#endif
-
+/* UART config */
 #ifdef USE_UART
 extern UART_HandleTypeDef huart1;
 #endif
 
-/* Device config */
+/***** Device config *****/
 #define FLASH_QSPI_HANDLE hqspi
 #define RTC_HANDLE hrtc
 
@@ -148,11 +124,11 @@ extern UART_HandleTypeDef huart1;
 #define BUZZER_TIMER_CHANNEL TIM_CHANNEL_2
 
 /* USB config */
-#define TIMusb TIM7
+#define TIMUsb TIM7
 #define CDC_POLLING_INTERVAL 2 // ms
-#define TIMusb_CLK_ENABLE __HAL_RCC_TIM7_CLK_ENABLE
-#define TIMusb_IRQn TIM7_IRQn
-#define TIMusb_IRQHandler TIM7_IRQHandler
+#define TIMUsb_CLK_ENABLE __HAL_RCC_TIM7_CLK_ENABLE
+#define TIMUsb_IRQn TIM7_IRQn
+#define TIMUsb_IRQHandler TIM7_IRQHandler
 
 /* Sensor config */
 #define NUM_IMU           2
