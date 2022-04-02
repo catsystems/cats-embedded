@@ -1,5 +1,5 @@
 /*
- * This file was part of Cleanflight and Betaflight.
+ * This file was adapted from Cleanflight and Betaflight.
  * https://github.com/betaflight/betaflight
  * It is modified for the CATS Flight Software.
  *
@@ -61,7 +61,6 @@ static void cli_cmd_parse_stats(const char *cmd_name, char *args);
 
 static void cli_cmd_lfs_format(const char *cmd_name, char *args);
 static void cli_cmd_erase_flash(const char *cmd_name, char *args);
-static void cli_cmd_erase_recordings(const char *cmd_name, char *args);
 
 static void cli_cmd_flash_write(const char *cmd_name, char *args);
 static void cli_cmd_flash_stop(const char *cmd_name, char *args);
@@ -86,7 +85,6 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cli_cmd_log_enable),
     CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cli_cmd_ls),
     CLI_COMMAND_DEF("reboot", "reboot without saving", NULL, cli_cmd_reboot),
-    CLI_COMMAND_DEF("rec_erase", "erase the recordings", NULL, cli_cmd_erase_recordings),
     CLI_COMMAND_DEF("rec_info", "get the info about flash", NULL, cli_cmd_rec_info),
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
@@ -563,12 +561,6 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   lfs_mkdir(&lfs, "stats");
 
   strncpy(cwd, "/", sizeof(cwd));
-}
-
-static void cli_cmd_erase_recordings(const char *cmd_name, char *args) {
-  cli_print_line("\nErasing the flight recordings, this might not take much...");
-  erase_recordings();
-  cli_print_line("Recordings erased!");
 }
 
 static void cli_cmd_flash_write(const char *cmd_name, char *args) {

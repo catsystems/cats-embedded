@@ -206,6 +206,3 @@ void parse_stats(uint16_t number) {
 
   lfs_file_close(&lfs, &curr_file);
 }
-
-void erase_recordings() { /* remove everything from /flights */
-}
