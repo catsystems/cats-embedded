@@ -172,6 +172,8 @@ _Noreturn void task_recorder(__attribute__((unused)) void *argument) {
         rec_buffer_idx = 0;
         osMessageQueueReset(rec_queue);
 
+        /* TODO: stats file is not always created. Try adding a delay before creating it. */
+        // osDelay(200);
         /* create flight stats file */
         create_stats_file();
       } break;
@@ -243,7 +245,7 @@ static void create_stats_file() {
   snprintf(current_stats_filename, MAX_FILENAME_SIZE, "stats/stats_%05lu", flight_counter);
   lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
 
-  /* This will as long as there are no pointers in the global_flight_stats struct */
+  /* This will work as long as there are no pointers in the global_flight_stats struct */
   lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
 
   lfs_file_close(&lfs, &current_stats_file);

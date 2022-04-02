@@ -23,6 +23,5 @@
 
 void dump_recording(uint16_t number);
 void parse_recording(uint16_t number);
-void erase_recordings();
 
 void parse_stats(uint16_t number);

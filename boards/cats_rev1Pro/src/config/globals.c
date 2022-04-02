@@ -163,4 +163,4 @@ volatile recorder_status_e global_recorder_status = REC_OFF;
 
 event_action_map_elem_t* event_action_map = NULL;
 
-const char* code_version = "2.1.0";
+const char* code_version = "2.1.0+";
