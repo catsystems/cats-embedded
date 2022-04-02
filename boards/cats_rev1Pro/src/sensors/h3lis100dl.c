@@ -69,7 +69,7 @@ bool h3lis100dl_init(const H3LIS100DL *dev) {
 
   // CTRL_REG_1
   // Select power mode, sample rate and enable all axis
-  tmp = (uint8_t)dev->power_mode | (uint8_t)dev->sample_rate | 0x03;
+  tmp = (uint8_t)dev->power_mode | (uint8_t)dev->sample_rate | 0x07;
   write_register(dev->spi, H3LIS100DL_CTRL_REG1, tmp);
 
   // CTRL_REG_2

@@ -23,7 +23,19 @@ if ("${CATS_TARGET}" STREQUAL "CATS_ORION")
             lib/STM/STM32L4/STM32L4xx_HAL_Driver/Inc/Legacy
             lib/STM/STM32L4/STM32L4xx/Include
             target/${CATS_TARGET})
-endif()
+    file(GLOB_RECURSE LIB_FILES_TARGET "lib/STM/STM32F4/*.*")
+    file(GLOB_RECURSE SOURCES_TARGET "lib/STM/STM32L4/*.*")
+elseif ("${CATS_TARGET}" STREQUAL "CATS_VEGA")
+    set(MCU_TYPE STM32F411xE)
+    set(FLASH_LD STM32F411CCUX_FLASH.ld)
+    include_directories(
+            lib/STM/STM32F4/STM32F4xx_HAL_Driver/Inc
+            lib/STM/STM32F4/STM32F4xx_HAL_Driver/Inc/Legacy
+            lib/STM/STM32F4/STM32F4xx/Include
+            target/${CATS_TARGET})
+    file(GLOB_RECURSE LIB_FILES_TARGET "lib/STM/STM32F4/*.*")
+    file(GLOB_RECURSE SOURCES_TARGET "lib/STM/STM32F4/*.*")
+endif ()
 
 # project settings
 project(${CATS_TARGET} C CXX ASM)
@@ -92,7 +104,16 @@ include_directories(
 
 add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -D${CATS_TARGET})
 
-file(GLOB_RECURSE LIB_FILES "lib/*.*")
+file(GLOB_RECURSE LIB_FILES
+        "lib/CMSIS/*.*"
+        "lib/FreeRTOS/*.*"
+        "lib/LittleFS/*.*"
+        "lib/Tracing/*.*"
+        "lib/STM/EEPROM/*.*"
+        "lib/STM/USB/*.*")
+
+list(APPEND LIB_FILES ${LIB_FILES_TARGET})
+
 set_source_files_properties(
         ${LIB_FILES}
         PROPERTIES
@@ -106,9 +127,18 @@ set_source_files_properties(
         COMPILE_FLAGS -O3
 )
 
+file(GLOB_RECURSE SOURCES
+        "lib/CMSIS/*.*"
+        "lib/FreeRTOS/*.*"
+        "lib/LittleFS/*.*"
+        "lib/Tracing/*.*"
+        "lib/STM/EEPROM/*.*"
+        "lib/STM/USB/*.*"
+        "target/${CATS_TARGET}/*.*"
+        "target/${CATS_TARGET}/target.c"
+        "src/*.*")
 
-file(GLOB_RECURSE SOURCES "lib/*.*" "target/${CATS_TARGET}/*.*" "target/target.c" "src/*.*")
-
+list(APPEND SOURCES ${SOURCES_TARGET})
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/target/${CATS_TARGET}/${FLASH_LD})
 

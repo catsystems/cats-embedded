@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 #include "util/types.h"
-#include "stm32l4xx_hal.h"
+#include "target.h"
 
 typedef enum cs_type {
   LOW_ACTIVE = GPIO_PIN_RESET,

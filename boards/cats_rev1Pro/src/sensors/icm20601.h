@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "stm32l4xx_hal.h"
 #include "drivers/spi.h"
 #include "cmsis_os.h"
 #include <stdbool.h>

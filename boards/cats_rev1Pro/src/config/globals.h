@@ -29,7 +29,7 @@
 #include "drivers/sbus.h"
 #include "drivers/buzzer.h"
 #include "drivers/servo.h"
-#include "stm32l4xx_hal.h"
+#include "target.h"
 #include "usbd_cdc_if.h"
 #include "sensor_config.h"
 

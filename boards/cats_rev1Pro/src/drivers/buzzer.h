@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "stm32l4xx_hal.h"
+#include "target.h"
 
 /** Exported Types **/
 
