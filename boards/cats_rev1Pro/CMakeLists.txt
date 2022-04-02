@@ -13,9 +13,9 @@ set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-set(CATS_TARGET CATS_L4)
+set(CATS_TARGET CATS_ORION)
 
-if ("${CATS_TARGET}" STREQUAL "CATS_L4")
+if ("${CATS_TARGET}" STREQUAL "CATS_ORION")
     set(MCU_TYPE STM32L433xx)
     set(FLASH_LD STM32L433RCTX_FLASH.ld)
     include_directories(

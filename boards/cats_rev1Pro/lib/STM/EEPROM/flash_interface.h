@@ -27,13 +27,13 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#ifdef CATS_L4
+#ifdef CATS_ORION
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_ll_crc.h"
 #include "stm32l4xx_ll_bus.h"
 #endif
 
-#ifdef CATS_F4
+#ifdef CATS_VEGA
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_ll_crc.h"
 #include "stm32f4xx_ll_bus.h"

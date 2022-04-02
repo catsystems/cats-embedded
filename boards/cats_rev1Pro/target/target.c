@@ -18,7 +18,7 @@
 
 #include "target.h"
 
-#if defined(CATS_L4)
+#if defined(CATS_ORION)
 
 /* ADC config */
 ADC_HandleTypeDef hadc1;

@@ -21,7 +21,7 @@
 
 /* Todo: check divisions */
 /* CAREFUL: always add acclerometer settings after IMU settings */
-#ifdef CATS_L4
+#ifdef CATS_ORION
 sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {[0].sens_type = ICM20601_ID_ACC,
                                                      [0].upper_limit = 32.0f,
                                                      [0].lower_limit = -32.0f,
