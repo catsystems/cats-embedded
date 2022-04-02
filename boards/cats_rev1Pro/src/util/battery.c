@@ -40,14 +40,14 @@ static uint32_t cell_count = 1;
  * --------------------------------
  */
 const float voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
-typedef enum { INDEX_MIN, INDEX_LOW, INDEX_MAX } battery_level_index_e;
+typedef enum { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK } battery_level_index_e;
 
 // Automatically check how many cells are connected
 void battery_monitor_init() {
   if (battery_type == ALKALINE) return;
   uint32_t i = 1;
   float voltage = battery_voltage();
-  while (((float)i * voltage_lookup[battery_type][INDEX_MAX]) < voltage) {
+  while (((float)i * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
     i++;
   }
   cell_count = i;
@@ -68,20 +68,20 @@ battery_level_e battery_level() {
 
   /* Battery level can only go back up when voltage + hysteresis voltage is reached */
   switch (level) {
-    case BATTERY_OK:
-      if (voltage <= voltage_lookup[battery_type][INDEX_LOW]) {
+    case BATTERY_CRIT:
+      if (voltage > (voltage_lookup[battery_type][BAT_IDX_CRIT] + BATTERY_VOLTAGE_HYSTERESIS)) {
         level = BATTERY_LOW;
       }
       break;
     case BATTERY_LOW:
-      if (voltage <= voltage_lookup[battery_type][INDEX_MIN]) {
+      if (voltage <= voltage_lookup[battery_type][BAT_IDX_CRIT]) {
         level = BATTERY_CRIT;
-      } else if (voltage > (voltage_lookup[battery_type][INDEX_LOW] + BATTERY_VOLTAGE_HYSTERESIS)) {
+      } else if (voltage > (voltage_lookup[battery_type][BAT_IDX_LOW] + BATTERY_VOLTAGE_HYSTERESIS)) {
         level = BATTERY_OK;
       }
       break;
-    case BATTERY_CRIT:
-      if (voltage > (voltage_lookup[battery_type][INDEX_LOW] + BATTERY_VOLTAGE_HYSTERESIS)) {
+    case BATTERY_OK:
+      if (voltage <= voltage_lookup[battery_type][BAT_IDX_LOW]) {
         level = BATTERY_LOW;
       }
       break;

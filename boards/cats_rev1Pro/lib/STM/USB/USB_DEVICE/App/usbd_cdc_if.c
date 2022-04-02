@@ -262,7 +262,7 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
   return result;
 }
 
-void TIMusb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
+void TIMUsb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
 
 void CDC_Transmit_Elapsed() {
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
@@ -279,15 +279,9 @@ void CDC_Transmit_Elapsed() {
 }
 
 static void TIM_Config(void) {
-  /* Set TIMusb instance */
-  TimHandle.Instance = TIMusb;
+  /* Set TIMUsb instance */
+  TimHandle.Instance = TIMUsb;
 
-  /* Initialize TIMx peripheral as follow:
-       + Period = 10000 - 1
-       + Prescaler = ((SystemCoreClock/2)/10000) - 1
-       + ClockDivision = 0
-       + Counter direction = Up
-  */
   TimHandle.Init.Period = (CDC_POLLING_INTERVAL * 1000) - 1;
   TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
   TimHandle.Init.ClockDivision = 0;
@@ -298,14 +292,14 @@ static void TIM_Config(void) {
   }
 
   /* Enable TIM peripherals Clock */
-  TIMusb_CLK_ENABLE();
+  TIMUsb_CLK_ENABLE();
 
   /* Configure the NVIC for TIMx */
   /* Set Interrupt Group Priority */
-  HAL_NVIC_SetPriority(TIMusb_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(TIMUsb_IRQn, 6, 0);
 
   /* Enable the TIMx global Interrupt */
-  HAL_NVIC_EnableIRQ(TIMusb_IRQn);
+  HAL_NVIC_EnableIRQ(TIMUsb_IRQn);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

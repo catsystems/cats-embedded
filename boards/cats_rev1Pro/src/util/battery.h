@@ -18,7 +18,7 @@
 
 #pragma once
 
-typedef enum { BATTERY_OK = 0, BATTERY_LOW, BATTERY_CRIT } battery_level_e;
+typedef enum { BATTERY_CRIT = 1, BATTERY_LOW, BATTERY_OK } battery_level_e;
 
 void battery_monitor_init();
 float battery_voltage();

@@ -47,13 +47,13 @@ void SystemClock_Config(void);
 static void GPIO_Init(void);
 static void DMA_Init(void);
 static void ADC_Init(void);
-static void CAN_Init(void);
 static void QUADSPI_Init(void);
 static void RTC_Init(void);
 static void SPI1_Init(void);
 static void SPI2_Init(void);
 static void TIM2_Init(void);
 static void TIM15_Init(void);
+static void CAN_Init(void);
 static void USART1_UART_Init(void);
 void task_init(void *argument);
 
@@ -77,9 +77,9 @@ int main(void) {
   HAL_PWR_EnableBkUpAccess();
 
   /* Jump to bootloader if RTC register matches pattern */
-  if(HAL_RTCEx_BKUPRead(&RTC_HANDLE, RTC_BKP_DR0) == BOOTLOADER_MAGIC_PATTERN){
-    HAL_RTCEx_BKUPWrite(&RTC_HANDLE, RTC_BKP_DR0, 0); // Reset register
-    BootLoaderJump(); // Does not return!
+  if (HAL_RTCEx_BKUPRead(&RTC_HANDLE, RTC_BKP_DR0) == BOOTLOADER_MAGIC_PATTERN) {
+    HAL_RTCEx_BKUPWrite(&RTC_HANDLE, RTC_BKP_DR0, 0);  // Reset register
+    BootLoaderJump();                                  // Does not return!
   }
 
   /* Initialize all configured peripherals */
@@ -93,7 +93,7 @@ int main(void) {
   TIM2_Init();
   TIM15_Init();
   USART1_UART_Init();
-  if(HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)){
+  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
     MX_USB_DEVICE_Init();
   }
 
@@ -195,7 +195,6 @@ void SystemClock_Config(void) {
  * @retval None
  */
 static void ADC_Init(void) {
-
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Common config
@@ -253,37 +252,11 @@ static void ADC_Init(void) {
 }
 
 /**
- * @brief CAN1 Initialization Function
- * @param None
- * @retval None
- */
-static void CAN_Init(void) {
-#ifdef USE_CAN
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_4TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK) {
-    Error_Handler();
-  }
-#endif
-}
-
-/**
  * @brief QUADSPI Initialization Function
  * @param None
  * @retval None
  */
 static void QUADSPI_Init(void) {
-#ifdef USE_QSPI
   hqspi.Instance = QUADSPI;
 
   hqspi.Init.ClockPrescaler = 1;
@@ -296,7 +269,6 @@ static void QUADSPI_Init(void) {
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
   // Application configuration
   HAL_QSPI_Init(&hqspi);
-#endif
 }
 
 /**
@@ -324,7 +296,6 @@ static void RTC_Init(void) {
  * @retval None
  */
 static void SPI1_Init(void) {
-  #ifdef USE_SPI1
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -342,7 +313,6 @@ static void SPI1_Init(void) {
   if (HAL_SPI_Init(&hspi1) != HAL_OK) {
     Error_Handler();
   }
-  #endif
 }
 
 /**
@@ -351,7 +321,6 @@ static void SPI1_Init(void) {
  * @retval None
  */
 static void SPI2_Init(void) {
-  #ifdef USE_SPI2
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
@@ -369,7 +338,6 @@ static void SPI2_Init(void) {
   if (HAL_SPI_Init(&hspi2) != HAL_OK) {
     Error_Handler();
   }
-  #endif
 }
 
 /**
@@ -378,7 +346,6 @@ static void SPI2_Init(void) {
  * @retval None
  */
 static void TIM2_Init(void) {
-
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -468,7 +435,7 @@ static void TIM15_Init(void) {
  * @retval None
  */
 static void USART1_UART_Init(void) {
-#ifdef USE_UART1
+#ifdef USE_UART
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -480,6 +447,31 @@ static void USART1_UART_Init(void) {
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(&huart1) != HAL_OK) {
+    Error_Handler();
+  }
+#endif
+}
+
+/**
+ * @brief CAN1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void CAN_Init(void) {
+#ifdef USE_CAN
+  hcan1.Instance = CAN1;
+  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_4TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan1.Init.TimeTriggeredMode = DISABLE;
+  hcan1.Init.AutoBusOff = DISABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
+  hcan1.Init.AutoRetransmission = DISABLE;
+  hcan1.Init.ReceiveFifoLocked = DISABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
+  if (HAL_CAN_Init(&hcan1) != HAL_OK) {
     Error_Handler();
   }
 #endif
@@ -601,7 +593,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     HAL_IncTick();
   }
 
-  if (htim->Instance == TIMusb){
+  if (htim->Instance == TIMUsb) {
     CDC_Transmit_Elapsed();
   }
 }
