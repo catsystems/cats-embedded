@@ -18,64 +18,33 @@
 
 #pragma once
 
-
-#if defined(CATS_ORION) && defined(CATS_VEGA)
-#error More than one board defined
-#endif
-
-#if defined(CATS_ORION)
-
-#include "stm32l4xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 /***** Pin config *****/
-#define BUTTON_Pin         GPIO_PIN_13
-#define BUTTON_GPIO_Port   GPIOC
-#define V_PYRO1_Pin        GPIO_PIN_0
-#define V_PYRO1_GPIO_Port  GPIOC
-#define V_PYRO2_Pin        GPIO_PIN_1
-#define V_PYRO2_GPIO_Port  GPIOC
-#define V_PYRO3_Pin        GPIO_PIN_2
-#define V_PYRO3_GPIO_Port  GPIOC
-#define V_BAT_Pin          GPIO_PIN_3
-#define V_BAT_GPIO_Port    GPIOC
-#define SERVO1_Pin         GPIO_PIN_0
-#define SERVO1_GPIO_Port   GPIOA
-#define SERVO2_Pin         GPIO_PIN_1
-#define SERVO2_GPIO_Port   GPIOA
-#define USB_DET_Pin        GPIO_PIN_2
-#define USB_DET_GPIO_Port  GPIOA
-#define LED1_Pin           GPIO_PIN_4
-#define LED1_GPIO_Port     GPIOA
-#define LED2_Pin           GPIO_PIN_2
-#define LED2_GPIO_Port     GPIOB
-#define CS_BARO3_Pin       GPIO_PIN_12
-#define CS_BARO3_GPIO_Port GPIOB
-#define CS_BARO1_Pin       GPIO_PIN_6
-#define CS_BARO1_GPIO_Port GPIOC
-#define CS_BARO2_Pin       GPIO_PIN_7
-#define CS_BARO2_GPIO_Port GPIOC
-#define PYRO1_Pin          GPIO_PIN_8
-#define PYRO1_GPIO_Port    GPIOC
-#define PYRO2_Pin          GPIO_PIN_9
-#define PYRO2_GPIO_Port    GPIOC
-#define PYRO3_Pin          GPIO_PIN_8
-#define PYRO3_GPIO_Port    GPIOA
-#define IO2_Pin            GPIO_PIN_15
-#define IO2_GPIO_Port      GPIOA
-#define IO3_Pin            GPIO_PIN_10
-#define IO3_GPIO_Port      GPIOC
-#define CS_MAG_Pin         GPIO_PIN_11
-#define CS_MAG_GPIO_Port   GPIOC
-#define CS_ACC_Pin         GPIO_PIN_12
-#define CS_ACC_GPIO_Port   GPIOC
-#define CS_IMU2_Pin        GPIO_PIN_2
-#define CS_IMU2_GPIO_Port  GPIOD
-#define CS_IMU1_Pin        GPIO_PIN_3
-#define CS_IMU1_GPIO_Port  GPIOB
-#define INT_ACC_Pin        GPIO_PIN_6
-#define INT_ACC_GPIO_Port  GPIOB
-#define IO1_Pin            GPIO_PIN_7
-#define IO1_GPIO_Port      GPIOB
+#define LED1_Pin GPIO_PIN_13
+#define LED1_GPIO_Port GPIOC
+#define LED2_Pin GPIO_PIN_14
+#define LED2_GPIO_Port GPIOC
+#define BARO_Pin GPIO_PIN_0
+#define BARO_GPIO_Port GPIOB
+#define IMU_Pin GPIO_PIN_1
+#define IMU_GPIO_Port GPIOB
+#define PYRO_EN_Pin GPIO_PIN_2
+#define PYRO_EN_GPIO_Port GPIOB
+#define FLASH_CS_Pin GPIO_PIN_12
+#define FLASH_CS_GPIO_Port GPIOB
+#define RF_INT2_Pin GPIO_PIN_13
+#define RF_INT2_GPIO_Port GPIOB
+#define RF_INT1_Pin GPIO_PIN_8
+#define RF_INT1_GPIO_Port GPIOA
+#define USB_DET_Pin GPIO_PIN_15
+#define USB_DET_GPIO_Port GPIOA
+#define IO1_Pin GPIO_PIN_7
+#define IO1_GPIO_Port GPIOB
+#define PYRO1_Pin GPIO_PIN_8
+#define PYRO1_GPIO_Port GPIOB
+#define PYRO2_Pin GPIO_PIN_9
+#define PYRO2_GPIO_Port GPIOB
 
 /***** Peripherals config *****/
 // #define USE_CAN
@@ -85,10 +54,7 @@
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
 #define ADC_HANDLE hadc1
-#define ADC_NUM_CHANNELS 4
-
-/* QSPI config */
-extern QSPI_HandleTypeDef hqspi;
+#define ADC_NUM_CHANNELS 3
 
 /* RTC config */
 extern RTC_HandleTypeDef hrtc;
@@ -141,4 +107,6 @@ extern UART_HandleTypeDef huart1;
 #define MAG_SPI_HANDLE hspi1
 #define BARO_SPI_HANDLE hspi2
 
-#endif
+void Error_Handler(void);
+void target_pre_init();
+void target_init();

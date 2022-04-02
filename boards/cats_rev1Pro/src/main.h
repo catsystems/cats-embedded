@@ -25,10 +25,5 @@
 // Random pattern to tell system to jump to bootloader
 #define BOOTLOADER_MAGIC_PATTERN 0xAA88BB77
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
-/* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
-
 /* Private defines -----------------------------------------------------------*/
 

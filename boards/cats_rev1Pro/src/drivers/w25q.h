@@ -27,7 +27,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "stm32l433xx.h"
+#include "target.h"
 #include "main.h"
 
 typedef enum {
