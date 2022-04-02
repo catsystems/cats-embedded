@@ -19,11 +19,11 @@
 #pragma once
 
 
-#if defined(CATS_L4) && defined(CATS_F4)
+#if defined(CATS_ORION) && defined(CATS_VEGA)
 #error More than one board defined
 #endif
 
-#if defined(CATS_L4)
+#if defined(CATS_ORION)
 
 #include "stm32l4xx_hal.h"
 
