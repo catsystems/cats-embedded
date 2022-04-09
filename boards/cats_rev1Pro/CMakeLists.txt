@@ -13,28 +13,16 @@ set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-set(CATS_TARGET CATS_ORION)
+set(CATS_TARGET ORION)
 
-if ("${CATS_TARGET}" STREQUAL "CATS_ORION")
+if ("${CATS_TARGET}" STREQUAL "ORION")
     set(MCU_TYPE STM32L433xx)
+    set(MCU_FAMILY STM32L4)
     set(FLASH_LD STM32L433RCTX_FLASH.ld)
-    include_directories(
-            lib/STM/STM32L4/STM32L4xx_HAL_Driver/Inc
-            lib/STM/STM32L4/STM32L4xx_HAL_Driver/Inc/Legacy
-            lib/STM/STM32L4/STM32L4xx/Include
-            target/${CATS_TARGET})
-    file(GLOB_RECURSE LIB_FILES_TARGET "lib/STM/STM32F4/*.*")
-    file(GLOB_RECURSE SOURCES_TARGET "lib/STM/STM32L4/*.*")
-elseif ("${CATS_TARGET}" STREQUAL "CATS_VEGA")
+elseif ("${CATS_TARGET}" STREQUAL "VEGA")
     set(MCU_TYPE STM32F411xE)
+    set(MCU_FAMILY STM32F4)
     set(FLASH_LD STM32F411CCUX_FLASH.ld)
-    include_directories(
-            lib/STM/STM32F4/STM32F4xx_HAL_Driver/Inc
-            lib/STM/STM32F4/STM32F4xx_HAL_Driver/Inc/Legacy
-            lib/STM/STM32F4/STM32F4xx/Include
-            target/${CATS_TARGET})
-    file(GLOB_RECURSE LIB_FILES_TARGET "lib/STM/STM32F4/*.*")
-    file(GLOB_RECURSE SOURCES_TARGET "lib/STM/STM32F4/*.*")
 endif ()
 
 # project settings
@@ -86,10 +74,12 @@ else ()
 endif ()
 
 include_directories(
+        lib/STM/${MCU_FAMILY}/${MCU_FAMILY}xx_HAL_Driver/Inc
+        lib/STM/${MCU_FAMILY}/${MCU_FAMILY}xx_HAL_Driver/Inc/Legacy
+        lib/STM/${MCU_FAMILY}/${MCU_FAMILY}xx/Include
+        lib/STM/${MCU_FAMILY}/USB_DEVICE
         lib/STM/USB/STM32_USB_Device_Library/Core/Inc
         lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
-        lib/STM/USB/USB_DEVICE/App
-        lib/STM/USB/USB_DEVICE/Target
         lib/STM/EEPROM
         lib/CMSIS/Include
         lib/CMSIS/DSP/Inc
@@ -99,20 +89,20 @@ include_directories(
         lib/Tracing/inc
         lib/Tracing/cfg
         lib/LittleFS
+        target/${CATS_TARGET}
         src
-        target)
+        src/usb)
 
-add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -D${CATS_TARGET})
+add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -DCATS_${CATS_TARGET})
 
 file(GLOB_RECURSE LIB_FILES
+        "lib/STM/${MCU_FAMILY}/*.*"
+        "lib/STM/EEPROM/*.*"
+        "lib/STM/USB/*.*"
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
         "lib/LittleFS/*.*"
-        "lib/Tracing/*.*"
-        "lib/STM/EEPROM/*.*"
-        "lib/STM/USB/*.*")
-
-list(APPEND LIB_FILES ${LIB_FILES_TARGET})
+        "lib/Tracing/*.*")
 
 set_source_files_properties(
         ${LIB_FILES}
@@ -128,33 +118,32 @@ set_source_files_properties(
 )
 
 file(GLOB_RECURSE SOURCES
+        "lib/STM/EEPROM/*.*"
+        "lib/STM/USB/*.*"
+        "lib/STM/${MCU_FAMILY}/*.*"
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
         "lib/LittleFS/*.*"
         "lib/Tracing/*.*"
-        "lib/STM/EEPROM/*.*"
-        "lib/STM/USB/*.*"
         "target/${CATS_TARGET}/*.*"
         "target/${CATS_TARGET}/target.c"
         "src/*.*")
 
-list(APPEND SOURCES ${SOURCES_TARGET})
-
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/target/${CATS_TARGET}/${FLASH_LD})
 
-add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
+add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${CATS_TARGET}.map)
 add_link_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
-target_link_libraries(${PROJECT_NAME}.elf libarm_cortexM4lf_math.a)
+target_link_libraries(${CATS_TARGET}.elf libarm_cortexM4lf_math.a)
 
-set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
-set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
+set(HEX_FILE ${PROJECT_BINARY_DIR}/${CATS_TARGET}.hex)
+set(BIN_FILE ${PROJECT_BINARY_DIR}/${CATS_TARGET}.bin)
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${HEX_FILE}
-        COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${CATS_TARGET}.elf> ${HEX_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${CATS_TARGET}.elf> ${BIN_FILE}
         COMMENT "Building ${HEX_FILE}
 Building ${BIN_FILE}")
