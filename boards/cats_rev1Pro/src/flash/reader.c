@@ -16,15 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "reader.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
-#include "reader.h"
+#include "config/globals.h"
+#include "control/data_processing.h"
+#include "flash/lfs_custom.h"
 #include "recorder.h"
 #include "util/log.h"
-#include "config/globals.h"
-#include "flash/lfs_custom.h"
-#include "control/data_processing.h"
 
 void dump_recording(uint16_t number) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
@@ -52,11 +53,27 @@ void dump_recording(uint16_t number) {
       int write_idx = 0;
       for (uint32_t j = 0; j < 128; ++j) {
         write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
+        //      for (uint32_t j = 0; j < 128; j += 16) {
+        //        write_idx +=
+        //            sprintf(string_buffer1 + write_idx,
+        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
+        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
+        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
+        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
+        //                    read_buf[j + 15]);
       }
       log_rawr("%s", string_buffer1);
       write_idx = 0;
       for (uint32_t j = 128; j < 256; ++j) {
         write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
+        //      for (uint32_t j = 128; j < 256; j += 16) {
+        //        write_idx +=
+        //            sprintf(string_buffer1 + write_idx,
+        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
+        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
+        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
+        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
+        //                    read_buf[j + 15]);
       }
       log_rawr("%s\n", string_buffer2);
 

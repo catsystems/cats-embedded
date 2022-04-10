@@ -16,20 +16,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/log.h"
-#include "cli/cli.h"
-#include "config/globals.h"
 #include "tasks/task_usb_communicator.h"
+
+#include "cli/cli.h"
+#include "comm/stream_group.h"
+#include "config/globals.h"
+#include "util/log.h"
 
 _Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");
 
-  fifo_flush(&usb_input_fifo);
-  fifo_flush(&usb_output_fifo);
-  cli_enter(&usb_input_fifo, &usb_output_fifo);
+  // usb_fifo_reset();
+  cli_enter();
   while (1) {
-    if (fifo_get_length(&usb_input_fifo)) {
+    if (stream_length(USB_SG.in) > 0) {
       cli_process();
     }
 

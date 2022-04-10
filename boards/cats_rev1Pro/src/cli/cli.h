@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include "util/fifo.h"
+#include "comm/fifo.h"
 #include "cli/cli.h"
 #include "cli/settings.h"
 
 #include <stdarg.h>
 
 void cli_process(void);
-void cli_enter(fifo_t *in, fifo_t *out);
+void cli_enter();
 
 void cli_print(const char *str);
 void cli_printf(const char *format, ...) __attribute__((format(printf, 1, 2)));

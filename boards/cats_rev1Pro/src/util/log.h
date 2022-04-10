@@ -49,17 +49,6 @@ void log_enable();
 void log_disable();
 bool log_is_enabled();
 
-#define CATS_RAINBOW_LOG
-
-/* Remove the rainbow flag if CATS_DEBUG isn't active. */
-#ifndef CATS_DEBUG
-#undef CATS_RAINBOW_LOG
-#endif
-
-#ifdef CATS_DEBUG
-#define PRINT_BUFFER_LEN 420
-extern osMutexId_t print_mutex;
-#endif
 
 void log_log(int level, const char *file, int line, const char *format, ...) __attribute__((format(printf, 4, 5)));
 

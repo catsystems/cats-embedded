@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,4 +18,14 @@
 
 #pragma once
 
-_Noreturn void task_usb_communicator(void *argument);
+#include "comm/stream.h"
+
+/**
+ * A wrapper for a pair of input and output streams.
+ */
+typedef struct {
+  const stream_t *in;
+  const stream_t *out;
+} stream_group_t;
+
+extern const stream_group_t USB_SG;

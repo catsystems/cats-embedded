@@ -17,16 +17,18 @@
  */
 
 #include "util/log.h"
+#include "comm/stream_group.h"
 #include "util/debug.h"
 
 #ifdef CATS_DEBUG
-#include "usbd_cdc_if.h"
 #include "cmsis_os.h"
 
-#include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#define CATS_RAINBOW_LOG
 
 static struct {
   int level;
@@ -38,7 +40,7 @@ static const char *level_strings[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR",
 static const char *level_colors[] = {"\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"};
 #endif
 
-osMutexId_t print_mutex;
+#define PRINT_BUFFER_LEN 420
 static char print_buffer[PRINT_BUFFER_LEN];
 #endif
 
@@ -70,7 +72,7 @@ bool log_is_enabled() {
 
 void log_log(int level, const char *file, int line, const char *format, ...) {
 #ifdef CATS_DEBUG
-  if (L.enabled && level >= L.level && osMutexAcquire(print_mutex, 0U) == osOK) {
+  if (L.enabled && level >= L.level) {
     /* fill buffer with metadata */
     static char buf_ts[16];
     buf_ts[snprintf(buf_ts, sizeof(buf_ts), "%lu", osKernelGetTickCount())] = '\0';
@@ -85,41 +87,31 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
 #endif
     va_list argptr;
     va_start(argptr, format);
-    vsnprintf(print_buffer + len, PRINT_BUFFER_LEN, format, argptr);
+    len += vsnprintf(print_buffer + len, PRINT_BUFFER_LEN, format, argptr);
     va_end(argptr);
-    snprintf(print_buffer + strlen(print_buffer), PRINT_BUFFER_LEN, "\n");
-    CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
-    osMutexRelease(print_mutex);
-    osDelay(2);
+    len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
+    stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
   }
 #endif
 }
 
 void log_raw(const char *format, ...) {
 #ifdef CATS_DEBUG
-  if (osMutexAcquire(print_mutex, 0U) == osOK) {
-    va_list argptr;
-    va_start(argptr, format);
-    vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
-    va_end(argptr);
-    snprintf(print_buffer + strlen(print_buffer), PRINT_BUFFER_LEN, "\n");
-    CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
-    osMutexRelease(print_mutex);
-    osDelay(2);
-  }
+  va_list argptr;
+  va_start(argptr, format);
+  int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
+  va_end(argptr);
+  len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
+  stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
 #endif
 }
 
 void log_rawr(const char *format, ...) {
 #ifdef CATS_DEBUG
-  if (osMutexAcquire(print_mutex, 0U) == osOK) {
-    va_list argptr;
-    va_start(argptr, format);
-    vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
-    va_end(argptr);
-    CDC_Transmit_FS((uint8_t *)print_buffer, strlen(print_buffer));
-    osMutexRelease(print_mutex);
-    osDelay(5);
-  }
+  va_list argptr;
+  va_start(argptr, format);
+  int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
+  va_end(argptr);
+  stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
 #endif
 }

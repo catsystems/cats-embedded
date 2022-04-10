@@ -17,8 +17,12 @@
  */
 
 #include "config/globals.h"
-#include "target.h"
+
+#include <stdbool.h>
+
+#include "comm/fifo.h"
 #include "drivers/spi.h"
+#include "target.h"
 
 /** Protocol Handles **/
 
@@ -26,13 +30,16 @@
 
 SPI_BUS SPI_IMU[NUM_IMU] = {
 #if NUM_IMU > 0
-    [0].cs_port = CS_IMU1_GPIO_Port, [0].cs_pin = CS_IMU1_Pin, [0].spi_handle = &IMU_SPI_HANDLE, [0].cs_type = LOW_ACTIVE,
+    [0].cs_port = CS_IMU1_GPIO_Port,  [0].cs_pin = CS_IMU1_Pin,
+    [0].spi_handle = &IMU_SPI_HANDLE, [0].cs_type = LOW_ACTIVE,
 #endif
 #if NUM_IMU > 1
-    [1].cs_port = CS_IMU2_GPIO_Port, [1].cs_pin = CS_IMU2_Pin, [1].spi_handle = &IMU_SPI_HANDLE, [1].cs_type = LOW_ACTIVE,
+    [1].cs_port = CS_IMU2_GPIO_Port,  [1].cs_pin = CS_IMU2_Pin,
+    [1].spi_handle = &IMU_SPI_HANDLE, [1].cs_type = LOW_ACTIVE,
 #endif
 #if NUM_IMU > 2
-    [2].cs_port = CS_IMU3_GPIO_Port, [2].cs_pin = CS_IMU3_Pin, [2].spi_handle = &IMU_SPI_HANDLE, [2].cs_type = LOW_ACTIVE,
+    [2].cs_port = CS_IMU3_GPIO_Port,  [2].cs_pin = CS_IMU3_Pin,
+    [2].spi_handle = &IMU_SPI_HANDLE, [2].cs_type = LOW_ACTIVE,
 #endif
 };
 
@@ -60,7 +67,6 @@ const ICM20601 IMU_DEV[NUM_IMU] = {
 #endif
 };
 
-
 SPI_BUS SPI_ACCEL = {
     .cs_port = CS_ACC_GPIO_Port, .cs_pin = CS_ACC_Pin, .spi_handle = &ACCEL_SPI_HANDLE, .cs_type = LOW_ACTIVE};
 
@@ -73,16 +79,16 @@ const H3LIS100DL ACCEL = {
 
 SPI_BUS SPI_BARO[NUM_BARO] = {
 #if NUM_BARO > 0
-    [0].cs_port = CS_BARO1_GPIO_Port, [0].cs_pin = CS_BARO1_Pin,
-    [0].spi_handle = &BARO_SPI_HANDLE,    [0].cs_type = LOW_ACTIVE,
+    [0].cs_port = CS_BARO1_GPIO_Port,  [0].cs_pin = CS_BARO1_Pin,
+    [0].spi_handle = &BARO_SPI_HANDLE, [0].cs_type = LOW_ACTIVE,
 #endif
 #if NUM_BARO > 1
-    [1].cs_port = CS_BARO2_GPIO_Port, [1].cs_pin = CS_BARO2_Pin,
-    [1].spi_handle = &BARO_SPI_HANDLE,    [1].cs_type = LOW_ACTIVE,
+    [1].cs_port = CS_BARO2_GPIO_Port,  [1].cs_pin = CS_BARO2_Pin,
+    [1].spi_handle = &BARO_SPI_HANDLE, [1].cs_type = LOW_ACTIVE,
 #endif
 #if NUM_BARO > 2
-    [2].cs_port = CS_BARO3_GPIO_Port, [2].cs_pin = CS_BARO3_Pin,
-    [2].spi_handle = &BARO_SPI_HANDLE,    [2].cs_type = LOW_ACTIVE,
+    [2].cs_port = CS_BARO3_GPIO_Port,  [2].cs_pin = CS_BARO3_Pin,
+    [2].spi_handle = &BARO_SPI_HANDLE, [2].cs_type = LOW_ACTIVE,
 #endif
 };
 
@@ -114,13 +120,12 @@ MMC5983MA MAG = {
     .mag_scale = {0.986369789f, 1.03176177f, 0.983317614f},
 };
 
-fifo_t usb_input_fifo;
-fifo_t usb_output_fifo;
-
-uint8_t usb_fifo_out_buffer[USB_OUTPUT_BUFFER_SIZE];
-uint8_t usb_fifo_in_buffer[USB_INPUT_BUFFER_SIZE];
-
-BUZ BUZZER = {.timer = &BUZZER_TIMER_HANDLE, .channel = BUZZER_TIMER_CHANNEL, .arr = 4000, .start = 0, .started = 0, .volume = 100};
+BUZ BUZZER = {.timer = &BUZZER_TIMER_HANDLE,
+              .channel = BUZZER_TIMER_CHANNEL,
+              .arr = 4000,
+              .start = 0,
+              .started = 0,
+              .volume = 100};
 
 SERVO SERVO1 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_1, .pulse = 15000, .started = 0};
 
