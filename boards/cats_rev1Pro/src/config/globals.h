@@ -18,28 +18,23 @@
 
 #pragma once
 
-#include "util/types.h"
-#include "flash/recorder.h"
-#include "util/fifo.h"
-#include "sensors/icm20601.h"
-#include "sensors/ms5607.h"
-#include "sensors/mmc5983ma.h"
-#include "sensors/h3lis100dl.h"
-#include "drivers/spi.h"
-#include "drivers/sbus.h"
 #include "drivers/buzzer.h"
+#include "drivers/sbus.h"
 #include "drivers/servo.h"
-#include "target.h"
-#include "usbd_cdc_if.h"
+#include "drivers/spi.h"
+#include "flash/recorder.h"
 #include "sensor_config.h"
+#include "sensors/h3lis100dl.h"
+#include "sensors/icm20601.h"
+#include "sensors/mmc5983ma.h"
+#include "sensors/ms5607.h"
+#include "target.h"
+#include "util/types.h"
 
 /** Sampling Frequencies **/
-#define CONTROL_SAMPLING_FREQ 100 // in Hz
+#define CONTROL_SAMPLING_FREQ 100  // in Hz
 
-#define RECEIVER_SAMPLING_FREQ 50 // in Hz
-
-#define USB_OUTPUT_BUFFER_SIZE 256
-#define USB_INPUT_BUFFER_SIZE  256
+#define RECEIVER_SAMPLING_FREQ 50  // in Hz
 
 /** Device Handles **/
 
@@ -56,13 +51,6 @@ extern BUZ BUZZER;
 
 extern SERVO SERVO1;
 extern SERVO SERVO2;
-
-/** Data streams **/
-
-extern fifo_t usb_input_fifo;
-extern uint8_t usb_fifo_in_buffer[USB_INPUT_BUFFER_SIZE];
-extern fifo_t usb_output_fifo;
-extern uint8_t usb_fifo_out_buffer[USB_OUTPUT_BUFFER_SIZE];
 
 /** State Estimation **/
 /* Index of high G Accel */

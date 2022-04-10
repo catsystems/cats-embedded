@@ -16,33 +16,35 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/w25q.h"
+#include "tasks/task_init.h"
+
+#include <stdbool.h>
+#include <stdlib.h>
+
+#include "cmsis_os.h"
+#include "comm/fifo.h"
+#include "comm/stream.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "util/log.h"
 #include "drivers/adc.h"
 #include "drivers/spi.h"
+#include "drivers/w25q.h"
+#include "flash/lfs_custom.h"
+#include "lfs.h"
+#include "tasks/task_drop_test_fsm.h"
+#include "tasks/task_flight_fsm.h"
+#include "tasks/task_health_monitor.h"
+#include "tasks/task_peripherals.h"
+#include "tasks/task_preprocessing.h"
+#include "tasks/task_receiver.h"
+#include "tasks/task_recorder.h"
+#include "tasks/task_sensor_read.h"
+#include "tasks/task_state_est.h"
+#include "tasks/task_usb_communicator.h"
+#include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
-#include "util/actions.h"
-#include "tasks/task_flight_fsm.h"
-#include "tasks/task_drop_test_fsm.h"
-#include "tasks/task_sensor_read.h"
-#include "tasks/task_init.h"
-#include "tasks/task_recorder.h"
-#include "tasks/task_state_est.h"
-#include "tasks/task_peripherals.h"
-#include "tasks/task_usb_communicator.h"
-#include "tasks/task_receiver.h"
-#include "tasks/task_health_monitor.h"
-#include "tasks/task_preprocessing.h"
-#include "lfs.h"
-#include "flash/lfs_custom.h"
-#include "util/fifo.h"
-#include "cmsis_os.h"
-
-#include <stdlib.h>
-#include <stdbool.h>
+#include "util/log.h"
 
 /** Task Definitions **/
 
@@ -106,6 +108,7 @@ static void create_event_map();
 
 _Noreturn void task_init(__attribute__((unused)) void *argument) {
   osDelay(200);
+
   init_system();
   log_info("System initialization complete.");
 
@@ -149,9 +152,6 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   servo_start(&SERVO2);
 
   buzzer_queue_status(CATS_BUZZ_BOOTUP);
-  // Fifo init
-  fifo_init(&usb_input_fifo, usb_fifo_in_buffer, USB_INPUT_BUFFER_SIZE);
-  fifo_init(&usb_output_fifo, usb_fifo_out_buffer, USB_OUTPUT_BUFFER_SIZE);
   log_disable();
 
   /* Infinite loop */
@@ -166,15 +166,6 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 /** Private Function Definitions **/
 
 static void init_system() {
-#ifdef CATS_DEBUG
-  const osMutexAttr_t print_mutex_attr = {
-      "print_mutex",       // human readable mutex name
-      osMutexPrioInherit,  // attr_bits
-      NULL,                // memory for control block
-      0U                   // size for control block
-  };
-  print_mutex = osMutexNew(&print_mutex_attr);
-#endif
   log_set_level(LOG_TRACE);
   log_enable();
 }
@@ -287,13 +278,12 @@ static void init_imu() {
   /* TODO: this delay until 1000 prob. isn't needed anymore */
   /* TODO: Add timeout for sensor init */
   osDelayUntil(1000);
-  for(int i = 0; i < NUM_IMU; i++){
+  for (int i = 0; i < NUM_IMU; i++) {
     while (!icm20601_init(&IMU_DEV[i])) {
       osDelay(10);
       log_error("IMU initialization failed");
     }
   }
-
 
   while (!h3lis100dl_init(&ACCEL)) {
     osDelay(10);
@@ -302,7 +292,7 @@ static void init_imu() {
 }
 
 static void init_baro() {
-  for(int i = 0; i < NUM_BARO; i++){
+  for (int i = 0; i < NUM_BARO; i++) {
     ms5607_init(&BARO_DEV[i]);
     osDelay(10);
   }

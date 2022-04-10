@@ -18,11 +18,12 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include <util/fifo.h>
+
 #include "usbd_cdc_if.h"
 
-#include "cmsis_os2.h"
 #include "FreeRTOSConfig.h"
+#include "comm/fifo.h"
+#include "comm/stream_group.h"
 #include "config/globals.h"
 #include "target.h"
 
@@ -87,7 +88,7 @@ static int8_t CDC_Init_FS(void) {
     Error_Handler();
   }
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 512);
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, APP_TX_DATA_SIZE);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
 
   usb_initialized = true;
@@ -204,10 +205,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
   /* USER CODE BEGIN 6 */
   global_usb_detection = true;
-  uint32_t buf_length = *Len;
-  if (buf_length != 0) {
-    fifo_write_bytes(&usb_input_fifo, Buf, buf_length);
-  }
+  stream_write(USB_SG.in, Buf, *Len);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -268,12 +266,10 @@ void CDC_Transmit_Elapsed() {
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
   if (hcdc->TxState == 0) {
     // Check usb fifo and print out to usb
-    uint32_t len = fifo_get_length(&usb_output_fifo);
-    if (len) {
-      if (fifo_read_bytes(&usb_output_fifo, UserTxBufferFS, len)) {
-        USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, len);
-        USBD_CDC_TransmitPacket(&hUsbDeviceFS);
-      }
+    uint32_t len = stream_length(USB_SG.out);
+    if (len > 0 && stream_read(USB_SG.out, UserTxBufferFS, len)) {
+      USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, len);
+      USBD_CDC_TransmitPacket(&hUsbDeviceFS);
     }
   }
 }

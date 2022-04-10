@@ -37,7 +37,6 @@ _Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
   uint32_t pyro_check_timer = 0;
   flight_fsm_e old_fsm_state = MOVING;
   battery_level_e old_level = BATTERY_OK;
-  static uint8_t print_buffer[USB_OUTPUT_BUFFER_SIZE];
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;

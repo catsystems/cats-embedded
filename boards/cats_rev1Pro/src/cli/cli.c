@@ -18,15 +18,17 @@
  */
 
 #include "cli/cli.h"
-#include "cli/cli_commands.h"
-#include "util/log.h"
-#include "flash/lfs_custom.h"
 
-#include <string.h>
-#include <stdio.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "cli/cli_commands.h"
+#include "comm/stream_group.h"
+#include "flash/lfs_custom.h"
+#include "util/log.h"
 
 #define CLI_IN_BUFFER_SIZE  128
 #define CLI_OUT_BUFFER_SIZE 256
@@ -35,9 +37,6 @@ static uint32_t buffer_index = 0;
 
 static char cli_buffer[CLI_IN_BUFFER_SIZE];
 static char old_cli_buffer[CLI_IN_BUFFER_SIZE];
-
-static fifo_t *cli_in;
-static fifo_t *cli_out;
 
 static void cli_print_error_va(const char *cmdName, const char *format, va_list va);
 static void cli_print_error(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
@@ -60,7 +59,7 @@ void get_min_max(const cli_value_t *var, int *min, int *max) {
   }
 }
 
-void cli_print(const char *str) { fifo_write_str(cli_out, str); }
+void cli_print(const char *str) { stream_write(USB_SG.out, (uint8_t *)str, strlen(str)); }
 
 static void cli_prompt(void) { cli_printf("\r\n^._.^:%s> ", cwd); }
 
@@ -77,9 +76,7 @@ static void cli_printf_va(const char *format, va_list va) {
   cli_print(buffer);
 }
 
-static void cli_write(uint8_t ch) {
-  while (fifo_write(cli_out, ch) == false) osDelay(3);
-}
+static void cli_write(uint8_t ch) { stream_write_byte(USB_SG.out, ch); }
 
 void cli_printf(const char *format, ...) {
   va_list va;
@@ -260,16 +257,15 @@ static void process_character_interactive(const char c) {
 }
 
 void cli_process(void) {
-  while (fifo_get_length(cli_in) > 0) {
-    process_character_interactive(fifo_read(cli_in));
+  while (stream_length(USB_SG.in) > 0) {
+    uint8_t ch = 0;
+    if (stream_read_byte(USB_SG.in, &ch)) {
+      process_character_interactive(ch);
+    }
   }
 }
 
-void cli_enter(fifo_t *in, fifo_t *out) {
-  cli_in = in;
-  cli_out = out;
-  cli_prompt();
-}
+void cli_enter() { cli_prompt(); }
 
 static void print_value_pointer(const char *cmdName, const cli_value_t *var, const void *valuePointer, bool full) {
   if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {

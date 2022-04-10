@@ -91,7 +91,7 @@ include_directories(
         lib/LittleFS
         target/${CATS_TARGET}
         src
-        src/usb)
+        src/drivers/usb)
 
 add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -DCATS_${CATS_TARGET})
 
