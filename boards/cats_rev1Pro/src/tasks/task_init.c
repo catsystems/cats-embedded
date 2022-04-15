@@ -118,22 +118,13 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(100);
 
+  init_lfs();
+
   cc_init();
 
   cc_load();
 
-  osDelay(10);
-
-  /* Check if the configurations makes sense */
-  if (global_cats_config.config.config_version != CONFIG_VERSION) {
-    log_error("Configuration changed or error in config!");
-    cc_defaults();
-    cc_save();
-  }
-
   osDelay(100);
-
-  init_lfs();
 
   adc_init();
   osDelay(100);

@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "lfs.h"
-#include "drivers/w25q.h"
 #include "cli/cli.h"
+#include "drivers/w25q.h"
+#include "lfs.h"
 
 static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
 static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
@@ -60,6 +60,17 @@ char cwd[LFS_NAME_MAX] = {};
 
 uint32_t flight_counter = 0;
 lfs_file_t fc_file;
+
+int8_t lfs_obj_type(const char *path) {
+  struct lfs_info info;
+  int32_t stat_err = lfs_stat(&lfs, path, &info);
+  if (stat_err < 0) {
+    // cli_print_linef("lfs_stat failed with error: %ld", stat_err);
+    return -1;
+  }
+  /* casting here is fine because info.type should be 0x1 (LFS_TYPE_REG) or 0x2 (LFS_TYPE_FILE) */
+  return (int8_t)info.type;
+}
 
 int lfs_ls(const char *path) {
   lfs_dir_t dir;

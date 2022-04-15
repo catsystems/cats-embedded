@@ -17,19 +17,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/w25q.h"
-#include "cli/cli.h"
 #include "cli/cli_commands.h"
-#include "util/log.h"
-#include "flash/reader.h"
+#include "cli/cli.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "drivers/w25q.h"
+#include "flash/lfs_custom.h"
+#include "flash/reader.h"
 #include "util/actions.h"
 #include "util/battery.h"
-#include "flash/lfs_custom.h"
+#include "util/log.h"
 
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 /** CLI command function declarations **/
@@ -388,53 +388,97 @@ static void cli_cmd_version(const char *cmd_name, char *args) {
 
 static void cli_cmd_log_enable(const char *cmd_name, char *args) { log_enable(); }
 
-static void cli_cmd_ls(const char *cmd_name, char *args) { lfs_ls(cwd); }
+static void cli_cmd_ls(const char *cmd_name, char *args) {
+  if (args == NULL) {
+    lfs_ls(cwd);
+  } else {
+    uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+    if (full_path_len > LFS_NAME_MAX) {
+      cli_print_line("File path too long!");
+      return;
+    }
+    char *full_path = malloc(full_path_len + 1);
+    strcpy(full_path, cwd);
+    strcat(full_path, "/");
+    strcat(full_path, args);
+    lfs_ls(full_path);
+    free(full_path);
+  }
+}
 
 static void cli_cmd_cd(const char *cmd_name, char *args) {
   /* TODO - check if a directory actually exists */
   if (args == NULL || strcmp(args, "/") == 0) {
     strncpy(cwd, "/", sizeof(cwd));
   } else if (strcmp(args, "..") == 0) {
-    /* return one lvl back */
+    /* Return one lvl back by clearing everything after the last path separator. */
+    const char *last_path_sep = strrchr(cwd, '/');
+    if (last_path_sep != NULL) {
+      uint32_t last_path_sep_loc = last_path_sep - cwd;
+      cwd[last_path_sep_loc + 1] = '\0';
+    }
   } else if (strcmp(args, ".") != 0) {
     if (args[0] == '/') {
       /* absolute path */
+      uint32_t full_path_len = strlen(args);
+      if (full_path_len > LFS_NAME_MAX) {
+        cli_print_line("Path too long!");
+        return;
+      }
+      char *tmp_path = malloc(full_path_len + 1);
+      strcpy(tmp_path, args);
+      if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
+        cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
+        free(tmp_path);
+        return;
+      }
       strncpy(cwd, args, sizeof(cwd));
+      free(tmp_path);
     } else {
       /* relative path */
+      uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+      if (full_path_len > LFS_NAME_MAX) {
+        cli_print_line("Path too long!");
+        return;
+      }
+      char *tmp_path = malloc(full_path_len + 1);
+      strcpy(tmp_path, args);
+      if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
+        cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
+        free(tmp_path);
+        return;
+      }
       strncat(cwd, args, sizeof(cwd) - strlen(cwd) - 1);
+      free(tmp_path);
     }
   }
 }
 
 static void cli_cmd_rm(const char *cmd_name, char *args) {
   if (args != NULL) {
-    if (strlen(args) > LFS_NAME_MAX) {
-      cli_print_line("File cmd_name too long!");
+    /* +1 for the path separator (/) */
+    uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+    if (full_path_len > LFS_NAME_MAX) {
+      cli_print_line("File path too long!");
       return;
     }
-    /* first +1 for the path separator (/), second +1 for the null terminator */
-    char *full_path = malloc(strlen(cwd) + 1 + strlen(args) + 1);
+    /* +1 for the null terminator */
+    char *full_path = malloc(full_path_len + 1);
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
-    struct lfs_info info;
-    int32_t stat_err = lfs_stat(&lfs, full_path, &info);
-    if (stat_err < 0) {
-      cli_print_linef("lfs_stat failed with %ld", stat_err);
+
+    if (lfs_obj_type(full_path) != LFS_TYPE_REG) {
+      cli_print_linef("Cannot remove '%s': not a file!", full_path);
       free(full_path);
       return;
     }
-    if (info.type != LFS_TYPE_REG) {
-      cli_print_line("This is not a file!");
-      free(full_path);
-      return;
-    }
+
     int32_t rm_err = lfs_remove(&lfs, full_path);
     if (rm_err < 0) {
-      cli_print_linef("File removal failed with %ld", rm_err);
+      cli_print_linef("Removal of file '%s' failed with %ld", full_path, rm_err);
     }
-    cli_printf("File %s removed!", args);
+    cli_printf("File '%s' removed!", args);
     free(full_path);
   } else {
     cli_print_line("Argument not provided!");

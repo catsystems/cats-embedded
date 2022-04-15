@@ -19,6 +19,7 @@ if ("${CATS_TARGET}" STREQUAL "ORION")
     set(MCU_TYPE STM32L433xx)
     set(MCU_FAMILY STM32L4)
     set(FLASH_LD STM32L433RCTX_FLASH.ld)
+    include_directories(lib/STM/STM32L4/EEPROM)
 elseif ("${CATS_TARGET}" STREQUAL "VEGA")
     set(MCU_TYPE STM32F411xE)
     set(MCU_FAMILY STM32F4)
@@ -80,7 +81,6 @@ include_directories(
         lib/STM/${MCU_FAMILY}/USB_DEVICE
         lib/STM/USB/STM32_USB_Device_Library/Core/Inc
         lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
-        lib/STM/EEPROM
         lib/CMSIS/Include
         lib/CMSIS/DSP/Inc
         lib/FreeRTOS/Source/include
@@ -97,7 +97,6 @@ add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -DCATS_${CATS_TARGET})
 
 file(GLOB_RECURSE LIB_FILES
         "lib/STM/${MCU_FAMILY}/*.*"
-        "lib/STM/EEPROM/*.*"
         "lib/STM/USB/*.*"
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
@@ -118,7 +117,6 @@ set_source_files_properties(
 )
 
 file(GLOB_RECURSE SOURCES
-        "lib/STM/EEPROM/*.*"
         "lib/STM/USB/*.*"
         "lib/STM/${MCU_FAMILY}/*.*"
         "lib/CMSIS/*.*"
