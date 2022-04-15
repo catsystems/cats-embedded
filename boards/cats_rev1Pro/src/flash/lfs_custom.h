@@ -39,6 +39,14 @@ extern uint32_t flight_counter;
 int lfs_ls(const char *path);
 
 /**
+ * Return the type of an object in the file system.
+ *
+ * @param path - path to the LFS object
+ * @return LFS_TYPE_REG if file, LFS_TYPE_DIR if directory, or -1 in case of error.
+ */
+int8_t lfs_obj_type(const char *path);
+
+/**
  * Counts the number of elements of a given type on the provided path. Not recursive.
  *
  * @param path directory whose elements are to be counted

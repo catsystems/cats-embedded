@@ -17,10 +17,23 @@
  */
 
 #include "config/cats_config.h"
-#include "config/globals.h"
 #include "cli/settings.h"
-#include "eeprom_emul.h"
+#include "config/globals.h"
 #include "util/actions.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define CONFIG_SOURCE_EEPROM 1
+#define CONFIG_SOURCE_LFS    2
+#define CONFIG_SOURCE        CONFIG_SOURCE_LFS
+
+#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
+#include "eeprom_emul.h"
+#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
+#include "flash/lfs_custom.h"
+#include "lfs.h"
+#endif
 
 const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.boot_state = CATS_FLIGHT,
@@ -51,6 +64,10 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
 
 cats_config_u global_cats_config = {};
 
+#if CONFIG_SOURCE == CONFIG_SOURCE_LFS
+lfs_file_t config_file;
+#endif
+
 /** cats config initialization **/
 
 void cc_init() {
@@ -62,32 +79,56 @@ void cc_init() {
     // TODO: assert that lookupTableSpeeds[i] is not NULL
     snprintf(lookup_table_speeds[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
   }
+#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
   HAL_FLASH_Unlock();
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
   osDelay(5);
   HAL_FLASH_Lock();
+#endif
 }
 
 void cc_defaults() { memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config)); }
 
 /** persistence functions **/
 
-void cc_load() {
+bool cc_load() {
+  bool ret = true;
+#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
   for (int i = 0; i < sizeof(cats_config_t) / sizeof(uint32_t); i++) {
-    EE_ReadVariable32bits(i + 1, &global_cats_config.config_array[i]);
+    ret &= EE_ReadVariable32bits(i + 1, &global_cats_config.config_array[i]) == EE_OK;
   }
+#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
+  ret &= lfs_file_open(&lfs, &config_file, "config", LFS_O_RDONLY | LFS_O_CREAT) >= 0;
+  ret &= lfs_file_read(&lfs, &config_file, &global_cats_config.config, sizeof(global_cats_config.config)) ==
+         sizeof(global_cats_config.config);
+  ret &= lfs_file_close(&lfs, &config_file) >= 0;
+#endif
+
+  /* Check if the read config makes sense */
+  if (global_cats_config.config.config_version != CONFIG_VERSION) {
+    log_error("Configuration changed or error in config!");
+    cc_defaults();
+    ret &= cc_save();
+  }
+
+  return ret;
 }
 
 bool cc_format_save() {
+#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
   HAL_FLASH_Unlock();
   __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
   EE_Status ee_status = EE_Format(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
   return cc_save();
+#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
+  return cc_save();
+#endif
 }
 
 bool cc_save() {
+#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
   HAL_FLASH_Unlock();
   __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
   // loop through all elements of the config
@@ -113,6 +154,18 @@ bool cc_save() {
   }
   HAL_FLASH_Lock();
   return true;
+#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
+  lfs_file_open(&lfs, &config_file, "config", LFS_O_WRONLY | LFS_O_CREAT);
+  lfs_file_rewind(&lfs, &config_file);
+  /* Config saving is successful if the entire global_cats_config struct is written. */
+  bool ret = lfs_file_write(&lfs, &config_file, &global_cats_config.config, sizeof(global_cats_config.config)) ==
+             sizeof(global_cats_config.config);
+  lfs_file_close(&lfs, &config_file);
+  if (ret == false) {
+    log_error("Error while saving configuration file!");
+  }
+  return ret;
+#endif
 }
 
 /**

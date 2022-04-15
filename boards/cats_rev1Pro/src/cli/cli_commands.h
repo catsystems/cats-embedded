@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 typedef void cli_command_fn(const char *cmd_name, char *args);
 
 typedef struct {

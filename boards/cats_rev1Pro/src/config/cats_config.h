@@ -68,8 +68,8 @@ extern cats_config_u global_cats_config;
 void cc_init();
 void cc_defaults();
 
-/** persistence functions **/
-void cc_load();
+/** persistence functions - return true on success **/
+bool cc_load();
 bool cc_save();
 bool cc_format_save();
 

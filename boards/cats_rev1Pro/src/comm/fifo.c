@@ -120,7 +120,7 @@ bool fifo_write(fifo_t *const fifo, const uint8_t *data, uint32_t count) {
   return false;
 }
 
-uint32_t fifo_read_until(fifo_t *const fifo, const uint8_t *data, uint8_t delimiter, uint32_t count) {
+uint32_t fifo_read_until(fifo_t *const fifo, uint8_t *data, uint8_t delimiter, uint32_t count) {
   uint32_t max;
   bool found = false;
   if (count > fifo->used)
