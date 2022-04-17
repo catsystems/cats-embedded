@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmsis_os.h"
 #include "tasks/task_recorder.h"
-#include "util/log.h"
-#include "util/types.h"
+#include "cmsis_os.h"
+#include "config/globals.h"
 #include "flash/lfs_custom.h"
 #include "flash/recorder.h"
-#include "config/cats_config.h"
+#include "util/log.h"
+#include "util/types.h"
 
 #include <stdlib.h>
 

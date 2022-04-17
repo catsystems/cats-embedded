@@ -1,6 +1,7 @@
 /*
  * lfs utility functions
  *
+ * Copyright (c) 2022, The littlefs authors.
  * Copyright (c) 2017, Arm Limited. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -20,10 +21,10 @@
 #else
 
 // System includes
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 #ifndef LFS_NO_MALLOC
 #include <stdlib.h>
@@ -32,11 +33,8 @@
 #include <assert.h>
 #endif
 #if !defined(LFS_NO_DEBUG) || !defined(LFS_NO_WARN) || !defined(LFS_NO_ERROR) || defined(LFS_YES_TRACE)
-#include <stdio.h>
-#endif
-
 #include "util/log.h"
-#include "config/globals.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,12 +44,10 @@ extern "C" {
 // macros must not have side-effects as the macros can be removed for a smaller
 // code footprint
 
-//#define LFS_YES_TRACE
 // Logging functions
 #ifndef LFS_TRACE
 #ifdef LFS_YES_TRACE
-//#define LFS_TRACE_(fmt, ...) log_raw("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_TRACE_(fmt, ...) trace_printf(flash_channel, "T " fmt "%s\n", __VA_ARGS__)
+#define LFS_TRACE_(fmt, ...) log_raw("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_TRACE(...)       LFS_TRACE_(__VA_ARGS__, "")
 #else
 #define LFS_TRACE(...)
@@ -60,8 +56,7 @@ extern "C" {
 
 #ifndef LFS_DEBUG
 #ifndef LFS_NO_DEBUG
-//#define LFS_DEBUG_(fmt, ...) log_raw("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_DEBUG_(fmt, ...) trace_printf(flash_channel, "D " fmt "%s\n", __VA_ARGS__)
+#define LFS_DEBUG_(fmt, ...) log_raw("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_DEBUG(...)       LFS_DEBUG_(__VA_ARGS__, "")
 #else
 #define LFS_DEBUG(...)
@@ -70,8 +65,7 @@ extern "C" {
 
 #ifndef LFS_WARN
 #ifndef LFS_NO_WARN
-//#define LFS_WARN_(fmt, ...) log_raw("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_WARN_(fmt, ...) trace_printf(flash_channel, "W " fmt "%s\n", __VA_ARGS__)
+#define LFS_WARN_(fmt, ...) log_raw("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_WARN(...)       LFS_WARN_(__VA_ARGS__, "")
 #else
 #define LFS_WARN(...)
@@ -80,15 +74,12 @@ extern "C" {
 
 #ifndef LFS_ERROR
 #ifndef LFS_NO_ERROR
-//#define LFS_ERROR_(fmt, ...) log_raw("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_ERROR_(fmt, ...) trace_printf(flash_channel, "E " fmt "%s\n",__VA_ARGS__)
+#define LFS_ERROR_(fmt, ...) log_raw("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_ERROR(...)       LFS_ERROR_(__VA_ARGS__, "")
 #else
 #define LFS_ERROR(...)
 #endif
 #endif
-
-#define LFS_NO_ASSERT
 
 // Runtime assertions
 #ifndef LFS_ASSERT
