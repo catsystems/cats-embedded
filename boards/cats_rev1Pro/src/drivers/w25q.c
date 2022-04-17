@@ -20,6 +20,12 @@
 #include "util/log.h"
 #include "target.h"
 
+#define CATS_FLASH_SPI 1
+#define CATS_FLASH_QSPI 2
+#define CATS_FLASH_MODE CATS_FLASH_QSPI
+
+#if CATS_FLASH_MODE == CATS_FLASH_SPI
+
 w25q_t w25q = {.id = W25QINVALID};
 
 /* Settings */
@@ -597,3 +603,5 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
 uint32_t w25q_sector_to_page(uint32_t sector_idx) { return (sector_idx * w25q.sector_size) / w25q.page_size; }
 
 uint32_t w25q_block_to_page(uint32_t block_idx) { return (block_idx * w25q.block_size) / w25q.page_size; }
+
+#endif
