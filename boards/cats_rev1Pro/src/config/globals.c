@@ -67,6 +67,7 @@ const ICM20601 IMU_DEV[NUM_IMU] = {
 #endif
 };
 
+#if NUM_ACCELEROMETER > 0
 SPI_BUS SPI_ACCEL = {
     .cs_port = CS_ACC_GPIO_Port, .cs_pin = CS_ACC_Pin, .spi_handle = &ACCEL_SPI_HANDLE, .cs_type = LOW_ACTIVE};
 
@@ -76,6 +77,7 @@ const H3LIS100DL ACCEL = {
     .sample_rate = H3LIS100DL_ODR_100,
     .filter = H3LIS100DL_NO_FILTER,
 };
+#endif
 
 SPI_BUS SPI_BARO[NUM_BARO] = {
 #if NUM_BARO > 0
@@ -104,6 +106,7 @@ MS5607 BARO_DEV[NUM_BARO] = {
 #endif
 };
 
+#if NUM_MAGNETO > 0
 SPI_BUS SPI_MAG = {
     .cs_port = CS_MAG_GPIO_Port,
     .cs_pin = CS_MAG_Pin,
@@ -119,6 +122,7 @@ MMC5983MA MAG = {
     .mag_bias = {0.0108642578f, 0.0267333984f, 0.0308837891f},
     .mag_scale = {0.986369789f, 1.03176177f, 0.983317614f},
 };
+#endif
 
 BUZ BUZZER = {.timer = &BUZZER_TIMER_HANDLE,
               .channel = BUZZER_TIMER_CHANNEL,

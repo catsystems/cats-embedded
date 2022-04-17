@@ -131,6 +131,8 @@ extern UART_HandleTypeDef huart1;
 #define NUM_ACCELEROMETER 1
 #define NUM_BARO          3
 
+#define NUM_PYRO          3
+
 #define IMU_SPI_HANDLE hspi1
 #define ACCEL_SPI_HANDLE hspi1
 #define MAG_SPI_HANDLE hspi1
