@@ -28,7 +28,6 @@
 
 #include <stdbool.h>
 #include "target.h"
-#include "main.h"
 
 typedef enum {
   W25QINVALID = 0,

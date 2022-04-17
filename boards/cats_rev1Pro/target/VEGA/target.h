@@ -25,10 +25,10 @@
 #define LED1_GPIO_Port GPIOC
 #define LED2_Pin GPIO_PIN_14
 #define LED2_GPIO_Port GPIOC
-#define BARO_Pin GPIO_PIN_0
-#define BARO_GPIO_Port GPIOB
-#define IMU_Pin GPIO_PIN_1
-#define IMU_GPIO_Port GPIOB
+#define CS_BARO1_Pin GPIO_PIN_0
+#define CS_BARO1_GPIO_Port GPIOB
+#define CS_IMU1_Pin GPIO_PIN_1
+#define CS_IMU1_GPIO_Port GPIOB
 #define PYRO_EN_Pin GPIO_PIN_2
 #define PYRO_EN_GPIO_Port GPIOB
 #define FLASH_CS_Pin GPIO_PIN_12
@@ -97,10 +97,12 @@ extern UART_HandleTypeDef huart1;
 #define TIMUsb_IRQHandler TIM7_IRQHandler
 
 /* Sensor config */
-#define NUM_IMU           2
-#define NUM_MAGNETO       1
-#define NUM_ACCELEROMETER 1
-#define NUM_BARO          3
+#define NUM_IMU           1
+#define NUM_MAGNETO       0
+#define NUM_ACCELEROMETER 0
+#define NUM_BARO          1
+
+#define NUM_PYRO          2
 
 #define IMU_SPI_HANDLE hspi1
 #define ACCEL_SPI_HANDLE hspi1

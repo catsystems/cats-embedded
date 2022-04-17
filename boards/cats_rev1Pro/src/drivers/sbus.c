@@ -17,7 +17,7 @@
  */
 
 #include "drivers/sbus.h"
-#include "stm32l4xx_hal.h"
+#include "target.h"
 
 extern UART_HandleTypeDef huart1;
 

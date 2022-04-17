@@ -20,8 +20,9 @@
 
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "flash/lfs_custom.h"
 #include "drivers/servo.h"
+#include "flash/lfs_custom.h"
+#include "target.h"
 
 bool no_action_function(__attribute__((unused)) int16_t bummer);
 
@@ -79,50 +80,62 @@ bool os_delay(int16_t ticks) {
 
 // High current outputs for pyros, valves etc.
 bool high_current_channel_one(int16_t state) {
+#if NUM_PYRO > 0
   if (state == 0 || state == 1) {
     HAL_GPIO_WritePin(PYRO1_GPIO_Port, PYRO1_Pin, (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool high_current_channel_two(int16_t state) {
+#if NUM_PYRO > 1
   if (state == 0 || state == 1) {
     HAL_GPIO_WritePin(PYRO2_GPIO_Port, PYRO2_Pin, (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool high_current_channel_three(int16_t state) {
+#if NUM_PYRO > 2
   if (state == 0 || state == 1) {
     HAL_GPIO_WritePin(PYRO3_GPIO_Port, PYRO3_Pin, (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool high_current_channel_four(int16_t state) {
+#if NUM_PYRO > 3
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_4_GPIO_Port, PYRO_4_Pin,  (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool high_current_channel_five(int16_t state) {
+#if NUM_PYRO > 4
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_5_GPIO_Port, PYRO_5_Pin,  (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool high_current_channel_six(int16_t state) {
+#if NUM_PYRO > 5
   if (state == 0 || state == 1) {
-    // HAL_GPIO_WritePin(PYRO_3_GPIO_Port, PYRO_3_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_6_GPIO_Port, PYRO_6_Pin,  (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
