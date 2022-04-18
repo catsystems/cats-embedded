@@ -132,6 +132,7 @@ extern UART_HandleTypeDef huart1;
 #define NUM_BARO          3
 
 #define NUM_PYRO          3
+#define NUM_LOW_LEVEL_IO  2
 
 #define IMU_SPI_HANDLE hspi1
 #define ACCEL_SPI_HANDLE hspi1

@@ -275,10 +275,11 @@ static void init_imu() {
       osDelay(10);
     }
   }
-
-  while (!h3lis100dl_init(&ACCEL)) {
-    log_error("ACCEL initialization failed");
-    osDelay(10);
+  for (int i = 0; i < NUM_ACCELEROMETER; i++) {
+    while (!h3lis100dl_init(&ACCEL)) {
+      osDelay(10);
+      log_error("ACCEL initialization failed");
+    }
   }
 }
 
@@ -290,9 +291,11 @@ static void init_baro() {
 }
 
 static void init_magneto() {
+#if NUM_MAGNETO > 0
   spi_init(MAG.spi);
   mmc5983ma_init(&MAG);
   // mmc5983_calibration(&MAG);
+#endif
 }
 
 static void init_buzzer() {

@@ -52,6 +52,7 @@ typedef struct {
   uint32_t block_size;
   uint32_t block_count;
   uint32_t capacity_in_kilobytes;
+  uint8_t lock;
 } w25q_t;
 
 typedef enum {

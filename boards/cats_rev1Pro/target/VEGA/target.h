@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 
 /***** Pin config *****/
@@ -64,8 +65,8 @@ extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 
 /* Timer config */
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim15;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
 
 /* CAN config */
 #ifdef USE_CAN
@@ -79,22 +80,26 @@ extern UART_HandleTypeDef huart1;
 #endif
 
 /***** Device config *****/
-#define FLASH_QSPI_HANDLE hqspi
+
+/* Flash Config */
+#define FLASH_SPI_HANDLE hspi2
+
+
 #define RTC_HANDLE hrtc
 
-#define SERVO_TIMER_HANDLE htim2
+#define SERVO_TIMER_HANDLE htim3
 #define SERVO_TIMER_CHANNEL_1 TIM_CHANNEL_2
 #define SERVO_TIMER_CHANNEL_2 TIM_CHANNEL_1
 
-#define BUZZER_TIMER_HANDLE htim15
+#define BUZZER_TIMER_HANDLE htim4
 #define BUZZER_TIMER_CHANNEL TIM_CHANNEL_2
 
 /* USB config */
-#define TIMUsb TIM7
+#define TIMUsb TIM5
 #define CDC_POLLING_INTERVAL 2 // ms
-#define TIMUsb_CLK_ENABLE __HAL_RCC_TIM7_CLK_ENABLE
-#define TIMUsb_IRQn TIM7_IRQn
-#define TIMUsb_IRQHandler TIM7_IRQHandler
+#define TIMUsb_CLK_ENABLE __HAL_RCC_TIM5_CLK_ENABLE
+#define TIMUsb_IRQn TIM5_IRQn
+#define TIMUsb_IRQHandler TIM5_IRQHandler
 
 /* Sensor config */
 #define NUM_IMU           1
@@ -103,11 +108,16 @@ extern UART_HandleTypeDef huart1;
 #define NUM_BARO          1
 
 #define NUM_PYRO          2
+#define NUM_LOW_LEVEL_IO  1
 
 #define IMU_SPI_HANDLE hspi1
 #define ACCEL_SPI_HANDLE hspi1
 #define MAG_SPI_HANDLE hspi1
-#define BARO_SPI_HANDLE hspi2
+#define BARO_SPI_HANDLE hspi1
+
+void SystemClock_Config(void);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 void Error_Handler(void);
 void target_pre_init();
