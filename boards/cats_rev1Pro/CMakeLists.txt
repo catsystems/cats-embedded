@@ -106,14 +106,14 @@ file(GLOB_RECURSE LIB_FILES
 set_source_files_properties(
         ${LIB_FILES}
         PROPERTIES
-        COMPILE_FLAGS -O3
+        COMPILE_FLAGS -Og
 )
 
 file(GLOB_RECURSE TARGET_FILES "target/*.*")
 set_source_files_properties(
         ${TARGET_FILES}
         PROPERTIES
-        COMPILE_FLAGS -O3
+        COMPILE_FLAGS -Og
 )
 
 file(GLOB_RECURSE SOURCES

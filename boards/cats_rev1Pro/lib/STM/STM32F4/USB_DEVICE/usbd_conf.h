@@ -74,6 +74,8 @@ extern "C" {
 #define USBD_LPM_ENABLED 0U
 /*---------- -----------*/
 #define USBD_SELF_POWERED 1U
+/* Todo: This is just a guess for removing warnings: */
+#define USBD_CLASS_BOS_ENABLED 0U
 
 /****************************************/
 /* #define for FS and HS identification */

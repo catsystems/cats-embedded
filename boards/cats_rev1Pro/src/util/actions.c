@@ -142,18 +142,22 @@ bool high_current_channel_six(int16_t state) {
 // Low level (3.3V) outputs
 
 bool low_level_channel_one(int16_t state) {
+#if NUM_LOW_LEVEL_IO > 0
   if (state == 0 || state == 1) {
     HAL_GPIO_WritePin(IO1_GPIO_Port, IO1_Pin, (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
 bool low_level_channel_two(int16_t state) {
+#if NUM_LOW_LEVEL_IO > 1
   if (state == 0 || state == 1) {
     HAL_GPIO_WritePin(IO2_GPIO_Port, IO2_Pin, (GPIO_PinState)state);
     return true;
   }
+#endif
   return false;
 }
 
