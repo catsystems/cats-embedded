@@ -270,10 +270,10 @@ static void init_imu() {
   /* TODO: Add timeout for sensor init */
   osDelayUntil(1000);
   for (int i = 0; i < NUM_IMU; i++) {
-    while (!icm20601_init(&IMU_DEV[i])) {
+    /*while (!icm20601_init(&IMU_DEV[i])) {
       osDelay(10);
       log_error("IMU initialization failed");
-    }
+    }*/
   }
   for (int i = 0; i < NUM_ACCELEROMETER; i++) {
     while (!h3lis100dl_init(&ACCEL)) {
