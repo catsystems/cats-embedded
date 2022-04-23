@@ -170,4 +170,10 @@ uint32_t w25q_block_to_page(uint32_t block_num);
  */
 bool w25q_is_sector_empty(uint32_t sector_idx);
 
+w25q_status_e w25q_read_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
+                               uint32_t bytes_to_read_up_to_sector_size);
+
+w25q_status_e w25q_write_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
+                                uint32_t bytes_to_write_up_to_sector_size);
+
 extern w25q_t w25q;

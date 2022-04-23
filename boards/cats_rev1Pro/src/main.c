@@ -30,7 +30,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* Private variables ---------------------------------------------------------*/
 
 /* Definitions for task_init */
-uint32_t task_init_buffer[256];
+uint32_t task_init_buffer[512];
 osStaticThreadDef_t task_init_control_block;
 const osThreadAttr_t task_init_attributes = {
     .name = "task_init",
