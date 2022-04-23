@@ -181,6 +181,8 @@ static void init_devices() {
 
 static void init_lfs() {
   /* mount the filesystem */
+  // w25q_chip_erase();
+  osDelay(5000);
   int err = lfs_mount(&lfs, &lfs_cfg);
   if (err == 0) {
     log_raw("LFS mounted successfully!");
@@ -237,7 +239,7 @@ static void init_tasks() {
       vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      // osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
       osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
 
@@ -292,9 +294,9 @@ static void init_baro() {
 
 static void init_magneto() {
 #if NUM_MAGNETO > 0
-    spi_init(MAG.spi);
-    mmc5983ma_init(&MAG);
-    // mmc5983_calibration(&MAG);
+  spi_init(MAG.spi);
+  mmc5983ma_init(&MAG);
+  // mmc5983_calibration(&MAG);
 #endif
 }
 
