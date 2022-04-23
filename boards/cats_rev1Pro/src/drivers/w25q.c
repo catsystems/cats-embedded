@@ -17,10 +17,10 @@
  */
 
 #include "drivers/w25q.h"
-#include "util/log.h"
 #include "target.h"
+#include "util/log.h"
 
-#define CATS_FLASH_SPI 1
+#define CATS_FLASH_SPI  1
 #define CATS_FLASH_QSPI 2
 
 #ifdef CATS_VEGA
@@ -30,7 +30,6 @@
 #ifdef CATS_ORION
 #define CATS_FLASH_MODE CATS_FLASH_QSPI
 #endif
-
 
 w25q_t w25q = {.id = W25QINVALID};
 
@@ -68,8 +67,6 @@ w25q_t w25q = {.id = W25QINVALID};
 // Chip erase waiting timeout
 #define W25Q_CHIP_ERASE_TIMEOUT_MAX 200000U
 
-
-
 #if CATS_FLASH_MODE == CATS_FLASH_QSPI
 // Write enable
 int8_t w25q_write_enable(void) {
@@ -86,7 +83,8 @@ int8_t w25q_write_enable(void) {
   };
 
   // Send write enable command
-  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_WRITE_ENABLE;
+  if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    return W25Q_ERR_WRITE_ENABLE;
   // Keep querying W25Q_CMD_READ_STATUS_REG1 register, read w25qxx in the status byte_ Status_ REG1_ Wel is compared
   // with 0x02 Read status register 1 bit 1 (read-only), WEL write enable flag bit. When the flag bit is 1, it means
   // that write operation can be performed
@@ -335,7 +333,8 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
   if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_INIT;
 
   // receive data
-  if (HAL_QSPI_Receive(&FLASH_QSPI_HANDLE, status_reg_val, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_TRANSMIT;
+  if (HAL_QSPI_Receive(&FLASH_QSPI_HANDLE, status_reg_val, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    return W25Q_ERR_TRANSMIT;
 
   return W25Q_OK;
 }
@@ -615,9 +614,7 @@ uint32_t w25q_block_to_page(uint32_t block_idx) { return (block_idx * w25q.block
 
 #elif CATS_FLASH_MODE == CATS_FLASH_SPI
 
-static inline void w25qxx_spi_transmit(uint8_t data) {
-  HAL_SPI_Transmit(&FLASH_SPI_HANDLE, &data, 1, 100);
-}
+static inline void w25qxx_spi_transmit(uint8_t data) { HAL_SPI_Transmit(&FLASH_SPI_HANDLE, &data, 1, 100); }
 
 static inline uint8_t w25qxx_spi_receive() {
   uint8_t ret;
@@ -661,7 +658,7 @@ int8_t w25q_write_enable(void) {
 }
 
 w25q_status_e w25q_init(void) {
-  //w25q_reset();
+  // w25q_reset();
   uint32_t device_id = 0;
   if (w25q_read_id(&device_id) != W25Q_OK) {
     return W25Q_ERR_INIT;
@@ -745,7 +742,7 @@ w25q_status_e w25q_init(void) {
   return W25Q_OK;
 }
 
-w25q_status_e w25q_read_id(uint32_t  *w25q_id) {
+w25q_status_e w25q_read_id(uint32_t *w25q_id) {
   uint32_t temp0 = 0, temp1 = 0, temp2 = 0;
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
   //(0x9F);
@@ -862,13 +859,11 @@ w25q_status_e w25q_chip_erase(void) {
   return W25Q_OK;
 }
 
-void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
-                       uint32_t offset_in_bytes,
+void w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                        uint32_t bytes_to_write_up_to_page_size) {
   while (w25q.lock == 1) osDelay(1);
   w25q.lock = 1;
-  if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25q.page_size) ||
-      (bytes_to_write_up_to_page_size == 0))
+  if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25q.page_size) || (bytes_to_write_up_to_page_size == 0))
     bytes_to_write_up_to_page_size = w25q.page_size - offset_in_bytes;
   if ((offset_in_bytes + bytes_to_write_up_to_page_size) > w25q.page_size)
     bytes_to_write_up_to_page_size = w25q.page_size - offset_in_bytes;
@@ -887,17 +882,39 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num,
   w25q.lock = 0;
 }
 
-
-
+w25q_status_e w25q_write_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
+                                uint32_t bytes_to_write_up_to_sector_size) {
+  if ((bytes_to_write_up_to_sector_size > w25q.sector_size) || (bytes_to_write_up_to_sector_size == 0))
+    bytes_to_write_up_to_sector_size = w25q.sector_size;
+  if (offset_in_bytes >= w25q.sector_size) {
+    return W25Q_ERR_TRANSMIT;
+  }
+  uint32_t start_page;
+  int32_t bytes_to_write;
+  uint32_t local_offset;
+  if ((offset_in_bytes + bytes_to_write_up_to_sector_size) > w25q.sector_size)
+    bytes_to_write = w25q.sector_size - offset_in_bytes;
+  else
+    bytes_to_write = bytes_to_write_up_to_sector_size;
+  start_page = w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
+  local_offset = offset_in_bytes % w25q.page_size;
+  do {
+    w25qxx_write_page(buf, start_page, local_offset, bytes_to_write);
+    // log_debug("Page %lu written", start_page);
+    start_page++;
+    bytes_to_write -= w25q.page_size - local_offset;
+    buf += w25q.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_write > 0);
+  return W25Q_OK;
+}
 
 w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_bytes_to_write) {
-
   uint32_t bytes_to_write_up_to_sector_size = num_bytes_to_write;
   uint32_t offset_in_bytes = write_addr;
   uint32_t sector_num = num_bytes_to_write;
 
-  if ((bytes_to_write_up_to_sector_size > w25q.sector_size) ||
-      (bytes_to_write_up_to_sector_size == 0))
+  if ((bytes_to_write_up_to_sector_size > w25q.sector_size) || (bytes_to_write_up_to_sector_size == 0))
     bytes_to_write_up_to_sector_size = w25q.sector_size;
 
   if (offset_in_bytes >= w25q.sector_size) {
@@ -910,8 +927,7 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
     bytes_to_write = w25q.sector_size - offset_in_bytes;
   else
     bytes_to_write = bytes_to_write_up_to_sector_size;
-  start_page =
-      w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
+  start_page = w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
   local_offset = offset_in_bytes % w25q.page_size;
   do {
     w25qxx_write_page(buf, start_page, local_offset, bytes_to_write);
@@ -928,8 +944,7 @@ void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                       uint32_t NumByteToRead_up_to_PageSize) {
   while (w25q.lock == 1) osDelay(1);
   w25q.lock = 1;
-  if ((NumByteToRead_up_to_PageSize > w25q.page_size) ||
-      (NumByteToRead_up_to_PageSize == 0))
+  if ((NumByteToRead_up_to_PageSize > w25q.page_size) || (NumByteToRead_up_to_PageSize == 0))
     NumByteToRead_up_to_PageSize = w25q.page_size;
   if ((offset_in_bytes + NumByteToRead_up_to_PageSize) > w25q.page_size)
     NumByteToRead_up_to_PageSize = w25q.page_size - offset_in_bytes;
@@ -949,15 +964,11 @@ void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
   w25q.lock = 0;
 }
 
-w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
-
-  uint32_t bytes_to_read_up_to_sector_size = num_bytes_to_read;
-  uint32_t offset_in_bytes = read_addr;
-  uint32_t sector_num = read_addr;
-
-  if ((bytes_to_read_up_to_sector_size > w25q.sector_size) ||
-      (bytes_to_read_up_to_sector_size == 0))
+w25q_status_e w25q_read_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
+                               uint32_t bytes_to_read_up_to_sector_size) {
+  if ((bytes_to_read_up_to_sector_size > w25q.sector_size) || (bytes_to_read_up_to_sector_size == 0))
     bytes_to_read_up_to_sector_size = w25q.sector_size;
+
   if (offset_in_bytes >= w25q.sector_size) {
     return W25Q_ERR_TRANSMIT;
   }
@@ -968,9 +979,35 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
     bytes_to_read = w25q.sector_size - offset_in_bytes;
   else
     bytes_to_read = bytes_to_read_up_to_sector_size;
-  start_page =
-      w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
+  start_page = w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
   local_offset = offset_in_bytes % w25q.page_size;
+  do {
+    w25qxx_read_page(buf, start_page, local_offset, bytes_to_read);
+    start_page++;
+    bytes_to_read -= w25q.page_size - local_offset;
+    buf += w25q.page_size - local_offset;
+    local_offset = 0;
+  } while (bytes_to_read > 0);
+}
+
+w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
+  uint32_t bytes_to_read_up_to_sector_size = num_bytes_to_read;
+  uint32_t offset_in_bytes = read_addr;
+  uint32_t sector_num = read_addr;
+
+  if ((bytes_to_read_up_to_sector_size > w25q.sector_size) || (bytes_to_read_up_to_sector_size == 0))
+    bytes_to_read_up_to_sector_size = w25q.sector_size;
+  if (offset_in_bytes >= w25q.sector_size) {
+    return W25Q_ERR_TRANSMIT;
+  }
+  int32_t bytes_to_read;
+  if ((offset_in_bytes + bytes_to_read_up_to_sector_size) > w25q.sector_size) {
+    bytes_to_read = w25q.sector_size - offset_in_bytes;
+  } else {
+    bytes_to_read = bytes_to_read_up_to_sector_size;
+  }
+  uint32_t start_page = w25q_sector_to_page(sector_num) + (offset_in_bytes / w25q.page_size);
+  uint32_t local_offset = offset_in_bytes % w25q.page_size;
   do {
     w25qxx_read_page(buf, start_page, local_offset, bytes_to_read);
     start_page++;
@@ -980,7 +1017,6 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
   } while (bytes_to_read > 0);
   return W25Q_OK;
 }
-
 
 uint32_t w25q_sector_to_page(uint32_t sector_idx) { return (sector_idx * w25q.sector_size) / w25q.page_size; }
 

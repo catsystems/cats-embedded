@@ -47,8 +47,12 @@ const struct lfs_config lfs_cfg = {
     .read_size = 256,
     .prog_size = 256,
     .block_size = 4096,
+#if defined(CATS_ORION)
     // 8k pages for 256 Mbit flash
     .block_count = 8192,
+#elif defined(CATS_VEGA)
+    .block_count = 4096,
+#endif
     .cache_size = LFS_CACHE_SIZE,
     .lookahead_size = LFS_LOOKAHEAD_SIZE,
     .block_cycles = 500,
@@ -165,16 +169,26 @@ int32_t lfs_cnt(const char *path, enum lfs_type type) {
 }
 
 static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
+#ifdef CATS_ORION
   if (w25q_read_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
     return 0;
   }
+#elif CATS_VEGA
+  if (w25q_read_sector((uint8_t *)buffer, block, off, size) == W25Q_OK) {
+    return 0;
+  }
+#endif
   return LFS_ERR_CORRUPT;
 }
 static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
                          lfs_size_t size) {
   static uint32_t sync_counter = 0;
   static uint32_t sync_counter_err = 0;
+#ifdef CATS_ORION
   if (w25q_write_buffer((uint8_t *)buffer, block * (w25q.sector_size) + off, size) == W25Q_OK) {
+#elif CATS_VEGA
+  if (w25q_write_sector((uint8_t *)buffer, block, off, size) == W25Q_OK) {
+#endif
     if (sync_counter % 32 == 0) {
       /* Flash the LED at certain intervals */
       HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
