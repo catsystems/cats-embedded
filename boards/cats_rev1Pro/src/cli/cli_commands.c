@@ -621,52 +621,132 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
   uint8_t write_buf[256] = {0};
   uint8_t read_buf[256] = {0};
   fill_buf(write_buf, 256);
-  cli_print_line("\nStep 1: Erasing the chip sector by sector...");
   // w25q_chip_erase();
-  for (uint32_t i = 0; i < w25q.sector_count; ++i) {
-    if (i % 100 == 0) {
-      cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
+  if (!strcmp(args, "full")) {
+    cli_print_line("\nStep 1: Erasing the chip sector by sector...");
+    for (uint32_t i = 0; i < w25q.sector_count; ++i) {
+      if (i % 100 == 0) {
+        cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
+      }
+      w25q_status_e sector_erase_status = w25q_sector_erase(i);
+      if (sector_erase_status != W25Q_OK) {
+        cli_print_linef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
+        osDelay(5000);
+      }
     }
-    w25q_status_e sector_erase_status = w25q_sector_erase(i);
-    if (sector_erase_status != W25Q_OK) {
-      cli_print_linef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
-      osDelay(5000);
-    }
-  }
-  cli_print_line("Step 2: Sequential write test");
-  for (uint32_t i = 0; i < w25q.page_count; ++i) {
-    if (i % 100 == 0) {
-      cli_print_linef("%lu / %lu pages written...", i, w25q.page_count);
-    }
+
+    cli_print_line("Step 2: Sequential write test");
+    for (uint32_t i = 0; i < w25q.page_count; ++i) {
+      if (i % 100 == 0) {
+        cli_print_linef("%lu / %lu pages written...", i, w25q.page_count);
+      }
 #if defined(CATS_ORION)
-    w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
+      w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
 #elif defined(CATS_VEGA)
-    w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
+      w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
 #endif
-    if (write_status != W25Q_OK) {
-      cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
-      osDelay(5000);
+      if (write_status != W25Q_OK) {
+        cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
+        osDelay(5000);
+      }
     }
-  }
-  cli_print_line("Step 3: Sequential read test");
-  for (uint32_t i = 0; i < w25q.page_count; ++i) {
-    memset(read_buf, 0, 256);
-    if (i % 100 == 0) {
-      cli_print_linef("%lu / %lu pages read...", i, w25q.page_count);
-    }
+
+    cli_print_line("Step 3: Sequential read test");
+    for (uint32_t i = 0; i < w25q.page_count; ++i) {
+      memset(read_buf, 0, 256);
+      if (i % 100 == 0) {
+        cli_print_linef("%lu / %lu pages read...", i, w25q.page_count);
+      }
 #if defined(CATS_ORION)
-    w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
+      w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
 #elif defined(CATS_VEGA)
 
-    w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
+      w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
 #endif
-    if (read_status != W25Q_OK) {
-      cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
-      osDelay(1);
+      if (read_status != W25Q_OK) {
+        cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
+        osDelay(1);
+      }
+      if (memcmp(write_buf, read_buf, 256) != 0) {
+        cli_print_linef("Buffer mismatch at page %lu", i);
+        osDelay(1);
+      }
     }
-    if (memcmp(write_buf, read_buf, 256) != 0) {
-      cli_print_linef("Buffer mismatch at page %lu", i);
-      osDelay(1);
+
+    cli_print_line("\nStep 4: Erasing the chip sector by sector...");
+    for (uint32_t i = 0; i < w25q.sector_count; ++i) {
+      if (i % 100 == 0) {
+        cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
+      }
+      w25q_status_e sector_erase_status = w25q_sector_erase(i);
+      if (sector_erase_status != W25Q_OK) {
+        cli_print_linef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
+        osDelay(5000);
+      }
+    }
+  } else {
+    char *endptr;
+    uint32_t sector_idx = strtoul(args, &endptr, 10);
+    if (args != endptr) {
+      if (sector_idx >= w25q.sector_count) {
+        cli_print_linef("Sector %lu not found!", sector_idx);
+        return;
+      }
+
+      cli_print_linef("\nStep 1: Erasing sector %lu", sector_idx);
+      w25q_status_e sector_erase_status = w25q_sector_erase(sector_idx);
+      if (sector_erase_status != W25Q_OK) {
+        cli_print_linef("Sector erase error encountered at sector %lu; status %d", sector_idx, sector_erase_status);
+        osDelay(5000);
+      }
+
+      const uint32_t start_page_idx = w25q_sector_to_page(sector_idx);
+      const uint32_t pages_per_sector = w25q.sector_size / w25q.page_size;
+      const uint32_t end_page_idx = start_page_idx + pages_per_sector - 1;
+      cli_print_linef("Step 2: Sequential write test (start_page: %lu, end_page: %lu)", start_page_idx, end_page_idx);
+      for (uint32_t i = start_page_idx; i <= end_page_idx; ++i) {
+        if (i % 4 == 0) {
+          cli_print_linef("%lu / %lu pages written...", i - start_page_idx, pages_per_sector);
+        }
+#if defined(CATS_ORION)
+        w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
+#elif defined(CATS_VEGA)
+        w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
+#endif
+        if (write_status != W25Q_OK) {
+          cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
+          osDelay(5000);
+        }
+      }
+
+      cli_print_linef("Step 3: Sequential read test (start_page: %lu, end_page: %lu)", start_page_idx, end_page_idx);
+      for (uint32_t i = start_page_idx; i <= end_page_idx; ++i) {
+        memset(read_buf, 0, 256);
+        if (i % 4 == 0) {
+          cli_print_linef("%lu / %lu pages read...", i - start_page_idx, pages_per_sector);
+        }
+#if defined(CATS_ORION)
+        w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
+#elif defined(CATS_VEGA)
+
+        w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
+#endif
+        if (read_status != W25Q_OK) {
+          cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
+          osDelay(1);
+        }
+        if (memcmp(write_buf, read_buf, 256) != 0) {
+          cli_print_linef("Buffer mismatch at page %lu", i);
+          osDelay(1);
+        }
+      }
+
+      cli_print_linef("\nStep 4: Erasing sector %lu...", sector_idx);
+      sector_erase_status = w25q_sector_erase(sector_idx);
+      if (sector_erase_status != W25Q_OK) {
+        cli_print_linef("Sector erase error encountered at sector %lu; status %d", sector_idx, sector_erase_status);
+        osDelay(5000);
+      }
     }
   }
   cli_print_line("Test complete!");
