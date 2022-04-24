@@ -105,8 +105,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   static uint8_t x = 0;
   if (htim->Instance == TIM1) {
     HAL_IncTick();
-    x++;
-    if(x > 1){
+    if(HAL_GetTick() > 1000 && ++x == 10){
       CDC_Transmit_Elapsed();
       x = 0;
     }
