@@ -622,7 +622,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
   uint8_t read_buf[256] = {0};
   fill_buf(write_buf, 256);
   cli_print_line("\nStep 1: Erasing the chip sector by sector...");
-  w25q_chip_erase();
+  // w25q_chip_erase();
   for (uint32_t i = 0; i < w25q.sector_count; ++i) {
     if (i % 100 == 0) {
       cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
@@ -638,7 +638,11 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
     if (i % 100 == 0) {
       cli_print_linef("%lu / %lu pages written...", i, w25q.page_count);
     }
+#if defined(CATS_ORION)
     w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
+#elif defined(CATS_VEGA)
+    w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
+#endif
     if (write_status != W25Q_OK) {
       cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
       osDelay(5000);
@@ -650,14 +654,19 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
     if (i % 100 == 0) {
       cli_print_linef("%lu / %lu pages read...", i, w25q.page_count);
     }
+#if defined(CATS_ORION)
     w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
+#elif defined(CATS_VEGA)
+
+    w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
+#endif
     if (read_status != W25Q_OK) {
       cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
-      osDelay(5000);
+      osDelay(1);
     }
     if (memcmp(write_buf, read_buf, 256) != 0) {
       cli_print_linef("Buffer mismatch at page %lu", i);
-      osDelay(5000);
+      osDelay(1);
     }
   }
   cli_print_line("Test complete!");

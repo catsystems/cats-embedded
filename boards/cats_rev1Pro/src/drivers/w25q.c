@@ -617,7 +617,7 @@ uint32_t w25q_block_to_page(uint32_t block_idx) { return (block_idx * w25q.block
 static inline void w25qxx_spi_transmit(uint8_t data) { HAL_SPI_Transmit(&FLASH_SPI_HANDLE, &data, 1, 100); }
 
 static inline uint8_t w25qxx_spi_receive() {
-  uint8_t ret;
+  uint8_t ret = 0;
   HAL_SPI_Receive(&FLASH_SPI_HANDLE, &ret, 1, 100);
   return ret;
 }
@@ -634,7 +634,7 @@ static inline void w25qxx_wait_for_write_end(void) {
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
 }
 
-static inline void w25qxx_send_address(uint32_t address) {
+static inline void w25qxx_send_address_4byte(uint32_t address) {
   uint8_t buf[4];
   uint8_t *addr_ptr = (uint8_t *)&address;
   //  buf[0] = (address & 0xFF000000) >> 24;
@@ -648,6 +648,18 @@ static inline void w25qxx_send_address(uint32_t address) {
   HAL_SPI_Transmit(&FLASH_SPI_HANDLE, buf, sizeof(buf), 100);
 }
 
+static inline void w25qxx_send_address(uint32_t address) {
+  uint8_t buf[3];
+  buf[0] = (address & 0xFF0000) >> 16;
+  buf[1] = (address & 0xFF00) >> 8;
+  buf[2] = address & 0xFF;
+  //  uint8_t *addr_ptr = (uint8_t *)&address;
+  //  buf[0] = addr_ptr[3];
+  //  buf[1] = addr_ptr[2];
+  //  buf[2] = addr_ptr[1];
+  HAL_SPI_Transmit(&FLASH_SPI_HANDLE, buf, sizeof(buf), 100);
+}
+
 // Write enable
 int8_t w25q_write_enable(void) {
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
@@ -657,8 +669,25 @@ int8_t w25q_write_enable(void) {
   return W25Q_OK;
 }
 
+static inline void w25qxx_write_status_register(uint8_t status_register, uint8_t data) {
+  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
+  if (status_register == 1) {
+    w25qxx_spi_transmit(0x01);
+  } else if (status_register == 2) {
+    w25qxx_spi_transmit(0x31);
+  } else {
+    w25qxx_spi_transmit(0x11);
+  }
+  w25qxx_spi_transmit(data);
+  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
+}
+
 w25q_status_e w25q_init(void) {
-  // w25q_reset();
+  w25q.lock = 1;
+  while (osKernelGetTickCount() < 100) osDelay(1);
+  HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
+  osDelay(100);
+
   uint32_t device_id = 0;
   if (w25q_read_id(&device_id) != W25Q_OK) {
     return W25Q_ERR_INIT;
@@ -730,15 +759,30 @@ w25q_status_e w25q_init(void) {
 
   osDelay(10);
 
+  w25q_write_enable();
+  w25qxx_write_status_register(2, 0x00);
+  w25qxx_wait_for_write_end();
+
   uint8_t status1 = 0;
   uint8_t status2 = 0;
   uint8_t status3 = 0;
+
   w25q_read_status_reg(1, &status1);
   w25q_read_status_reg(2, &status2);
   w25q_read_status_reg(3, &status3);
 
   log_debug("Flash statuses: %x %x %x", status1, status2, status3);
 
+  log_debug("w25qxx Page Size: %hu B", w25q.page_size);
+  log_debug("w25qxx Page Count: %lu", w25q.page_count);
+  log_debug("w25qxx Sector Size: %lu B", w25q.sector_size);
+  log_debug("w25qxx Sector Count: %lu", w25q.sector_count);
+  log_debug("w25qxx Block Size: %lu B", w25q.block_size);
+  log_debug("w25qxx Block Count: %lu", w25q.block_count);
+  log_debug("w25qxx Capacity: %lu KB", w25q.capacity_in_kilobytes);
+  log_debug("w25qxx Init Done");
+
+  w25q.lock = 0;
   return W25Q_OK;
 }
 
@@ -859,8 +903,8 @@ w25q_status_e w25q_chip_erase(void) {
   return W25Q_OK;
 }
 
-void w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
-                       uint32_t bytes_to_write_up_to_page_size) {
+w25q_status_e w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
+                                uint32_t bytes_to_write_up_to_page_size) {
   while (w25q.lock == 1) osDelay(1);
   w25q.lock = 1;
   if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25q.page_size) || (bytes_to_write_up_to_page_size == 0))
@@ -872,14 +916,16 @@ void w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes
   w25qxx_wait_for_write_end();
   w25q_write_enable();
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
-  /* TODO: This should probably be 0x12 */
+  /* TODO: This should probably be 0x12 when quad */
   /* TODO: most likely the last address bits should be 0 */
-  w25qxx_spi_transmit(0x12);
+  // w25qxx_spi_transmit(0x12);
+  w25qxx_spi_transmit(0x02);
   w25qxx_send_address(page_num);
   HAL_SPI_Transmit(&FLASH_SPI_HANDLE, buf, bytes_to_write_up_to_page_size, 100);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
   w25q.lock = 0;
+  return W25Q_OK;
 }
 
 w25q_status_e w25q_write_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
@@ -940,8 +986,8 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
   return W25Q_OK;
 }
 
-void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
-                      uint32_t NumByteToRead_up_to_PageSize) {
+w25q_status_e w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
+                               uint32_t NumByteToRead_up_to_PageSize) {
   while (w25q.lock == 1) osDelay(1);
   w25q.lock = 1;
   if ((NumByteToRead_up_to_PageSize > w25q.page_size) || (NumByteToRead_up_to_PageSize == 0))
@@ -950,7 +996,8 @@ void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
     NumByteToRead_up_to_PageSize = w25q.page_size - offset_in_bytes;
   page_num = page_num * w25q.page_size + offset_in_bytes;
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
-  w25qxx_spi_transmit(0x0C);
+  //  w25qxx_spi_transmit(0x0C);
+  w25qxx_spi_transmit(0x0B);
   w25qxx_send_address(page_num);
   //  if (w25qxx.id >= W25Q256) w25qxx_spi_transmit((page_num & 0xFF000000) >>
   //  24); w25qxx_spi_transmit((page_num & 0xFF0000) >> 16);
@@ -962,6 +1009,7 @@ void w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
 
   // osDelay(1);
   w25q.lock = 0;
+  return W25Q_OK;
 }
 
 w25q_status_e w25q_read_sector(uint8_t *buf, uint32_t sector_num, uint32_t offset_in_bytes,
@@ -988,6 +1036,7 @@ w25q_status_e w25q_read_sector(uint8_t *buf, uint32_t sector_num, uint32_t offse
     buf += w25q.page_size - local_offset;
     local_offset = 0;
   } while (bytes_to_read > 0);
+  return W25Q_OK;
 }
 
 w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
