@@ -102,12 +102,18 @@ int main(void) {
  * @retval None
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  static uint8_t x = 0;
   if (htim->Instance == TIM1) {
     HAL_IncTick();
+    x++;
+    if(x > 1){
+      CDC_Transmit_Elapsed();
+      x = 0;
+    }
   }
 
   if (htim->Instance == TIMUsb) {
-    CDC_Transmit_Elapsed();
+
   }
 }
 
