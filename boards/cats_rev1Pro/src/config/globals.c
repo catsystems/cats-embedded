@@ -142,6 +142,9 @@ imu_data_t global_imu[NUM_IMU] = {0};
 accel_data_t global_accel[NUM_ACCELEROMETER] = {};
 magneto_data_t global_magneto[NUM_MAGNETO] = {};
 
+baro_data_t global_baro_sim[NUM_BARO] = {};
+imu_data_t global_imu_sim[NUM_BARO] = {};
+
 state_estimation_input_t global_estimation_input = {0};
 SI_data_t global_SI_data = {0};
 estimation_output_t global_estimation_data = {0};
@@ -167,6 +170,8 @@ traceString flash_channel;
 
 volatile bool global_usb_detection = false;
 volatile bool usb_communication_complete = false;
+volatile bool simulation_started = false;
+volatile bool simulation_start_complete = false;
 
 volatile recorder_status_e global_recorder_status = REC_OFF;
 

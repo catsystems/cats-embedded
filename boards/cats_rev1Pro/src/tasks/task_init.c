@@ -41,9 +41,11 @@
 #include "tasks/task_sensor_read.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_usb_communicator.h"
+#include "tasks/task_simulator.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
+
 #include "util/log.h"
 
 /** Task Definitions **/
@@ -77,6 +79,9 @@ SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1592)
 SET_TASK_PARAMS(task_usb_communicator, 512)
+#ifdef CATS_DEBUG
+SET_TASK_PARAMS(task_simulator, 512)
+#endif
 
 /** Private Constants **/
 
@@ -89,6 +94,8 @@ static void init_devices();
 static void init_lfs();
 
 static void init_communication();
+
+static void init_simulation();
 
 static void init_tasks();
 
@@ -149,6 +156,10 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
+    }
+    /* Start Simulation Task */
+    if(simulation_started == true && simulation_start_complete == false){
+      init_simulation();
     }
     osDelay(100);
   }
@@ -221,6 +232,11 @@ static void init_communication() {
   usb_communication_complete = true;
 }
 
+static void init_simulation(){
+  osThreadNew(task_simulator, NULL, &task_simulator_attributes);
+  simulation_start_complete = true;
+}
+
 static void init_tasks() {
   switch (global_cats_config.config.boot_state) {
     case CATS_FLIGHT: {
@@ -250,6 +266,7 @@ static void init_tasks() {
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
+
 
       // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
