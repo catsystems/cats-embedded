@@ -17,10 +17,11 @@
  */
 
 #include "tasks/task_preprocessing.h"
-#include "control/calibration.h"
-#include "control/data_processing.h"
+#include <util/log.h>
 #include "config/globals.h"
 #include "config/sensor_config.h"
+#include "control/calibration.h"
+#include "control/data_processing.h"
 #include "control/sensor_elimination.h"
 
 /** Private Constants **/
@@ -42,6 +43,10 @@ void task_preprocessing(void *argument) {
   /* Create data structs */
   static SI_data_t SI_data = {0};
   static SI_data_t SI_data_old = {0};
+  SI_data_old.acc.x = 9.81f;
+  SI_data_old.acc.y = 0.0f;
+  SI_data_old.acc.z = 0.0f;
+  SI_data_old.pressure = 98000.0f;
 #ifdef USE_MEDIAN_FILTER
   median_filter_t filter_data = {0};
 #endif
@@ -71,6 +76,9 @@ void task_preprocessing(void *argument) {
 
     /* average and construct SI Data */
     avg_and_to_SI(&SI_data, &SI_data_old, &sensor_elimination);
+
+    //log_info("acc: %ld; height: %ld", (int32_t)((float)SI_data.acc.x*1000),
+    //(int32_t)((float)SI_data.pressure*1000));
 
     /* Compute gravity when changing to IDLE */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {

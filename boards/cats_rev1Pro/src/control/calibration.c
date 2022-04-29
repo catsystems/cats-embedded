@@ -40,14 +40,17 @@ void calibrate_imu(const vf32_t *accel_data, calibration_data_t *calibration) {
   switch (calibration->axis) {
     case 0:
       calibration->angle = accel_data->x / GRAVITY;
+      if(calibration->angle < 0.3f) calibration->angle = 0.3f;
       log_info("Calibration chose X Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
       break;
     case 1:
       calibration->angle = accel_data->y / GRAVITY;
+      if(calibration->angle < 0.3f) calibration->angle = 0.3f;
       log_info("Calibration chose Y Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
       break;
     case 2:
       calibration->angle = accel_data->z / GRAVITY;
+      if(calibration->angle < 0.3f) calibration->angle = 0.3f;
       log_info("Calibration chose Z Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
       break;
     default:
