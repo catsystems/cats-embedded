@@ -59,6 +59,9 @@ extern imu_data_t global_imu[NUM_IMU];
 extern accel_data_t global_accel[NUM_ACCELEROMETER];
 extern magneto_data_t global_magneto[NUM_MAGNETO];
 
+extern baro_data_t global_baro_sim[NUM_BARO];
+extern imu_data_t global_imu_sim[NUM_BARO];
+
 extern state_estimation_input_t global_estimation_input;
 extern SI_data_t global_SI_data;
 extern flight_fsm_t global_flight_state;
@@ -85,6 +88,8 @@ extern traceString flash_channel;
 
 extern volatile bool global_usb_detection;
 extern volatile bool usb_communication_complete;
+extern volatile bool simulation_started;
+extern volatile bool simulation_start_complete;
 
 /* recorder status is controlled by output functions, do not set manually! */
 extern volatile recorder_status_e global_recorder_status;
