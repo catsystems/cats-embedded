@@ -31,6 +31,7 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 #include "lfs.h"
+#include "tasks/task_airbrake_controller.h"
 #include "tasks/task_drop_test_fsm.h"
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_health_monitor.h"
@@ -42,7 +43,6 @@
 #include "tasks/task_simulator.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_usb_communicator.h"
-#include "tasks/task_simulator.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
@@ -82,6 +82,9 @@ SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_usb_communicator, 512)
 #ifdef CATS_DEBUG
 SET_TASK_PARAMS(task_simulator, 512)
+#endif
+#ifdef USE_AIRBRAKE_CONTROL
+SET_TASK_PARAMS(task_airbrake_controller, 1024)
 #endif
 
 /** Private Constants **/
@@ -270,6 +273,10 @@ static void init_tasks() {
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
+
+#ifdef USE_AIRBRAKE_CONTROL
+      osThreadNew(task_airbrake_controller, NULL, &task_airbrake_controller_attributes);
+#endif
 
       // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
