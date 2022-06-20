@@ -186,8 +186,8 @@ w25q_status_e w25q_init(void) {
       log_debug("W25Q Unknown ID");
       return W25Q_ERR_INIT;
   }
-  w25q.page_size = W25Q_PAGE_SIZE;
-  w25q.sector_size = W25Q_SECTOR_SIZE;  // 4kB
+  w25q.page_size = W25Q_PAGE_SIZE_BYTES;
+  w25q.sector_size = W25Q_SECTOR_SIZE_BYTES;  // 4kB
   w25q.sector_count = w25q.block_count * 16;
   w25q.page_count = (w25q.sector_count * w25q.sector_size) / w25q.page_size;
   w25q.block_size = w25q.sector_size * 16;
@@ -270,7 +270,7 @@ w25q_status_e w25q_reset(void) {
   // Use the automatic polling flag bit to wait for the end of communication
   if (w25q_auto_polling_mem_ready() != W25Q_OK) return W25Q_ERR_AUTOPOLLING;
 
-  s_command.Instruction = W25Q_CMD_ENTER_4_BYTE_ADDRESS_MODE;
+  s_command.Instruction = W25Q_CMD_ENTER_4_BYTE_ADDR_MODE;
 
   if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     return W25Q_ERR_INIT;  // If the sending fails, an error message is returned
@@ -364,7 +364,7 @@ w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
       .DataMode = QSPI_DATA_NONE,
       .DummyCycles = 0,
       .Address = sector_idx * w25q.sector_size,
-      .Instruction = W25Q_CMD_SECTOR_ERASE,
+      .Instruction = W25Q_CMD_SECTOR_ERASE_4_BYTE_ADDR,
   };
 
   if (w25q_write_enable() != W25Q_OK) {
@@ -444,7 +444,7 @@ w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
       .DataMode = QSPI_DATA_NONE,
       .DummyCycles = 0,
       .Address = block_idx * w25q.block_size,
-      .Instruction = W25Q_CMD_BLOCK_ERASE_64K,
+      .Instruction = W25Q_CMD_BLOCK_ERASE_64K_4_BYTE_ADDR,
   };
 
   if (w25q_write_enable() != W25Q_OK) {
@@ -549,7 +549,7 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
   uint8_t *write_data;
 
   // Calculates the remaining space on the current page
-  current_size = W25Q_PAGE_SIZE - (write_addr % W25Q_PAGE_SIZE);
+  current_size = W25Q_PAGE_SIZE_BYTES - (write_addr % W25Q_PAGE_SIZE_BYTES);
 
   // Determine whether the remaining space of the current page is enough to write all data
   if (current_size > num_bytes_to_write) {
@@ -580,7 +580,7 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
       current_addr += current_size;  // Calculate the next write address
       write_data += current_size;    // Gets the address of the data store to be written next time
       // Calculate the length of the next write
-      current_size = ((current_addr + W25Q_PAGE_SIZE) > end_addr) ? (end_addr - current_addr) : W25Q_PAGE_SIZE;
+      current_size = ((current_addr + W25Q_PAGE_SIZE_BYTES) > end_addr) ? (end_addr - current_addr) : W25Q_PAGE_SIZE_BYTES;
     }
   } while (current_addr < end_addr);  // Judge whether all data are written
 

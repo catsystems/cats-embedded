@@ -129,7 +129,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(100);
 
-  init_lfs();
+  //init_lfs();
 
   cc_init();
 
@@ -257,7 +257,7 @@ static void init_tasks() {
       vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      //osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
       osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
 
