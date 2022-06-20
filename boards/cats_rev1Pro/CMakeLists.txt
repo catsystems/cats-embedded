@@ -13,7 +13,7 @@ set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-set(CATS_TARGET VEGA)
+set(CATS_TARGET ORION)
 
 if ("${CATS_TARGET}" STREQUAL "ORION")
     set(MCU_TYPE STM32L433xx)
