@@ -42,8 +42,10 @@ _Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
     if (osMessageQueueGet(event_queue, &curr_event, NULL, osWaitForever) == osOK) {
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
-        if (curr_event == ev_timers[i].timer_init_event) {
-          osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks);
+        if ((ev_timers[i].timer_id != NULL) && (curr_event == ev_timers[i].timer_init_event)) {
+          if(osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
+            log_warn("Starting TIMER %lu with event %u failed.", i, curr_event);
+          }
         }
       }
       /* start Mach timer if needed */
