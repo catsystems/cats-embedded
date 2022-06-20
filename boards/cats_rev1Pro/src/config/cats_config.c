@@ -26,10 +26,11 @@
 
 #define CONFIG_SOURCE_EEPROM 1
 #define CONFIG_SOURCE_LFS    2
-#define CONFIG_SOURCE        CONFIG_SOURCE_LFS
+#define CONFIG_SOURCE        CONFIG_SOURCE_EEPROM
 
 #if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
 #include "eeprom_emul.h"
+#include "util/log.h"
 #elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
 #include "flash/lfs_custom.h"
 #include "lfs.h"
