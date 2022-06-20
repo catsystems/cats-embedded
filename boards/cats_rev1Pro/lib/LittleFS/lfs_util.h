@@ -46,6 +46,7 @@ extern "C" {
 
 // Logging functions
 #ifndef LFS_TRACE
+//#define LFS_YES_TRACE
 #ifdef LFS_YES_TRACE
 #define LFS_TRACE_(fmt, ...) log_raw("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_TRACE(...)       LFS_TRACE_(__VA_ARGS__, "")
@@ -202,6 +203,9 @@ uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size);
 // Note, memory must be 64-bit aligned
 static inline void *lfs_malloc(size_t size) {
 #ifndef LFS_NO_MALLOC
+  // TODO: define LFS_NO_MALLOC and statically allocate buffer for each file
+  // Uncomment pvPortMalloc (and vPortFree in lfs_free) only as a workaround.
+  //return pvPortMalloc(size);
   return malloc(size);
 #else
   (void)size;
@@ -212,6 +216,7 @@ static inline void *lfs_malloc(size_t size) {
 // Deallocate memory, only used if buffers are not provided to littlefs
 static inline void lfs_free(void *p) {
 #ifndef LFS_NO_MALLOC
+  //vPortFree(p);
   free(p);
 #else
   (void)p;

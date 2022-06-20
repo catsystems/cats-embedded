@@ -39,6 +39,7 @@
 #include "tasks/task_receiver.h"
 #include "tasks/task_recorder.h"
 #include "tasks/task_sensor_read.h"
+#include "tasks/task_simulator.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_usb_communicator.h"
 #include "tasks/task_simulator.h"
@@ -77,7 +78,7 @@ SET_TASK_PARAMS(task_flight_fsm, 512)
 // SET_TASK_PARAMS(task_drop_test_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_recorder, 1592)
+SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_usb_communicator, 512)
 #ifdef CATS_DEBUG
 SET_TASK_PARAMS(task_simulator, 512)
@@ -125,7 +126,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
 
   osDelay(100);
 
-  //init_lfs();
+  init_lfs();
 
   cc_init();
 
@@ -158,7 +159,7 @@ _Noreturn void task_init(__attribute__((unused)) void *argument) {
       init_communication();
     }
     /* Start Simulation Task */
-    if(simulation_started == true && simulation_start_complete == false){
+    if (simulation_started == true && simulation_start_complete == false) {
       init_simulation();
     }
     osDelay(100);
@@ -193,11 +194,8 @@ static void init_devices() {
 static void init_lfs() {
   /* mount the filesystem */
   int err = lfs_mount(&lfs, &lfs_cfg);
-  if (err == 0) {
-    log_raw("LFS mounted successfully!");
-  } else {
-    /* reformat if we can't mount the filesystem */
-    /* this should only happen on the first boot */
+  if (err != 0) {
+    /* reformat if we can't mount the filesystem, this should only happen on the first boot */
     log_raw("LFS mounting failed with error %d!", err);
     log_raw("Trying LFS format");
     lfs_format(&lfs, &lfs_cfg);
@@ -207,7 +205,11 @@ static void init_lfs() {
     }
   }
 
-  lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
+  err = lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
+  if (err != 0) {
+    log_raw("LFS initialization failed: could not open 'flight_counter' file, error %d", err);
+    return;
+  }
 
   /* read how many flights we have */
   if (lfs_file_read(&lfs, &fc_file, &flight_counter, sizeof(flight_counter)) > 0) {
@@ -225,6 +227,8 @@ static void init_lfs() {
   lfs_mkdir(&lfs, "stats");
 
   strncpy(cwd, "/", sizeof(cwd));
+
+  log_raw("LFS mounted successfully!");
 }
 
 static void init_communication() {
@@ -232,7 +236,7 @@ static void init_communication() {
   usb_communication_complete = true;
 }
 
-static void init_simulation(){
+static void init_simulation() {
   osThreadNew(task_simulator, NULL, &task_simulator_attributes);
   simulation_start_complete = true;
 }
@@ -253,7 +257,7 @@ static void init_tasks() {
       vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-      //osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+      osThreadNew(task_recorder, NULL, &task_recorder_attributes);
 
       osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
 
@@ -266,7 +270,6 @@ static void init_tasks() {
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
-
 
       // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
 
