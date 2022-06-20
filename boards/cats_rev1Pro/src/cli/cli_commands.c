@@ -757,7 +757,9 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_start_simulation(const char *cmd_name, char *args){
+  cli_print_line("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
   start_simulation();
+  //cli_print_line("Simulation complete!");
 }
 
 
