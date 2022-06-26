@@ -90,6 +90,7 @@ extern volatile bool global_usb_detection;
 extern volatile bool usb_communication_complete;
 extern volatile bool simulation_started;
 extern volatile bool simulation_start_complete;
+extern cats_sim_choice_e global_cats_sim_choice;
 
 /* recorder status is controlled by output functions, do not set manually! */
 extern volatile recorder_status_e global_recorder_status;

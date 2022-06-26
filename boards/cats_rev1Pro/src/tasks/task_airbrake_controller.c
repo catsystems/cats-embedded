@@ -38,7 +38,7 @@ _Noreturn void task_airbrake_controller(__attribute__((unused)) void *argument) 
 
   /* Call the Controller */
   compute_control_input(&control_data, global_flight_state.flight_state, &global_estimation_data);
-  log_info("Control_Output: %ld", (int32_t)((float)control_data.control_input * 1000));
+  //log_info("Control_Output: %ld", (int32_t)((float)control_data.control_input * 1000));
 
 
   /* Sleep */

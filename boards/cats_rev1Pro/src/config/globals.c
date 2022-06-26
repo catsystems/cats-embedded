@@ -172,6 +172,7 @@ volatile bool global_usb_detection = false;
 volatile bool usb_communication_complete = false;
 volatile bool simulation_started = false;
 volatile bool simulation_start_complete = false;
+cats_sim_choice_e global_cats_sim_choice = SIM_INVALID;
 
 volatile recorder_status_e global_recorder_status = REC_OFF;
 
