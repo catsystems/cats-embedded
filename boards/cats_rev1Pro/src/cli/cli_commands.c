@@ -92,7 +92,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
-    CLI_COMMAND_DEF("sim", "start a simulation flight", NULL, cli_cmd_start_simulation),
+    CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
     CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
     CLI_COMMAND_DEF("status", "show status", NULL, cli_cmd_status),
     CLI_COMMAND_DEF("version", "show version", NULL, cli_cmd_version),
@@ -758,7 +758,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
 
 static void cli_cmd_start_simulation(const char *cmd_name, char *args){
   cli_print_line("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
-  start_simulation();
+  start_simulation(args);
   //cli_print_line("Simulation complete!");
 }
 

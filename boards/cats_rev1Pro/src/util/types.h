@@ -251,6 +251,12 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
+typedef enum {
+  SIM_INVALID = 0,
+  SIM_HOP,
+  SIM_300M
+} cats_sim_choice_e;
+
 typedef enum { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH } recorder_status_e;
 
 typedef struct {
