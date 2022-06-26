@@ -16,15 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmsis_os.h"
 #include "tasks/task_sensor_read.h"
+#include "cmsis_os.h"
+#include "config/globals.h"
+#include "flash/recorder.h"
+#include "sensors/h3lis100dl.h"
 #include "sensors/icm20601.h"
 #include "sensors/mmc5983ma.h"
-#include "sensors/h3lis100dl.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
-#include "flash/recorder.h"
-#include "config/globals.h"
 
 #include <string.h>
 
@@ -83,16 +83,13 @@ void task_sensor_read(void *argument) {
       prepare_temp();
       stage = READ_BARO_TEMPERATURE;
 
-      if(simulation_started){
+      if (simulation_started) {
         pressure[0] = global_baro_sim[0].pressure;
-      }
-      else{
+      } else {
         get_temp_pres(temperature_baro, pressure);
       }
 
-
       /* For Simulator */
-
 
       /* Read and Save Barometric Data */
       for (int i = 0; i < NUM_BARO; i++) {
@@ -118,11 +115,9 @@ void task_sensor_read(void *argument) {
 
       /* Read and Save IMU Data */
       for (int i = 0; i < NUM_IMU; i++) {
-
-        if(simulation_started){
+        if (simulation_started) {
           acceleration[0] = global_imu_sim[0].acc.x;
-        }
-        else{
+        } else {
           read_imu(gyroscope, acceleration, &temperature_imu, i);
         }
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
@@ -139,32 +134,32 @@ void task_sensor_read(void *argument) {
 /** Private Function Definitions **/
 
 static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *temperature, int32_t id) {
-      if(id >= NUM_IMU) return;
-      icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
-      icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
-      // icm20601_read_temp_raw(&IMU_DEV[id], temperature);
+  if (id >= NUM_IMU) return;
+  icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
+  icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
+  // icm20601_read_temp_raw(&IMU_DEV[id], temperature);
 }
 
 static void prepare_temp() {
-  for (int32_t i = 0; i < NUM_BARO; ++i){
+  for (int32_t i = 0; i < NUM_BARO; ++i) {
     ms5607_prepare_temp(&BARO_DEV[i]);
   }
 }
 //
 static void prepare_pres() {
-  for (int32_t i = 0; i < NUM_BARO; ++i){
+  for (int32_t i = 0; i < NUM_BARO; ++i) {
     ms5607_prepare_pres(&BARO_DEV[i]);
   }
 }
 
 static void read_baro() {
-  for (int32_t i = 0; i < NUM_BARO; ++i){
+  for (int32_t i = 0; i < NUM_BARO; ++i) {
     ms5607_read_raw(&BARO_DEV[i]);
   }
 }
 
 static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
-  for (int32_t i = 0; i < NUM_BARO; ++i){
+  for (int32_t i = 0; i < NUM_BARO; ++i) {
     ms5607_get_temp_pres(&BARO_DEV[i], &temperature[i], &pressure[i]);
   }
 }

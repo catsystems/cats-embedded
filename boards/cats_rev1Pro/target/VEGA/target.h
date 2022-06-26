@@ -26,9 +26,9 @@
 #define LED1_GPIO_Port GPIOC
 #define LED2_Pin GPIO_PIN_14
 #define LED2_GPIO_Port GPIOC
-#define CS_BARO1_Pin GPIO_PIN_0
+#define CS_BARO1_Pin GPIO_PIN_1
 #define CS_BARO1_GPIO_Port GPIOB
-#define CS_IMU1_Pin GPIO_PIN_1
+#define CS_IMU1_Pin GPIO_PIN_0
 #define CS_IMU1_GPIO_Port GPIOB
 #define PYRO_EN_Pin GPIO_PIN_2
 #define PYRO_EN_GPIO_Port GPIOB
