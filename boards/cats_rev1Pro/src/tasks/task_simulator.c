@@ -38,18 +38,20 @@ _Noreturn void task_simulator(__attribute__((unused)) void *argument) {
   timestamp_t sim_start = osKernelGetTickCount();
   timestamp_t time_since_start = 0;
 
+  init_simulation_data();
+
   while (1) {
     time_since_start = osKernelGetTickCount() - sim_start;
 
     /* Check if we need to use new acceleration datapoint */
-    if(time_since_start > acceleration_time_array[index_acc]){
+    if(time_since_start > acc_time_array[index_acc]){
       index_acc++;
     }
 
     /* Compute wanted acceleration */
-    sim_imu_data[0].acc.x = (int16_t)(1024*acceleration_array[index_acc]);
+    sim_imu_data[0].acc.x = (int16_t)(1024*acc_array[index_acc]);
     /* Add Noise */
-    sim_imu_data[0].acc.x += (int16_t)rand_bounds(-20, 20);
+    sim_imu_data[0].acc.x += (int16_t)rand_bounds(-10, 10);
 
     /* Check if we need to use new barometer datapoint */
     if(time_since_start > pressure_time_array[index_press+1]){
