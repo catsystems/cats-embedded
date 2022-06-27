@@ -177,7 +177,7 @@ static void init_devices() {
   /* IMU */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
   osDelay(10);
-  //init_imu();
+  init_imu();
   osDelay(10);
   /* BARO */
   init_baro();
