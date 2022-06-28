@@ -271,14 +271,14 @@ static void init_imu() {
   osDelayUntil(1000);
   for (int i = 0; i < NUM_IMU; i++) {
     while (!icm20601_init(&IMU_DEV[i])) {
+      log_error("IMU %d initialization failed", i);
       osDelay(10);
-      log_error("IMU initialization failed");
     }
   }
 
   while (!h3lis100dl_init(&ACCEL)) {
-    osDelay(10);
     log_error("ACCEL initialization failed");
+    osDelay(10);
   }
 }
 
@@ -330,14 +330,19 @@ static void create_event_map() {
 }
 
 static void init_timers() {
-  uint32_t used_timers = 0;
   /* Init timers */
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.config.timers[i].duration > 0) {
       ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
       ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].end_event;
       ev_timers[i].timer_duration_ticks = global_cats_config.config.timers[i].duration;
-      used_timers++;
+    }
+  }
+
+  /* Create Timers */
+  for (uint32_t i = 0; i < NUM_TIMERS; i++) {
+    if (global_cats_config.config.timers[i].duration > 0) {
+      ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
     }
   }
 
@@ -346,10 +351,6 @@ static void init_timers() {
   mach_timer.execute_event = EV_MACHTIMER;
   mach_timer.timer_duration_ticks = global_cats_config.config.control_settings.mach_timer_duration;
 
-  /* Create Timers */
-  for (uint32_t i = 0; i < used_timers; i++) {
-    ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
-  }
   /* Create mach timer */
   mach_timer.timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
 }
