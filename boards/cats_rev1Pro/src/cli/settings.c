@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "config/cats_config.h"
 #include "cli/settings.h"
+#include "config/cats_config.h"
 
 const char* const lookup_table_boot_state[] = {
     "CATS_INVALID", "CATS_IDLE", "CATS_CONFIG", "CATS_TIMER", "CATS_DROP", "CATS_FLIGHT",
@@ -61,23 +61,23 @@ const cli_value_t value_table[] = {
     // Timers
     {"timer1_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[0].start_event},
-    {"timer1_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
-     &global_cats_config.config.timers[0].end_event},
+    {"timer1_trigger", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
+     &global_cats_config.config.timers[0].trigger_event},
     {"timer1_duration", VAR_UINT32, .config.u32_max = 1200000, &global_cats_config.config.timers[0].duration},
     {"timer2_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[1].start_event},
-    {"timer2_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
-     &global_cats_config.config.timers[1].end_event},
+    {"timer2_trigger", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
+     &global_cats_config.config.timers[1].trigger_event},
     {"timer2_duration", VAR_UINT32, .config.u32_max = 1200000, &global_cats_config.config.timers[1].duration},
     {"timer3_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[2].start_event},
-    {"timer3_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
-     &global_cats_config.config.timers[2].end_event},
+    {"timer3_trigger", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
+     &global_cats_config.config.timers[2].trigger_event},
     {"timer3_duration", VAR_UINT32, .config.u32_max = 1200000, &global_cats_config.config.timers[2].duration},
     {"timer4_start", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
      &global_cats_config.config.timers[3].start_event},
-    {"timer4_end", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
-     &global_cats_config.config.timers[3].end_event},
+    {"timer4_trigger", VAR_UINT8 | MODE_LOOKUP, .config.lookup = {TABLE_EVENTS},
+     &global_cats_config.config.timers[3].trigger_event},
     {"timer4_duration", VAR_UINT32, .config.u32_max = 1200000, &global_cats_config.config.timers[3].duration},
 
     // Events

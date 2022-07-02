@@ -212,8 +212,10 @@ typedef struct {
 
 typedef struct {
   uint32_t duration;
+  /* Event on which the timer starts. */
   uint8_t start_event;
-  uint8_t end_event;
+  /* Event that the timer triggers. */
+  uint8_t trigger_event;
 } config_timer_t;
 
 typedef struct {
