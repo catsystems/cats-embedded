@@ -18,13 +18,14 @@
 
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "util/log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-const char* fsm_map[14] = {"INVALID",  "MOVING",      "READY",      "THRUSTING_1", "THRUSTING_2",
-                           "COASTING", "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
-                           "DROGUE",   "MAIN",        "TOUCHDOWN",  "HEHE"};
+const char* const fsm_map[14] = {"INVALID",  "MOVING",      "READY",      "THRUSTING_1", "THRUSTING_2",
+                                 "COASTING", "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
+                                 "DROGUE",   "MAIN",        "TOUCHDOWN",  "HEHE"};
 
 const char* const boot_state_map[6] = {
     "CATS_INVALID", "CATS_IDLE", "CATS_CONFIG", "CATS_TIMER", "CATS_DROP", "CATS_FLIGHT",
@@ -43,9 +44,13 @@ char* recorder_speed_map[NUM_REC_SPEEDS] = {};
 
 void init_recorder_speed_map() {
   for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
-    // TODO: free this memory
-    recorder_speed_map[i] = (char*)calloc(14, sizeof(char));
-    // TODO: assert that lookupTableSpeeds[i] is not NULL
+    recorder_speed_map[i] = (char*)pvPortMalloc(14 * sizeof(char));
+    if (recorder_speed_map[i] == NULL) {
+      log_raw("Could not allocate memory for recorder_speed_map[%lu]!", i);
+      return;
+    }
+
+    memset(recorder_speed_map[i], 0, 14 * sizeof(char));
     snprintf(recorder_speed_map[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
   }
 }

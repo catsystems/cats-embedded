@@ -36,12 +36,7 @@ static void check_high_current_channels();
 
 static void init_communication();
 
-static void init_simulation();
-
 SET_TASK_PARAMS(task_usb_communicator, 512)
-#ifdef CATS_DEBUG
-SET_TASK_PARAMS(task_simulator, 512)
-#endif
 
 /** Exported Function Definitions **/
 
@@ -57,10 +52,6 @@ SET_TASK_PARAMS(task_simulator, 512)
   while (1) {
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
-    }
-    /* Start Simulation Task */
-    if (simulation_started == true && simulation_start_complete == false) {
-      init_simulation();
     }
 
     // Check battery level
@@ -156,9 +147,4 @@ static void check_high_current_channels() {
 static void init_communication() {
   osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
   usb_communication_complete = true;
-}
-
-static void init_simulation() {
-  osThreadNew(task_simulator, NULL, &task_simulator_attributes);
-  simulation_start_complete = true;
 }

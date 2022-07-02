@@ -1,29 +1,29 @@
-/**
- ******************************************************************************
- * @file           : main.h
- * @brief          : Header for main.c file.
- *                   This file contains the common defines of the application.
- ******************************************************************************
- * @attention
+/*
+ * CATS Flight Software
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- ******************************************************************************
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
-/* Includes ------------------------------------------------------------------*/
 #include "target.h"
 
-// Random pattern to tell system to jump to bootloader
+/* Random pattern to tell system to jump to bootloader */
 #define BOOTLOADER_MAGIC_PATTERN 0xAA88BB77
 
-/* Private defines -----------------------------------------------------------*/
-
+/* Suppress warnings for non-existing define */
+#ifndef USBD_CLASS_BOS_ENABLED
+#define USBD_CLASS_BOS_ENABLED 0
+#endif

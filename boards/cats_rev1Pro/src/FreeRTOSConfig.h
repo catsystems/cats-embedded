@@ -51,6 +51,7 @@ extern uint32_t SystemCoreClock;
 #define configENABLE_FPU 1
 #define configENABLE_MPU 0
 
+#define configUSE_TRACE_FACILITY                0
 #define configUSE_PREEMPTION                    1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0  // TODO: check if this can be 1
 #define configUSE_TICKLESS_IDLE                 0
@@ -77,7 +78,11 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
 //#define configAPPLICATION_ALLOCATED_HEAP          1
 //#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP 1
+#if defined(CATS_ORION)
 #define configTOTAL_HEAP_SIZE ((size_t)18 * 1024)
+#elif defined(CATS_VEGA)
+#define configTOTAL_HEAP_SIZE ((size_t)32 * 1024)
+#endif
 
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK 0
@@ -89,7 +94,6 @@ extern uint32_t SystemCoreClock;
 /* Run time and task stats gathering related definitions. */
 #define configGENERATE_RUN_TIME_STATS        0
 #define configUSE_STATS_FORMATTING_FUNCTIONS 0
-
 
 #ifdef CATS_DEBUG
 #define configCHECK_FOR_STACK_OVERFLOW 2

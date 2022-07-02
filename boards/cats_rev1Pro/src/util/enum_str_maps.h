@@ -18,10 +18,10 @@
 
 #pragma once
 
-extern const char *boot_state_map[6];
-extern const char *fsm_map[14];
-extern const char *event_map[9];
-extern const char *action_map[17];
+extern const char *const boot_state_map[6];
+extern const char *const fsm_map[14];
+extern const char *const event_map[9];
+extern const char *const action_map[17];
 
 extern char *recorder_speed_map[NUM_REC_SPEEDS];
 
