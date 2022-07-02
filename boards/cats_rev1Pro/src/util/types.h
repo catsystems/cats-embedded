@@ -206,7 +206,7 @@ typedef struct {
 
 typedef struct {
   uint16_t liftoff_acc_threshold;  // m/s^2
-  uint16_t mach_timer_duration;    // s
+  uint16_t mach_timer_duration;    // ms
   uint16_t main_altitude;          // m
 } control_settings_t;
 
