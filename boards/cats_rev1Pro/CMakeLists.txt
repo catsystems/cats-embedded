@@ -12,6 +12,7 @@ set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CATS_TARGET VEGA)
 
@@ -72,6 +73,7 @@ elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
 else ()
     message(STATUS "Minimal optimization, debug info included")
     add_compile_options(-Og -g)
+    add_definitions(-DCATS_DEBUG)
 endif ()
 
 include_directories(
@@ -93,7 +95,7 @@ include_directories(
         src
         src/drivers/usb)
 
-add_definitions(-DUSE_HAL_DRIVER -DDEBUG -D${MCU_TYPE} -DCATS_${CATS_TARGET})
+add_definitions(-DUSE_HAL_DRIVER -D${MCU_TYPE} -DCATS_${CATS_TARGET})
 
 file(GLOB_RECURSE LIB_FILES
         "lib/STM/${MCU_FAMILY}/*.*"

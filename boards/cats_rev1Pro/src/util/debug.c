@@ -19,8 +19,6 @@
 #include "cmsis_os.h"
 #include "usbd_cdc_if.h"
 
-#include "util/debug.h"
-
 #include <stdio.h>
 
 #define STACK_OVERFLOW_PRINT_BUF_SZ 100

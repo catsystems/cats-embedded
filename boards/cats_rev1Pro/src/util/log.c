@@ -18,7 +18,6 @@
 
 #include "util/log.h"
 #include "comm/stream_group.h"
-#include "util/debug.h"
 
 #ifdef CATS_DEBUG
 #include "cmsis_os.h"

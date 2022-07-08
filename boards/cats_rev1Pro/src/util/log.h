@@ -22,7 +22,6 @@
 
 #include "trcRecorder.h"
 #include "cmsis_os.h"
-#include "util/debug.h"
 
 #include <string.h>
 #include <stdbool.h>
