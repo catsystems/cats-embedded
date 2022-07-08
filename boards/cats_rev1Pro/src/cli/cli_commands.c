@@ -756,13 +756,11 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
   cli_print_line("Test complete!");
 }
 
-static void cli_cmd_start_simulation(const char *cmd_name, char *args){
+static void cli_cmd_start_simulation(const char *cmd_name, char *args) {
   cli_print_line("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
   start_simulation(args);
-  //cli_print_line("Simulation complete!");
+  // cli_print_line("Simulation complete!");
 }
-
-
 
 /**  Helper function definitions **/
 
@@ -793,8 +791,8 @@ static void print_timer_config() {
     if (global_cats_config.config.timers[i].duration > 0) {
       cli_printf("\nTIMER %d\n", i + 1);
       cli_printf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
-      cli_printf("  End: %s\n", p_event_table->values[global_cats_config.config.timers[i].end_event]);
       cli_printf("  Duration: %lu ms\n", global_cats_config.config.timers[i].duration);
+      cli_printf("  Trigger: %s\n", p_event_table->values[global_cats_config.config.timers[i].trigger_event]);
     }
   }
 }
