@@ -354,8 +354,12 @@ static void cli_cmd_config(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_defaults(const char *cmd_name, char *args) {
-  cc_defaults();
-  cli_print_line("Reset to default values");
+  bool use_default_outputs = true;
+  if (!strcmp(args, "--no-outputs")) {
+    use_default_outputs = false;
+  }
+  cc_defaults(use_default_outputs);
+  cli_print_linef("Reset to default values%s", use_default_outputs ? "": " [no outputs]");
 }
 
 static void cli_cmd_dump(const char *cmd_name, char *args) {
