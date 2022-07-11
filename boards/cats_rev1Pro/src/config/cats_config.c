@@ -38,7 +38,7 @@
 
 const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.boot_state = CATS_FLIGHT,
-                                      .config.control_settings.main_altitude = 150,
+                                      .config.control_settings.main_altitude = 200,
                                       .config.control_settings.liftoff_acc_threshold = 35,
                                       .config.timers[0].duration = 0,
                                       .config.timers[0].start_event = 0,
@@ -56,6 +56,10 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.action_array[EV_READY][1] = REC_FILL_QUEUE,
                                       .config.action_array[EV_LIFTOFF][0] = ACT_SET_RECORDER_STATE,
                                       .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
+                                      .config.action_array[EV_APOGEE][0] = ACT_HIGH_CURRENT_ONE,
+                                      .config.action_array[EV_APOGEE][1] = 1,
+                                      .config.action_array[EV_POST_APOGEE][0] = ACT_HIGH_CURRENT_TWO,
+                                      .config.action_array[EV_POST_APOGEE][1] = 1,
                                       .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
                                       .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
                                       .config.initial_servo_position[0] = 0,
@@ -89,7 +93,16 @@ void cc_init() {
 #endif
 }
 
-void cc_defaults() { memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config)); }
+void cc_defaults(bool use_default_outputs) {
+  memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
+  /* Remove APOGEE & POST_APOGEE actions */
+  if (!use_default_outputs) {
+    memset(global_cats_config.config.action_array[EV_APOGEE], 0,
+           sizeof(global_cats_config.config.action_array[EV_APOGEE]));
+    memset(global_cats_config.config.action_array[EV_POST_APOGEE], 0,
+           sizeof(global_cats_config.config.action_array[EV_POST_APOGEE]));
+  }
+}
 
 /** persistence functions **/
 
@@ -109,7 +122,7 @@ bool cc_load() {
   /* Check if the read config makes sense */
   if (global_cats_config.config.config_version != CONFIG_VERSION) {
     log_error("Configuration changed or error in config!");
-    cc_defaults();
+    cc_defaults(true);
     ret &= cc_save();
   }
 

@@ -66,7 +66,7 @@ extern cats_config_u global_cats_config;
 
 /** cats config initialization **/
 void cc_init();
-void cc_defaults();
+void cc_defaults(bool use_default_outputs);
 
 /** persistence functions - return true on success **/
 bool cc_load();
