@@ -19,7 +19,6 @@
 #pragma once
 
 #include "cmsis_os.h"
-#include "util/types.h"
 #include "target.h"
 
 typedef enum cs_type {

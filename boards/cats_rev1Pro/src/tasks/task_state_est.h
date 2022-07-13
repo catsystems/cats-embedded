@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_state_est(void *argument);
+[[noreturn]] void task_state_est(void *argument);

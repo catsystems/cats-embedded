@@ -19,11 +19,9 @@
 
 #pragma once
 
-#include "comm/fifo.h"
 #include "cli/cli.h"
 #include "cli/settings.h"
-
-#include <stdarg.h>
+#include "comm/fifo.h"
 
 void cli_process(void);
 void cli_enter();

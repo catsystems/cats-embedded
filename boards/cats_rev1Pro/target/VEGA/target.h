@@ -115,6 +115,9 @@ extern UART_HandleTypeDef huart1;
 #define MAG_SPI_HANDLE hspi1
 #define BARO_SPI_HANDLE hspi1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void SystemClock_Config(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -122,3 +125,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 void target_pre_init();
 void target_init();
+#ifdef __cplusplus
+}
+#endif

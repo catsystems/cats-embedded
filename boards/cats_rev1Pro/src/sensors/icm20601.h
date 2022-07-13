@@ -20,9 +20,8 @@
 
 #pragma once
 
-#include "drivers/spi.h"
 #include "cmsis_os.h"
-#include <stdbool.h>
+#include "drivers/spi.h"
 
 /** Exported Types **/
 

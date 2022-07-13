@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <stdbool.h>
-
 #include "cmsis_os.h"
 
 typedef struct {

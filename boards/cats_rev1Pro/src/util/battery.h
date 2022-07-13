@@ -20,6 +20,8 @@
 
 typedef enum { BATTERY_CRIT = 1, BATTERY_LOW, BATTERY_OK } battery_level_e;
 
+
 void battery_monitor_init();
 float battery_voltage();
 battery_level_e battery_level();
+

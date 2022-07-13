@@ -18,4 +18,3 @@ extern float32_t acc_array[5];
 
 extern timestamp_t pressure_time_array[10];
 extern float32_t pressure_array[10];
-

@@ -20,8 +20,6 @@
 
 #include "target.h"
 
-#include <stdbool.h>
-
 typedef struct servo_dev {
   // Hardware Configuration
   TIM_HandleTypeDef *timer;

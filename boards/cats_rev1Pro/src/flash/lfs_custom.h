@@ -22,7 +22,7 @@
 
 /* TODO: Wrap lfs functions where you always pass this lfs variable instead of making it visible globally */
 extern lfs_t lfs;
-extern const struct lfs_config lfs_cfg;
+const struct lfs_config *get_lfs_cfg();
 
 extern lfs_file_t fc_file;
 

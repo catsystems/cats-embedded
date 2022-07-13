@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_usb_communicator(void *argument);
+[[noreturn]] void task_usb_communicator(void *argument);

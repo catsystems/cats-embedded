@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <cstdint>
 
 #include "comm/fifo.h"
 

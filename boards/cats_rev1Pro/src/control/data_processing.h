@@ -18,9 +18,8 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 float median(float input_array[]);
-
 /* */
 int32_t log2_32(uint32_t value);

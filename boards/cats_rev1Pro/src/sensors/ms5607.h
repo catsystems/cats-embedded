@@ -23,9 +23,6 @@
 #include "cmsis_os.h"
 #include "drivers/spi.h"
 
-#include <stdbool.h>
-
-
 /** Exported Types **/
 
 enum ms5607_osr {

@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
 
 typedef enum {
   CATS_ERR_OK = 0,

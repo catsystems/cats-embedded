@@ -18,16 +18,16 @@
 
 #pragma once
 
+#include "util/error_handler.h"
 #include "util/log.h"
 #include "util/types.h"
-#include "util/error_handler.h"
 
 /* The barometric data from the sensor does not agree to the KF assumptions that it has zero offset.
  * Hence, the noise matrices are changed over time. At liftoff, the offset is large and close to apogee
  * it is close to zero. The noise matrices here are therefore not agreeing to the data analysis. */
 #define STD_NOISE_BARO         900000.0f  // From data analysis: 2.6f m
 #define STD_NOISE_BARO_INITIAL 9.0f       // From data analysis: 2.6f m
-#define STD_NOISE_IMU          0.004f    // From data analysis: 0.004f m/s^2
+#define STD_NOISE_IMU          0.004f     // From data analysis: 0.004f m/s^2
 #define STD_NOISE_OFFSET       0.000001f
 
 void init_filter_struct(kalman_filter_t *filter);

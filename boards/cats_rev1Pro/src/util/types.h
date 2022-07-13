@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
 #include "arm_math.h"
 #include "cmsis_os2.h"
 #include "config/control_config.h"

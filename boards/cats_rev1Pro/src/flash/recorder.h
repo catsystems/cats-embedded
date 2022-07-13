@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "util/types.h"
 #include "util/error_handler.h"
+#include "util/types.h"
 
 #include "cmsis_os.h"
 
@@ -154,7 +154,9 @@ inline void reset_global_flight_stats() {
  * @param rec_type record type with or without ID
  * @return record type without ID
  */
-inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) { return rec_type & ~REC_ID_MASK; }
+inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) {
+  return (rec_entry_type_e)(rec_type & ~REC_ID_MASK);
+}
 
 /**
  * Add the ID information to the given record type.
@@ -164,7 +166,7 @@ inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) { 
  * @return record type with ID
  */
 inline rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t id) {
-  return rec_type | (id & REC_ID_MASK);
+  return (rec_entry_type_e)(rec_type | (id & REC_ID_MASK));
 }
 
 /**

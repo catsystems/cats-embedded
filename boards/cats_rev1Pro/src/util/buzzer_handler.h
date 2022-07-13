@@ -18,17 +18,13 @@
 
 #pragma once
 
-#include "util/types.h"
-
-#include <stdbool.h>
-
 typedef enum {
   CATS_BUZZ_NONE = 0,
   CATS_BUZZ_BOOTUP,
   CATS_BUZZ_READY,
   CATS_BUZZ_CHANGED_MOVING,
   CATS_BUZZ_CHANGED_READY,
-  } buzzer_status_e;
+} buzzer_status_e;
 
 void buzzer_handler_update();
 bool buzzer_queue_status(buzzer_status_e status);
