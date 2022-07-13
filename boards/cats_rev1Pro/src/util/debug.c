@@ -32,7 +32,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
  *
  * The function will loop forever.
  */
-_Noreturn void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
+void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
   static char print_buf[STACK_OVERFLOW_PRINT_BUF_SZ] = {};
   uint32_t msg_len = snprintf(print_buf, sizeof(print_buf), "Stack overflow detected in %s...\n", task_name);
 

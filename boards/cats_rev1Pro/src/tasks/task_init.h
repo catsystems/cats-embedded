@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_init(void *argument);
+[[noreturn]] void task_init(void *argument);

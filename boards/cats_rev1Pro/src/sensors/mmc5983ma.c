@@ -17,7 +17,6 @@
  */
 
 #include "sensors/mmc5983ma.h"
-#include <stdbool.h>
 
 #define MMC5983MA_XOUT_0     0x00
 #define MMC5983MA_XOUT_1     0x01

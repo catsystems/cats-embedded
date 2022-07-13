@@ -83,7 +83,12 @@ extern const uint32_t MSIRangeTable[12];    /*!< MSI ranges table values     */
 /** @addtogroup STM32L4xx_System_Exported_Functions
   * @{
   */
-_Noreturn void BootLoaderJump(void);
+#ifdef __cplusplus
+[[ noreturn ]]
+#else
+_Noreturn
+#endif
+void BootLoaderJump(void);
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 

@@ -99,7 +99,12 @@ extern const uint8_t  APBPrescTable[8];     /*!< APB prescalers table values */
 /** @addtogroup STM32F4xx_System_Exported_Functions
   * @{
   */
-_Noreturn void BootLoaderJump(void);
+#ifdef __cplusplus
+[[ noreturn ]]
+#else
+_Noreturn
+#endif
+void BootLoaderJump(void);
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 /**

@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "comm/fifo.h"
 

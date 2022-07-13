@@ -19,7 +19,6 @@
 #include "reader.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include "config/globals.h"
 #include "control/data_processing.h"
@@ -33,9 +32,9 @@ void dump_recording(uint16_t number) {
     return;
   }
 
-  char *string_buffer1 = calloc(400, sizeof(char));
-  char *string_buffer2 = calloc(400, sizeof(char));
-  uint8_t *read_buf = (uint8_t *)calloc(256, sizeof(uint8_t));
+  char *string_buffer1 = (char *)(calloc(400, sizeof(char)));
+  char *string_buffer2 = (char *)(calloc(400, sizeof(char)));
+  uint8_t *read_buf = (uint8_t *)(calloc(256, sizeof(uint8_t)));
 
   char filename[MAX_FILENAME_SIZE] = {};
   snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);

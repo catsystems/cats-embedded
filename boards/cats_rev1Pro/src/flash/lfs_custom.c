@@ -52,13 +52,17 @@ const struct lfs_config lfs_cfg = {
     .block_count = 8192,
 #elif defined(CATS_VEGA)
     .block_count = 4096,
+    .block_cycles = 500,
 #endif
     .cache_size = LFS_CACHE_SIZE,
     .lookahead_size = LFS_LOOKAHEAD_SIZE,
-    .block_cycles = 500,
     .read_buffer = read_buffer,
     .prog_buffer = prog_buffer,
     .lookahead_buffer = lookahead_buffer};
+
+const struct lfs_config *get_lfs_cfg() {
+  return &lfs_cfg;
+};
 
 char cwd[LFS_NAME_MAX] = {};
 
@@ -66,9 +70,7 @@ uint32_t flight_counter = 0;
 
 // static uint8_t fc_file_cfg_buffer[LFS_CACHE_SIZE] = {};
 // struct lfs_file_config fc_file_cfg = {.buffer = fc_file_cfg_buffer, .attr_count = 1};
-lfs_file_t fc_file/* = {.cfg = &fc_file_cfg} */;
-
-
+lfs_file_t fc_file /* = {.cfg = &fc_file_cfg} */;
 
 int8_t lfs_obj_type(const char *path) {
   struct lfs_info info;

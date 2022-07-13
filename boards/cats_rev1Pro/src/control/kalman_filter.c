@@ -17,10 +17,10 @@
  */
 
 #include "control/kalman_filter.h"
-#include "cmsis_os.h"
-#include <string.h>
 #include <arm_neon.h>
 #include <math.h>
+#include <string.h>
+#include "cmsis_os.h"
 #include "util/error_handler.h"
 
 void init_filter_struct(kalman_filter_t *const filter) {

@@ -18,6 +18,7 @@
  */
 
 #include "cli/cli_commands.h"
+
 #include "cli/cli.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
@@ -29,7 +30,6 @@
 #include "util/log.h"
 #include "util/sim.h"
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -359,7 +359,7 @@ static void cli_cmd_defaults(const char *cmd_name, char *args) {
     use_default_outputs = false;
   }
   cc_defaults(use_default_outputs);
-  cli_print_linef("Reset to default values%s", use_default_outputs ? "": " [no outputs]");
+  cli_print_linef("Reset to default values%s", use_default_outputs ? "" : " [no outputs]");
 }
 
 static void cli_cmd_dump(const char *cmd_name, char *args) {
@@ -405,7 +405,7 @@ static void cli_cmd_ls(const char *cmd_name, char *args) {
       cli_print_line("File path too long!");
       return;
     }
-    char *full_path = malloc(full_path_len + 1);
+    char *full_path = (char *)(malloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
@@ -433,7 +433,7 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = malloc(full_path_len + 1);
+      char *tmp_path = (char *)(malloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
@@ -449,7 +449,7 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = malloc(full_path_len + 1);
+      char *tmp_path = (char *)(malloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
@@ -471,7 +471,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
       return;
     }
     /* +1 for the null terminator */
-    char *full_path = malloc(full_path_len + 1);
+    char *full_path = (char *)(malloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
@@ -493,6 +493,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
   }
 }
 
+extern const struct lfs_config lfs_cfg;
 static void cli_cmd_rec_info(const char *cmd_name, char *args) {
   const lfs_ssize_t curr_sz_blocks = lfs_fs_size(&lfs);
   const int32_t num_flights = lfs_cnt("/flights", LFS_TYPE_REG);
@@ -503,9 +504,9 @@ static void cli_cmd_rec_info(const char *cmd_name, char *args) {
     return;
   }
 
-  const lfs_size_t block_size_kb = lfs_cfg.block_size / 1024;
+  const lfs_size_t block_size_kb = get_lfs_cfg()->block_size / 1024;
   const lfs_size_t curr_sz_kb = curr_sz_blocks * block_size_kb;
-  const lfs_size_t total_sz_kb = block_size_kb * lfs_cfg.block_count;
+  const lfs_size_t total_sz_kb = block_size_kb * get_lfs_cfg()->block_count;
   const double percentage_used = (double)curr_sz_kb / total_sz_kb * 100;
   cli_print_linef("Space:\n  Total: %lu KB\n   Used: %lu KB (%.2f%%)\n   Free: %lu KB (%.2f%%)", total_sz_kb,
                   curr_sz_kb, percentage_used, total_sz_kb - curr_sz_kb, 100 - percentage_used);
@@ -572,8 +573,8 @@ static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
 
 static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
   cli_print_line("\nTrying LFS format");
-  lfs_format(&lfs, &lfs_cfg);
-  int err = lfs_mount(&lfs, &lfs_cfg);
+  lfs_format(&lfs, get_lfs_cfg());
+  int err = lfs_mount(&lfs, get_lfs_cfg());
   if (err != 0) {
     cli_print_linef("LFS mounting failed with error %d!", err);
   } else {
@@ -592,14 +593,14 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   cli_print_line("Flash erased!");
   cli_print_line("Mounting LFS");
 
-  int err = lfs_mount(&lfs, &lfs_cfg);
+  int err = lfs_mount(&lfs, get_lfs_cfg());
   if (err == 0) {
     cli_print_line("LFS mounted successfully!");
   } else {
     cli_print_linef("LFS mounting failed with error %d!", err);
     cli_print_line("Trying LFS format");
-    lfs_format(&lfs, &lfs_cfg);
-    int err2 = lfs_mount(&lfs, &lfs_cfg);
+    lfs_format(&lfs, get_lfs_cfg());
+    int err2 = lfs_mount(&lfs, get_lfs_cfg());
     if (err2 != 0) {
       cli_print_linef("LFS mounting failed again with error %d!", err2);
       return;
@@ -775,12 +776,12 @@ static void print_action_config() {
   cli_printf("\n * ACTION CONFIGURATION *\n");
   config_action_t action;
   for (int i = 0; i < NUM_EVENTS; i++) {
-    int nr_actions = cc_get_num_actions(i);
+    int nr_actions = cc_get_num_actions((cats_event_e)(i));
     if (nr_actions > 0) {
       cli_printf("\n%s\n", p_event_table->values[i]);
       cli_printf("   Number of Actions: %d\n", nr_actions);
       for (int j = 0; j < nr_actions; j++) {
-        cc_get_action(i, j, &action);
+        cc_get_action((cats_event_e)(i), j, &action);
         cli_printf("     %s - %d\n", p_action_table->values[action.action_idx], action.arg);
       }
     }

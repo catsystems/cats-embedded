@@ -21,7 +21,6 @@
 #pragma once
 
 #include "drivers/spi.h"
-#include <stdbool.h>
 
 // CTRL_REG_1
 enum h3lis100dl_power_mode {

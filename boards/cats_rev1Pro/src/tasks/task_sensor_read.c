@@ -50,7 +50,7 @@ static void read_baro();
  * @param argument: Not used
  * @retval None
  */
-void task_sensor_read(void *argument) {
+[[noreturn]] void task_sensor_read(void *argument) {
   /* Initialize IMU data variables */
   int16_t gyroscope[3] = {0};    /* 0 = x, 1 = y, 2 = z */
   int16_t acceleration[3] = {0}; /* 0 = x, 1 = y, 2 = z */

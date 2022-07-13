@@ -19,8 +19,9 @@
 #pragma once
 
 #include "cmsis_os.h"
-#include "util/types.h"
 #include "target.h"
+
+#include <stdbool.h>
 
 typedef enum cs_type {
   LOW_ACTIVE = GPIO_PIN_RESET,

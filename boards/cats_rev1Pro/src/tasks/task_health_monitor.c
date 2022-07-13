@@ -16,14 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmsis_os.h"
 #include "tasks/task_health_monitor.h"
+#include "cmsis_os.h"
+#include "config/cats_config.h"
 #include "config/globals.h"
+#include "drivers/adc.h"
+#include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
-#include "config/cats_config.h"
-#include "util/actions.h"
-#include "drivers/adc.h"
 
 /** Private Constants **/
 
@@ -31,7 +31,7 @@
 static void check_high_current_channels();
 /** Exported Function Definitions **/
 
-_Noreturn void task_health_monitor(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_health_monitor(__attribute__((unused)) void *argument) {
   // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
   uint32_t pyro_check_timer = 0;
@@ -95,13 +95,13 @@ static void check_high_current_channels() {
   bool error_encountered = false;
   // Loop over all events
   for (int ev_idx = 0; ev_idx < NUM_EVENTS; ev_idx++) {
-    uint16_t nr_actions = cc_get_num_actions(ev_idx);
+    uint16_t nr_actions = cc_get_num_actions((cats_event_e)ev_idx);
     // If an action is mapped to the event
     if (nr_actions > 0) {
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
         config_action_t action;
-        if (cc_get_action(ev_idx, act_idx, &action) == true) {
+        if (cc_get_action((cats_event_e)ev_idx, act_idx, &action) == true) {
           switch (action.action_idx) {
             case ACT_HIGH_CURRENT_ONE:
               if (adc_get(ADC_PYRO1) < 500) {

@@ -34,10 +34,10 @@ uint32_t task_init_buffer[512];
 osStaticThreadDef_t task_init_control_block;
 const osThreadAttr_t task_init_attributes = {
     .name = "task_init",
-    .stack_mem = &task_init_buffer[0],
-    .stack_size = sizeof(task_init_buffer),
     .cb_mem = &task_init_control_block,
     .cb_size = sizeof(task_init_control_block),
+    .stack_mem = &task_init_buffer[0],
+    .stack_size = sizeof(task_init_buffer),
     .priority = (osPriority_t)osPriorityNormal,
 };
 

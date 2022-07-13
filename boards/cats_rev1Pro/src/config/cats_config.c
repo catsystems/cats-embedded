@@ -80,7 +80,7 @@ void cc_init() {
    * in descending order and are dependent on CONTROL_SAMPLING_FREQ. */
   for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
     // TODO: free this memory
-    lookup_table_speeds[i] = calloc(14, sizeof(char));
+    lookup_table_speeds[i] = (char*)(calloc(14, sizeof(char)));
     // TODO: assert that lookupTableSpeeds[i] is not NULL
     snprintf(lookup_table_speeds[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
   }
