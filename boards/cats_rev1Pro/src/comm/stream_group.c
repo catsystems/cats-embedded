@@ -18,8 +18,6 @@
 
 #include "comm/stream_group.h"
 
-#include <stdbool.h>
-
 #include "comm/fifo.h"
 #include "comm/stream.h"
 

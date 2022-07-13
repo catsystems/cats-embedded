@@ -17,15 +17,14 @@
  */
 
 #include "recorder.h"
-#include "util/log.h"
-#include "config/globals.h"
 #include "config/cats_config.h"
+#include "config/globals.h"
+#include "util/log.h"
 
 #include <math.h>
-#include <stdbool.h>
 
 flight_stats_t global_flight_stats = {
-    .max_height.val = -INFINITY, .max_velocity.val = -INFINITY, .max_acceleration.val = -INFINITY};
+    .max_height = {.val = -INFINITY}, .max_velocity = {.val = -INFINITY}, .max_acceleration = {.val = -INFINITY}};
 
 /**
  * Checks whether the given rec_type should be recorded.

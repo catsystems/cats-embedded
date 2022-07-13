@@ -29,7 +29,7 @@ void add_error(cats_error_e err) {
 
       errors |= err;
 
-      error_info_t error_info = {.error = errors};
+      error_info_t error_info = {.error = (cats_error_e)(errors)};
       record(osKernelGetTickCount(), ERROR_INFO, &error_info);
     }
   }
@@ -39,12 +39,12 @@ void clear_error(cats_error_e err) {
   if (errors & err) {
     errors &= ~err;
 
-    error_info_t error_info = {.error = errors};
+    error_info_t error_info = {.error = (cats_error_e)(errors)};
     record(osKernelGetTickCount(), ERROR_INFO, &error_info);
   }
 }
 
-//TODO: use __builtin_popcount(errors)
+// TODO: use __builtin_popcount(errors)
 uint32_t get_error_count() {
   uint32_t count = 0;
   const uint32_t mask = 0x00000001;

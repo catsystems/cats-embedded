@@ -18,8 +18,6 @@
 
 #include "comm/stream.h"
 
-#include <stdbool.h>
-
 #include "comm/fifo.h"
 
 void stream_init(stream_t *stream, fifo_t *fifo, uint32_t timeout_msec) {

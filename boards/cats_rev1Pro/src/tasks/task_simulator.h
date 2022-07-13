@@ -4,4 +4,4 @@
 
 #pragma once
 
-_Noreturn void task_simulator(void *argument);
+[[noreturn]] void task_simulator(void *argument);

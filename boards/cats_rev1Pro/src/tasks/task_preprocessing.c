@@ -17,12 +17,12 @@
  */
 
 #include "tasks/task_preprocessing.h"
-#include <util/log.h>
 #include "config/globals.h"
 #include "config/sensor_config.h"
 #include "control/calibration.h"
 #include "control/data_processing.h"
 #include "control/sensor_elimination.h"
+#include "util/log.h"
 
 /** Private Constants **/
 
@@ -39,7 +39,7 @@ inline static float calculate_height(float pressure_initial, float pressure);
  * @param argument: Not used
  * @retval None
  */
-void task_preprocessing(void *argument) {
+[[noreturn]] void task_preprocessing(void *argument) {
   /* Create data structs */
   static SI_data_t SI_data = {0};
   static SI_data_t SI_data_old = {0};
@@ -53,7 +53,7 @@ void task_preprocessing(void *argument) {
   sensor_elimination_t sensor_elimination = {0};
   /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
    * the linear acceleration calibration */
-  calibration_data_t calibration = {.gyro_calib.x = 0, .gyro_calib.y = 0, .gyro_calib.z = 0, .angle = 1, .axis = 2};
+  calibration_data_t calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
   state_estimation_input_t state_est_input = {.acceleration_z = 0.0f, .height_AGL = 0.0f};
   float32_t pressure_0 = P_INITIAL;
 
@@ -77,7 +77,7 @@ void task_preprocessing(void *argument) {
     /* average and construct SI Data */
     avg_and_to_SI(&SI_data, &SI_data_old, &sensor_elimination);
 
-    //log_info("acc: %ld; height: %ld", (int32_t)((float)SI_data.acc.x*1000),
+    // log_info("acc: %ld; height: %ld", (int32_t)((float)SI_data.acc.x*1000),
     //(int32_t)((float)SI_data.pressure*1000));
 
     /* Compute gravity when changing to IDLE */

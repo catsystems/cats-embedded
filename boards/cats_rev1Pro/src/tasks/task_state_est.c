@@ -17,9 +17,9 @@
  */
 
 #include "tasks/task_state_est.h"
+#include "config/globals.h"
 #include "control/kalman_filter.h"
 #include "control/orientation_filter.h"
-#include "config/globals.h"
 
 #include <math.h>
 
@@ -34,7 +34,7 @@
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_state_est(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_state_est(__attribute__((unused)) void *argument) {
   /* End Initialization */
   osDelay(1000);
 
@@ -118,8 +118,10 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
 #endif
 
     /* record filtered data */
-    filtered_data_info_t filtered_data_info = {.filtered_acceleration = filter.measured_acceleration,
-                                               .filtered_altitude_AGL = filter.measured_AGL};
+    filtered_data_info_t filtered_data_info = {
+        .filtered_altitude_AGL = filter.measured_AGL,
+        .filtered_acceleration = filter.measured_acceleration,
+    };
 
     record(tick_count, FILTERED_DATA_INFO, &filtered_data_info);
 
@@ -132,9 +134,9 @@ _Noreturn void task_state_est(__attribute__((unused)) void *argument) {
     }
     record(tick_count, FLIGHT_INFO, &flight_info);
 
-    //log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
-    //         (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration * 1000),
-    //         (int32_t)((float)filter.x_bar.pData[2] * 1000));
+    // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
+    //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
+    //          1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
 
     /* reset old fsm enum */
     old_fsm_enum = new_fsm_enum;

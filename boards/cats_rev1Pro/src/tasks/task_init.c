@@ -18,7 +18,6 @@
 
 #include "tasks/task_init.h"
 
-#include <stdbool.h>
 #include <stdlib.h>
 
 #include "cmsis_os.h"
@@ -40,13 +39,11 @@
 #include "tasks/task_simulator.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_usb_communicator.h"
-#include "tasks/task_simulator.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 
 #include "util/log.h"
-
 /** Task Definitions **/
 
 #define SET_TASK_PARAMS(task, stack_sz)           \
@@ -54,10 +51,10 @@
   StaticTask_t task##_control_block;              \
   const osThreadAttr_t task##_attributes = {      \
       .name = #task,                              \
-      .stack_mem = &task##_buffer[0],             \
-      .stack_size = sizeof(task##_buffer),        \
       .cb_mem = &task##_control_block,            \
       .cb_size = sizeof(task##_control_block),    \
+      .stack_mem = &task##_buffer[0],             \
+      .stack_size = sizeof(task##_buffer),        \
       .priority = (osPriority_t)osPriorityNormal, \
   };
 
@@ -110,7 +107,7 @@ static void create_event_map();
 
 /** Exported Function Definitions **/
 
-_Noreturn void task_init(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_init(__attribute__((unused)) void *argument) {
   osDelay(200);
 
   init_system();
@@ -189,13 +186,13 @@ static void init_devices() {
 
 static void init_lfs() {
   /* mount the filesystem */
-  int err = lfs_mount(&lfs, &lfs_cfg);
+  int err = lfs_mount(&lfs, get_lfs_cfg());
   if (err != 0) {
     /* reformat if we can't mount the filesystem, this should only happen on the first boot */
     log_raw("LFS mounting failed with error %d!", err);
     log_raw("Trying LFS format");
-    lfs_format(&lfs, &lfs_cfg);
-    int err2 = lfs_mount(&lfs, &lfs_cfg);
+    lfs_format(&lfs, get_lfs_cfg());
+    int err2 = lfs_mount(&lfs, get_lfs_cfg());
     if (err2 != 0) {
       log_raw("LFS mounting failed again with error %d!", err2);
     }
@@ -319,20 +316,21 @@ static void init_buzzer() {
 static void create_event_map() {
   /* number of event types + 0th element */
   /* TODO: where to free this? */
-  event_action_map = calloc(NUM_EVENTS, sizeof(event_action_map_elem_t));
+  event_action_map = (event_action_map_elem_t *)(calloc(NUM_EVENTS, sizeof(event_action_map_elem_t)));
 
   uint16_t nr_actions;
   config_action_t action;
   // Loop over all events
   for (int ev_idx = 0; ev_idx < NUM_EVENTS; ev_idx++) {
-    nr_actions = cc_get_num_actions(ev_idx);
+    nr_actions = cc_get_num_actions((cats_event_e)(ev_idx));
     // If an action is mapped to the event
     if (nr_actions > 0) {
       event_action_map[ev_idx].num_actions = nr_actions;
-      event_action_map[ev_idx].action_list = calloc(nr_actions, sizeof(peripheral_act_t));
+      event_action_map[ev_idx].action_list =
+          (peripheral_act_t *)(calloc(nr_actions, sizeof(peripheral_act_t)));
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
-        if (cc_get_action(ev_idx, act_idx, &action) == true) {
+        if (cc_get_action((cats_event_e)(ev_idx), act_idx, &action) == true) {
           event_action_map[ev_idx].action_list[act_idx].func_ptr = action_table[action.action_idx];
           event_action_map[ev_idx].action_list[act_idx].func_arg = action.arg;
         } else {
@@ -358,7 +356,8 @@ static void init_timers() {
   /* Create Timers */
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.config.timers[i].duration > 0) {
-      ev_timers[i].timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
+      ev_timers[i].timer_id =
+          osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
     }
   }
 
@@ -368,5 +367,5 @@ static void init_timers() {
   mach_timer.timer_duration_ticks = global_cats_config.config.control_settings.mach_timer_duration;
 
   /* Create mach timer */
-  mach_timer.timer_id = osTimerNew((void *)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
+  mach_timer.timer_id = osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
 }

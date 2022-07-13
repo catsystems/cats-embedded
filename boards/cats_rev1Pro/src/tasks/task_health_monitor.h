@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_health_monitor(void *argument);
+[[noreturn]] void task_health_monitor(void *argument);

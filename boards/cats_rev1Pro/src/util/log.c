@@ -22,10 +22,7 @@
 #ifdef CATS_DEBUG
 #include "cmsis_os.h"
 
-#include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 #define CATS_RAINBOW_LOG
 

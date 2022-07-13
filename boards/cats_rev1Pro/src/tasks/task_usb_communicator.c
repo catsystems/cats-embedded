@@ -23,7 +23,7 @@
 #include "config/globals.h"
 #include "util/log.h"
 
-_Noreturn void task_usb_communicator(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_usb_communicator(__attribute__((unused)) void *argument) {
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");
 

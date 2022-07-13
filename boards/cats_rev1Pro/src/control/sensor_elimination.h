@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "util/types.h"
 #include "util/error_handler.h"
+#include "util/types.h"
 
 /* maximum times a value is allowed to be the same value before we assume that
  * it is faulty */

@@ -21,8 +21,10 @@
 // *** Includes *** //
 
 #include "sensors/icm20601.h"
-#include <stdlib.h>
+#include "util/types.h"
 
+#include <stdlib.h>
+#include <string.h>
 /** Private Defines **/
 
 #define REG_SELF_TEST_X_GYRO   0x00
@@ -105,7 +107,7 @@ static float get_gyro_sensitivity(enum icm20601_gyro_dps gyro_dps);
 // Read bytes from MEMS
 static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length);
 // Write bytes to MEMS
-static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length);
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, volatile uint8_t *data, uint16_t length);
 
 /** Exported Function Definitions **/
 
@@ -379,11 +381,11 @@ static void icm_read_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint
 }
 
 // Write bytes to MEMS
-static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, uint8_t *data, uint16_t length) {
+static void icm_write_bytes(const ICM20601 *dev, uint8_t reg, volatile uint8_t *data, uint16_t length) {
   uint8_t tmp[8];
   tmp[0] = reg;
   if (length < 8) {
-    memcpy(&tmp[1], data, length);
+    memcpy(&tmp[1], (uint8_t *)(data), length);
     spi_transmit(dev->spi, tmp, length + 1);
   }
 }

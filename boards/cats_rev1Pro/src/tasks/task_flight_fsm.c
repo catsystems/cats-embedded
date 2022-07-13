@@ -16,20 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmsis_os.h"
-#include "config/globals.h"
-#include "util/log.h"
 #include "tasks/task_flight_fsm.h"
-#include "control/flight_phases.h"
+#include "cmsis_os.h"
 #include "config/cats_config.h"
+#include "config/globals.h"
+#include "control/flight_phases.h"
 #include "tasks/task_peripherals.h"
+#include "util/log.h"
 
 /**
  * @brief Function implementing the task_flight_fsm thread.
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_flight_fsm(__attribute__((unused)) void *argument) {
   const control_settings_t settings = global_cats_config.config.control_settings;
 
   trigger_event(EV_MOVING);

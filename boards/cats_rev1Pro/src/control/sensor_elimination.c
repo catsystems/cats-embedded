@@ -28,8 +28,8 @@ void check_sensors(sensor_elimination_t *elimination) {
 
   /* Accelerometers */
   for (uint8_t i = 0; i < NUM_ACCELEROMETER; i++) {
-    status = check_sensor_bounds(elimination, i, &acc_info[NUM_IMU + i]);
-    status |= check_sensor_freezing(elimination, i, &acc_info[NUM_IMU + i]);
+    status = (cats_error_e)(check_sensor_bounds(elimination, i, &acc_info[NUM_IMU + i]) |
+                                       check_sensor_freezing(elimination, i, &acc_info[NUM_IMU + i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_acc[i] = 0;
@@ -42,12 +42,12 @@ void check_sensors(sensor_elimination_t *elimination) {
 
   /* IMU */
   for (uint8_t i = 0; i < NUM_IMU; i++) {
-    status = check_sensor_bounds(elimination, i, &acc_info[i]);
-    status |= check_sensor_freezing(elimination, i, &acc_info[i]);
+    status = (cats_error_e)(check_sensor_bounds(elimination, i, &acc_info[i]) |
+                                       check_sensor_freezing(elimination, i, &acc_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_imu[i] = 0;
-      clear_error(CATS_ERR_IMU_0 << i);
+      clear_error((cats_error_e)(CATS_ERR_IMU_0 << i));
     } else {
       add_error(status);
     }
@@ -56,12 +56,12 @@ void check_sensors(sensor_elimination_t *elimination) {
 
   /* Barometer */
   for (uint8_t i = 0; i < NUM_BARO; i++) {
-    status = check_sensor_bounds(elimination, i, &baro_info[i]);
-    status |= check_sensor_freezing(elimination, i, &baro_info[i]);
+    status = (cats_error_e)(check_sensor_bounds(elimination, i, &baro_info[i]) |
+                                       check_sensor_freezing(elimination, i, &baro_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_baro[i] = 0;
-      clear_error(CATS_ERR_BARO_0 << i);
+      clear_error((cats_error_e)(CATS_ERR_BARO_0 << i));
     } else {
       add_error(status);
     }
@@ -70,8 +70,8 @@ void check_sensors(sensor_elimination_t *elimination) {
 
   /* Magneto */
   for (uint8_t i = 0; i < NUM_MAGNETO; i++) {
-    status = check_sensor_bounds(elimination, i, &mag_info[i]);
-    status |= check_sensor_freezing(elimination, i, &mag_info[i]);
+    status = (cats_error_e)(check_sensor_bounds(elimination, i, &mag_info[i]) |
+                                       check_sensor_freezing(elimination, i, &mag_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_mag[i] = 0;
@@ -92,7 +92,7 @@ static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8
       if ((((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           (((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_baro[index] = 1;
-        status = CATS_ERR_BARO_0 << index;
+        status = (cats_error_e)(CATS_ERR_BARO_0 << index);
       }
       break;
     case MMC5983MA_ID:
@@ -106,7 +106,7 @@ static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8
       if ((((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           (((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_imu[index] = 1;
-        status = CATS_ERR_IMU_0 << index;
+        status = (cats_error_e)(CATS_ERR_IMU_0 << index);
       }
       break;
     case H3LIS100DL_ID:
@@ -133,7 +133,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
         elimination->freeze_counter_baro[index]++;
         if (elimination->freeze_counter_baro[index] > MAX_NUM_SAME_VALUE) {
           elimination->faulty_baro[index] = 1;
-          status = CATS_ERR_BARO_0 << index;
+          status = (cats_error_e)(CATS_ERR_BARO_0 << index);
         }
       } else {
         elimination->last_value_baro[index] = global_baro[index].pressure;
@@ -157,7 +157,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
         elimination->freeze_counter_imu[index]++;
         if (elimination->freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
           elimination->faulty_imu[index] = 1;
-          status = CATS_ERR_IMU_0 << index;
+          status = (cats_error_e)(CATS_ERR_IMU_0 << index);
         }
       } else {
         elimination->last_value_imu[index] = global_imu[index].acc.x;

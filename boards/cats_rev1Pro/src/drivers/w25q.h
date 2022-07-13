@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include "target.h"
+
+#include <stdbool.h>
 
 typedef enum {
   W25QINVALID = 0,
@@ -178,9 +179,9 @@ w25q_status_e w25q_write_sector(uint8_t *buf, uint32_t sector_num, uint32_t offs
                                 uint32_t bytes_to_write_up_to_sector_size);
 
 w25q_status_e w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
-                       uint32_t bytes_to_write_up_to_page_size);
+                                uint32_t bytes_to_write_up_to_page_size);
 
 w25q_status_e w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
-                      uint32_t NumByteToRead_up_to_PageSize);
+                               uint32_t NumByteToRead_up_to_PageSize);
 
 extern w25q_t w25q;

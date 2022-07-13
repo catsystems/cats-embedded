@@ -84,15 +84,15 @@ w25q_t w25q = {.id = W25QINVALID};
 // Write enable
 int8_t w25q_write_enable(void) {
   QSPI_CommandTypeDef s_command = {
+      .Instruction = W25Q_CMD_WRITE_ENABLE,
+      .DummyCycles = 0,
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .DataMode = QSPI_DATA_NONE,
-      .DummyCycles = 0,
-      .Instruction = W25Q_CMD_WRITE_ENABLE,
   };
 
   // Send write enable command
@@ -109,9 +109,9 @@ int8_t w25q_write_enable(void) {
   QSPI_AutoPollingTypeDef s_config = {
       .Match = 0x02,
       .Mask = W25Q_STATUS_REG1_WEL,
-      .MatchMode = QSPI_MATCH_MODE_AND,
-      .StatusBytesSize = 1,
       .Interval = 0x10,
+      .StatusBytesSize = 1,
+      .MatchMode = QSPI_MATCH_MODE_AND,
       .AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE,
   };
 
@@ -210,15 +210,15 @@ w25q_status_e w25q_init(void) {
 // Polling to confirm whether the FLASH is idle (used to wait for the end of communication, etc.)
 int8_t w25q_auto_polling_mem_ready(void) {
   QSPI_CommandTypeDef s_command = {
+      .Instruction = W25Q_CMD_READ_STATUS_REG1,
+      .DummyCycles = 0,
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_1_LINE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .DataMode = QSPI_DATA_1_LINE,
-      .DummyCycles = 0,
-      .Instruction = W25Q_CMD_READ_STATUS_REG1,
   };
 
   // Keep querying W25Q_CMD_READ_STATUS_REG1 register, read w25q in the status byte_ Status_ REG1_ Busy is compared
@@ -226,12 +226,11 @@ int8_t w25q_auto_polling_mem_ready(void) {
   // be set to 1, idle or communication end to 0
   QSPI_AutoPollingTypeDef s_config = {
       .Match = 0,
-      .MatchMode = QSPI_MATCH_MODE_AND,
-      .Interval = 0x10,
-      .AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE,
-      .StatusBytesSize = 1,
-
       .Mask = W25Q_STATUS_REG1_BUSY,
+      .Interval = 0x10,
+      .StatusBytesSize = 1,
+      .MatchMode = QSPI_MATCH_MODE_AND,
+      .AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE,
   };
 
   // Send polling wait command
@@ -244,15 +243,15 @@ int8_t w25q_auto_polling_mem_ready(void) {
 // FLASH software reset
 w25q_status_e w25q_reset(void) {
   QSPI_CommandTypeDef s_command = {
+      .Instruction = W25Q_CMD_ENABLE_RESET,
+      .DummyCycles = 0,
       .InstructionMode = QSPI_INSTRUCTION_1_LINE,
       .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .DataMode = QSPI_DATA_NONE,
-      .DummyCycles = 0,
-      .Instruction = W25Q_CMD_ENABLE_RESET,
   };
 
   // Send reset enable command
@@ -283,17 +282,17 @@ w25q_status_e w25q_reset(void) {
 
 w25q_status_e w25q_read_id(uint32_t *w25q_id) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_JEDEC_ID,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_1_LINE,
+      .NbData = 3,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_NONE,
-      .DataMode = QSPI_DATA_1_LINE,
-      .DummyCycles = 0,
-      .NbData = 3,
-      .Instruction = W25Q_CMD_JEDEC_ID,
   };
 
   uint8_t qspi_receive_buff[3];  // Store data read by QSPI
@@ -330,17 +329,17 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
   }
 
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = status_reg_cmd,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_1_LINE,
+      .NbData = 1,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_NONE,
-      .DataMode = QSPI_DATA_1_LINE,
-      .DummyCycles = 0,
-      .NbData = 1,
-      .Instruction = status_reg_cmd,
   };
 
   if (HAL_QSPI_Command(&FLASH_QSPI_HANDLE, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) return W25Q_ERR_INIT;
@@ -354,17 +353,17 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
 
 w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_SECTOR_ERASE_4_BYTE_ADDR,
+      .Address = sector_idx * w25q.sector_size,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_1_LINE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_1_LINE,
-      .DataMode = QSPI_DATA_NONE,
-      .DummyCycles = 0,
-      .Address = sector_idx * w25q.sector_size,
-      .Instruction = W25Q_CMD_SECTOR_ERASE_4_BYTE_ADDR,
   };
 
   if (w25q_write_enable() != W25Q_OK) {
@@ -404,17 +403,19 @@ bool w25q_is_sector_empty(uint32_t sector_idx) {
 /* TODO: Since blocks on W25Q are 64k and this function accepts a block index this means that it can only erase the
  * first halves of 64k blocks. This should be fixed if this function gets used at some point. */
 w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
-  QSPI_CommandTypeDef s_command = {.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-                                   .AddressSize = QSPI_ADDRESS_32_BITS,
-                                   .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
-                                   .DdrMode = QSPI_DDR_MODE_DISABLE,
-                                   .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
-                                   .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-                                   .AddressMode = QSPI_ADDRESS_1_LINE,
-                                   .DataMode = QSPI_DATA_NONE,
-                                   .DummyCycles = 0,
-                                   .Address = block_idx * w25q.block_size,
-                                   .Instruction = W25Q_CMD_BLOCK_ERASE_32K};
+  QSPI_CommandTypeDef s_command = {
+      .Instruction = W25Q_CMD_BLOCK_ERASE_32K,
+      .Address = block_idx * w25q.block_size,
+      .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_1_LINE,
+      .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
+      .DdrMode = QSPI_DDR_MODE_DISABLE,
+      .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
+      .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
+  };
 
   if (w25q_write_enable() != W25Q_OK) {
     return W25Q_ERR_WRITE_ENABLE;
@@ -434,17 +435,17 @@ w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
 
 w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_BLOCK_ERASE_64K_4_BYTE_ADDR,
+      .Address = block_idx * w25q.block_size,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_1_LINE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_1_LINE,
-      .DataMode = QSPI_DATA_NONE,
-      .DummyCycles = 0,
-      .Address = block_idx * w25q.block_size,
-      .Instruction = W25Q_CMD_BLOCK_ERASE_64K_4_BYTE_ADDR,
   };
 
   if (w25q_write_enable() != W25Q_OK) {
@@ -465,16 +466,16 @@ w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
 
 w25q_status_e w25q_chip_erase(void) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_CHIP_ERASE,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_NONE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_NONE,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_NONE,
-      .DataMode = QSPI_DATA_NONE,
-      .DummyCycles = 0,
-      .Instruction = W25Q_CMD_CHIP_ERASE,
   };
 
   // Send write enable
@@ -491,11 +492,11 @@ w25q_status_e w25q_chip_erase(void) {
   // command will be set to 1, idle or communication end to 0
   QSPI_AutoPollingTypeDef s_config = {
       .Match = 0,
-      .MatchMode = QSPI_MATCH_MODE_AND,
-      .Interval = 0x10,
-      .AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE,
-      .StatusBytesSize = 1,
       .Mask = W25Q_STATUS_REG1_BUSY,
+      .Interval = 0x10,
+      .StatusBytesSize = 1,
+      .MatchMode = QSPI_MATCH_MODE_AND,
+      .AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE,
   };
 
   s_command.Instruction = W25Q_CMD_READ_STATUS_REG1;
@@ -511,18 +512,18 @@ w25q_status_e w25q_chip_erase(void) {
 /* write in */
 w25q_status_e w25q_write_page(uint8_t *buf, uint32_t write_addr, uint16_t num_bytes_to_write) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_QUAD_INPUT_PAGE_PROGRAM,
+      .Address = write_addr,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 0,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_1_LINE,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_4_LINES,
+      .NbData = num_bytes_to_write,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_1_LINE,
-      .DataMode = QSPI_DATA_4_LINES,
-      .DummyCycles = 0,
-      .NbData = num_bytes_to_write,
-      .Address = write_addr,
-      .Instruction = W25Q_CMD_QUAD_INPUT_PAGE_PROGRAM,
 
   };
 
@@ -580,7 +581,8 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
       current_addr += current_size;  // Calculate the next write address
       write_data += current_size;    // Gets the address of the data store to be written next time
       // Calculate the length of the next write
-      current_size = ((current_addr + W25Q_PAGE_SIZE_BYTES) > end_addr) ? (end_addr - current_addr) : W25Q_PAGE_SIZE_BYTES;
+      current_size =
+          ((current_addr + W25Q_PAGE_SIZE_BYTES) > end_addr) ? (end_addr - current_addr) : W25Q_PAGE_SIZE_BYTES;
     }
   } while (current_addr < end_addr);  // Judge whether all data are written
 
@@ -590,18 +592,18 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
 /* read */
 w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_bytes_to_read) {
   QSPI_CommandTypeDef s_command = {
-      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .Instruction = W25Q_CMD_FAST_READ_QUAD_IO,
+      .Address = read_addr,
       .AddressSize = QSPI_ADDRESS_32_BITS,
+      .DummyCycles = 6,
+      .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+      .AddressMode = QSPI_ADDRESS_4_LINES,
       .AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE,
+      .DataMode = QSPI_DATA_4_LINES,
+      .NbData = num_bytes_to_read,
       .DdrMode = QSPI_DDR_MODE_DISABLE,
       .DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY,
       .SIOOMode = QSPI_SIOO_INST_EVERY_CMD,
-      .AddressMode = QSPI_ADDRESS_4_LINES,
-      .DataMode = QSPI_DATA_4_LINES,
-      .DummyCycles = 6,
-      .NbData = num_bytes_to_read,
-      .Address = read_addr,
-      .Instruction = W25Q_CMD_FAST_READ_QUAD_IO,
   };
 
   // Send read command

@@ -19,7 +19,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
 #include "util/types.h"
 
 /* The system will reload the default config when the number changes */

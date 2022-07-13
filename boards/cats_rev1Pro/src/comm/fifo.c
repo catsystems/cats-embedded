@@ -19,7 +19,7 @@
 #include "comm/fifo.h"
 
 #include <string.h>
-
+#include <stdbool.h>
 
 void fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
   fifo->buf = buf;

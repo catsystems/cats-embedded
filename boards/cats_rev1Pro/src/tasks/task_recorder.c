@@ -22,9 +22,6 @@
 #include "flash/lfs_custom.h"
 #include "flash/recorder.h"
 #include "util/log.h"
-#include "util/types.h"
-
-#include <stdlib.h>
 
 /** Private Constants **/
 
@@ -40,7 +37,7 @@ static void create_stats_file();
 
 /** Exported Function Definitions **/
 
-_Noreturn void task_recorder(__attribute__((unused)) void *argument) {
+[[noreturn]] void task_recorder(__attribute__((unused)) void *argument) {
   uint8_t rec_buffer[REC_BUFFER_LEN] = {};
 
   uint16_t rec_buffer_idx = 0;

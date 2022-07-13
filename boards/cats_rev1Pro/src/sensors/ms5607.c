@@ -19,9 +19,10 @@
 /* MS5607 Barometer Device Library */
 
 #include "sensors/ms5607.h"
-#include "util/types.h"
-#include <stdbool.h>
+
 #include "drivers/spi.h"
+
+#include "util/types.h"
 
 // Commands
 #define COMMAND_RESET           0x1E

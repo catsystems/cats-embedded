@@ -36,7 +36,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
  * @param argument: Not used
  * @retval None
  */
-_Noreturn void task_peripherals(__attribute__((unused)) void* argument) {
+[[noreturn]] void task_peripherals(__attribute__((unused)) void* argument) {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, NULL, osWaitForever) == osOK) {

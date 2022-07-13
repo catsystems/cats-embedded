@@ -21,8 +21,6 @@
 
 #include "config/cats_config.h"
 
-#include <stdbool.h>
-
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
 typedef enum { TABLE_BOOTSTATE = 0, TABLE_EVENTS, TABLE_ACTIONS, TABLE_SPEEDS } lookup_table_index_e;

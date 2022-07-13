@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_flight_fsm(void *argument);
+[[noreturn]] void task_flight_fsm(void *argument);

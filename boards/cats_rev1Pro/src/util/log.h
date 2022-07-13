@@ -20,10 +20,9 @@
 
 #pragma once
 
-#include "trcRecorder.h"
 #include "cmsis_os.h"
+#include "trcRecorder.h"
 
-#include <string.h>
 #include <stdbool.h>
 
 /** TRACING SECTION **/
@@ -43,11 +42,13 @@
 
 enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void log_set_level(int level);
 void log_enable();
 void log_disable();
 bool log_is_enabled();
-
 
 void log_log(int level, const char *file, int line, const char *format, ...) __attribute__((format(printf, 4, 5)));
 
@@ -55,6 +56,10 @@ void log_raw(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 /* just like log_raw, but without \n */
 void log_rawr(const char *format, ...) __attribute__((format(printf, 1, 2)));
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef CATS_DEBUG
 

@@ -18,4 +18,4 @@
 
 #pragma once
 
-void task_recorder(void *argument);
+[[noreturn]] void task_recorder(void *argument);

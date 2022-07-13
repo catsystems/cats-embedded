@@ -18,4 +18,4 @@
 
 #pragma once
 
-_Noreturn void task_preprocessing(void *argument);
+[[noreturn]] void task_preprocessing(void *argument);
