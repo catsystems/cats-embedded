@@ -65,9 +65,7 @@ extern imu_data_t global_imu_sim[NUM_BARO];
 extern state_estimation_input_t global_estimation_input;
 extern SI_data_t global_SI_data;
 extern flight_fsm_t global_flight_state;
-extern drop_test_fsm_t global_drop_test_state;
 extern estimation_output_t global_estimation_data;
-extern dt_telemetry_trigger_t dt_telemetry_trigger;
 
 /** Timers **/
 extern cats_timer_t ev_timers[NUM_TIMERS];
