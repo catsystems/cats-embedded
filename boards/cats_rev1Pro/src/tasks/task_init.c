@@ -31,12 +31,10 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 #include "lfs.h"
-#include "tasks/task_drop_test_fsm.h"
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_health_monitor.h"
 #include "tasks/task_peripherals.h"
 #include "tasks/task_preprocessing.h"
-#include "tasks/task_receiver.h"
 #include "tasks/task_recorder.h"
 #include "tasks/task_sensor_read.h"
 #include "tasks/task_simulator.h"
@@ -68,14 +66,12 @@ SET_TASK_PARAMS(task_sensor_read, 512)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_preprocessing, 512)
 
-// SET_TASK_PARAMS(task_receiver, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_state_est, 512)
 SET_TASK_PARAMS(task_health_monitor, 256)
 
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_flight_fsm, 512)
-// SET_TASK_PARAMS(task_drop_test_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1024)
@@ -271,9 +267,6 @@ static void init_tasks() {
 
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
 
-      // osThreadNew(task_receiver, NULL, &task_receiver_attributes);
-
-      // osThreadNew(task_drop_test_fsm, NULL, &task_drop_test_fsm_attributes);
     } break;
     case CATS_CONFIG:
       break;

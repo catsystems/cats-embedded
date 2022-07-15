@@ -87,15 +87,6 @@ typedef struct {
                                   frame. */
 } filtered_data_info_t;
 
-typedef union {
-  flight_fsm_e flight_state;
-  drop_test_fsm_e drop_state;
-} flight_state_u;
-
-typedef struct {
-  flight_state_u flight_or_drop_state;
-} flight_state_t;
-
 typedef struct {
   cats_event_e event;
   uint8_t action_idx;
@@ -113,7 +104,7 @@ typedef union {
   flight_info_t flight_info;
   orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;
-  flight_state_t flight_state;
+  flight_fsm_e flight_state;
   event_info_t event_info;
   error_info_t error_info;
 } rec_elem_u;

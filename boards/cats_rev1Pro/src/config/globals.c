@@ -149,8 +149,6 @@ state_estimation_input_t global_estimation_input = {0};
 SI_data_t global_SI_data = {0};
 estimation_output_t global_estimation_data = {0};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};
-drop_test_fsm_t global_drop_test_state = {.flight_state = DT_READY};
-dt_telemetry_trigger_t dt_telemetry_trigger = {0};
 
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};

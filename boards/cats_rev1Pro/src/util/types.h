@@ -151,30 +151,6 @@ typedef struct {
   bool state_changed;
 } flight_fsm_t;
 
-typedef enum {
-  DT_INVALID = 0,
-  DT_READY,
-  DT_WAITING,
-  DT_DROGUE,
-  DT_MAIN,
-  DT_TOUCHDOWN,
-  HEHE3 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
-} drop_test_fsm_e;
-
-typedef struct {
-  drop_test_fsm_e flight_state;
-  uint32_t timer_start_drogue;
-  uint32_t timer_start_main;
-  uint32_t memory;
-  bool state_changed;
-} drop_test_fsm_t;
-
-typedef struct {
-  uint8_t set_waiting;
-  uint8_t set_drogue;
-  uint8_t set_main;
-} dt_telemetry_trigger_t;
-
 typedef struct {
   float32_t Ad_data[9];
   float32_t Ad_T_data[9];

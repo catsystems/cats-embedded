@@ -162,7 +162,7 @@ void parse_recording(uint16_t number) {
         case FLIGHT_STATE: {
           size_t elem_sz = sizeof(rec_elem.u.flight_state);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FLIGHT_STATE|%u", rec_elem.ts, rec_elem.u.flight_state.flight_or_drop_state.flight_state);
+          log_raw("%lu|FLIGHT_STATE|%u", rec_elem.ts, rec_elem.u.flight_state);
         } break;
         case EVENT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.event_info);

@@ -43,8 +43,7 @@ _Noreturn void task_flight_fsm(__attribute__((unused)) void *argument) {
 
     if (global_flight_state.state_changed) {
       log_error("State Changed FlightFSM to %s", flight_fsm_map[global_flight_state.flight_state]);
-      flight_state_t flight_state = {.flight_or_drop_state.flight_state = global_flight_state.flight_state};
-      record(tick_count, FLIGHT_STATE, &flight_state);
+      record(tick_count, FLIGHT_STATE, &global_flight_state.flight_state);
     }
 
     tick_count += tick_update;
