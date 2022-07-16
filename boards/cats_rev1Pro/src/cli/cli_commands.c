@@ -534,24 +534,61 @@ static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
   }
 }
 
+/* flight_parse <flight_idx> [--filter <RECORDER TYPE>...] */
 static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
-  /* TODO - count how many files in a directory here */
-  char *endptr;
-  uint32_t flight_idx = strtoul(args, &endptr, 10);
+  char *ptr = strtok(args, " ");
 
-  if (args != endptr) {
-    // A number was found
-    if (flight_idx > flight_counter) {
-      cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
-      cli_print_linef("Number of recorded flights: %lu", flight_counter);
+  uint32_t flight_idx = 0;
+  rec_entry_type_e filter_mask = 0;
+
+  /* Read flight_idx */
+  if (ptr != NULL) {
+    char *endptr;
+    flight_idx = strtoul(ptr, &endptr, 10);
+
+    if (args != endptr) {
+      // A number was found
+      if (flight_idx > flight_counter) {
+        cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
+        cli_print_linef("Number of recorded flights: %lu", flight_counter);
+      }
     } else {
-      cli_print_linefeed();
-      parse_recording(flight_idx);
+      cli_print_linef("\nBad flight index argument: %s!", ptr);
+      return;
     }
   } else {
-    cli_print_line("\nArgument not provided!");
+    cli_print_line("\nFlight index not provided!");
+    return;
   }
+
+  /* Read filter command */
+  ptr = strtok(NULL, " ");
+  if (ptr != NULL) {
+    if (!strcmp(ptr, "--filter")) {
+      /*Read filter types */
+      while (ptr != NULL) {
+        if(!strcmp(ptr, "IMU")) filter_mask |= IMU;
+        if(!strcmp(ptr, "BARO")) filter_mask |= BARO;
+        if(!strcmp(ptr, "MAGNETO")) filter_mask |= MAGNETO;
+        if(!strcmp(ptr, "ACCELEROMETER")) filter_mask |= ACCELEROMETER;
+        if(!strcmp(ptr, "FLIGHT_INFO")) filter_mask |= FLIGHT_INFO;
+        if(!strcmp(ptr, "ORIENTATION_INFO")) filter_mask |= ORIENTATION_INFO;
+        if(!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask |= FILTERED_DATA_INFO;
+        if(!strcmp(ptr, "FLIGHT_STATE")) filter_mask |= FLIGHT_STATE;
+        if(!strcmp(ptr, "EVENT_INFO")) filter_mask |= EVENT_INFO;
+        if(!strcmp(ptr, "ERROR_INFO")) filter_mask |= ERROR_INFO;
+        ptr = strtok(NULL, " ");
+      }
+    } else {
+      cli_print_linef("\nBad option: %s!", ptr);
+    }
+  } else {
+    filter_mask = UINT32_MAX;
+  }
+
+  parse_recording(flight_idx, filter_mask);
 }
+
 static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
   /* TODO - count how many files in a directory here */
   char *endptr;

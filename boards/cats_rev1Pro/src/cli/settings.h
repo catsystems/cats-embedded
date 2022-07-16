@@ -105,6 +105,4 @@ typedef struct cli_value {
 extern const lookup_table_entry_t lookup_tables[];
 extern const uint16_t value_table_entry_count;
 
-extern char *lookup_table_speeds[NUM_REC_SPEEDS];
-
 extern const cli_value_t value_table[];

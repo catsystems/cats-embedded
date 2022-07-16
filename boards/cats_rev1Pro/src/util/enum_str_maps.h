@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include "cmsis_os.h"
-#include "recorder.h"
-#include "util/types.h"
+extern const char *boot_state_map[6];
+extern const char *fsm_map[14];
+extern const char *event_map[9];
+extern const char *action_map[17];
 
-void dump_recording(uint16_t number);
-void parse_recording(uint16_t number, rec_entry_type_e filter_mask);
+extern char *recorder_speed_map[NUM_REC_SPEEDS];
 
-void parse_stats(uint16_t number);
+void init_recorder_speed_map();

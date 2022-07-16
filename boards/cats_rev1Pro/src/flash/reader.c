@@ -20,10 +20,12 @@
 
 #include <stddef.h>
 
+#include "cli/settings.h"
 #include "config/globals.h"
 #include "control/data_processing.h"
 #include "flash/lfs_custom.h"
 #include "recorder.h"
+#include "util/enum_str_maps.h"
 #include "util/log.h"
 
 void dump_recording(uint16_t number) {
@@ -89,7 +91,7 @@ void dump_recording(uint16_t number) {
   free(string_buffer2);
 }
 
-void parse_recording(uint16_t number) {
+void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
     log_raw("The recorder is currently active, stop it first!");
     return;
@@ -111,67 +113,91 @@ void parse_recording(uint16_t number) {
 
     while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem, 8) > 0) {
       const rec_entry_type_e rec_type = rec_elem.rec_type;
-      switch (get_record_type_without_id(rec_type)) {
+      const rec_entry_type_e rec_type_without_id = get_record_type_without_id(rec_type);
+      switch (rec_type_without_id) {
         case IMU: {
           size_t elem_sz = sizeof(rec_elem.u.imu);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.imu.acc.x,
-                  rec_elem.u.imu.acc.y, rec_elem.u.imu.acc.z, rec_elem.u.imu.gyro.x, rec_elem.u.imu.gyro.y,
-                  rec_elem.u.imu.gyro.z);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.ts, get_id_from_record_type(rec_type),
+                    rec_elem.u.imu.acc.x, rec_elem.u.imu.acc.y, rec_elem.u.imu.acc.z, rec_elem.u.imu.gyro.x,
+                    rec_elem.u.imu.gyro.y, rec_elem.u.imu.gyro.z);
+          }
         } break;
         case BARO: {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
-                  rec_elem.u.baro.temperature);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
+                    rec_elem.u.baro.temperature);
+          }
         } break;
         case MAGNETO: {
           size_t elem_sz = sizeof(rec_elem.u.magneto_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.magneto_info.x,
-                  (double)rec_elem.u.magneto_info.y, (double)rec_elem.u.magneto_info.z);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.magneto_info.x,
+                    (double)rec_elem.u.magneto_info.y, (double)rec_elem.u.magneto_info.z);
+          }
         } break;
         case ACCELEROMETER: {
           size_t elem_sz = sizeof(rec_elem.u.accel_data);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ACC|%d|%d|%d", rec_elem.ts, rec_elem.u.accel_data.x, rec_elem.u.accel_data.y,
-                  rec_elem.u.accel_data.z);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|ACC|%d|%d|%d", rec_elem.ts, rec_elem.u.accel_data.x, rec_elem.u.accel_data.y,
+                    rec_elem.u.accel_data.z);
+          }
         } break;
         case FLIGHT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.flight_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.flight_info.acceleration,
-                  (double)rec_elem.u.flight_info.height, (double)rec_elem.u.flight_info.velocity);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.flight_info.acceleration,
+                    (double)rec_elem.u.flight_info.height, (double)rec_elem.u.flight_info.velocity);
+          }
         } break;
         case ORIENTATION_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.orientation_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.ts, rec_elem.u.orientation_info.estimated_orientation[0],
-                  rec_elem.u.orientation_info.estimated_orientation[1],
-                  rec_elem.u.orientation_info.estimated_orientation[2],
-                  rec_elem.u.orientation_info.estimated_orientation[3]);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.ts,
+                    rec_elem.u.orientation_info.estimated_orientation[0],
+                    rec_elem.u.orientation_info.estimated_orientation[1],
+                    rec_elem.u.orientation_info.estimated_orientation[2],
+                    rec_elem.u.orientation_info.estimated_orientation[3]);
+          }
         } break;
         case FILTERED_DATA_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.filtered_data_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.ts,
-                  (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
-                  (double)rec_elem.u.filtered_data_info.filtered_acceleration);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.ts,
+                    (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
+                    (double)rec_elem.u.filtered_data_info.filtered_acceleration);
+          }
         } break;
         case FLIGHT_STATE: {
           size_t elem_sz = sizeof(rec_elem.u.flight_state);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|FLIGHT_STATE|%u", rec_elem.ts, rec_elem.u.flight_state);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|FLIGHT_STATE|%s", rec_elem.ts, fsm_map[rec_elem.u.flight_state]);
+          }
         } break;
         case EVENT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.event_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|EVENT_INFO|%d|%u", rec_elem.ts, rec_elem.u.event_info.event, rec_elem.u.event_info.action_idx);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            uint8_t action_idx = rec_elem.u.event_info.action_idx;
+            log_raw("%lu|EVENT_INFO|%s|%u", rec_elem.ts,
+                    (lookup_tables[TABLE_EVENTS].values)[rec_elem.u.event_info.event], action_idx);
+          }
         } break;
         case ERROR_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.error_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          log_raw("%lu|ERROR_INFO|%d", rec_elem.ts, rec_elem.u.error_info.error);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|ERROR_INFO|%d", rec_elem.ts, rec_elem.u.error_info.error);
+          }
         } break;
         default:
           log_raw("Impossible recorder entry type!");
