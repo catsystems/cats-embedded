@@ -18,31 +18,16 @@
  */
 
 #include "cli/settings.h"
-#include "config/cats_config.h"
-
-const char* const lookup_table_boot_state[] = {
-    "CATS_INVALID", "CATS_IDLE", "CATS_CONFIG", "CATS_TIMER", "CATS_DROP", "CATS_FLIGHT",
-};
-
-const char* const lookup_table_events[] = {
-    "MOVING", "READY", "LIFTOFF", "MAX_V", "APOGEE", "POST_APOGEE", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
-};
-
-const char* const lookup_table_actions[] = {
-    "NONE",   "DELAY",   "HC_ONE",  "HC_TWO",    "HC_THREE",  "HC_FOUR",     "HC_FIVE",    "HC_SIX",   "LL_ONE",
-    "LL_TWO", "LL_TREE", "LL_FOUR", "SERVO_ONE", "SERVO_TWO", "SERVO_THREE", "SERVO_FOUR", "RECORDER",
-};
-
-char* lookup_table_speeds[NUM_REC_SPEEDS] = {};
+#include "util/enum_str_maps.h"
 
 #define LOOKUP_TABLE_ENTRY(name) \
   { name, ARRAYLEN(name) }
 
 const lookup_table_entry_t lookup_tables[] = {
-    LOOKUP_TABLE_ENTRY(lookup_table_boot_state),
-    LOOKUP_TABLE_ENTRY(lookup_table_events),
-    LOOKUP_TABLE_ENTRY(lookup_table_actions),
-    {(const char* const*)lookup_table_speeds, NUM_REC_SPEEDS},
+    LOOKUP_TABLE_ENTRY(boot_state_map),
+    LOOKUP_TABLE_ENTRY(event_map),
+    LOOKUP_TABLE_ENTRY(action_map),
+    {(const char* const*)recorder_speed_map, NUM_REC_SPEEDS},
 };
 
 #undef LOOKUP_TABLE_ENTRY

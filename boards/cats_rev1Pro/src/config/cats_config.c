@@ -17,9 +17,9 @@
  */
 
 #include "config/cats_config.h"
-#include "cli/settings.h"
 #include "config/globals.h"
 #include "util/actions.h"
+#include "util/enum_str_maps.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,12 +78,7 @@ lfs_file_t config_file;
 void cc_init() {
   /* Fill lookup_table_speeds with the string representation of the available speeds. The speeds are placed in the array
    * in descending order and are dependent on CONTROL_SAMPLING_FREQ. */
-  for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
-    // TODO: free this memory
-    lookup_table_speeds[i] = (char*)(calloc(14, sizeof(char)));
-    // TODO: assert that lookupTableSpeeds[i] is not NULL
-    snprintf(lookup_table_speeds[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
-  }
+  init_recorder_speed_map();
 #if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
   HAL_FLASH_Unlock();
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);

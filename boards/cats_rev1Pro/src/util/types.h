@@ -121,9 +121,6 @@ typedef struct {
   float magneto_radius;
 } magneto_calibration_data_t;
 
-extern const char *flight_fsm_map[14];
-extern const char *drop_test_fsm_map[7];
-
 typedef enum {
   INVALID = 0,
   MOVING = 1,
