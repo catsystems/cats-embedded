@@ -515,22 +515,55 @@ static void cli_cmd_rec_info(const char *cmd_name, char *args) {
   cli_print_linef("Number of stats logs: %ld", num_stats);
 }
 
-static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
-  /* TODO - count how many files in a directory here */
-  char *endptr;
-  uint32_t flight_idx = strtoul(args, &endptr, 10);
-
-  if (args != endptr) {
-    // A number was found
-    if (flight_idx > flight_counter) {
-      cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
-      cli_print_linef("Number of recorded flights: %lu", flight_counter);
-    } else {
-      cli_print_linefeed();
-      dump_recording(flight_idx);
-    }
-  } else {
+/**
+ * Parse the log index argument string and return it as a number.
+ *
+ * The function supports tail indexing: -1, -2, -3..., where -1 is the last log, -2 the one before it, etc.
+ *
+ *
+ * @param log_idx_arg
+ * @return
+ */
+static int32_t get_flight_idx(const char *log_idx_arg) {
+  if (log_idx_arg == NULL) {
     cli_print_line("\nArgument not provided!");
+    return -1;
+  }
+
+  char *endptr;
+  int32_t flight_idx = strtol(log_idx_arg, &endptr, 10);
+
+  if (log_idx_arg == endptr) {
+    cli_print_linef("\nInvalid argument: %s.", log_idx_arg);
+    return -1;
+  }
+
+  /* Check for tail indexing */
+  if (flight_idx < 0) {
+    /* Convert to "normal" index */
+    flight_idx = flight_counter + 1 + flight_idx;
+  }
+
+  if (flight_idx <= 0) {
+    cli_print_linef("\nInvalid flight: %s.", log_idx_arg);
+    return -1;
+  }
+
+  if (flight_idx > flight_counter) {
+    cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
+    cli_print_linef("Number of recorded flights: %lu", flight_counter);
+    return -1;
+  }
+
+  return flight_idx;
+}
+
+static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
+  int32_t flight_idx_or_err = get_flight_idx(args);
+
+  if (flight_idx_or_err > 0) {
+    cli_print_linefeed();
+    dump_recording(flight_idx_or_err);
   }
 }
 
@@ -538,26 +571,10 @@ static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
 static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
   char *ptr = strtok(args, " ");
 
-  uint32_t flight_idx = 0;
+  int32_t flight_idx_or_err = get_flight_idx(ptr);
   rec_entry_type_e filter_mask = 0;
 
-  /* Read flight_idx */
-  if (ptr != NULL) {
-    char *endptr;
-    flight_idx = strtoul(ptr, &endptr, 10);
-
-    if (args != endptr) {
-      // A number was found
-      if (flight_idx > flight_counter) {
-        cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
-        cli_print_linef("Number of recorded flights: %lu", flight_counter);
-      }
-    } else {
-      cli_print_linef("\nBad flight index argument: %s!", ptr);
-      return;
-    }
-  } else {
-    cli_print_line("\nFlight index not provided!");
+  if (flight_idx_or_err < 0) {
     return;
   }
 
@@ -567,16 +584,16 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
     if (!strcmp(ptr, "--filter")) {
       /*Read filter types */
       while (ptr != NULL) {
-        if(!strcmp(ptr, "IMU")) filter_mask |= IMU;
-        if(!strcmp(ptr, "BARO")) filter_mask |= BARO;
-        if(!strcmp(ptr, "MAGNETO")) filter_mask |= MAGNETO;
-        if(!strcmp(ptr, "ACCELEROMETER")) filter_mask |= ACCELEROMETER;
-        if(!strcmp(ptr, "FLIGHT_INFO")) filter_mask |= FLIGHT_INFO;
-        if(!strcmp(ptr, "ORIENTATION_INFO")) filter_mask |= ORIENTATION_INFO;
-        if(!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask |= FILTERED_DATA_INFO;
-        if(!strcmp(ptr, "FLIGHT_STATE")) filter_mask |= FLIGHT_STATE;
-        if(!strcmp(ptr, "EVENT_INFO")) filter_mask |= EVENT_INFO;
-        if(!strcmp(ptr, "ERROR_INFO")) filter_mask |= ERROR_INFO;
+        if (!strcmp(ptr, "IMU")) filter_mask |= IMU;
+        if (!strcmp(ptr, "BARO")) filter_mask |= BARO;
+        if (!strcmp(ptr, "MAGNETO")) filter_mask |= MAGNETO;
+        if (!strcmp(ptr, "ACCELEROMETER")) filter_mask |= ACCELEROMETER;
+        if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask |= FLIGHT_INFO;
+        if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask |= ORIENTATION_INFO;
+        if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask |= FILTERED_DATA_INFO;
+        if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask |= FLIGHT_STATE;
+        if (!strcmp(ptr, "EVENT_INFO")) filter_mask |= EVENT_INFO;
+        if (!strcmp(ptr, "ERROR_INFO")) filter_mask |= ERROR_INFO;
         ptr = strtok(NULL, " ");
       }
     } else {
@@ -586,25 +603,15 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
     filter_mask = UINT32_MAX;
   }
 
-  parse_recording(flight_idx, filter_mask);
+  parse_recording(flight_idx_or_err, filter_mask);
 }
 
 static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
-  /* TODO - count how many files in a directory here */
-  char *endptr;
-  uint32_t flight_idx = strtoul(args, &endptr, 10);
+  int32_t flight_idx_or_err = get_flight_idx(args);
 
-  if (args != endptr) {
-    // A number was found
-    if (flight_idx > flight_counter) {
-      cli_print_linef("\nFlight %lu doesn't exist", flight_idx);
-      cli_print_linef("Number of recorded flights: %lu", flight_counter);
-    } else {
-      cli_print_linefeed();
-      parse_stats(flight_idx);
-    }
-  } else {
-    cli_print_line("\nArgument not provided!");
+  if (flight_idx_or_err > 0) {
+    cli_print_linefeed();
+    parse_stats(flight_idx_or_err);
   }
 }
 
@@ -616,6 +623,7 @@ static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
     cli_print_linef("LFS mounting failed with error %d!", err);
   } else {
     cli_print_line("Mounting successful!");
+    flight_counter = 0;
     /* create the flights directory */
     lfs_mkdir(&lfs, "flights");
     lfs_mkdir(&lfs, "stats");
