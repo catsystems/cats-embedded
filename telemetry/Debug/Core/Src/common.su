@@ -1,0 +1,4 @@
+common.cpp:10:28:expresslrs_mod_settings_s* get_elrs_airRateConfig(uint8_t)	16	static
+common.cpp:20:9:uint8_t enumRatetoIndex(uint8_t)	32	static
+common.cpp:40:29:void __static_initialization_and_destruction_0(int, int)	16	static
+common.cpp:40:29:cpp)	8	static

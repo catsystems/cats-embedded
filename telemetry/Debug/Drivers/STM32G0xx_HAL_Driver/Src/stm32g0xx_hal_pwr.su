@@ -1,0 +1,12 @@
+stm32g0xx_hal_pwr.c:74:6:HAL_PWR_DeInit	8	static
+stm32g0xx_hal_pwr.c:229:6:HAL_PWR_EnableBkUpAccess	8	static
+stm32g0xx_hal_pwr.c:239:6:HAL_PWR_DisableBkUpAccess	8	static
+stm32g0xx_hal_pwr.c:263:6:HAL_PWR_EnableWakeUpPin	16	static
+stm32g0xx_hal_pwr.c:285:6:HAL_PWR_DisableWakeUpPin	16	static
+stm32g0xx_hal_pwr.c:319:6:HAL_PWR_EnterSLEEPMode	16	static,ignoring_inline_asm
+stm32g0xx_hal_pwr.c:399:6:HAL_PWR_EnterSTOPMode	16	static,ignoring_inline_asm
+stm32g0xx_hal_pwr.c:454:6:HAL_PWR_EnterSTANDBYMode	8	static,ignoring_inline_asm
+stm32g0xx_hal_pwr.c:481:6:HAL_PWR_EnableSleepOnExit	8	static
+stm32g0xx_hal_pwr.c:495:6:HAL_PWR_DisableSleepOnExit	8	static
+stm32g0xx_hal_pwr.c:509:6:HAL_PWR_EnableSEVOnPend	8	static
+stm32g0xx_hal_pwr.c:522:6:HAL_PWR_DisableSEVOnPend	8	static

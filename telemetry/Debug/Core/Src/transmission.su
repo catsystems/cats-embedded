@@ -1,0 +1,19 @@
+FHSS.h:24:24:uint32_t GetInitialFreq()	8	static
+FHSS.h:36:20:void FHSSsetCurrIndex(uint8_t)	16	static
+FHSS.h:42:24:uint32_t FHSSgetNextFreq()	16	static
+transmission.cpp:36:6:void SetRFLinkRate(mode_e)	80	static
+transmission.cpp:53:6:void ProcessRFPacket()	32	static
+transmission.cpp:77:6:void RXdoneISR()	8	static
+transmission.cpp:97:6:void TXdoneISR()	8	static
+transmission.cpp:105:6:void transmissionSetup(mode_e)	40	static
+transmission.cpp:141:6:void rx_timeout()	8	static
+transmission.cpp:163:6:void tx_transmit()	8	static
+transmission.cpp:186:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
+LQCALC.h:9:5:LQCALC<N>::LQCALC() [with unsigned char N = 30]	16	static
+LQCALC.h:27:10:void LQCALC<N>::inc() [with unsigned char N = 30]	16	static
+LQCALC.h:18:10:void LQCALC<N>::add() [with unsigned char N = 30]	16	static
+LQCALC.h:56:13:uint8_t LQCALC<N>::getLQ() const [with unsigned char N = 30]	16	static
+LQCALC.h:80:10:void LQCALC<N>::reset() [with unsigned char N = 30]	24	static
+LQCALC.h:92:10:bool LQCALC<N>::currentIsSet() const [with unsigned char N = 30]	16	static
+transmission.cpp:194:1:void __static_initialization_and_destruction_0(int, int)	16	static
+transmission.cpp:194:1:cpp)	8	static
