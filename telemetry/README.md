@@ -10,6 +10,15 @@ This repository contains all firmware for the telemetry microcontroller.
 * Frequency Hopping Spread Spectrum
 * Support for GNSS modules
 
+## Contribution
+Contributions are welcome and encouraged. You can contribute in many ways:
+
+* Implement a new feature in the firmware
+* Bug reporting & fixes
+* New feature ideas & suggestions
+
+The best way to get started is to join our [Discord](https://discord.gg/H9Caj8XeBj) server.
+
 ## Open Source
 All CATS code is open source and can be used free of charge without warranty. 
 
