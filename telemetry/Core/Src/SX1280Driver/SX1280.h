@@ -5,6 +5,7 @@
 #include "SX1280_hal.h"
 #include "stm32g0xx_hal.h"
 
+class Transmission;
 
 class SX1280Driver
 {
@@ -35,7 +36,7 @@ public:
     SX1280Driver();
     bool Begin();
     void End();
-    void SetTxIdleMode() { SetMode(SX1280_MODE_FS); }; // set Idle mode used when switching from RX to TX
+    void SetIdleMode() { SetMode(SX1280_MODE_FS); }; // set Idle mode used when switching from RX to TX
     void Config(uint8_t bw, uint8_t sf, uint8_t cr, uint32_t freq,
                 uint8_t PreambleLength, bool InvertIQ, uint8_t PayloadLength, uint32_t interval,
                 uint32_t flrcSyncWord=0, uint16_t flrcCrcSeed=0, uint8_t flrc=0);

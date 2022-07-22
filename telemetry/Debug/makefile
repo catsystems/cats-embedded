@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (9-2020-q2-update)
+# Toolchain: GNU Tools for STM32 (10.3-2021.10)
 ################################################################################
 
 -include ../makefile.init
@@ -11,6 +11,7 @@ RM := rm -rf
 -include sources.mk
 -include Drivers/STM32G0xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
+-include Core/Src/Transmission/subdir.mk
 -include Core/Src/TinyGPSPlus/subdir.mk
 -include Core/Src/SX1280Driver/subdir.mk
 -include Core/Src/FHSS/subdir.mk
@@ -61,14 +62,14 @@ BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ART
 EXECUTABLES += \
 cats_tele_tx.elf \
 
+MAP_FILES += \
+cats_tele_tx.map \
+
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
 cats_tele_tx.list \
-
-OBJCOPY_BIN += \
-cats_tele_tx.bin \
 
 
 # All Target
@@ -78,8 +79,8 @@ all: main-build
 main-build: cats_tele_tx.elf secondary-outputs
 
 # Tool invocations
-cats_tele_tx.elf: $(OBJS) $(USER_OBJS) C:\Users\Luca\Google\ Drive\Projects\CATS\cats-telemetry\STM32G071GBUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "cats_tele_tx.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\Luca\Google Drive\Projects\CATS\cats-telemetry\STM32G071GBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="cats_tele_tx.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+cats_tele_tx.elf cats_tele_tx.map: $(OBJS) $(USER_OBJS) G:\My\ Drive\Projects\CATS\cats-telemetry\STM32G071GBUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "cats_tele_tx.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"G:\My Drive\Projects\CATS\cats-telemetry\STM32G071GBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="cats_tele_tx.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -93,17 +94,12 @@ cats_tele_tx.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-cats_tele_tx.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "cats_tele_tx.bin"
-	@echo 'Finished building: $@'
-	@echo ' '
-
 # Other Targets
 clean:
-	-$(RM) cats_tele_tx.bin cats_tele_tx.elf cats_tele_tx.list default.size.stdout
+	-$(RM) cats_tele_tx.elf cats_tele_tx.list cats_tele_tx.map default.size.stdout
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'
