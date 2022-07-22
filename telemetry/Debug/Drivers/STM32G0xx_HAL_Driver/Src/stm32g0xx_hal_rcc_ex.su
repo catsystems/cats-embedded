@@ -1,0 +1,5 @@
+stm32g0xx_hal_rcc_ex.c:114:19:HAL_RCCEx_PeriphCLKConfig	32	static
+stm32g0xx_hal_rcc_ex.c:471:6:HAL_RCCEx_GetPeriphCLKConfig	16	static
+stm32g0xx_hal_rcc_ex.c:612:10:HAL_RCCEx_GetPeriphCLKFreq	32	static
+stm32g0xx_hal_rcc_ex.c:1218:6:HAL_RCCEx_EnableLSCO	56	static
+stm32g0xx_hal_rcc_ex.c:1265:6:HAL_RCCEx_DisableLSCO	16	static
