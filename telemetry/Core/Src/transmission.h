@@ -5,12 +5,7 @@
  *      Author: luca.jost
  */
 #pragma once
+#include "common.h"
 
-typedef enum {
-	TX = 1,
-	RX = 2,
-} mode_e;
-
-
-void transmissionSetup(mode_e mode);
+void transmissionSetup(transmission_direction_e mode);
 

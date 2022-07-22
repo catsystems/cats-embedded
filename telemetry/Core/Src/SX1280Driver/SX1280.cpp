@@ -1,7 +1,6 @@
 #include "SX1280Driver/SX1280_Regs.h"
 #include "SX1280Driver/SX1280_hal.h"
 #include "SX1280Driver/SX1280.h"
-//#include "logging.h"
 
 SX1280Hal hal;
 SX1280Driver *SX1280Driver::instance = NULL;

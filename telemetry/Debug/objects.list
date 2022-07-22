@@ -4,6 +4,7 @@
 "./Core/Src/SX1280Driver/SX1280.o"
 "./Core/Src/SX1280Driver/SX1280_hal.o"
 "./Core/Src/TinyGPSPlus/TinyGPS.o"
+"./Core/Src/Transmission/Transmission.o"
 "./Core/Src/common.o"
 "./Core/Src/gps.o"
 "./Core/Src/main.o"

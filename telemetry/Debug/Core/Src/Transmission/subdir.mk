@@ -5,29 +5,23 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../Core/Src/FHSS/FHSS.cpp \
-../Core/Src/FHSS/crc.cpp \
-../Core/Src/FHSS/random.cpp 
+../Core/Src/Transmission/Transmission.cpp 
 
 OBJS += \
-./Core/Src/FHSS/FHSS.o \
-./Core/Src/FHSS/crc.o \
-./Core/Src/FHSS/random.o 
+./Core/Src/Transmission/Transmission.o 
 
 CPP_DEPS += \
-./Core/Src/FHSS/FHSS.d \
-./Core/Src/FHSS/crc.d \
-./Core/Src/FHSS/random.d 
+./Core/Src/Transmission/Transmission.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-Core/Src/FHSS/%.o Core/Src/FHSS/%.su: ../Core/Src/FHSS/%.cpp Core/Src/FHSS/subdir.mk
+Core/Src/Transmission/%.o Core/Src/Transmission/%.su: ../Core/Src/Transmission/%.cpp Core/Src/Transmission/subdir.mk
 	arm-none-eabi-g++ "$<" -mcpu=cortex-m0plus -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G071xx -c -I../Core/Src -I../Drivers/STM32G0xx_HAL_Driver/Inc -I../Drivers/STM32G0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G0xx/Include -I../Drivers/CMSIS/Include -I../Lib -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 
-clean: clean-Core-2f-Src-2f-FHSS
+clean: clean-Core-2f-Src-2f-Transmission
 
-clean-Core-2f-Src-2f-FHSS:
-	-$(RM) ./Core/Src/FHSS/FHSS.d ./Core/Src/FHSS/FHSS.o ./Core/Src/FHSS/FHSS.su ./Core/Src/FHSS/crc.d ./Core/Src/FHSS/crc.o ./Core/Src/FHSS/crc.su ./Core/Src/FHSS/random.d ./Core/Src/FHSS/random.o ./Core/Src/FHSS/random.su
+clean-Core-2f-Src-2f-Transmission:
+	-$(RM) ./Core/Src/Transmission/Transmission.d ./Core/Src/Transmission/Transmission.o ./Core/Src/Transmission/Transmission.su
 
-.PHONY: clean-Core-2f-Src-2f-FHSS
+.PHONY: clean-Core-2f-Src-2f-Transmission
 

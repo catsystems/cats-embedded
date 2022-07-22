@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "SX1280Driver/SX1280Driver.h"
-#include "transmission.h"
+#include "Transmission/Transmission.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -109,7 +109,13 @@ int main(void)
   HAL_Delay(4000);
 
   gpsSetup();
-  transmissionSetup(RX);
+  Transmission Link;
+
+  Link.begin(&htim2);
+  uint8_t buffer[] = "test123";
+  Link.setLinkPhrase(buffer, 7);
+  Link.setDirection(TX);
+  Link.enableTransmission();
   /* USER CODE END 2 */
 
   /* Infinite loop */

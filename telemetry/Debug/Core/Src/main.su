@@ -1,9 +1,13 @@
-main.cpp:79:5:int main()	8	static
-main.cpp:134:6:void SystemClock_Config()	88	static
-main.cpp:179:13:void MX_ADC1_Init()	24	static
-main.cpp:236:13:void MX_SPI1_Init()	8	static
-main.cpp:276:13:void MX_TIM2_Init()	40	static
-main.cpp:321:13:void MX_USART1_UART_Init()	8	static
-main.cpp:369:13:void MX_USART2_UART_Init()	8	static
-main.cpp:417:13:void MX_GPIO_Init()	48	static
-main.cpp:482:6:void Error_Handler()	8	static,ignoring_inline_asm
+../Core/Src/Transmission/TransmissionSettings.h:24:7:TransmissionSettings::TransmissionSettings()	24	static
+../Core/Src/Transmission/Transmission.h:25:7:Transmission::Transmission()	16	static
+../Core/Src/main.cpp:79:5:int main()	200	static
+../Core/Src/main.cpp:140:6:void SystemClock_Config()	88	static
+../Core/Src/main.cpp:185:13:void MX_ADC1_Init()	24	static
+../Core/Src/main.cpp:242:13:void MX_SPI1_Init()	8	static
+../Core/Src/main.cpp:282:13:void MX_TIM2_Init()	40	static
+../Core/Src/main.cpp:327:13:void MX_USART1_UART_Init()	8	static
+../Core/Src/main.cpp:375:13:void MX_USART2_UART_Init()	8	static
+../Core/Src/main.cpp:423:13:void MX_GPIO_Init()	48	static
+../Core/Src/main.cpp:488:6:void Error_Handler()	8	static,ignoring_inline_asm
+../Core/Src/LQCALC/LQCALC.h:9:5:LQCALC<N>::LQCALC() [with unsigned char N = 30]	16	static
+../Core/Src/LQCALC/LQCALC.h:80:10:void LQCALC<N>::reset() [with unsigned char N = 30]	24	static
