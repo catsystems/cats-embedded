@@ -24,11 +24,25 @@
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
+#include "util/task_util.h"
+
+#include "tasks/task_simulator.h"
+#include "tasks/task_usb_communicator.h"
 
 /** Private Constants **/
 
 /** Private Function Declarations **/
 static void check_high_current_channels();
+
+static void init_communication();
+
+static void init_simulation();
+
+SET_TASK_PARAMS(task_usb_communicator, 512)
+#ifdef CATS_DEBUG
+SET_TASK_PARAMS(task_simulator, 512)
+#endif
+
 /** Exported Function Definitions **/
 
 [[noreturn]] void task_health_monitor(__attribute__((unused)) void *argument) {
@@ -41,6 +55,14 @@ static void check_high_current_channels();
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
+    if (global_usb_detection == true && usb_communication_complete == false) {
+      init_communication();
+    }
+    /* Start Simulation Task */
+    if (simulation_started == true && simulation_start_complete == false) {
+      init_simulation();
+    }
+
     // Check battery level
     battery_level_e level = battery_level();
     bool level_changed = (old_level != level);
@@ -129,4 +151,14 @@ static void check_high_current_channels() {
     }
   }
   if (error_encountered == false) clear_error(CATS_ERR_NO_PYRO);
+}
+
+static void init_communication() {
+  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+  usb_communication_complete = true;
+}
+
+static void init_simulation() {
+  osThreadNew(task_simulator, NULL, &task_simulator_attributes);
+  simulation_start_complete = true;
 }

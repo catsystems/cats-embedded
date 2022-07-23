@@ -549,7 +549,7 @@ void target_pre_init() {
 }
 
 
-void target_init(){
+void  target_init(){
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();

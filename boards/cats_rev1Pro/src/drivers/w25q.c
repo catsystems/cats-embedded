@@ -19,6 +19,7 @@
 #include "drivers/w25q.h"
 #include "target.h"
 #include "util/log.h"
+#include "util/task_util.h"
 
 #define CATS_FLASH_SPI  1
 #define CATS_FLASH_QSPI 2
@@ -193,7 +194,7 @@ w25q_status_e w25q_init(void) {
   w25q.block_size = w25q.sector_size * 16;
   w25q.capacity_in_kilobytes = (w25q.sector_count * w25q.sector_size) / 1024;
 
-  osDelay(10);
+  sysDelay(10);
 
   uint8_t status1 = 0;
   uint8_t status2 = 0;
@@ -634,13 +635,13 @@ static inline uint8_t w25qxx_spi_receive() {
 }
 
 static inline void w25qxx_wait_for_write_end(void) {
-  // osDelay(1);
+  // sysDelay(1);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
   w25qxx_spi_transmit(W25Q_CMD_READ_STATUS_REG1);
   uint8_t status_reg_val = 0x00;
   do {
     status_reg_val = w25qxx_spi_receive();
-    osDelay(1);
+    sysDelay(1);
   } while ((status_reg_val & W25Q_STATUS_REG1_BUSY) == 1);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
 }
@@ -676,7 +677,7 @@ int8_t w25q_write_enable(void) {
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
   w25qxx_spi_transmit(W25Q_CMD_WRITE_ENABLE);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
-  // osDelay(1);
+  // sysDelay(1);
   return W25Q_OK;
 }
 
@@ -696,9 +697,9 @@ static inline void w25qxx_write_status_register(uint8_t status_register, uint8_t
 
 w25q_status_e w25q_init(void) {
   w25q.lock = 1;
-  while (osKernelGetTickCount() < 100) osDelay(1);
+  //while (osKernelGetTickCount() < 100) sysDelay(1);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
-  osDelay(100);
+  sysDelay(100);
 
   uint32_t device_id = 0;
   if (w25q_read_id(&device_id) != W25Q_OK) {
@@ -830,7 +831,7 @@ w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_v
 }
 
 w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
 
   w25qxx_wait_for_write_end();
@@ -847,7 +848,7 @@ w25q_status_e w25q_sector_erase(uint32_t sector_idx) {
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
 
-  osDelay(1);
+  sysDelay(1);
   w25q.lock = 0;
 
   return W25Q_OK;
@@ -872,7 +873,7 @@ bool w25q_is_sector_empty(uint32_t sector_idx) {
 }
 
 w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
 
   w25qxx_wait_for_write_end();
@@ -883,13 +884,13 @@ w25q_status_e w25q_block_erase_32k(uint32_t block_idx) {
   w25q_send_3_byte_addr(block_idx);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
-  osDelay(1);
+  sysDelay(1);
   w25q.lock = 0;
   return W25Q_OK;
 }
 
 w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
 
   w25qxx_wait_for_write_end();
@@ -905,27 +906,27 @@ w25q_status_e w25q_block_erase_64k(uint32_t block_idx) {
   }
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
-  osDelay(1);
+  sysDelay(1);
   w25q.lock = 0;
   return W25Q_OK;
 }
 
 w25q_status_e w25q_chip_erase(void) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
   w25q_write_enable();
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_RESET);
   w25qxx_spi_transmit(W25Q_CMD_CHIP_ERASE);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   w25qxx_wait_for_write_end();
-  osDelay(10);
+  sysDelay(10);
   w25q.lock = 0;
   return W25Q_OK;
 }
 
 w25q_status_e w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                                 uint32_t bytes_to_write_up_to_page_size) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
   if (((bytes_to_write_up_to_page_size + offset_in_bytes) > w25q.page_size) || (bytes_to_write_up_to_page_size == 0))
     bytes_to_write_up_to_page_size = w25q.page_size - offset_in_bytes;
@@ -1009,7 +1010,7 @@ w25q_status_e w25q_write_buffer(uint8_t *buf, uint32_t write_addr, uint32_t num_
 
 w25q_status_e w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                                uint32_t NumByteToRead_up_to_PageSize) {
-  while (w25q.lock == 1) osDelay(1);
+  while (w25q.lock == 1) sysDelay(1);
   w25q.lock = 1;
   if ((NumByteToRead_up_to_PageSize > w25q.page_size) || (NumByteToRead_up_to_PageSize == 0))
     NumByteToRead_up_to_PageSize = w25q.page_size;
@@ -1028,7 +1029,7 @@ w25q_status_e w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_
   HAL_SPI_Receive(&FLASH_SPI_HANDLE, buf, NumByteToRead_up_to_PageSize, 100);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
 
-  // osDelay(1);
+  // sysDelay(1);
   w25q.lock = 0;
   return W25Q_OK;
 }

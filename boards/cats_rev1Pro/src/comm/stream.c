@@ -20,6 +20,8 @@
 
 #include "comm/fifo.h"
 
+#include "util/task_util.h"
+
 void stream_init(stream_t *stream, fifo_t *fifo, uint32_t timeout_msec) {
   stream->fifo = fifo;
   stream->timeout_msec = timeout_msec;
@@ -38,7 +40,7 @@ bool stream_read_byte(const stream_t *stream, uint8_t *byte_ptr) {
     if (ret == true) {
       break;
     }
-    osDelay(1);
+    sysDelay(1);
   } while ((++timeout < stream->timeout_msec));
   return ret;
 }
@@ -52,7 +54,7 @@ bool stream_write_byte(const stream_t *stream, uint8_t byte) {
     if (ret == true) {
       break;
     }
-    osDelay(1);
+    sysDelay(1);
   } while ((++timeout < stream->timeout_msec));
   return ret;
 }
@@ -68,7 +70,7 @@ bool stream_read(const stream_t *stream, uint8_t *data, uint32_t len) {
     if (ret == true) {
       break;
     }
-    osDelay(1);
+    sysDelay(1);
   } while ((++timeout < stream->timeout_msec));
   return ret;
 }
@@ -84,7 +86,7 @@ bool stream_write(const stream_t *stream, const uint8_t *data, uint32_t len) {
     if (ret == true) {
       break;
     }
-    osDelay(1);
+    sysDelay(1);
   } while ((++timeout < stream->timeout_msec));
   return ret;
 }
