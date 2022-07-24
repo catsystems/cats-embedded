@@ -102,6 +102,8 @@ const size_t NUM_CLI_COMMANDS = sizeof cmd_table / sizeof cmd_table[0];
 
 /** Helper function declarations **/
 
+static void print_control_config();
+
 static void print_action_config();
 
 static void print_timer_config();
@@ -349,6 +351,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_config(const char *cmd_name, char *args) {
+  print_control_config();
   print_action_config();
   print_timer_config();
 }
@@ -814,6 +817,14 @@ static void cli_cmd_start_simulation(const char *cmd_name, char *args) {
 
 /**  Helper function definitions **/
 
+static void print_control_config(){
+  cli_print_line("\n * CONTROL SETTINGS *\n");
+
+  cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
+  cli_printf("  Main Altitude:          %u m\n", global_cats_config.config.control_settings.main_altitude);
+  cli_printf("  Mach Timer Duration:    %u ms\n", global_cats_config.config.control_settings.mach_timer_duration);
+}
+
 static void print_action_config() {
   const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
   const lookup_table_entry_t *p_action_table = &lookup_tables[TABLE_ACTIONS];
@@ -840,9 +851,9 @@ static void print_timer_config() {
   for (int i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.config.timers[i].duration > 0) {
       cli_printf("\nTIMER %d\n", i + 1);
-      cli_printf("  Start: %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
+      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
+      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.config.timers[i].trigger_event]);
       cli_printf("  Duration: %lu ms\n", global_cats_config.config.timers[i].duration);
-      cli_printf("  Trigger: %s\n", p_event_table->values[global_cats_config.config.timers[i].trigger_event]);
     }
   }
 }
