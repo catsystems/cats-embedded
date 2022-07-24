@@ -98,7 +98,7 @@ typedef struct cli_value {
   const char *name;
   const uint8_t type;  // see cli_value_flag_e
   const cli_value_config_t config;
-  void *pdata;
+  uint16_t member_offset;
   callback_f cb;
 } __attribute__((packed)) cli_value_t;
 
@@ -106,3 +106,5 @@ extern const lookup_table_entry_t lookup_tables[];
 extern const uint16_t value_table_entry_count;
 
 extern const cli_value_t value_table[];
+
+void *get_cats_config_member_ptr(const cats_config_u *cfg, const cli_value_t *var);

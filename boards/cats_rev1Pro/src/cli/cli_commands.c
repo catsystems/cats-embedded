@@ -112,6 +112,8 @@ static void cli_set_var(const cli_value_t *var, uint32_t value);
 
 static void fill_buf(uint8_t *buf, size_t buf_sz);
 
+static void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits);
+
 /** CLI command function definitions **/
 
 static void cli_cmd_help(const char *cmd_name, char *args) {
@@ -175,7 +177,7 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
         cli_print_linefeed();
       }
       cli_printf("%s = ", value_table[i].name);
-      cli_print_var(cmd_name, val, 0);
+      cli_print_var(cmd_name, &global_cats_config, val, 0);
       cli_print_linefeed();
       cli_print_var_range(val);
       // cliPrintVarDefault(cmd_name, val);
@@ -196,13 +198,9 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
   if (len == 0 || (len == 1 && args[0] == '*')) {
     cli_print_line("Current settings: ");
 
-    for (uint32_t i = 0; i < value_table_entry_count; i++) {
-      const cli_value_t *val = &value_table[i];
-      cli_printf("%s = ", value_table[i].name);
-      // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-      cli_print_var(cmd_name, val, len);
-      cli_print_linefeed();
-    }
+    // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
+    print_cats_config(cmd_name, &global_cats_config, len);
+
   } else if ((eqptr = strstr(args, "=")) != NULL) {
     // has equals
 
@@ -273,6 +271,8 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
           // skip spaces
           valPtr = skip_space(valPtr);
 
+          const void *var_ptr = get_cats_config_member_ptr(&global_cats_config, val);
+
           // process substring starting at valPtr
           // note: no need to copy substrings for atoi()
           //       it stops at the first character that cannot be converted...
@@ -280,7 +280,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             default:
             case VAR_UINT8: {
               // fetch data pointer
-              uint8_t *data = (uint8_t *)val->pdata + i;
+              uint8_t *data = (uint8_t *)var_ptr + i;
               // store value
               *data = (uint8_t)atoi((const char *)valPtr);
             }
@@ -288,7 +288,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             break;
             case VAR_INT8: {
               // fetch data pointer
-              int8_t *data = (int8_t *)val->pdata + i;
+              int8_t *data = (int8_t *)var_ptr + i;
               // store value
               *data = (int8_t)atoi((const char *)valPtr);
             }
@@ -296,7 +296,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             break;
             case VAR_UINT16: {
               // fetch data pointer
-              uint16_t *data = (uint16_t *)val->pdata + i;
+              uint16_t *data = (uint16_t *)var_ptr + i;
               // store value
               *data = (uint16_t)atoi((const char *)valPtr);
             }
@@ -304,7 +304,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             break;
             case VAR_INT16: {
               // fetch data pointer
-              int16_t *data = (int16_t *)val->pdata + i;
+              int16_t *data = (int16_t *)var_ptr + i;
               // store value
               *data = (int16_t)atoi((const char *)valPtr);
             }
@@ -312,7 +312,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             break;
             case VAR_UINT32: {
               // fetch data pointer
-              uint32_t *data = (uint32_t *)val->pdata + i;
+              uint32_t *data = (uint32_t *)var_ptr + i;
               // store value
               *data = (uint32_t)strtoul((const char *)valPtr, NULL, 10);
             }
@@ -334,7 +334,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
 
     if (value_changed) {
       cli_printf("%s set to ", val->name);
-      cli_print_var(cmd_name, val, 0);
+      cli_print_var(cmd_name, &global_cats_config, val, 0);
       if (val->cb != NULL) {
         val->cb(val);
       }
@@ -367,15 +367,10 @@ static void cli_cmd_defaults(const char *cmd_name, char *args) {
 
 static void cli_cmd_dump(const char *cmd_name, char *args) {
   const uint32_t len = strlen(args);
-  cli_printf("#Configuration dump");
-  cli_print_linefeed();
-  for (uint32_t i = 0; i < value_table_entry_count; i++) {
-    const cli_value_t *val = &value_table[i];
-    cli_printf("set %s = ", value_table[i].name);
-    // when len is 1 (when * is passed as argument), it will print min/max values as well
-    cli_print_var(cmd_name, val, len);
-    cli_print_linefeed();
-  }
+  cli_print_linef("#Configuration dump");
+
+  print_cats_config(cmd_name, &global_cats_config, len);
+
   cli_printf("#End of configuration dump");
 }
 
@@ -496,7 +491,6 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
   }
 }
 
-extern const struct lfs_config lfs_cfg;
 static void cli_cmd_rec_info(const char *cmd_name, char *args) {
   const lfs_ssize_t curr_sz_blocks = lfs_fs_size(&lfs);
   const int32_t num_flights = lfs_cnt("/flights", LFS_TYPE_REG);
@@ -859,7 +853,8 @@ static void print_timer_config() {
 }
 
 static void cli_set_var(const cli_value_t *var, const uint32_t value) {
-  void *ptr = var->pdata;
+  const void *ptr = get_cats_config_member_ptr(&global_cats_config, var);
+
   uint32_t work_value;
   uint32_t mask;
 
@@ -924,5 +919,19 @@ static void fill_buf(uint8_t *buf, size_t buf_sz) {
   for (uint32_t i = 0; i < buf_sz / 2; ++i) {
     buf[i] = i * 2;
     buf[buf_sz - i - 1] = i * 2 + 1;
+  }
+}
+
+static void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits) {
+  char *prefix = "";
+  if (!strcmp(cmd_name, "dump")) {
+    prefix = "set ";
+  }
+
+  for (uint32_t i = 0; i < value_table_entry_count; i++) {
+    const cli_value_t *val = &value_table[i];
+    cli_printf("%s%s = ", prefix, value_table[i].name);
+    cli_print_var(cmd_name, cfg, val, print_limits);
+    cli_print_linefeed();
   }
 }

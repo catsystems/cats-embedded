@@ -376,8 +376,8 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
   }
 }
 
-void cli_print_var(const char *cmdName, const cli_value_t *var, bool full) {
-  const void *ptr = var->pdata;
+void cli_print_var(const char *cmdName, const cats_config_u *cfg, const cli_value_t *var, bool full) {
+  const void *ptr = get_cats_config_member_ptr(cfg, var);
 
   print_value_pointer(cmdName, var, ptr, full);
 }
