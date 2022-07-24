@@ -16,12 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmsis_os.h"
-#include "config/globals.h"
-#include "util/types.h"
-#include "util/log.h"
 #include "tasks/task_peripherals.h"
+#include "cmsis_os.h"
+#include "config/cats_config.h"
+#include "config/globals.h"
 #include "flash/recorder.h"
+#include "util/enum_str_maps.h"
+#include "util/log.h"
+#include "util/types.h"
 
 /** Private Constants **/
 
@@ -43,7 +45,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
         if ((ev_timers[i].timer_id != NULL) && (curr_event == ev_timers[i].timer_init_event)) {
-          if(osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
+          if (osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
             log_warn("Starting TIMER %lu with event %u failed.", i, curr_event);
           }
         }
@@ -61,7 +63,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_list[i].func_ptr;
         if (curr_fp != NULL) {
-          log_warn("EXECUTING EVENT: %d, action_idx: %lu", curr_event, i);
+          log_warn("EXECUTING EVENT: %s, action_idx: %lu", event_map[curr_event], i);
           /* call the actuator function */
           curr_fp(action_list[i].func_arg);
           event_info_t event_info = {.event = curr_event, .action_idx = i};
@@ -71,7 +73,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
       if (num_actions == 0) {
         timestamp_t curr_ts = osKernelGetTickCount();
         event_info_t event_info = {.event = curr_event, .action_idx = 0xFF};
-        record(curr_ts,EVENT_INFO, &event_info);
+        record(curr_ts, EVENT_INFO, &event_info);
       }
     }
   }

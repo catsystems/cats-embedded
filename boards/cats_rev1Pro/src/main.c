@@ -1,48 +1,42 @@
-/**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+/*
+ * CATS Flight Software
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- ******************************************************************************
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 #include "target.h"
 #include "usbd_cdc_if.h"
 
-/* Private includes ----------------------------------------------------------*/
+#include "drivers/adc.h"
 
-/* Private typedef -----------------------------------------------------------*/
-typedef StaticTask_t osStaticThreadDef_t;
+#include "util/battery.h"
+#include "util/buzzer_handler.h"
+#include "util/log.h"
+#include "util/task_util.h"
+#include "util/types.h"
 
-/* Private variables ---------------------------------------------------------*/
+#include "init/config.h"
+#include "init/system.h"
+#include "init/tasks.h"
 
-/* Definitions for task_init */
-uint32_t task_init_buffer[512];
-osStaticThreadDef_t task_init_control_block;
-const osThreadAttr_t task_init_attributes = {
-    .name = "task_init",
-    .cb_mem = &task_init_control_block,
-    .cb_size = sizeof(task_init_control_block),
-    .stack_mem = &task_init_buffer[0],
-    .stack_size = sizeof(task_init_buffer),
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-/* Private function prototypes -----------------------------------------------*/
-void task_init(void *argument);
+static void init_logging() {
+  log_set_level(LOG_TRACE);
+  log_enable();
+}
 
 /**
  * @brief  The application entry point.
@@ -50,7 +44,6 @@ void task_init(void *argument);
  */
 int main(void) {
   /* MCU Configuration--------------------------------------------------------*/
-
   target_pre_init();
 
   /* Initialize RTC registers */
@@ -65,6 +58,27 @@ int main(void) {
 
   target_init();
 
+  init_logging();
+  HAL_Delay(100);
+  log_info("System initialization complete.");
+
+  HAL_Delay(100);
+  init_storage();
+  log_info("LFS initialization complete.");
+
+  HAL_Delay(100);
+  load_and_set_config();
+  log_info("Config load complete.");
+
+  HAL_Delay(100);
+  init_devices();
+  log_info("Device initialization complete.");
+
+  HAL_Delay(100);
+  adc_init();
+  battery_monitor_init();
+  log_info("Battery monitor initialization complete.");
+
 #if (configUSE_TRACE_FACILITY == 1)
   vTraceEnable(TRC_INIT);
 #endif
@@ -72,26 +86,22 @@ int main(void) {
   /* Init scheduler */
   osKernelInitialize();
 
-  /* creation of defaultTask */
-  osThreadNew(task_init, NULL, &task_init_attributes);
+  init_tasks();
+  log_info("Task initialization complete.");
+
+  buzzer_queue_status(CATS_BUZZ_BOOTUP);
+  log_disable();
+
+  rtos_started = true;
 
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1) {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
 }
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
 
 /**
  * @brief  Period elapsed callback in non blocking mode

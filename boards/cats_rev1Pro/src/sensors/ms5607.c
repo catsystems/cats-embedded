@@ -54,11 +54,11 @@ void ms5607_init(MS5607 *dev) {
 
   // Reset chip
   ms_write_command(dev, COMMAND_RESET);
-  osDelay(reset_time);
+  HAL_Delay(reset_time);
 
   // Read calibration
   read_calibration(dev);
-  osDelay(1);
+  HAL_Delay(1);
 }
 
 void ms5607_prepare_temp(MS5607 *dev) {

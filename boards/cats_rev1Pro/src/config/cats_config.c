@@ -20,6 +20,7 @@
 #include "config/globals.h"
 #include "util/actions.h"
 #include "util/enum_str_maps.h"
+#include "util/task_util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +84,7 @@ void cc_init() {
   HAL_FLASH_Unlock();
   EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
   if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
-  osDelay(5);
+  sysDelay(5);
   HAL_FLASH_Lock();
 #endif
 }
