@@ -17,11 +17,6 @@
  */
 
 #pragma once
-#include "sensor_config.h"
-//#define INCLUDE_NOISE
-
-//#define INCLUDE_SPIKES
-//#define INCLUDE_OFFSET
 
 #define USE_ORIENTATION_FILTER
 #define USE_ADAPTIVE_GAIN

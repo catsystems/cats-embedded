@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include "util/types.h"
+#include "target.h"
 
 /* The system will reload the default config when the number changes */
 /* Config version 2 / Minor 2 */

@@ -33,6 +33,26 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
+sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = ICM20601_ID_ACC,
+                                                             .conversion_to_SI = 9.81f / 1024.0f,
+                                                             .upper_limit = 32.0f * 9.81f,
+                                                             .lower_limit = -32.0f * 9.81f,
+                                                             .resolution = 1.0f}};
+
+sens_info_t gyro_info[NUM_IMU] = {{.sens_type = ICM20601_ID_GYRO,
+                                          .conversion_to_SI = 1.0f / 16.4f,
+                                          .upper_limit = 2000.0f,
+                                          .lower_limit = -2000.0f,
+                                          .resolution = 1.0f}};
+
+sens_info_t mag_info[NUM_MAGNETO] = {};
+
+sens_info_t baro_info[NUM_BARO] = {{.sens_type = MS5607_ID,
+                                           .conversion_to_SI = 1.0f,
+                                           .upper_limit = 200000.0f,
+                                           .lower_limit = 10.0f,
+                                           .resolution = 1.0f}};
+
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 

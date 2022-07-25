@@ -23,7 +23,7 @@
 #include "drivers/servo.h"
 #include "drivers/spi.h"
 #include "flash/recorder.h"
-#include "sensor_config.h"
+#include "target.h"
 #include "sensors/h3lis100dl.h"
 #include "sensors/icm20601.h"
 #include "sensors/mmc5983ma.h"
