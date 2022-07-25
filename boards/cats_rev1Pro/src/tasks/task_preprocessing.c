@@ -18,7 +18,7 @@
 
 #include "tasks/task_preprocessing.h"
 #include "config/globals.h"
-#include "config/sensor_config.h"
+#include "target.h"
 #include "control/calibration.h"
 #include "control/data_processing.h"
 #include "control/sensor_elimination.h"

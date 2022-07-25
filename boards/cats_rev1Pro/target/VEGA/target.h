@@ -20,6 +20,8 @@
 
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
+#include "arm_math.h"
+
 
 /***** Pin config *****/
 #define LED1_Pin GPIO_PIN_13
@@ -109,6 +111,29 @@ extern UART_HandleTypeDef huart1;
 
 #define NUM_PYRO          2
 #define NUM_LOW_LEVEL_IO  1
+
+typedef enum {
+    SENS_TYPE_INVALID = 0,
+    ICM20601_ID_ACC,
+    ICM20601_ID_GYRO,
+    MS5607_ID,
+    MMC5983MA_ID,
+    H3LIS100DL_ID,
+    HEHE4 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
+} sens_type_e;
+
+typedef struct {
+    sens_type_e sens_type;
+    float32_t conversion_to_SI;
+    float32_t upper_limit;
+    float32_t lower_limit;
+    float32_t resolution;
+} sens_info_t;
+
+extern sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER];
+extern sens_info_t gyro_info[NUM_IMU];
+extern sens_info_t mag_info[NUM_MAGNETO];
+extern sens_info_t baro_info[NUM_BARO];
 
 #define IMU_SPI_HANDLE hspi1
 #define ACCEL_SPI_HANDLE hspi1

@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "target.h"
 
 #include "arm_math.h"
 #include "cmsis_os2.h"

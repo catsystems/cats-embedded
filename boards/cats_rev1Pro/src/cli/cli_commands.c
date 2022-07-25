@@ -379,18 +379,18 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 static void cli_cmd_status(const char *cmd_name, char *args) {
   const lookup_table_entry_t *p_boot_table = &lookup_tables[TABLE_BOOTSTATE];
   const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
-  cli_print_linef("System time: %lu ticks", osKernelGetTickCount());
-  cli_print_linef("Mode:        %s", p_boot_table->values[global_cats_config.config.boot_state]);
-  cli_print_linef("State:       %s", p_event_table->values[global_flight_state.flight_state - 1]);
-  cli_print_linef("Voltage:     %.2fV", (double)battery_voltage());
-  cli_print_linef("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
+  cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
+  cli_printf("Mode:        %s\n", p_boot_table->values[global_cats_config.config.boot_state]);
+  cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
+  cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
                   (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
 
 #ifdef CATS_DEBUG
   if (!strcmp(args, "--heap")) {
     HeapStats_t heap_stats = {};
     vPortGetHeapStats(&heap_stats);
-    cli_print_linef("Heap stats");
+    cli_print_linef("\nHeap stats");
     cli_print_linef("  Available heap space: %u B", heap_stats.xAvailableHeapSpaceInBytes);
     cli_print_linef("  Largest free block size: %u B", heap_stats.xSizeOfLargestFreeBlockInBytes);
     cli_print_linef("  Smallest free block size: %u B", heap_stats.xSizeOfSmallestFreeBlockInBytes);
