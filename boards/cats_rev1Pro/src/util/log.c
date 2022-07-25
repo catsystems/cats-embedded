@@ -28,7 +28,7 @@
 
 static struct {
   int level;
-  bool enabled;
+  log_mode_e log_mode;
 } L;
 
 static const char *level_strings[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
@@ -40,6 +40,18 @@ static const char *level_colors[] = {"\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[3
 static char print_buffer[PRINT_BUFFER_LEN];
 #endif
 
+void log_set_mode(log_mode_e mode) {
+#ifdef CATS_DEBUG
+  L.log_mode = mode;
+#endif
+}
+log_mode_e log_get_mode() {
+#ifdef CATS_DEBUG
+  return L.log_mode;
+#endif
+}
+
+// Only has impact on LOG_MODE_DEFAULT
 void log_set_level(int level) {
 #ifdef CATS_DEBUG
   L.level = level;
@@ -48,19 +60,19 @@ void log_set_level(int level) {
 
 void log_enable() {
 #ifdef CATS_DEBUG
-  L.enabled = true;
+  L.log_mode = LOG_MODE_DEFAULT;
 #endif
 }
 
 void log_disable() {
 #ifdef CATS_DEBUG
-  L.enabled = false;
+  L.log_mode = LOG_MODE_NONE;
 #endif
 }
 
 bool log_is_enabled() {
 #ifdef CATS_DEBUG
-  return L.enabled;
+  return L.log_mode == LOG_MODE_DEFAULT;
 #else
   return false;
 #endif
@@ -68,7 +80,7 @@ bool log_is_enabled() {
 
 void log_log(int level, const char *file, int line, const char *format, ...) {
 #ifdef CATS_DEBUG
-  if (L.enabled && level >= L.level) {
+  if ((L.log_mode == LOG_MODE_DEFAULT) && level >= L.level) {
     /* fill buffer with metadata */
     static char buf_ts[16];
     buf_ts[snprintf(buf_ts, sizeof(buf_ts), "%lu", osKernelGetTickCount())] = '\0';
@@ -99,6 +111,19 @@ void log_raw(const char *format, ...) {
   va_end(argptr);
   len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
   stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+#endif
+}
+
+void log_sim(const char *format, ...) {
+#ifdef CATS_DEBUG
+  if (L.log_mode == LOG_MODE_SIM) {
+    va_list argptr;
+    va_start(argptr, format);
+    int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
+    va_end(argptr);
+    len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
+    stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+  }
 #endif
 }
 

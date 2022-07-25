@@ -28,15 +28,27 @@
 #include "util/enum_str_maps.h"
 #include "util/log.h"
 
+#define STRING_BUF_SZ 400
+#define READ_BUF_SZ   256
+
 void dump_recording(uint16_t number) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
     log_raw("The recorder is currently active, stop it first!");
     return;
   }
 
-  char *string_buffer1 = (char *)(calloc(400, sizeof(char)));
-  char *string_buffer2 = (char *)(calloc(400, sizeof(char)));
-  uint8_t *read_buf = (uint8_t *)(calloc(256, sizeof(uint8_t)));
+  char *string_buffer1 = (char *)(pvPortMalloc(STRING_BUF_SZ * sizeof(char)));
+  char *string_buffer2 = (char *)(pvPortMalloc(STRING_BUF_SZ * sizeof(char)));
+  uint8_t *read_buf = (uint8_t *)(pvPortMalloc(READ_BUF_SZ * sizeof(uint8_t)));
+
+  if (string_buffer1 == NULL || string_buffer2 == NULL || read_buf == NULL){
+    log_raw("Cannot allocate enough memory for flight dumping!");
+    return;
+  }
+
+  memset(string_buffer1, 0, STRING_BUF_SZ);
+  memset(string_buffer2, 0, STRING_BUF_SZ);
+  memset(read_buf, 0, READ_BUF_SZ);
 
   char filename[MAX_FILENAME_SIZE] = {};
   snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);
@@ -46,13 +58,13 @@ void dump_recording(uint16_t number) {
   lfs_file_t curr_file;
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
     int file_size = lfs_file_size(&lfs, &curr_file);
-    for (lfs_size_t i = 0; i < file_size; i += 256) {
-      lfs_size_t chunk = lfs_min(256, file_size - i);
+    for (lfs_size_t i = 0; i < file_size; i += READ_BUF_SZ) {
+      lfs_size_t chunk = lfs_min(READ_BUF_SZ, file_size - i);
 
       lfs_file_read(&lfs, &curr_file, read_buf, chunk);
 
       int write_idx = 0;
-      for (uint32_t j = 0; j < 128; ++j) {
+      for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
         write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
         //      for (uint32_t j = 0; j < 128; j += 16) {
         //        write_idx +=
@@ -65,7 +77,7 @@ void dump_recording(uint16_t number) {
       }
       log_rawr("%s", string_buffer1);
       write_idx = 0;
-      for (uint32_t j = 128; j < 256; ++j) {
+      for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
         write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
         //      for (uint32_t j = 128; j < 256; j += 16) {
         //        write_idx +=
@@ -78,8 +90,8 @@ void dump_recording(uint16_t number) {
       }
       log_rawr("%s\n", string_buffer2);
 
-      memset(string_buffer1, 0, 400);
-      memset(string_buffer2, 0, 400);
+      memset(string_buffer1, 0, STRING_BUF_SZ);
+      memset(string_buffer2, 0, STRING_BUF_SZ);
     }
   } else {
     log_error("Flight %d not found!", number);
@@ -87,8 +99,9 @@ void dump_recording(uint16_t number) {
 
   lfs_file_close(&lfs, &curr_file);
 
-  free(string_buffer1);
-  free(string_buffer2);
+  vPortFree(string_buffer1);
+  vPortFree(string_buffer2);
+  vPortFree(read_buf);
 }
 
 void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
@@ -224,21 +237,41 @@ void parse_stats(uint16_t number) {
   lfs_file_t curr_file;
 
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
-    flight_stats_t local_flight_stats = {};
-    if (lfs_file_read(&lfs, &curr_file, &local_flight_stats, sizeof(flight_stats_t)) > 0) {
+    flight_stats_t *local_flight_stats = pvPortMalloc(sizeof(flight_stats_t));
+
+    if (local_flight_stats == NULL) {
+      log_raw("Could not allocate enough memory for flight stats readout.");
+      return;
+    }
+    if (lfs_file_read(&lfs, &curr_file, local_flight_stats, sizeof(flight_stats_t)) > 0) {
       log_raw("Flight Stats %d", number);
       log_raw("========================");
       log_raw("  Height");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_height.ts);
-      log_raw("    Max. Height [m]: %f", (double)local_flight_stats.max_height.val);
+      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_height.ts);
+      log_raw("    Max. Height [m]: %f", (double)local_flight_stats->max_height.val);
       log_raw("========================");
       log_raw("  Velocity");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_velocity.ts);
-      log_raw("    Max. Velocity [m/s]: %f", (double)local_flight_stats.max_velocity.val);
+      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_velocity.ts);
+      log_raw("    Max. Velocity [m/s]: %f", (double)local_flight_stats->max_velocity.val);
       log_raw("========================");
       log_raw("  Acceleration");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats.max_acceleration.ts);
-      log_raw("    Max. Acceleration [m/s^2]: %f", (double)local_flight_stats.max_acceleration.val);
+      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_acceleration.ts);
+      log_raw("    Max. Acceleration [m/s^2]: %f", (double)local_flight_stats->max_acceleration.val);
+      log_raw("========================");
+      log_raw("  Calibration Values");
+      log_raw("    P0: %f", (double)local_flight_stats->pressure_0);
+      log_raw("    IMU:");
+      log_raw("      Angle: %f", (double)local_flight_stats->calibration_data.angle);
+      log_raw("      Axis: %hu", local_flight_stats->calibration_data.axis);
+      log_raw("    Gyro:");
+      log_raw("      x: %f", (double)local_flight_stats->calibration_data.gyro_calib.x);
+      log_raw("      y: %f", (double)local_flight_stats->calibration_data.gyro_calib.y);
+      log_raw("      z: %f", (double)local_flight_stats->calibration_data.gyro_calib.z);
+      log_raw("========================");
+      log_raw("  Config");
+      print_cats_config("cli", &(local_flight_stats->config), false);
+
+      vPortFree(local_flight_stats);
     } else {
       log_raw("Error while reading Stats %d", number);
     }

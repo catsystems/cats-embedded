@@ -80,16 +80,22 @@ inline static float calculate_height(float pressure_initial, float pressure);
     // log_info("acc: %ld; height: %ld", (int32_t)((float)SI_data.acc.x*1000),
     //(int32_t)((float)SI_data.pressure*1000));
 
-    /* Compute gravity when changing to IDLE */
+    /* Compute gravity when changing to READY */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       calibrate_imu(&SI_data.acc, &calibration);
+        log_info("[%lu] Calibration %u: %f", osKernelGetTickCount(),
+                calibration.axis, (double)calibration.angle);
       pressure_0 = SI_data.pressure;
+      global_flight_stats.pressure_0 = pressure_0;
+      global_flight_stats.calibration_data.angle = calibration.angle;
+      global_flight_stats.calibration_data.axis = calibration.axis;
     }
 
     if (!gyro_calibrated) {
       gyro_calibrated = compute_gyro_calibration(&SI_data.gyro, &calibration);
     } else {
       calibrate_gyro(&calibration, &SI_data.gyro);
+      global_flight_stats.calibration_data.gyro_calib = calibration.gyro_calib;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
@@ -107,6 +113,7 @@ inline static float calculate_height(float pressure_initial, float pressure);
 
     /* write input data into global struct */
     global_estimation_input = state_est_input;
+    //log_raw("Acceleration: %f, Height: %f", global_estimation_input.acceleration_z, global_estimation_input.height_AGL);
 
     /* Global SI data is only used in the fsm task */
     global_SI_data = SI_data;

@@ -53,11 +53,11 @@ static void create_stats_file();
 
   while (1) {
     rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
-
     if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, NULL, osWaitForever) != osOK) {
       log_error("Something wrong with the command recorder queue");
       continue;
     }
+    log_info("recorder command %u received", curr_rec_cmd);
     // trace_printf(flash_channel, "received command %d", curr_rec_cmd);
     switch (curr_rec_cmd) {
       case REC_CMD_INVALID:
@@ -105,10 +105,11 @@ static void create_stats_file();
         lfs_file_close(&lfs, &fc_file);
 
         /* reset flight stats */
-        reset_global_flight_stats();
+        init_global_flight_stats();
 
         /* open a new file */
         snprintf(current_flight_filename, MAX_FILENAME_SIZE, "flights/flight_%05lu", flight_counter);
+        log_info("Creating log file %lu...", flight_counter);
         lfs_file_open(&lfs, &current_flight_file, current_flight_filename, LFS_O_WRONLY | LFS_O_CREAT);
         rec_elem_t curr_log_elem;
         uint32_t sync_counter = 0;
@@ -122,12 +123,18 @@ static void create_stats_file();
             //  log_warn("max_queued_elems: %lu", max_elem_count);
             //}
 
-            if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, osWaitForever) == osOK) {
+            /* Wait 100 ticks to receive a recording element */
+            if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, 100U) == osOK) {
               // trace_print(flash_channel, "write_value start");
               write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
               // trace_print(flash_channel, "write_value end");
             } else {
-              log_error("Something wrong with the recording queue!");
+              if (global_recorder_status < REC_FILL_QUEUE) {
+                log_raw("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
+              } else {
+                log_error("Something wrong with the recording queue!");
+              }
+              break;
             }
           }
           // log_info("lfw start");
@@ -155,6 +162,7 @@ static void create_stats_file();
           }
           /* Check for a new command */
           if (osMessageQueueGetCount(rec_cmd_queue) > 0) {
+            lfs_file_sync(&lfs, &current_flight_file);
             /* breaks out of the inner while loop */
             break;
           }
@@ -240,10 +248,25 @@ static void create_stats_file() {
   char current_stats_filename[MAX_FILENAME_SIZE] = {};
 
   snprintf(current_stats_filename, MAX_FILENAME_SIZE, "stats/stats_%05lu", flight_counter);
-  lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
 
+  log_info("Creating stats file %lu...", flight_counter);
+  int err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
+
+  if (err != LFS_ERR_OK) {
+    log_error("Creating stats file %lu failed with %d", flight_counter, err);
+  } else {
+    log_info("Created stats file %lu.", flight_counter);
+  }
   /* This will work as long as there are no pointers in the global_flight_stats struct */
-  lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
+  err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
 
-  lfs_file_close(&lfs, &current_stats_file);
+  if (err < sizeof(global_flight_stats)) {
+    log_error("Writing to stats file failed with %d", err);
+  }
+
+  err = lfs_file_close(&lfs, &current_stats_file);
+
+  if (err != LFS_ERR_OK) {
+    log_error("Closing stats file failed with %d", err);
+  }
 }

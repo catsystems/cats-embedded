@@ -22,6 +22,7 @@
 #include "util/types.h"
 
 #include "cmsis_os.h"
+#include "config/cats_config.h"
 
 /** Exported Defines **/
 
@@ -118,6 +119,7 @@ typedef struct {
 /* Flight Statistics */
 
 typedef struct {
+  cats_config_u config;
   struct {
     timestamp_t ts;
     float val;
@@ -132,6 +134,10 @@ typedef struct {
     timestamp_t ts;
     float val;
   } max_acceleration;
+
+  calibration_data_t calibration_data;
+  float32_t pressure_0;
+
 } flight_stats_t;
 
 /** Exported Variables **/
@@ -141,8 +147,10 @@ extern flight_stats_t global_flight_stats;
 
 void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_value);
 
-inline void reset_global_flight_stats() {
-  memset(&global_flight_stats, 0, sizeof(flight_stats_t));
+inline void init_global_flight_stats() {
+  /* Save current flight config */
+  memcpy(&global_flight_stats.config, &global_cats_config, sizeof(global_cats_config));
+  /* Initialize nonzero members */
   global_flight_stats.max_height.val = -INFINITY;
   global_flight_stats.max_velocity.val = -INFINITY;
   global_flight_stats.max_acceleration.val = -INFINITY;

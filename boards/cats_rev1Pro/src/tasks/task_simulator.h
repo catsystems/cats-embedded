@@ -4,4 +4,4 @@
 
 #pragma once
 
-[[noreturn]] void task_simulator(void *argument);
+void start_simulation(char *args);

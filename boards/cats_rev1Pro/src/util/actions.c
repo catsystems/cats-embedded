@@ -112,7 +112,7 @@ bool high_current_channel_three(int16_t state) {
 bool high_current_channel_four(int16_t state) {
 #if NUM_PYRO > 3
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_4_GPIO_Port, PYRO_4_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_4_GPIO_Port, PYRO_4_Pin, (GPIO_PinState)state);
     return true;
   }
 #endif
@@ -122,7 +122,7 @@ bool high_current_channel_four(int16_t state) {
 bool high_current_channel_five(int16_t state) {
 #if NUM_PYRO > 4
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_5_GPIO_Port, PYRO_5_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_5_GPIO_Port, PYRO_5_Pin, (GPIO_PinState)state);
     return true;
   }
 #endif
@@ -132,7 +132,7 @@ bool high_current_channel_five(int16_t state) {
 bool high_current_channel_six(int16_t state) {
 #if NUM_PYRO > 5
   if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_6_GPIO_Port, PYRO_6_Pin,  (GPIO_PinState)state);
+    HAL_GPIO_WritePin(PYRO_6_GPIO_Port, PYRO_6_Pin, (GPIO_PinState)state);
     return true;
   }
 #endif
@@ -222,6 +222,7 @@ bool set_recorder_state(int16_t state) {
 
   rec_cmd_type_e rec_cmd = REC_CMD_INVALID;
 
+  log_info("Changing recorder state from %u to %u", global_recorder_status, new_rec_state);
   switch (global_recorder_status) {
     case REC_OFF:
       if (new_rec_state == REC_FILL_QUEUE) {
@@ -238,12 +239,13 @@ bool set_recorder_state(int16_t state) {
       }
       break;
     case REC_WRITE_TO_FLASH:
-      if (new_rec_state == REC_OFF || new_rec_state == REC_FILL_QUEUE) {
+      if ((new_rec_state == REC_OFF) || (new_rec_state == REC_FILL_QUEUE)) {
         rec_cmd = REC_CMD_WRITE_STOP;
         osStatus_t ret = osMessageQueuePut(rec_cmd_queue, &rec_cmd, 0U, 10U);
         if (ret != osOK) {
           log_error("Inserting an element to the recorder command queue failed! Error: %d", ret);
         }
+        rec_cmd = REC_CMD_INVALID;
         if (new_rec_state == REC_FILL_QUEUE) {
           rec_cmd = REC_CMD_FILL_Q;
         }

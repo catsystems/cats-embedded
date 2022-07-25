@@ -681,8 +681,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /* Initialization and de-initialization functions  ****************************/
 HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc);
 HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc);
-void       HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc);
-void       HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc);
+void       HAL_RTC_MspInit(RTC_HandleTypeDef *rtc_handle);
+void       HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtc_handle);
 
 /* Callbacks Register/UnRegister functions  ***********************************/
 #if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)

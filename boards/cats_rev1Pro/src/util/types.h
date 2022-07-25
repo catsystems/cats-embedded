@@ -233,6 +233,12 @@ typedef enum {
   SIM_300M
 } cats_sim_choice_e;
 
+typedef struct {
+  cats_sim_choice_e sim_choice;
+  uint32_t noise_seed;
+  int32_t sim_axis;
+} cats_sim_config_t;
+
 typedef enum { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH } recorder_status_e;
 
 typedef struct {

@@ -28,10 +28,12 @@
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/log.h"
-#include "util/sim.h"
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef CATS_DEBUG
+#include "tasks/task_simulator.h"
+#endif
 
 /** CLI command function declarations **/
 static void cli_cmd_help(const char *cmd_name, char *args);
@@ -92,7 +94,9 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
+#ifdef CATS_DEBUG
     CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
+#endif
     CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
     CLI_COMMAND_DEF("status", "show status", NULL, cli_cmd_status),
     CLI_COMMAND_DEF("version", "show version", NULL, cli_cmd_version),
@@ -111,8 +115,6 @@ static void print_timer_config();
 static void cli_set_var(const cli_value_t *var, uint32_t value);
 
 static void fill_buf(uint8_t *buf, size_t buf_sz);
-
-static void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits);
 
 /** CLI command function definitions **/
 
@@ -377,12 +379,28 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 static void cli_cmd_status(const char *cmd_name, char *args) {
   const lookup_table_entry_t *p_boot_table = &lookup_tables[TABLE_BOOTSTATE];
   const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
-  cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("Mode:        %s\n", p_boot_table->values[global_cats_config.config.boot_state]);
-  cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
-  cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
-             (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
+  cli_print_linef("System time: %lu ticks", osKernelGetTickCount());
+  cli_print_linef("Mode:        %s", p_boot_table->values[global_cats_config.config.boot_state]);
+  cli_print_linef("State:       %s", p_event_table->values[global_flight_state.flight_state - 1]);
+  cli_print_linef("Voltage:     %.2fV", (double)battery_voltage());
+  cli_print_linef("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
+                  (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
+
+#ifdef CATS_DEBUG
+  if (!strcmp(args, "--heap")) {
+    HeapStats_t heap_stats = {};
+    vPortGetHeapStats(&heap_stats);
+    cli_print_linef("Heap stats");
+    cli_print_linef("  Available heap space: %u B", heap_stats.xAvailableHeapSpaceInBytes);
+    cli_print_linef("  Largest free block size: %u B", heap_stats.xSizeOfLargestFreeBlockInBytes);
+    cli_print_linef("  Smallest free block size: %u B", heap_stats.xSizeOfSmallestFreeBlockInBytes);
+    cli_print_linef("  Number of free blocks: %u", heap_stats.xNumberOfFreeBlocks);
+    cli_print_linef("  Minimum free bytes remaining during program lifetime: %u B",
+                    heap_stats.xMinimumEverFreeBytesRemaining);
+    cli_print_linef("  Number of successful allocations: %u", heap_stats.xNumberOfSuccessfulAllocations);
+    cli_print_linef("  Number of successful frees: %u", heap_stats.xNumberOfSuccessfulFrees);
+  }
+#endif
 }
 
 static void cli_cmd_version(const char *cmd_name, char *args) {
@@ -403,12 +421,12 @@ static void cli_cmd_ls(const char *cmd_name, char *args) {
       cli_print_line("File path too long!");
       return;
     }
-    char *full_path = (char *)(malloc(full_path_len + 1));
+    char *full_path = (char *)(pvPortMalloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
     lfs_ls(full_path);
-    free(full_path);
+    vPortFree(full_path);
   }
 }
 
@@ -431,15 +449,15 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = (char *)(malloc(full_path_len + 1));
+      char *tmp_path = (char *)(pvPortMalloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
-        free(tmp_path);
+        vPortFree(tmp_path);
         return;
       }
       strncpy(cwd, args, sizeof(cwd));
-      free(tmp_path);
+      vPortFree(tmp_path);
     } else {
       /* relative path */
       uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
@@ -447,15 +465,15 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = (char *)(malloc(full_path_len + 1));
+      char *tmp_path = (char *)(pvPortMalloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
-        free(tmp_path);
+        vPortFree(tmp_path);
         return;
       }
       strncat(cwd, args, sizeof(cwd) - strlen(cwd) - 1);
-      free(tmp_path);
+      vPortFree(tmp_path);
     }
   }
 }
@@ -469,14 +487,14 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
       return;
     }
     /* +1 for the null terminator */
-    char *full_path = (char *)(malloc(full_path_len + 1));
+    char *full_path = (char *)(pvPortMalloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
 
     if (lfs_obj_type(full_path) != LFS_TYPE_REG) {
       cli_print_linef("Cannot remove '%s': not a file!", full_path);
-      free(full_path);
+      vPortFree(full_path);
       return;
     }
 
@@ -485,7 +503,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
       cli_print_linef("Removal of file '%s' failed with %ld", full_path, rm_err);
     }
     cli_printf("File '%s' removed!", args);
-    free(full_path);
+    vPortFree(full_path);
   } else {
     cli_print_line("Argument not provided!");
   }
@@ -803,15 +821,13 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
   cli_print_line("Test complete!");
 }
 
-static void cli_cmd_start_simulation(const char *cmd_name, char *args) {
-  cli_print_line("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
-  start_simulation(args);
-  // cli_print_line("Simulation complete!");
-}
+#ifdef CATS_DEBUG
+static void cli_cmd_start_simulation(const char *cmd_name, char *args) { start_simulation(args); }
+#endif
 
 /**  Helper function definitions **/
 
-static void print_control_config(){
+static void print_control_config() {
   cli_print_line("\n * CONTROL SETTINGS *\n");
 
   cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
@@ -919,19 +935,5 @@ static void fill_buf(uint8_t *buf, size_t buf_sz) {
   for (uint32_t i = 0; i < buf_sz / 2; ++i) {
     buf[i] = i * 2;
     buf[buf_sz - i - 1] = i * 2 + 1;
-  }
-}
-
-static void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits) {
-  char *prefix = "";
-  if (!strcmp(cmd_name, "dump")) {
-    prefix = "set ";
-  }
-
-  for (uint32_t i = 0; i < value_table_entry_count; i++) {
-    const cli_value_t *val = &value_table[i];
-    cli_printf("%s%s = ", prefix, value_table[i].name);
-    cli_print_var(cmd_name, cfg, val, print_limits);
-    cli_print_linefeed();
   }
 }

@@ -18,6 +18,7 @@
  */
 
 #include "cli/settings.h"
+#include "cli/cli.h"
 #include "util/enum_str_maps.h"
 
 #include <stddef.h>
@@ -144,4 +145,18 @@ const uint16_t value_table_entry_count = ARRAYLEN(value_table);
 
 void *get_cats_config_member_ptr(const cats_config_u *cfg, const cli_value_t *var) {
   return ((uint8_t *)cfg) + var->member_offset;
+}
+
+void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits) {
+  char *prefix = "";
+  if (!strcmp(cmd_name, "dump")) {
+    prefix = "set ";
+  }
+
+  for (uint32_t i = 0; i < value_table_entry_count; i++) {
+    const cli_value_t *val = &value_table[i];
+    cli_printf("%s%s = ", prefix, value_table[i].name);
+    cli_print_var(cmd_name, cfg, val, print_limits);
+    cli_print_linefeed();
+  }
 }

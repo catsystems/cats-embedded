@@ -63,7 +63,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_list[i].func_ptr;
         if (curr_fp != NULL) {
-          log_warn("EXECUTING EVENT: %s, action_idx: %lu", event_map[curr_event], i);
+          log_error("EXECUTING EVENT: %s, action_idx: %lu", event_map[curr_event], i);
           /* call the actuator function */
           curr_fp(action_list[i].func_arg);
           event_info_t event_info = {.event = curr_event, .action_idx = i};

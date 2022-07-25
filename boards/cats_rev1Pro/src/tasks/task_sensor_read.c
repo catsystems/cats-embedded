@@ -82,14 +82,16 @@ static void read_baro();
     } else {
       prepare_temp();
       stage = READ_BARO_TEMPERATURE;
-
+      /* For Simulator */
       if (simulation_started) {
-        pressure[0] = global_baro_sim[0].pressure;
+          for (int i = 0; i < NUM_BARO; i++) {
+              pressure[i] = global_baro_sim[i].pressure;
+          }
       } else {
         get_temp_pres(temperature_baro, pressure);
       }
 
-      /* For Simulator */
+
 
       /* Read and Save Barometric Data */
       for (int i = 0; i < NUM_BARO; i++) {
@@ -116,7 +118,9 @@ static void read_baro();
       /* Read and Save IMU Data */
       for (int i = 0; i < NUM_IMU; i++) {
         if (simulation_started) {
-          acceleration[0] = global_imu_sim[0].acc.x;
+          acceleration[0] = global_imu_sim[i].acc.x;
+          acceleration[1] = global_imu_sim[i].acc.y;
+          acceleration[2] = global_imu_sim[i].acc.z;
         } else {
           read_imu(gyroscope, acceleration, &temperature_imu, i);
         }

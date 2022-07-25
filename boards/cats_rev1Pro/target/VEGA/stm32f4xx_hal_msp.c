@@ -82,11 +82,11 @@ void HAL_MspInit(void) {
 /**
  * @brief RTC MSP Initialization
  * This function configures the hardware resources used in this example
- * @param hrtc: RTC handle pointer
+ * @param rtc_handle: RTC handle pointer
  * @retval None
  */
-void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc) {
-  if (hrtc->Instance == RTC) {
+void HAL_RTC_MspInit(RTC_HandleTypeDef* rtc_handle) {
+  if (rtc_handle->Instance == RTC) {
     /* USER CODE BEGIN RTC_MspInit 0 */
 
     /* USER CODE END RTC_MspInit 0 */
@@ -101,11 +101,11 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc) {
 /**
  * @brief RTC MSP De-Initialization
  * This function freeze the hardware resources used in this example
- * @param hrtc: RTC handle pointer
+ * @param rtc_handle: RTC handle pointer
  * @retval None
  */
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc) {
-  if (hrtc->Instance == RTC) {
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtc_handle) {
+  if (rtc_handle->Instance == RTC) {
     /* USER CODE BEGIN RTC_MspDeInit 0 */
 
     /* USER CODE END RTC_MspDeInit 0 */

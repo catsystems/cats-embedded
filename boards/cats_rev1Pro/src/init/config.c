@@ -49,8 +49,13 @@ void load_and_set_config() {
 
 static void create_event_map() {
   /* number of event types + 0th element */
-  /* TODO: where to free this? */
-  event_action_map = (event_action_map_elem_t *)(calloc(NUM_EVENTS, sizeof(event_action_map_elem_t)));
+  event_action_map = (event_action_map_elem_t *)(pvPortMalloc(NUM_EVENTS * sizeof(event_action_map_elem_t)));
+  if (event_action_map == NULL) {
+    // TODO: set some error, beep!!
+    log_raw("Could not allocate memory for event_action_map!");
+    return;
+  }
+  memset(event_action_map, 0, NUM_EVENTS * sizeof(event_action_map_elem_t));
 
   uint16_t nr_actions;
   config_action_t action;
@@ -60,7 +65,14 @@ static void create_event_map() {
     // If an action is mapped to the event
     if (nr_actions > 0) {
       event_action_map[ev_idx].num_actions = nr_actions;
-      event_action_map[ev_idx].action_list = (peripheral_act_t *)(calloc(nr_actions, sizeof(peripheral_act_t)));
+      event_action_map[ev_idx].action_list = (peripheral_act_t *)(pvPortMalloc(nr_actions * sizeof(peripheral_act_t)));
+      if (event_action_map[ev_idx].action_list == NULL) {
+        // TODO: set some error, beep!!
+        log_raw("Could not allocate memory for actions in event_action_map[%d].action_list!", ev_idx);
+        return;
+      }
+      memset(event_action_map[ev_idx].action_list, 0, nr_actions * sizeof(peripheral_act_t));
+
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
         if (cc_get_action((cats_event_e)(ev_idx), act_idx, &action) == true) {
