@@ -24,7 +24,7 @@
 
 /* The system will reload the default config when the number changes */
 /* Config version 2 / Minor 2 */
-#define CONFIG_VERSION 202
+#define CONFIG_VERSION 203
 
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10
@@ -55,6 +55,13 @@ typedef struct {
   int16_t action_array[NUM_EVENTS][16];  // 8 (16/2) actions for each event
   int16_t initial_servo_position[2];
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
+
+#ifdef CATS_VEGA
+  uint8_t tele_power_level;
+  uint8_t tele_direction;
+  uint8_t link_phrase[8];
+#endif
+
 } cats_config_t;
 
 typedef union {

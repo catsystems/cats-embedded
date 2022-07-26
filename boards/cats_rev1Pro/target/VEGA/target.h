@@ -51,7 +51,6 @@
 
 /***** Peripherals config *****/
 // #define USE_CAN
-// #define USE_UART
 
 /* ADC config */
 extern ADC_HandleTypeDef hadc1;
@@ -77,15 +76,15 @@ extern CAN_HandleTypeDef hcan1;
 #endif
 
 /* UART config */
-#ifdef USE_UART
 extern UART_HandleTypeDef huart1;
-#endif
+extern UART_HandleTypeDef huart2;
 
 /***** Device config *****/
 
 /* Flash Config */
 #define FLASH_SPI_HANDLE hspi2
 
+#define TELEMETRY_UART_HANDLE huart1
 
 #define RTC_HANDLE hrtc
 
