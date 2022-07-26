@@ -34,9 +34,10 @@ static fifo_t uart_fifo = {
 static stream_t uart_stream = {.fifo = &uart_fifo, .timeout_msec = 1};
 
 void send_setting(uint8_t command, uint8_t value);
-void parse(const uint8_t* buffer, uint32_t length);
+void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length);
 void send_link_phrase(uint8_t* phrase, uint32_t length);
 void send_tx_payload(uint8_t* payload, uint32_t length);
+bool check_valid_op_code(uint8_t op_code);
 void send_enable();
 
 [[noreturn]] void task_telemetry(__attribute__((unused)) void *argument) {
@@ -44,13 +45,13 @@ void send_enable();
   osDelay(5000);
 
   /* Configure the telemetry MCU */
-  send_setting(CMD_DIRECTION, global_cats_config.config.tele_direction);
+  send_setting(CMD_DIRECTION, global_cats_config.config.telemetry_settings.direction);
   osDelay(100);
-  send_setting(CMD_POWER_LEVEL, global_cats_config.config.tele_power_level);
+  send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
   osDelay(100);
   /* Only start the telemetry when a link phrase is set */
-  if(global_cats_config.config.link_phrase[0] != 0){
-    send_link_phrase(global_cats_config.config.link_phrase, 8);
+  if(global_cats_config.config.telemetry_settings.link_phrase[0] != 0){
+    send_link_phrase(global_cats_config.config.telemetry_settings.link_phrase, 8);
     osDelay(100);
     send_enable();
   }
@@ -74,76 +75,102 @@ void send_enable();
 
 
     /* Check for data from the Telemetry MCU */
-    while(stream_length(&uart_stream) > 0){
-      uint8_t tmp;
-      if(stream_read_byte(&uart_stream, &tmp)){
-        if(tmp == ESC_CHAR){
-          parse(uart_buffer, uart_index);
-          uart_index = 0;
-        } else {
-          uart_buffer[uart_index] = tmp;
-          uart_index++;
+    while(stream_length(&uart_stream) > 1){
+      /* First read the Op Code */
+      uint8_t op_code;
+      do {
+        stream_read_byte(&uart_stream, &op_code);
+      } while (check_valid_op_code(op_code) == false);
+
+      /* Read the data length */
+      uint8_t length;
+      if(stream_read_byte(&uart_stream, &length)) {
+        /* Read the data */
+        while ((length - uart_index) > 0) {
+          if (stream_read_byte(&uart_stream, &uart_buffer[uart_index])) {
+            uart_index++;
+          }
+          if(uart_index > 20) {
+            uart_index = 0;
+            break;
+          }
         }
+        parse(op_code, uart_buffer, length);
+        uart_index = 0;
       }
     }
+
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
-void parse(const uint8_t* buffer, uint32_t length){
+bool check_valid_op_code(uint8_t op_code){
+  /* TODO loop over all opcodes and check if it exists */
+  if(op_code == CMD_GNSS_INFO || op_code == CMD_GNSS_LOC || op_code == CMD_RX || op_code == CMD_INFO || op_code == CMD_GNSS_TIME)
+    return true;
+  else
+    return false;
+}
+
+void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length){
   if(length < 1) return;
 
-  /* TODO add all commands, store the data and make it look good :) */
+  /* TODO add all opcodes, store the data and make it look good :) */
 
-  if(buffer[0] == CMD_RX){
+  if(op_code == CMD_RX){
     log_info("RX received");
   }
-  else if(buffer[0] == CMD_INFO){
+  else if(op_code == CMD_INFO){
     log_info("Link Info received");
   }
-  else if(buffer[0] == CMD_GNSS_LOC){
+  else if(op_code == CMD_GNSS_LOC){
     log_info("GNSS location received");
   }
-  else if(buffer[0] == CMD_GNSS_INFO){
+  else if(op_code == CMD_GNSS_INFO){
     log_info("GNSS info received");
   }
-  else if(buffer[0] == CMD_GNSS_TIME){
+  else if(op_code == CMD_GNSS_TIME){
     log_info("GNSS time received");
+  } else {
+    log_error("Unknown Op Code");
   }
 }
 
 void send_link_phrase(uint8_t* phrase, uint32_t length){
   uint8_t command = CMD_LINK_PHRASE;
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &command, 1, 2);
+
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &length, 1, 2);
+
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, phrase, length, 2);
-  uint8_t end = ESC_CHAR;
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &end, 1, 2);
+
 }
 
 void send_setting(uint8_t command, uint8_t value) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &command, 1, 2);
+
+  uint8_t length = 1;
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &length, 1, 2);
+
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &value, 1, 2);
-  uint8_t end = ESC_CHAR;
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &end, 1, 2);
 }
 
 void send_enable(){
   uint8_t command = CMD_ENABLE;
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &command, 1, 2);
-  uint8_t end = ESC_CHAR;
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &end, 1, 2);
+  uint8_t length = 0;
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &length, 1, 2);
 }
 
 void send_tx_payload(uint8_t* payload, uint32_t length){
   uint8_t command = CMD_TX;
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &command, 1, 2);
 
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, payload, length, 2);
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &length, 1, 2);
 
-  uint8_t end = ESC_CHAR;
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, &end, 1, 2);
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, payload, length, 2);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){

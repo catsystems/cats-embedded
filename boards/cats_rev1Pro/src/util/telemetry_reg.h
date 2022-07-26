@@ -28,8 +28,6 @@ typedef enum {
   BIDIRECTIONAL = 1,
 } transmission_mode_e;
 
-#define ESC_CHAR 0xFF
-
 #define CMD_DIRECTION 0x10
 #define CMD_PA_GAIN 0x11
 #define CMD_POWER_LEVEL 0x12

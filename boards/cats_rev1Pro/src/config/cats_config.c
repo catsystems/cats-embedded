@@ -72,9 +72,9 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.rec_speed_idx = 0,
                                       .config.rec_mask = UINT32_MAX,
 #ifdef CATS_VEGA
-                                      .config.tele_power_level = 20,
-                                      .config.tele_direction = TX,
-                                      .config.link_phrase = "",
+                                      .config.telemetry_settings.power_level = 20,
+                                      .config.telemetry_settings.direction = TX,
+                                      .config.telemetry_settings.link_phrase = "",
 #endif
 };
 

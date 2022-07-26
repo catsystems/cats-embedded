@@ -198,6 +198,14 @@ typedef struct {
   int16_t arg;
 } config_action_t;
 
+#ifdef CATS_VEGA
+typedef struct {
+    uint8_t link_phrase[8];
+    uint8_t power_level;
+    uint8_t direction;
+} config_telemetry_t;
+#endif
+
 typedef bool (*peripheral_act_fp)(int16_t);
 
 typedef struct {

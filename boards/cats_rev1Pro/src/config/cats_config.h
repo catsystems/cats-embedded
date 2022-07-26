@@ -57,9 +57,7 @@ typedef struct {
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
 
 #ifdef CATS_VEGA
-  uint8_t tele_power_level;
-  uint8_t tele_direction;
-  uint8_t link_phrase[8];
+  config_telemetry_t telemetry_settings;
 #endif
 
 } cats_config_t;
