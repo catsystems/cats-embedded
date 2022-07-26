@@ -430,7 +430,7 @@ void cli_print_var_range(const cli_value_t *var) {
       const lookup_table_entry_t *tableEntry = &lookup_tables[var->config.lookup.table_index];
       cli_print("Allowed values: ");
       bool first_entry = true;
-      for (unsigned i = 0; i < tableEntry->value_count; i++) {
+      for (uint32_t i = 0; i < tableEntry->value_count; i++) {
         if (tableEntry->values[i]) {
           if (!first_entry) {
             cli_print(", ");

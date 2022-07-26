@@ -144,7 +144,7 @@ const cli_value_t value_table[] = {
 #ifdef CATS_VEGA
     {"tele_link_phrase", VAR_UINT8 | MODE_STRING, .config.string = {4, 8},
      offsetof(cats_config_u, config.telemetry_settings.link_phrase)},
-    {"tele_power",VAR_UINT8,     {.minmax_unsigned = {0, 30}},
+    {"tele_power_level",VAR_UINT8,     {.minmax_unsigned = {0, 30}},
      offsetof(cats_config_u, config.telemetry_settings.power_level)},
     {"tele_direction", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_DIRECTION}}, offsetof(cats_config_u, config.telemetry_settings.direction)},
 #endif
