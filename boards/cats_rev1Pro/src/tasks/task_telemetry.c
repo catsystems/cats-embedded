@@ -40,6 +40,35 @@ void send_tx_payload(uint8_t* payload, uint32_t length);
 bool check_valid_op_code(uint8_t op_code);
 void send_enable();
 
+typedef struct {
+  uint8_t state : 3;
+  uint8_t errors : 4;
+  uint16_t timestamp : 15;
+  uint64_t gps : 44;
+  uint32_t altitude : 17;
+  uint16_t velocity : 10;
+  uint16_t voltage : 8;
+  uint16_t continuity : 3;
+  // fill up to 16 bytes
+  uint8_t : 0;  // sent
+  uint8_t d1;   // dummy
+  uint8_t d2;   // dummy
+  uint8_t d3;   // dummy
+} __attribute__((packed)) packed_tx_msg_t;
+
+void pack_tx_msg(packed_tx_msg_t* tx_payload) {
+  tx_payload->timestamp = osKernelGetTickCount();
+  tx_payload->altitude = (uint32_t)global_estimation_data.height;
+  tx_payload->velocity = (uint32_t)global_estimation_data.velocity;
+}
+
+void parse_tx_msg(packed_tx_msg_t* tx_payload) {
+  uint32_t ts = tx_payload->timestamp;
+  uint32_t altitude = tx_payload->altitude;
+  uint16_t velocity = tx_payload->velocity;
+  log_raw("[TELE] ts: %lu alt: %lu vel: %u", ts, altitude, velocity);
+}
+
 [[noreturn]] void task_telemetry(__attribute__((unused)) void* argument) {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
@@ -66,12 +95,13 @@ void send_enable();
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (1) {
     /* TODO add the payload to the tx_payload buffer */
-    uint8_t tx_payload[16];
+    packed_tx_msg_t tx_payload = {};
 
-    uint32_t ts = osKernelGetTickCount();
-    memcpy(&tx_payload[0], &ts, 4);
+    pack_tx_msg(&tx_payload);
 
-    send_tx_payload(tx_payload, 16);
+    send_tx_payload((uint8_t*)&tx_payload, 16);
+
+    parse_tx_msg(&tx_payload);
 
     /* Check for data from the Telemetry MCU */
     while (stream_length(&uart_stream) > 1) {
