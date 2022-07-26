@@ -18,24 +18,24 @@
 
 #pragma once
 
+#include "SX1280Driver/SX1280_Regs.h"
+#include "telemetry_reg.h"
 #include <cstdint>
-#include "common.h"
 
 class TransmissionSettings {
 public:
-	transmission_direction_e transmissionDirection = TX;
-	transmission_mode_e transmissionMode = UNIDIRECTIONAL;
-	int8_t paGain = 34;			// dB, default +34dB SKY65383-11
-	int8_t powerLevel = 20;		// dBm, default +20dBm = 100mW
-	uint8_t linkPhrase[8];
-	bool transmissionEnabled = false;
+  transmission_direction_e transmissionDirection = TX;
+  transmission_mode_e transmissionMode = UNIDIRECTIONAL;
+  int8_t paGain = 34;     // dB, default +34dB SKY65383-11
+  int8_t powerLevel = 20; // dBm, default +20dBm = 100mW
+  uint8_t linkPhrase[8];
+  bool transmissionEnabled = false;
 
-	/* Predefined transmission modes */
-	uint32_t modeIndex = 1;
-	modulation_settings_s modulationConfig[2] = {
-	{SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_7, 100000, 12, 14},
-	{SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_7, 50000, 12, 14}
-	};
+  /* Predefined transmission modes */
+  uint32_t modeIndex = 1;
+  modulation_settings_s modulationConfig[2] = {
+      {SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_7, 100000, 12,
+       17},
+      {SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_7, 50000, 12,
+       17}};
 };
-
-
