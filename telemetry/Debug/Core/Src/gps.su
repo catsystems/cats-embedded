@@ -1,6 +1,5 @@
-../Core/Src/TinyGPSPlus/TinyGPS.h:59:9:bool TinyGPSLocation::isValid() const	16	static
-../Core/Src/gps.cpp:19:6:void gpsSetup()	32	static
-../Core/Src/gps.cpp:53:6:void gpsRun()	8	static
-../Core/Src/gps.cpp:64:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
-../Core/Src/gps.cpp:68:1:void __static_initialization_and_destruction_0(int, int)	16	static
-../Core/Src/gps.cpp:68:1:cpp)	8	static
+TinyGPS.h:59:9:bool TinyGPSLocation::isValid() const	16	static
+gps.cpp:19:6:void gpsSetup()	32	static
+gps.cpp:53:6:bool gpsRun()	8	static
+gps.cpp:59:1:void __static_initialization_and_destruction_0(int, int)	16	static
+gps.cpp:59:1:cpp)	8	static

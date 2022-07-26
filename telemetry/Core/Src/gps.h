@@ -6,5 +6,7 @@
  */
 #pragma once
 
+#include "TinyGPSPlus/TinyGPSPlus.h"
+
 void gpsSetup();
-void gpsRun();
+bool gpsRun();

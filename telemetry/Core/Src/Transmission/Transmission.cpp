@@ -19,225 +19,244 @@
 #include "Transmission.h"
 #include "FHSS/FHSS.h"
 #include "FHSS/crc.h"
-#include <cstring>
 #include "main.h"
+#include <cstring>
 
-static Transmission* pTransmission;
+static Transmission *pTransmission;
 
-static inline void rxCallback(){
-	pTransmission->rxDoneISR();
+static inline void rxCallback() { pTransmission->rxDoneISR(); }
+
+static inline void txCallback() { pTransmission->txDoneISR(); }
+
+bool Transmission::begin(TIM_HandleTypeDef *t) {
+
+  /* Catch if already initalized */
+  if (radioInitialized == true)
+    return radioInitialized;
+
+  timer = t;
+  pTransmission = this;
+  Radio.RXdoneCallback = &rxCallback;
+  Radio.TXdoneCallback = &txCallback;
+
+  if (Radio.Begin() == true) {
+    radioInitialized = true;
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+  }
+
+  return radioInitialized;
 }
 
-static inline void txCallback(){
-	pTransmission->txDoneISR();
+void Transmission::setLinkPhrase(const uint8_t *linkPhrase, uint32_t length) {
+  // Reset the linkPhrase
+  memset(Settings.linkPhrase, 0, 8);
+  // Copy new linkPhrase
+  memcpy(Settings.linkPhrase, linkPhrase, length);
+
+  /* If the transmission was already enabled, restart it */
+  if (Settings.transmissionEnabled) {
+    resetTransmission();
+  }
 }
 
-bool Transmission::begin(TIM_HandleTypeDef* t){
-
-	/* Catch if already initalized */
-	if(radioInitialized == true)
-		return radioInitialized;
-
-	timer = t;
-	pTransmission = this;
-	Radio.RXdoneCallback = &rxCallback;
-	Radio.TXdoneCallback = &txCallback;
-
-	if(Radio.Begin() == true)
-		radioInitialized = true;
-
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	return radioInitialized;
+void Transmission::setDirection(
+    transmission_direction_e transmissionDirection) {
+  if (Settings.transmissionDirection != transmissionDirection) {
+    Settings.transmissionDirection = transmissionDirection;
+    if (Settings.transmissionEnabled) {
+      resetTransmission();
+    }
+  }
 }
 
-void Transmission::setLinkPhrase(const uint8_t* linkPhrase, uint32_t length){
-	// Reset the linkPhrase
-	memset(Settings.linkPhrase, 0, 8);
-	// Copy new linkPhrase
-	memcpy(Settings.linkPhrase, linkPhrase, length);
-
-	/* If the transmission was already enabled, restart it */
-	if(Settings.transmissionEnabled){
-		resetTransmission();
-	}
+void Transmission::setMode(transmission_mode_e transmissionMode) {
+  Settings.transmissionMode = transmissionMode;
 }
 
-void Transmission::setDirection(transmission_direction_e transmissionDirection){
-	if(Settings.transmissionDirection != transmissionDirection){
-		Settings.transmissionDirection = transmissionDirection;
-		if(Settings.transmissionEnabled){
-			resetTransmission();
-		}
-	}
+void Transmission::setPAGain(int8_t gain) {
+  Settings.paGain = gain;
+
+  if (Settings.transmissionEnabled) {
+    Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
+  }
 }
 
-void Transmission::setMode(transmission_mode_e transmissionMode){
-	Settings.transmissionMode = transmissionMode;
+void Transmission::setPowerLevel(int8_t gain) { Settings.powerLevel = gain; }
+
+void Transmission::writeBytes(const uint8_t *data, uint32_t length) {
+  if (length > payloadLength)
+    return;
+  memcpy(txData, data, length);
+  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 
-void Transmission::setPAGain(int8_t gain){
-	Settings.paGain = gain;
+bool Transmission::available() { return dataAvailable; }
 
-	if(Settings.transmissionEnabled){
-		Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
-	}
+bool Transmission::readBytes(uint8_t *buffer, uint32_t length) {
+  if (dataAvailable) {
+    memcpy(buffer, rxData, length);
+    dataAvailable = false;
+    return true;
+  }
+  return false;
 }
 
-void Transmission::setPowerLevel(int8_t gain){
-	Settings.powerLevel = gain;
+void Transmission::enableTransmission() {
+
+  if (radioInitialized == false)
+    return;
+
+  if (Settings.transmissionEnabled)
+    return;
+
+  Settings.transmissionEnabled = true;
+
+  linkCRC = crc32(Settings.linkPhrase, 8);
+  linkXOR = linkCRC & 0xFF;
+
+  FHSSrandomiseFHSSsequence(linkCRC);
+
+  Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
+
+  HAL_Delay(10);
+
+  /* Get the modulation settings */
+  modulation_settings_s *const modParams =
+      &Settings.modulationConfig[Settings.modeIndex];
+
+  if (Settings.transmissionDirection == TX) {
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
+                 modParams->PreambleLen, 0, modParams->PayloadLength,
+                 modParams->interval);
+  } else {
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
+                 modParams->PreambleLen, 0, modParams->PayloadLength, 0);
+  }
+
+  payloadLength = modParams->PayloadLength;
+
+  HAL_Delay(10);
+
+  if (Settings.transmissionDirection == TX) {
+    TIM2->ARR = 1000;
+    HAL_TIM_Base_Start_IT(timer);
+  } else {
+    TIM2->ARR = 1005;
+    Radio.RXnb();
+    HAL_TIM_Base_Start_IT(timer);
+  }
 }
 
-void Transmission::enableTransmission(){
+void Transmission::disableTransmission() {
+  /* Wait until done transmitting / receiving*/
+  while (busyTransmitting)
+    ;
 
-	if(radioInitialized == false)
-		return;
+  if (!Settings.transmissionEnabled)
+    return;
 
-	if(Settings.transmissionEnabled)
-		return;
+  Settings.transmissionEnabled = false;
 
-	Settings.transmissionEnabled = true;
+  /* Disable Timer */
+  HAL_TIM_Base_Stop_IT(timer);
+  TIM2->CNT = 0;
 
-	linkCRC = crc32(Settings.linkPhrase, 8);
-	linkXOR = linkCRC & 0xFF;
+  /* Put Radio in Idle Mode */
+  Radio.SetIdleMode();
 
-	Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
-
-	HAL_Delay(10);
-
-	/* Get the modulation settings */
-	modulation_settings_s *const modParams = &Settings.modulationConfig[Settings.modeIndex];
-
-	if(Settings.transmissionDirection == TX){
-		Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
-						modParams->PreambleLen, 0, modParams->PayloadLength, modParams->interval);
-	} else {
-		Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
-						modParams->PreambleLen, 0, modParams->PayloadLength, 0);
-	}
-
-	payloadLength = modParams->PayloadLength;
-
-	HAL_Delay(10);
-
-	if(Settings.transmissionDirection == TX){
-		TIM2->ARR = 1000;
-		HAL_TIM_Base_Start_IT(timer);
-	} else {
-		TIM2->ARR = 1005;
-		Radio.RXnb();
-		HAL_TIM_Base_Start_IT(timer);
-	}
+  LQCalc.reset();
+  connectionState = disconnected;
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 }
 
-void Transmission::disableTransmission(){
-	/* Wait until done transmitting / receiving*/
-	while(busyTransmitting);
+void Transmission::processRFPacket() {
+  LQCalc.inc();
 
-	if (!Settings.transmissionEnabled)
-		return;
+  uint8_t crc =
+      (uint8_t)crc32((const uint8_t *)Radio.RXdataBuffer, payloadLength - 1);
 
-	Settings.transmissionEnabled = false;
+  if ((linkXOR ^ crc) == Radio.RXdataBuffer[payloadLength - 1]) {
+    connectionState = connected;
+    dataAvailable = true;
+    timeout = 0;
 
-	/* Disable Timer */
-	HAL_TIM_Base_Stop_IT(timer);
-	TIM2->CNT = 0;
+    memcpy(rxData, (const uint8_t *)Radio.RXdataBuffer, payloadLength);
 
-	/* Put Radio in Idle Mode */
-	Radio.SetIdleMode();
-
-	LQCalc.reset();
-	connectionState = disconnected;
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+    LQCalc.add();
+  }
 }
 
-void Transmission::processRFPacket(){
-	LQCalc.inc();
+void Transmission::rxDoneISR() {
+  busyTransmitting = false;
 
-	uint8_t crc = (uint8_t)crc32((const uint8_t*)Radio.RXdataBuffer, payloadLength-1);
+  /* Reset the timer */
+  HAL_TIM_Base_Stop_IT(timer);
+  TIM2->CNT = 0;
+  HAL_TIM_Base_Start_IT(timer);
 
-	if ((linkXOR ^ crc) == Radio.RXdataBuffer[payloadLength-1]){
-		connectionState = connected;
-		timeout = 0;
-	} else {
-		return;
-	}
+  processRFPacket();
 
-	LQCalc.add();
+  if (connectionState == connected) {
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+  }
 
+  Radio.SetFrequencyReg(FHSSgetNextFreq());
+
+  Radio.RXnb();
 }
 
-void Transmission::rxDoneISR(){
-	busyTransmitting = false;
+void Transmission::txDoneISR() {
+  busyTransmitting = false;
 
-	/* Reset the timer */
-	HAL_TIM_Base_Stop_IT(timer);
-	TIM2->CNT = 0;
-	HAL_TIM_Base_Start_IT(timer);
-
-	processRFPacket();
-
-	if(connectionState == connected){
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	}
-
-	Radio.SetFrequencyReg(FHSSgetNextFreq());
-
-	Radio.RXnb();
+  Radio.SetFrequencyReg(FHSSgetNextFreq());
 }
 
-void Transmission::txDoneISR(){
-	busyTransmitting = false;
+void Transmission::rxTimeout() {
 
-	Radio.SetFrequencyReg(FHSSgetNextFreq());
+  if (timeout == 50) {
+    LQCalc.reset();
+    connectionState = disconnected;
+    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+    FHSSsetCurrIndex(0);
+    Radio.SetFrequencyReg(GetInitialFreq());
+  }
+
+  if (connectionState == connected) {
+    LQCalc.inc();
+    Radio.SetFrequencyReg(FHSSgetNextFreq());
+  } else {
+    if (timeout > 5) {
+      timeout = 0;
+      Radio.SetFrequencyReg(FHSSgetNextFreq());
+    }
+  }
+
+  timeout++;
 }
 
-void Transmission::rxTimeout(){
+void Transmission::txTransmit() {
+  /* Add payload to tx buffer */
+  for (uint32_t i = 0; i < payloadLength - 1; i++) {
+    Radio.TXdataBuffer[i] = txData[i];
+  }
 
-	if(timeout == 50){
-		LQCalc.reset();
-		connectionState = disconnected;
-		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	}
+  /* Calculate CRC and store in last position */
+  uint8_t crc = (uint8_t)crc32((const uint8_t *)txData, payloadLength - 1);
+  Radio.TXdataBuffer[payloadLength - 1] = linkXOR ^ crc;
 
-	if(connectionState == connected){
-	  LQCalc.inc();
-	  Radio.SetFrequencyReg(FHSSgetNextFreq());
-	} else {
-	  if(timeout > 5){
-		  timeout = 0;
-		  Radio.SetFrequencyReg(FHSSgetNextFreq());
-	  }
-	}
-
-	timeout++;
+  /* Transmit message */
+  if (!busyTransmitting)
+    Radio.TXnb();
 }
 
-
-void Transmission::txTransmit(){
-	/* Add payload to tx buffer */
-	for(uint32_t i = 0; i < payloadLength-1; i++){
-		Radio.TXdataBuffer[i] = txData[i];
-	}
-
-	/* Calculate CRC and store in last position */
-	uint8_t crc = (uint8_t)crc32((const uint8_t*)txData, payloadLength-1);
-	Radio.TXdataBuffer[payloadLength-1] = linkXOR  ^ crc;
-
-	/* Transmit message */
-	if(!busyTransmitting) Radio.TXnb();
+transmission_direction_e Transmission::getDirection() {
+  return Settings.transmissionDirection;
 }
 
-transmission_direction_e Transmission::getDirection(){
-	return Settings.transmissionDirection;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (pTransmission->getDirection() == TX) {
+    pTransmission->txTransmit();
+  } else {
+    pTransmission->rxTimeout();
+  }
 }
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if(pTransmission->getDirection() == TX){
-		pTransmission->txTransmit();
-	} else {
-		pTransmission->rxTimeout();
-	}
-
-}
-

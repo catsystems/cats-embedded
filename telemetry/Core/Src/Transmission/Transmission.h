@@ -17,61 +17,64 @@
  */
 
 #pragma once
-#include "TransmissionSettings.h"
 #include "LQCALC/LQCALC.h"
+#include "SX1280Driver/SX1280.h"
+#include "TransmissionSettings.h"
+#include "stm32g0xx_hal.h"
 
 #define MAX_PAYLOAD_SIZE 20
 
 class Transmission {
 public:
-	bool begin(TIM_HandleTypeDef* t);
+  bool begin(TIM_HandleTypeDef *t);
 
-	void setDirection(transmission_direction_e transmissionDirection);
-	void setMode(transmission_mode_e transmissionMode);
-	void setPAGain(int8_t gain);
-	void setPowerLevel(int8_t gain);
-	void setLinkPhrase(const uint8_t* linkPhrase, uint32_t length);
+  void setDirection(transmission_direction_e transmissionDirection);
+  void setMode(transmission_mode_e transmissionMode);
+  void setPAGain(int8_t gain);
+  void setPowerLevel(int8_t gain);
+  void setLinkPhrase(const uint8_t *linkPhrase, uint32_t length);
 
-	transmission_direction_e getDirection();
+  /* Functions to read and write transmission data */
+  bool available();
+  void writeBytes(const uint8_t *buffer, uint32_t length);
+  bool readBytes(uint8_t *buffer, uint32_t length);
 
-	void enableTransmission();
-	void disableTransmission();
+  transmission_direction_e getDirection();
 
-	void txTransmit();
-	void rxTimeout();
+  void enableTransmission();
+  void disableTransmission();
 
-	void rxDoneISR();
-	void txDoneISR();
+  void txTransmit();
+  void rxTimeout();
 
+  void rxDoneISR();
+  void txDoneISR();
 
 private:
+  void processRFPacket();
 
-	void processRFPacket();
+  void resetTransmission() {
+    disableTransmission();
+    HAL_Delay(10);
+    enableTransmission();
+  }
 
+  SX1280Driver Radio;
+  LQCALC<30> LQCalc;
+  TransmissionSettings Settings;
 
+  TIM_HandleTypeDef *timer;
+  uint32_t timeout = 0;
 
-	void resetTransmission(){
-		disableTransmission();
-		HAL_Delay(10);
-		enableTransmission();
-	}
+  bool radioInitialized = false;
 
-	SX1280Driver Radio;
-	LQCALC<30> LQCalc;
-	TransmissionSettings Settings;
+  connectionState_e connectionState;
+  volatile bool busyTransmitting;
+  uint8_t linkXOR;
+  uint32_t linkCRC;
 
-	TIM_HandleTypeDef* timer;
-	uint32_t timeout = 0;
-
-
-	bool radioInitialized = false;
-
-	connectionState_e connectionState;
-	volatile bool busyTransmitting;
-	uint8_t linkXOR;
-	uint32_t linkCRC;
-	uint32_t payloadLength = 0;
-	uint8_t txData[MAX_PAYLOAD_SIZE];
-	uint8_t rxData[MAX_PAYLOAD_SIZE];
-
+  volatile bool dataAvailable = false;
+  uint32_t payloadLength = 0;
+  uint8_t txData[MAX_PAYLOAD_SIZE];
+  uint8_t rxData[MAX_PAYLOAD_SIZE];
 };
