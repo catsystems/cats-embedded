@@ -32,6 +32,7 @@
 #ifdef CATS_VEGA
 #include "tasks/task_telemetry.h"
 #endif
+
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_sensor_read, 512)
 /* Todo: Check with Trace if can be reduced */

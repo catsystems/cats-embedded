@@ -283,13 +283,16 @@ static void TIM_Config(void) {
   TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
   TimHandle.Init.ClockDivision = 0;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+
+  /* Enable TIM peripherals Clock */
+  TIMUsb_CLK_ENABLE();
+
   if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK) {
     /* Initialization Error */
     Error_Handler();
   }
 
-  /* Enable TIM peripherals Clock */
-  TIMUsb_CLK_ENABLE();
+
 
   /* Configure the NVIC for TIMx */
   /* Set Interrupt Group Priority */

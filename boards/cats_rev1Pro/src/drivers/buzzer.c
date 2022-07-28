@@ -57,11 +57,12 @@ void buzzer_set_freq(BUZ *dev, uint32_t frequency) {
   else if (frequency < 200)
     frequency = 200;
 
+#ifdef ORION
   if (frequency < 500)
     psc = 3;
   else if (frequency < 2000)
     psc = 2;
-
+#endif
   dev->arr = (uint16_t)(core_freq / (frequency * psc + frequency)) - 1;
 
   // Update timer period

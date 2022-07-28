@@ -18,12 +18,11 @@
 
 #pragma once
 
-#define USE_ORIENTATION_FILTER
-#define USE_ADAPTIVE_GAIN
-
 #define USE_MEDIAN_FILTER
 #define MEDIAN_FILTER_SIZE 9
 
-static const float P_INITIAL = 101250.f;   // hPa
-static const float GRAVITY = 9.81f;        // m/s^2
-static const float TEMPERATURE_0 = 15.0f;  // °C
+static const float P_INITIAL = 101250.0f;                   // hPa
+static const float GRAVITY = 9.81f;                         // m/s^2
+static const float TEMPERATURE_0 = 15.0f;                   // °C
+static const float BARO_LIFTOFF_MOV_AVG_SIZE = 500.0f;      // samples -> 5 seconds
+static const float BARO_LIFTOFF_FAST_MOV_AVG_SIZE = 10.0f;  // samples -> 5 seconds

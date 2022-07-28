@@ -139,6 +139,7 @@ typedef enum {
   HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } flight_fsm_e;
 
+/* Todo: Comment out this struct */
 typedef struct {
   flight_fsm_e flight_state;
   vf32_t old_acc_data;
@@ -236,7 +237,7 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
-typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M } cats_sim_choice_e;
+typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML } cats_sim_choice_e;
 
 typedef struct {
   cats_sim_choice_e sim_choice;

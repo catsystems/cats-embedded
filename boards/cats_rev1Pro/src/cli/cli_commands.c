@@ -69,7 +69,9 @@ static void cli_cmd_flash_write(const char *cmd_name, char *args);
 static void cli_cmd_flash_stop(const char *cmd_name, char *args);
 static void cli_cmd_flash_test(const char *cmd_name, char *args);
 
+#ifdef CATS_DEBUG
 static void cli_cmd_start_simulation(const char *cmd_name, char *args);
+#endif
 
 /* List of CLI commands; should be sorted in alphabetical order. */
 const clicmd_t cmd_table[] = {
