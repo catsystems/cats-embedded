@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2021 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,23 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
 #pragma once
-#include "arm_math.h"
-#include "util/types.h"
 
-typedef struct {
-    float32_t gyro_data[4];
-    float32_t estimate_data[4];
-    float32_t t_sampl;
-    arm_matrix_instance_f32 gyro;
-    arm_matrix_instance_f32 estimate;
-} orientation_filter_t;
-
-/* Filter Functions */
-void init_orientation_filter(orientation_filter_t* filter);
-void reset_orientation_filter(orientation_filter_t* filter);
-void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_vel);
-
-
-
-
+[[noreturn]] void task_airbrake_controller(__attribute__((unused)) void *argument);

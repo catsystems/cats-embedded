@@ -43,7 +43,7 @@
                        &settings);
 
     if (global_flight_state.state_changed) {
-      log_error("[%lu] State Changed FlightFSM to %s", osKernelGetTickCount(),
+      log_raw("[%lu] State Changed FlightFSM to %s", osKernelGetTickCount(),
                 fsm_map[global_flight_state.flight_state]);
       record(tick_count, FLIGHT_STATE, &global_flight_state.flight_state);
     }

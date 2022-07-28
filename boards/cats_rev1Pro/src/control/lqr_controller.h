@@ -18,19 +18,9 @@
 
 #pragma once
 
-#define USE_MEDIAN_FILTER
-#define MEDIAN_FILTER_SIZE 9
+#include "util/types.h"
 
-static const float P_INITIAL = 101250.f;   // hPa
-static const float GRAVITY = 9.81f;        // m/s^2
-static const float TEMPERATURE_0 = 15.0f;  // °C
+void control_init(control_data_t *control_data);
 
-/* For Airbrake Controller */
-#define USE_AIRBRAKE_CONTROL
-#define POLY_DEG                          30           // NEEDS CHANGE
-#define OPT_TRAJ_CONTROL_INPUT            0.50000f     // -
-#define CONTROL_DEACTIVATION_ALTITUDE_AGL 4463.63842f  // NEEDS CHANGE
-#define MIN_BOUNDARAY_AW                  0.5f    // -                                                             // -
-#define M_AW                              0.005f  // -
-#define TARGET_AGOGEE                     4478.00f  // m
-#define NUM_GAINS                         3
+void compute_control_input(control_data_t *control_data, flight_fsm_e flight_phase_detection,
+                           estimation_output_t *estimation_data);

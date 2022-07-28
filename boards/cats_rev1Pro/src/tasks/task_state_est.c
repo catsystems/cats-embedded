@@ -49,11 +49,10 @@
   flight_fsm_e old_fsm_enum = MOVING;
 
   /* initialize Orientation State Estimation */
-#ifdef USE_ORIENTATION_FILTER
-  orientation_filter_t orientation_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  orientation_filter_t orientation_filter = { };
   init_orientation_filter(&orientation_filter);
   reset_orientation_filter(&orientation_filter);
-#endif
+
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
@@ -64,11 +63,14 @@
     /* Reset IMU when we go from moving to READY */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       reset_kalman(&filter);
+      reset_orientation_filter(&orientation_filter);
     }
 
     /* Soft reset kalman filter when we go from Ready to thrusting */
+    /* Reset Orientation Estimate when going to thrusting */
     if ((new_fsm_enum == THRUSTING_1) && (new_fsm_enum != old_fsm_enum)) {
       soft_reset_kalman(&filter);
+      reset_orientation_filter(&orientation_filter);
     }
 
     /* Write measurement data into the filter struct */
@@ -98,12 +100,9 @@
     global_estimation_data.velocity = filter.x_bar_data[1];
     global_estimation_data.acceleration = filter.measured_acceleration + filter.x_bar_data[2];
 
-    /* Do Orientation Kalman */
-#ifdef USE_ORIENTATION_FILTER
-    read_sensor_data(&global_magneto[0], &global_imu[0], &orientation_filter);
-    orientation_filter_step(&orientation_filter);
+    /* Do Orientation Filter */
+    quaternion_kinematics(&orientation_filter, &global_SI_data.gyro);
     orientation_info_t orientation_info;
-    /* DO ORIENTATION Filter */
     /*
     log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", (int32_t)(orientation_filter.estimate_data[0] * 1000),
               (int32_t)(orientation_filter.estimate_data[1] * 1000),
@@ -115,7 +114,6 @@
     }
 
     record(tick_count, ORIENTATION_INFO, &orientation_info);
-#endif
 
     /* record filtered data */
     filtered_data_info_t filtered_data_info = {

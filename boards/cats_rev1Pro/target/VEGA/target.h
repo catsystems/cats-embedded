@@ -51,7 +51,7 @@
 
 /***** Peripherals config *****/
 // #define USE_CAN
-// #define USE_UART
+ #define USE_UART
 
 /* ADC config */
 extern ADC_HandleTypeDef hadc1;
@@ -79,6 +79,7 @@ extern CAN_HandleTypeDef hcan1;
 /* UART config */
 #ifdef USE_UART
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 #endif
 
 /***** Device config *****/
@@ -139,6 +140,8 @@ extern sens_info_t baro_info[NUM_BARO];
 #define ACCEL_SPI_HANDLE hspi1
 #define MAG_SPI_HANDLE hspi1
 #define BARO_SPI_HANDLE hspi1
+
+#define EPOS_UART_HANDLE huart2
 
 #ifdef __cplusplus
 extern "C" {

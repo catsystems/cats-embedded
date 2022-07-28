@@ -18,19 +18,25 @@
 
 #pragma once
 
-#define USE_MEDIAN_FILTER
-#define MEDIAN_FILTER_SIZE 9
 
-static const float P_INITIAL = 101250.f;   // hPa
-static const float GRAVITY = 9.81f;        // m/s^2
-static const float TEMPERATURE_0 = 15.0f;  // °C
 
-/* For Airbrake Controller */
-#define USE_AIRBRAKE_CONTROL
-#define POLY_DEG                          30           // NEEDS CHANGE
-#define OPT_TRAJ_CONTROL_INPUT            0.50000f     // -
-#define CONTROL_DEACTIVATION_ALTITUDE_AGL 4463.63842f  // NEEDS CHANGE
-#define MIN_BOUNDARAY_AW                  0.5f    // -                                                             // -
-#define M_AW                              0.005f  // -
-#define TARGET_AGOGEE                     4478.00f  // m
-#define NUM_GAINS                         3
+
+#include <stdbool.h>
+#include <stdint.h>
+#include "stm32f4xx.h"
+
+
+
+typedef struct uart_bus {
+  UART_HandleTypeDef* const uart_handle;
+  uint8_t initialized;
+  bool busy;
+} UART_BUS;
+
+uint8_t uart_transmit_receive(UART_BUS* bus, uint8_t* tx_buf, uint16_t tx_size, uint8_t* rx_buf, uint16_t rx_size);
+uint8_t uart_transmit(UART_BUS* bus, uint8_t* tx_buf, uint16_t tx_size);
+uint8_t uart_receive(UART_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
+void uart_init(UART_BUS* bus);
+
+#define MAX_INSTANCES 10
+#define UART_TIMEOUT   100

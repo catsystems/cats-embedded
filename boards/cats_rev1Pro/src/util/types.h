@@ -180,6 +180,24 @@ typedef struct {
 } kalman_filter_t;
 
 typedef struct {
+    float control_input;
+    float reference_error;
+    float integrated_error;
+
+    float sf_ref_altitude_AGL;
+    float sf_velocity;
+    float ref_velocity;
+    float tracking_feedback;
+
+    float lowerboundary_aw;
+    float upperboundary_aw;
+
+    double optimal_trajectory_coeff[POLY_DEG+1];
+    double gains[NUM_GAINS];
+    double poly_coeff[NUM_GAINS][POLY_DEG+1];
+} control_data_t;
+
+typedef struct {
   uint16_t liftoff_acc_threshold;  // m/s^2
   uint16_t mach_timer_duration;    // ms
   uint16_t main_altitude;          // m
