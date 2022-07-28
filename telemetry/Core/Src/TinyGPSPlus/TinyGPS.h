@@ -1,7 +1,7 @@
 /*
 TinyGPS++ - a small GPS library for Arduino providing universal NMEA parsing
-Based on work by and "distanceBetween" and "courseTo" courtesy of Maarten Lamers.
-Suggestion to add satellites, courseTo(), and cardinal() by Matt Monson.
+Based on work by and "distanceBetween" and "courseTo" courtesy of Maarten
+Lamers. Suggestion to add satellites, courseTo(), and cardinal() by Matt Monson.
 Location precision improvements suggested by Wayne Holder.
 Copyright (C) 2008-2013 Mikal Hart
 All rights reserved.
@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #else
 //#include "WProgram.h"
 #endif
+#include "main.h"
 #include <limits.h>
 #include <stdint.h>
-#include "main.h"
 
 #define _GPS_VERSION "1.0.2" // software version of this library
 #define _GPS_MPH_PER_KNOT 1.15077945
@@ -42,188 +42,212 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _GPS_FEET_PER_METER 3.2808399
 #define _GPS_MAX_FIELD_SIZE 15
 
-struct RawDegrees
-{
-   uint16_t deg;
-   uint32_t billionths;
-   bool negative;
+struct RawDegrees {
+  uint16_t deg;
+  uint32_t billionths;
+  bool negative;
+
 public:
-   RawDegrees() : deg(0), billionths(0), negative(false)
-   {}
+  RawDegrees() : deg(0), billionths(0), negative(false) {}
 };
 
-struct TinyGPSLocation
-{
-   friend class TinyGPSPlus;
-public:
-   bool isValid() const    { return valid; }
-   bool isUpdated() const  { return updated; }
-   uint32_t age() const    { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
-   const RawDegrees &rawLat()     { updated = false; return rawLatData; }
-   const RawDegrees &rawLng()     { updated = false; return rawLngData; }
-   double lat();
-   double lng();
+struct TinyGPSLocation {
+  friend class TinyGPSPlus;
 
-   TinyGPSLocation() : valid(false), updated(false)
-   {}
+public:
+  bool isValid() const { return valid; }
+  bool isUpdated() const { return updated; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
+  const RawDegrees &rawLat() {
+    updated = false;
+    return rawLatData;
+  }
+  const RawDegrees &rawLng() {
+    updated = false;
+    return rawLngData;
+  }
+  double lat();
+  double lng();
+
+  TinyGPSLocation() : valid(false), updated(false) {}
 
 private:
-   bool valid, updated;
-   RawDegrees rawLatData, rawLngData, rawNewLatData, rawNewLngData;
-   uint32_t lastCommitTime;
-   void commit();
-   void setLatitude(const char *term);
-   void setLongitude(const char *term);
+  bool valid, updated;
+  RawDegrees rawLatData, rawLngData, rawNewLatData, rawNewLngData;
+  uint32_t lastCommitTime;
+  void commit();
+  void setLatitude(const char *term);
+  void setLongitude(const char *term);
 };
 
-struct TinyGPSDate
-{
-   friend class TinyGPSPlus;
+struct TinyGPSDate {
+  friend class TinyGPSPlus;
+
 public:
-   bool isValid() const       { return valid; }
-   bool isUpdated() const     { return updated; }
-   uint32_t age() const       { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
+  bool isValid() const { return valid; }
+  bool isUpdated() const { return updated; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
 
-   uint32_t value()           { updated = false; return date; }
-   uint16_t year();
-   uint8_t month();
-   uint8_t day();
+  uint32_t value() {
+    updated = false;
+    return date;
+  }
+  uint16_t year();
+  uint8_t month();
+  uint8_t day();
 
-   TinyGPSDate() : valid(false), updated(false), date(0)
-   {}
+  TinyGPSDate() : valid(false), updated(false), date(0) {}
 
 private:
-   bool valid, updated;
-   uint32_t date, newDate;
-   uint32_t lastCommitTime;
-   void commit();
-   void setDate(const char *term);
+  bool valid, updated;
+  uint32_t date, newDate;
+  uint32_t lastCommitTime;
+  void commit();
+  void setDate(const char *term);
 };
 
-struct TinyGPSTime
-{
-   friend class TinyGPSPlus;
+struct TinyGPSTime {
+  friend class TinyGPSPlus;
+
 public:
-   bool isValid() const       { return valid; }
-   bool isUpdated() const     { return updated; }
-   uint32_t age() const       { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
+  bool isValid() const { return valid; }
+  bool isUpdated() const { return updated; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
 
-   uint32_t value()           { updated = false; return time; }
-   uint8_t hour();
-   uint8_t minute();
-   uint8_t second();
-   uint8_t centisecond();
+  uint32_t value() {
+    updated = false;
+    return time;
+  }
+  uint8_t hour();
+  uint8_t minute();
+  uint8_t second();
+  uint8_t centisecond();
 
-   TinyGPSTime() : valid(false), updated(false), time(0)
-   {}
+  TinyGPSTime() : valid(false), updated(false), time(0) {}
 
 private:
-   bool valid, updated;
-   uint32_t time, newTime;
-   uint32_t lastCommitTime;
-   void commit();
-   void setTime(const char *term);
+  bool valid, updated;
+  uint32_t time, newTime;
+  uint32_t lastCommitTime;
+  void commit();
+  void setTime(const char *term);
 };
 
-struct TinyGPSDecimal
-{
-   friend class TinyGPSPlus;
-public:
-   bool isValid() const    { return valid; }
-   bool isUpdated() const  { return updated; }
-   uint32_t age() const    { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
-   int32_t value()         { updated = false; return val; }
+struct TinyGPSDecimal {
+  friend class TinyGPSPlus;
 
-   TinyGPSDecimal() : valid(false), updated(false), val(0)
-   {}
+public:
+  bool isValid() const { return valid; }
+  bool isUpdated() const { return updated; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
+  int32_t value() {
+    updated = false;
+    return val;
+  }
+
+  TinyGPSDecimal() : valid(false), updated(false), val(0) {}
 
 private:
-   bool valid, updated;
-   uint32_t lastCommitTime;
-   int32_t val, newval;
-   void commit();
-   void set(const char *term);
+  bool valid, updated;
+  uint32_t lastCommitTime;
+  int32_t val, newval;
+  void commit();
+  void set(const char *term);
 };
 
-struct TinyGPSInteger
-{
-   friend class TinyGPSPlus;
-public:
-   bool isValid() const    { return valid; }
-   bool isUpdated() const  { return updated; }
-   uint32_t age() const    { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
-   uint32_t value()        { updated = false; return val; }
+struct TinyGPSInteger {
+  friend class TinyGPSPlus;
 
-   TinyGPSInteger() : valid(false), updated(false), val(0)
-   {}
+public:
+  bool isValid() const { return valid; }
+  bool isUpdated() const { return updated; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
+  uint32_t value() {
+    updated = false;
+    return val;
+  }
+
+  TinyGPSInteger() : valid(false), updated(false), val(0) {}
 
 private:
-   bool valid, updated;
-   uint32_t lastCommitTime;
-   uint32_t val, newval;
-   void commit();
-   void set(const char *term);
+  bool valid, updated;
+  uint32_t lastCommitTime;
+  uint32_t val, newval;
+  void commit();
+  void set(const char *term);
 };
 
-struct TinyGPSSpeed : TinyGPSDecimal
-{
-   double knots()    { return value() / 100.0; }
-   double mph()      { return _GPS_MPH_PER_KNOT * value() / 100.0; }
-   double mps()      { return _GPS_MPS_PER_KNOT * value() / 100.0; }
-   double kmph()     { return _GPS_KMPH_PER_KNOT * value() / 100.0; }
+struct TinyGPSSpeed : TinyGPSDecimal {
+  double knots() { return value() / 100.0; }
+  double mph() { return _GPS_MPH_PER_KNOT * value() / 100.0; }
+  double mps() { return _GPS_MPS_PER_KNOT * value() / 100.0; }
+  double kmph() { return _GPS_KMPH_PER_KNOT * value() / 100.0; }
 };
 
-struct TinyGPSCourse : public TinyGPSDecimal
-{
-   double deg()      { return value() / 100.0; }
+struct TinyGPSCourse : public TinyGPSDecimal {
+  double deg() { return value() / 100.0; }
 };
 
-struct TinyGPSAltitude : TinyGPSDecimal
-{
-   double meters()       { return value() / 100.0; }
-   double miles()        { return _GPS_MILES_PER_METER * value() / 100.0; }
-   double kilometers()   { return _GPS_KM_PER_METER * value() / 100.0; }
-   double feet()         { return _GPS_FEET_PER_METER * value() / 100.0; }
+struct TinyGPSAltitude : TinyGPSDecimal {
+  double meters() { return value() / 100.0; }
+  double miles() { return _GPS_MILES_PER_METER * value() / 100.0; }
+  double kilometers() { return _GPS_KM_PER_METER * value() / 100.0; }
+  double feet() { return _GPS_FEET_PER_METER * value() / 100.0; }
 };
 
-struct TinyGPSHDOP : TinyGPSDecimal
-{
-   double hdop() { return value() / 100.0; }
+struct TinyGPSHDOP : TinyGPSDecimal {
+  double hdop() { return value() / 100.0; }
 };
 
 class TinyGPSPlus;
-class TinyGPSCustom
-{
+class TinyGPSCustom {
 public:
-   TinyGPSCustom() {};
-   TinyGPSCustom(TinyGPSPlus &gps, const char *sentenceName, int termNumber);
-   void begin(TinyGPSPlus &gps, const char *_sentenceName, int _termNumber);
+  TinyGPSCustom(){};
+  TinyGPSCustom(TinyGPSPlus &gps, const char *sentenceName, int termNumber);
+  void begin(TinyGPSPlus &gps, const char *_sentenceName, int _termNumber);
 
-   bool isUpdated() const  { return updated; }
-   bool isValid() const    { return valid; }
-   uint32_t age() const    { return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX; }
-   const char *value()     { updated = false; return buffer; }
+  bool isUpdated() const { return updated; }
+  bool isValid() const { return valid; }
+  uint32_t age() const {
+    return valid ? HAL_GetTick() - lastCommitTime : (uint32_t)ULONG_MAX;
+  }
+  const char *value() {
+    updated = false;
+    return buffer;
+  }
 
 private:
-   void commit();
-   void set(const char *term);
+  void commit();
+  void set(const char *term);
 
-   char stagingBuffer[_GPS_MAX_FIELD_SIZE + 1];
-   char buffer[_GPS_MAX_FIELD_SIZE + 1];
-   unsigned long lastCommitTime;
-   bool valid, updated;
-   const char *sentenceName;
-   int termNumber;
-   friend class TinyGPSPlus;
-   TinyGPSCustom *next;
+  char stagingBuffer[_GPS_MAX_FIELD_SIZE + 1];
+  char buffer[_GPS_MAX_FIELD_SIZE + 1];
+  unsigned long lastCommitTime;
+  bool valid, updated;
+  const char *sentenceName;
+  int termNumber;
+  friend class TinyGPSPlus;
+  TinyGPSCustom *next;
 };
 
-class TinyGPSPlus
-{
+class TinyGPSPlus {
 public:
   TinyGPSPlus();
   bool encode(char c); // process one character received from GPS
-  TinyGPSPlus &operator << (char c) {encode(c); return *this;}
+  TinyGPSPlus &operator<<(char c) {
+    encode(c);
+    return *this;
+  }
 
   TinyGPSLocation location;
   TinyGPSDate date;
@@ -236,20 +260,21 @@ public:
 
   static const char *libraryVersion() { return _GPS_VERSION; }
 
-  static double distanceBetween(double lat1, double long1, double lat2, double long2);
+  static double distanceBetween(double lat1, double long1, double lat2,
+                                double long2);
   static double courseTo(double lat1, double long1, double lat2, double long2);
   static const char *cardinal(double course);
 
   static int32_t parseDecimal(const char *term);
   static void parseDegrees(const char *term, RawDegrees &deg);
 
-  uint32_t charsProcessed()   const { return encodedCharCount; }
+  uint32_t charsProcessed() const { return encodedCharCount; }
   uint32_t sentencesWithFix() const { return sentencesWithFixCount; }
-  uint32_t failedChecksum()   const { return failedChecksumCount; }
-  uint32_t passedChecksum()   const { return passedChecksumCount; }
+  uint32_t failedChecksum() const { return failedChecksumCount; }
+  uint32_t passedChecksum() const { return passedChecksumCount; }
 
 private:
-  enum {GPS_SENTENCE_GPGGA, GPS_SENTENCE_GPRMC, GPS_SENTENCE_OTHER};
+  enum { GPS_SENTENCE_GPGGA, GPS_SENTENCE_GPRMC, GPS_SENTENCE_OTHER };
 
   // parsing state variables
   uint8_t parity;

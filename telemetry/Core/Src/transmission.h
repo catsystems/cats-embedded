@@ -8,4 +8,3 @@
 #include "common.h"
 
 void transmissionSetup(transmission_direction_e mode);
-

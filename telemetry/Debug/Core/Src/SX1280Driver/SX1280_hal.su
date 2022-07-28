@@ -1,19 +1,19 @@
-SX1280_hal.h:64:10:void SX1280Hal::BusyDelay(uint32_t) const	16	static
+SX1280_hal.h:63:8:void SX1280Hal::BusyDelay(uint32_t) const	16	static
 SX1280_hal.cpp:30:1:SX1280Hal::SX1280Hal()	16	static
-SX1280_hal.cpp:35:6:void SX1280Hal::end()	16	static
-SX1280_hal.cpp:40:6:void SX1280Hal::init()	16	static
-SX1280_hal.cpp:45:6:void SX1280Hal::reset()	16	static
-SX1280_hal.cpp:50:6:void SX1280Hal::WriteCommand(SX1280_RadioCommands_t, uint8_t)	16	static
-SX1280_hal.cpp:64:6:void SX1280Hal::WriteCommand(SX1280_RadioCommands_t, uint8_t*, uint8_t)	32	static
-SX1280_hal.cpp:77:6:void SX1280Hal::ReadCommand(SX1280_RadioCommands_t, uint8_t*, uint8_t)	40	static
-SX1280_hal.cpp:103:6:void SX1280Hal::WriteRegister(uint16_t, uint8_t*, uint8_t)	40	static
-SX1280_hal.cpp:119:6:void SX1280Hal::WriteRegister(uint16_t, uint8_t)	16	static
-SX1280_hal.cpp:124:6:void SX1280Hal::ReadRegister(uint16_t, uint8_t*, uint8_t)	40	static
-SX1280_hal.cpp:140:9:uint8_t SX1280Hal::ReadRegister(uint16_t)	32	static
-SX1280_hal.cpp:147:6:void SX1280Hal::WriteBuffer(uint8_t, volatile uint8_t*, uint8_t)	48	static
-SX1280_hal.cpp:164:6:void SX1280Hal::ReadBuffer(uint8_t, volatile uint8_t*, uint8_t)	48	static
-SX1280_hal.cpp:182:6:bool SX1280Hal::WaitOnBusy()	24	static,ignoring_inline_asm
-SX1280_hal.cpp:200:6:void SX1280Hal::TXenable()	16	static
-SX1280_hal.cpp:212:6:void SX1280Hal::RXenable()	16	static
-SX1280_hal.cpp:224:6:void SX1280Hal::TXRXdisable()	16	static
-SX1280_hal.cpp:237:6:void HAL_GPIO_EXTI_Rising_Callback(uint16_t)	16	static
+SX1280_hal.cpp:32:6:void SX1280Hal::end()	16	static
+SX1280_hal.cpp:36:6:void SX1280Hal::init()	16	static
+SX1280_hal.cpp:38:6:void SX1280Hal::reset()	16	static
+SX1280_hal.cpp:42:6:void SX1280Hal::WriteCommand(SX1280_RadioCommands_t, uint8_t)	16	static
+SX1280_hal.cpp:55:6:void SX1280Hal::WriteCommand(SX1280_RadioCommands_t, uint8_t*, uint8_t)	32	static
+SX1280_hal.cpp:68:6:void SX1280Hal::ReadCommand(SX1280_RadioCommands_t, uint8_t*, uint8_t)	40	static
+SX1280_hal.cpp:94:6:void SX1280Hal::WriteRegister(uint16_t, uint8_t*, uint8_t)	40	static
+SX1280_hal.cpp:109:6:void SX1280Hal::WriteRegister(uint16_t, uint8_t)	16	static
+SX1280_hal.cpp:113:6:void SX1280Hal::ReadRegister(uint16_t, uint8_t*, uint8_t)	40	static
+SX1280_hal.cpp:128:9:uint8_t SX1280Hal::ReadRegister(uint16_t)	32	static
+SX1280_hal.cpp:134:6:void SX1280Hal::WriteBuffer(uint8_t, volatile uint8_t*, uint8_t)	48	static
+SX1280_hal.cpp:150:6:void SX1280Hal::ReadBuffer(uint8_t, volatile uint8_t*, uint8_t)	48	static
+SX1280_hal.cpp:168:6:bool SX1280Hal::WaitOnBusy()	24	static,ignoring_inline_asm
+SX1280_hal.cpp:184:6:void SX1280Hal::TXenable()	16	static
+SX1280_hal.cpp:195:6:void SX1280Hal::RXenable()	16	static
+SX1280_hal.cpp:206:6:void SX1280Hal::TXRXdisable()	16	static
+SX1280_hal.cpp:218:6:void HAL_GPIO_EXTI_Rising_Callback(uint16_t)	16	static

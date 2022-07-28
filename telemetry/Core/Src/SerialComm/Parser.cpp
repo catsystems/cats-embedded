@@ -36,6 +36,10 @@ void Parser::process(uint8_t ch) {
     buffer[bufferIndex] = ch;
     bufferIndex++;
   }
+
+  if ((length - bufferIndex) == 0 && validSize) {
+    parse();
+  }
 }
 
 void Parser::cmdDirection(uint8_t *args, uint32_t length) {

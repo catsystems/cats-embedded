@@ -15,4 +15,3 @@ uint8_t rng5Bit(void);
 
 // returns 0 <= x < upper where n < 256
 uint8_t rngN(uint8_t upper);
-

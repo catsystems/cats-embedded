@@ -68,6 +68,8 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 extern TinyGPSPlus gps;
 Parser p;
+
+uint32_t lr2;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,9 +112,9 @@ int main(void) {
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  start_serial();
-  HAL_Delay(4000);
 
+  HAL_Delay(4000);
+  start_serial();
   gpsSetup();
 
   while (Link.begin(&htim2) == false) {
@@ -131,25 +133,54 @@ int main(void) {
 
     /* USER CODE BEGIN 3 */
     // if(gpsRun()){
+
+    gpsRun();
     /* Transmit GPS info */
 
-    uint8_t command = CMD_GNSS_INFO;
-    HAL_UART_Transmit(&huart2, &command, 1, 2);
-    uint8_t length = 1;
-    HAL_UART_Transmit(&huart2, &length, 1, 2);
-    uint8_t sats = gps.satellites.value();
-    HAL_UART_Transmit(&huart2, &sats, 1, 2);
+    if (!Uart1Buffer.isEmpty()) {
+      uint8_t data;
+      Uart1Buffer.pop(&data);
+      gps.encode(data);
+    }
 
-    command = CMD_GNSS_LOC;
-    HAL_UART_Transmit(&huart2, &command, 1, 2);
-    length = 4;
-    HAL_UART_Transmit(&huart2, &length, 1, 2);
-    uint32_t loc = gps.satellites.value();
-    HAL_UART_Transmit(&huart2, (uint8_t *)&loc, 4, 2);
+    if (!Uart2Buffer.isEmpty()) {
+      uint8_t data;
+      Uart2Buffer.pop(&data);
+      p.process(data);
+    }
 
+    if (HAL_GetTick() > (lr2 + 500)) {
+      start_serial();
+    }
+
+    if (Link.available()) {
+      uint8_t rx_data[16];
+      Link.readBytes(rx_data, 16);
+
+      uint8_t command = CMD_RX;
+      HAL_UART_Transmit(&huart2, &command, 1, 2);
+      uint8_t length = 16;
+      HAL_UART_Transmit(&huart2, &length, 1, 2);
+      HAL_UART_Transmit(&huart2, rx_data, length, 2);
+    }
+    /*
+        uint8_t command = CMD_GNSS_INFO;
+        HAL_UART_Transmit(&huart2, &command, 1, 2);
+        uint8_t length = 1;
+        HAL_UART_Transmit(&huart2, &length, 1, 2);
+        uint8_t sats = gps.satellites.value();
+        HAL_UART_Transmit(&huart2, &sats, 1, 2);
+
+        command = CMD_GNSS_LOC;
+        HAL_UART_Transmit(&huart2, &command, 1, 2);
+        length = 4;
+        HAL_UART_Transmit(&huart2, &length, 1, 2);
+        uint32_t loc = gps.satellites.value();
+        HAL_UART_Transmit(&huart2, (uint8_t *)&loc, 4, 2);
+    */
     //}
 
-    HAL_Delay(100);
+    // HAL_Delay(100);
 
     // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
   }
