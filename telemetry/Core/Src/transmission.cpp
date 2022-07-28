@@ -5,8 +5,8 @@
  *      Author: Luca
  */
 /*
-#include "common.h"
 #include "transmission.h"
+#include "common.h"
 
 
 #include "main.h"
@@ -47,10 +47,9 @@ void ProcessRFPacket()
     int8_t rssi = Radio.LastPacketRSSI;
 
 
-    int n = snprintf(data, 30, "LQ: %d RSSI: %d SNR: %d\n", (int)lq, (int)rssi, (int)Radio.LastPacketSNR);
-    HAL_UART_Transmit(&huart2, (uint8_t*)data, n, 5);
+    int n = snprintf(data, 30, "LQ: %d RSSI: %d SNR: %d\n", (int)lq, (int)rssi,
+(int)Radio.LastPacketSNR); HAL_UART_Transmit(&huart2, (uint8_t*)data, n, 5);
 }
 
 
 */
-

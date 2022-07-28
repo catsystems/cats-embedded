@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 uint8_t c1;
-uint32_t last_package = 0;
+uint32_t lr1;
 
 TinyGPSPlus gps;
 
@@ -47,7 +47,7 @@ void gpsSetup() {
 }
 
 bool gpsRun() {
-  if (HAL_GetTick() > (last_package + 100)) {
+  if (HAL_GetTick() > (lr1 + 100)) {
     HAL_UART_Receive_IT(&huart1, (uint8_t *)&c1, 1);
   }
 

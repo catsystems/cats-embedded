@@ -1,29 +1,29 @@
-SX1280.h:39:10:void SX1280Driver::SetIdleMode()	16	static
-Transmission.h:61:7:void Transmission::resetTransmission()	16	static
-FHSS.h:24:24:uint32_t GetInitialFreq()	8	static
-FHSS.h:36:20:void FHSSsetCurrIndex(uint8_t)	16	static
-FHSS.h:42:24:uint32_t FHSSgetNextFreq()	16	static
+SX1280.h:38:8:void SX1280Driver::SetIdleMode()	16	static
+Transmission.h:56:8:void Transmission::resetTransmission()	16	static
+FHSS.h:25:24:uint32_t GetInitialFreq()	8	static
+FHSS.h:31:20:void FHSSsetCurrIndex(uint8_t)	16	static
+FHSS.h:36:24:uint32_t FHSSgetNextFreq()	16	static
 Transmission.cpp:27:20:void rxCallback()	8	static
-Transmission.cpp:31:20:void txCallback()	8	static
-Transmission.cpp:35:6:bool Transmission::begin(TIM_HandleTypeDef*)	16	static
-Transmission.cpp:56:6:void Transmission::setLinkPhrase(const uint8_t*, uint32_t)	24	static
-Transmission.cpp:68:6:void Transmission::setDirection(transmission_direction_e)	16	static
-Transmission.cpp:77:6:void Transmission::setMode(transmission_mode_e)	16	static
-Transmission.cpp:81:6:void Transmission::setPAGain(int8_t)	16	static
-Transmission.cpp:89:6:void Transmission::setPowerLevel(int8_t)	16	static
-Transmission.cpp:93:6:void Transmission::writeBytes(const uint8_t*, uint32_t)	24	static
-Transmission.cpp:99:6:bool Transmission::available()	16	static
-Transmission.cpp:103:6:bool Transmission::readBytes(uint8_t*, uint32_t)	24	static
-Transmission.cpp:114:6:void Transmission::enableTransmission()	80	static
-Transmission.cpp:158:6:void Transmission::disableTransmission()	16	static
-Transmission.cpp:179:6:void Transmission::processRFPacket()	24	static
-Transmission.cpp:196:6:void Transmission::rxDoneISR()	24	static
-Transmission.cpp:215:6:void Transmission::txDoneISR()	24	static
-Transmission.cpp:221:6:void Transmission::rxTimeout()	24	static
-Transmission.cpp:245:6:void Transmission::txTransmit()	24	static
-Transmission.cpp:259:26:transmission_direction_e Transmission::getDirection()	16	static
-Transmission.cpp:263:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
-LQCALC.h:80:10:void LQCALC<N>::reset() [with unsigned char N = 30]	24	static
-LQCALC.h:27:10:void LQCALC<N>::inc() [with unsigned char N = 30]	16	static
-LQCALC.h:18:10:void LQCALC<N>::add() [with unsigned char N = 30]	16	static
-LQCALC.h:92:10:bool LQCALC<N>::currentIsSet() const [with unsigned char N = 30]	16	static
+Transmission.cpp:29:20:void txCallback()	8	static
+Transmission.cpp:31:6:bool Transmission::begin(TIM_HandleTypeDef*)	16	static
+Transmission.cpp:50:6:void Transmission::setLinkPhrase(const uint8_t*, uint32_t)	24	static
+Transmission.cpp:62:6:void Transmission::setDirection(transmission_direction_e)	16	static
+Transmission.cpp:72:6:void Transmission::setMode(transmission_mode_e)	16	static
+Transmission.cpp:76:6:void Transmission::setPAGain(int8_t)	16	static
+Transmission.cpp:84:6:void Transmission::setPowerLevel(int8_t)	16	static
+Transmission.cpp:86:6:void Transmission::writeBytes(const uint8_t*, uint32_t)	24	static
+Transmission.cpp:93:6:bool Transmission::available()	16	static
+Transmission.cpp:95:6:bool Transmission::readBytes(uint8_t*, uint32_t)	24	static
+Transmission.cpp:104:6:void Transmission::enableTransmission()	80	static
+Transmission.cpp:150:6:void Transmission::disableTransmission()	16	static
+Transmission.cpp:172:6:void Transmission::processRFPacket()	24	static
+Transmission.cpp:189:6:void Transmission::rxDoneISR()	24	static
+Transmission.cpp:208:6:void Transmission::txDoneISR()	24	static
+Transmission.cpp:214:6:void Transmission::rxTimeout()	24	static
+Transmission.cpp:237:6:void Transmission::txTransmit()	24	static
+Transmission.cpp:252:26:transmission_direction_e Transmission::getDirection()	16	static
+Transmission.cpp:256:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
+LQCALC.h:60:8:void LQCALC<N>::reset() [with unsigned char N = 30]	24	static
+LQCALC.h:23:8:void LQCALC<N>::inc() [with unsigned char N = 30]	16	static
+LQCALC.h:15:8:void LQCALC<N>::add() [with unsigned char N = 30]	16	static
+LQCALC.h:71:8:bool LQCALC<N>::currentIsSet() const [with unsigned char N = 30]	16	static

@@ -227,7 +227,7 @@ void Transmission::rxTimeout() {
   } else {
     if (timeout > 5) {
       timeout = 0;
-      Radio.SetFrequencyReg(FHSSgetNextFreq());
+      // Radio.SetFrequencyReg(FHSSgetNextFreq());
     }
   }
 

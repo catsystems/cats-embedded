@@ -1,7 +1,7 @@
 /*
 TinyGPS++ - a small GPS library for Arduino providing universal NMEA parsing
-Based on work by and "distanceBetween" and "courseTo" courtesy of Maarten Lamers.
-Suggestion to add satellites, courseTo(), and cardinal() by Matt Monson.
+Based on work by and "distanceBetween" and "courseTo" courtesy of Maarten
+Lamers. Suggestion to add satellites, courseTo(), and cardinal() by Matt Monson.
 Location precision improvements suggested by Wayne Holder.
 Copyright (C) 2008-2013 Mikal Hart
 All rights reserved.
@@ -23,30 +23,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "TinyGPSPlus/TinyGPS.h"
 
-#include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define _GPRMCterm   "GPRMC"
-#define _GPGGAterm   "GPGGA"
-#define _GNRMCterm   "GNRMC"
-#define _GNGGAterm   "GNGGA"
+#define _GPRMCterm "GPRMC"
+#define _GPGGAterm "GPGGA"
+#define _GNRMCterm "GNRMC"
+#define _GNGGAterm "GNGGA"
 
 TinyGPSPlus::TinyGPSPlus()
-  :  parity(0)
-  ,  isChecksumTerm(false)
-  ,  curSentenceType(GPS_SENTENCE_OTHER)
-  ,  curTermNumber(0)
-  ,  curTermOffset(0)
-  ,  sentenceHasFix(false)
-  ,  customElts(0)
-  ,  customCandidates(0)
-  ,  encodedCharCount(0)
-  ,  sentencesWithFixCount(0)
-  ,  failedChecksumCount(0)
-  ,  passedChecksumCount(0)
-{
+    : parity(0), isChecksumTerm(false), curSentenceType(GPS_SENTENCE_OTHER),
+      curTermNumber(0), curTermOffset(0), sentenceHasFix(false), customElts(0),
+      customCandidates(0), encodedCharCount(0), sentencesWithFixCount(0),
+      failedChecksumCount(0), passedChecksumCount(0) {
   term[0] = '\0';
 }
 
@@ -54,30 +45,25 @@ TinyGPSPlus::TinyGPSPlus()
 // public methods
 //
 
-bool TinyGPSPlus::encode(char c)
-{
+bool TinyGPSPlus::encode(char c) {
   ++encodedCharCount;
 
-  switch(c)
-  {
+  switch (c) {
   case ',': // term terminators
     parity ^= (uint8_t)c;
   case '\r':
   case '\n':
-  case '*':
-    {
-      bool isValidSentence = false;
-      if (curTermOffset < sizeof(term))
-      {
-        term[curTermOffset] = 0;
-        isValidSentence = endOfTermHandler();
-      }
-      ++curTermNumber;
-      curTermOffset = 0;
-      isChecksumTerm = c == '*';
-      return isValidSentence;
+  case '*': {
+    bool isValidSentence = false;
+    if (curTermOffset < sizeof(term)) {
+      term[curTermOffset] = 0;
+      isValidSentence = endOfTermHandler();
     }
-    break;
+    ++curTermNumber;
+    curTermOffset = 0;
+    isChecksumTerm = c == '*';
+    return isValidSentence;
+  } break;
 
   case '$': // sentence begin
     curTermNumber = curTermOffset = 0;
@@ -101,8 +87,7 @@ bool TinyGPSPlus::encode(char c)
 //
 // internal utilities
 //
-int TinyGPSPlus::fromHex(char a)
-{
+int TinyGPSPlus::fromHex(char a) {
   if (a >= 'A' && a <= 'F')
     return a - 'A' + 10;
   else if (a >= 'a' && a <= 'f')
@@ -113,14 +98,14 @@ int TinyGPSPlus::fromHex(char a)
 
 // static
 // Parse a (potentially negative) number with up to 2 decimal digits -xxxx.yy
-int32_t TinyGPSPlus::parseDecimal(const char *term)
-{
+int32_t TinyGPSPlus::parseDecimal(const char *term) {
   bool negative = *term == '-';
-  if (negative) ++term;
+  if (negative)
+    ++term;
   int32_t ret = 100 * (int32_t)atol(term);
-  while (isdigit(*term)) ++term;
-  if (*term == '.' && isdigit(term[1]))
-  {
+  while (isdigit(*term))
+    ++term;
+  if (*term == '.' && isdigit(term[1])) {
     ret += 10 * (term[1] - '0');
     if (isdigit(term[2]))
       ret += term[2] - '0';
@@ -130,8 +115,7 @@ int32_t TinyGPSPlus::parseDecimal(const char *term)
 
 // static
 // Parse degrees in that funny NMEA format DDMM.MMMM
-void TinyGPSPlus::parseDegrees(const char *term, RawDegrees &deg)
-{
+void TinyGPSPlus::parseDegrees(const char *term, RawDegrees &deg) {
   uint32_t leftOfDecimal = (uint32_t)atol(term);
   uint16_t minutes = (uint16_t)(leftOfDecimal % 100);
   uint32_t multiplier = 10000000UL;
@@ -143,8 +127,7 @@ void TinyGPSPlus::parseDegrees(const char *term, RawDegrees &deg)
     ++term;
 
   if (*term == '.')
-    while (isdigit(*++term))
-    {
+    while (isdigit(*++term)) {
       multiplier /= 10;
       tenMillionthsOfMinutes += (*term - '0') * multiplier;
     }
@@ -153,38 +136,33 @@ void TinyGPSPlus::parseDegrees(const char *term, RawDegrees &deg)
   deg.negative = false;
 }
 
-#define COMBINE(sentence_type, term_number) (((unsigned)(sentence_type) << 5) | term_number)
+#define COMBINE(sentence_type, term_number)                                    \
+  (((unsigned)(sentence_type) << 5) | term_number)
 
 // Processes a just-completed term
 // Returns true if new sentence has just passed checksum test and is validated
-bool TinyGPSPlus::endOfTermHandler()
-{
+bool TinyGPSPlus::endOfTermHandler() {
   // If it's the checksum term, and the checksum checks out, commit
-  if (isChecksumTerm)
-  {
+  if (isChecksumTerm) {
     uint8_t checksum = 16 * fromHex(term[0]) + fromHex(term[1]);
-    if (checksum == parity)
-    {
+    if (checksum == parity) {
       passedChecksumCount++;
       if (sentenceHasFix)
         ++sentencesWithFixCount;
 
-      switch(curSentenceType)
-      {
+      switch (curSentenceType) {
       case GPS_SENTENCE_GPRMC:
         date.commit();
         time.commit();
-        if (sentenceHasFix)
-        {
-           location.commit();
-           speed.commit();
-           course.commit();
+        if (sentenceHasFix) {
+          location.commit();
+          speed.commit();
+          course.commit();
         }
         break;
       case GPS_SENTENCE_GPGGA:
         time.commit();
-        if (sentenceHasFix)
-        {
+        if (sentenceHasFix) {
           location.commit();
           altitude.commit();
         }
@@ -194,13 +172,15 @@ bool TinyGPSPlus::endOfTermHandler()
       }
 
       // Commit all custom listeners of this sentence type
-      for (TinyGPSCustom *p = customCandidates; p != NULL && strcmp(p->sentenceName, customCandidates->sentenceName) == 0; p = p->next)
-         p->commit();
+      for (TinyGPSCustom *p = customCandidates;
+           p != NULL &&
+           strcmp(p->sentenceName, customCandidates->sentenceName) == 0;
+           p = p->next)
+        p->commit();
       return true;
     }
 
-    else
-    {
+    else {
       ++failedChecksumCount;
     }
 
@@ -208,8 +188,7 @@ bool TinyGPSPlus::endOfTermHandler()
   }
 
   // the first term determines the sentence type
-  if (curTermNumber == 0)
-  {
+  if (curTermNumber == 0) {
     if (!strcmp(term, _GPRMCterm) || !strcmp(term, _GNRMCterm))
       curSentenceType = GPS_SENTENCE_GPRMC;
     else if (!strcmp(term, _GPGGAterm) || !strcmp(term, _GNGGAterm))
@@ -218,16 +197,20 @@ bool TinyGPSPlus::endOfTermHandler()
       curSentenceType = GPS_SENTENCE_OTHER;
 
     // Any custom candidates of this sentence type?
-    for (customCandidates = customElts; customCandidates != NULL && strcmp(customCandidates->sentenceName, term) < 0; customCandidates = customCandidates->next);
-    if (customCandidates != NULL && strcmp(customCandidates->sentenceName, term) > 0)
-       customCandidates = NULL;
+    for (customCandidates = customElts;
+         customCandidates != NULL &&
+         strcmp(customCandidates->sentenceName, term) < 0;
+         customCandidates = customCandidates->next)
+      ;
+    if (customCandidates != NULL &&
+        strcmp(customCandidates->sentenceName, term) > 0)
+      customCandidates = NULL;
 
     return false;
   }
 
   if (curSentenceType != GPS_SENTENCE_OTHER && term[0])
-    switch(COMBINE(curSentenceType, curTermNumber))
-  {
+    switch (COMBINE(curSentenceType, curTermNumber)) {
     case COMBINE(GPS_SENTENCE_GPRMC, 1): // Time in both sentences
     case COMBINE(GPS_SENTENCE_GPGGA, 1):
       time.setTime(term);
@@ -272,29 +255,33 @@ bool TinyGPSPlus::endOfTermHandler()
     case COMBINE(GPS_SENTENCE_GPGGA, 9): // Altitude (GPGGA)
       altitude.set(term);
       break;
-  }
+    }
 
   // Set custom values as needed
-  for (TinyGPSCustom *p = customCandidates; p != NULL && strcmp(p->sentenceName, customCandidates->sentenceName) == 0 && p->termNumber <= curTermNumber; p = p->next)
+  for (TinyGPSCustom *p = customCandidates;
+       p != NULL &&
+       strcmp(p->sentenceName, customCandidates->sentenceName) == 0 &&
+       p->termNumber <= curTermNumber;
+       p = p->next)
     if (p->termNumber == curTermNumber)
-         p->set(term);
+      p->set(term);
 
   return false;
 }
 
 /* static */
-double TinyGPSPlus::distanceBetween(double lat1, double long1, double lat2, double long2)
-{
+double TinyGPSPlus::distanceBetween(double lat1, double long1, double lat2,
+                                    double long2) {
   // returns distance in meters between two positions, both specified
   // as signed decimal-degrees latitude and longitude. Uses great-circle
   // distance computation for hypothetical sphere of radius 6372795 meters.
   // Because Earth is no exact sphere, rounding errors may be up to 0.5%.
   // Courtesy of Maarten Lamers
-  double delta = (long1-long2) * (M_PI/180); // Conversion to Radian
+  double delta = (long1 - long2) * (M_PI / 180); // Conversion to Radian
   double sdlong = sin(delta);
   double cdlong = cos(delta);
-  lat1 = (lat1) * (M_PI/180);
-  lat2 = (lat2) * (M_PI/180);
+  lat1 = (lat1) * (M_PI / 180);
+  lat2 = (lat2) * (M_PI / 180);
   double slat1 = sin(lat1);
   double clat1 = cos(lat1);
   double slat2 = sin(lat2);
@@ -308,197 +295,170 @@ double TinyGPSPlus::distanceBetween(double lat1, double long1, double lat2, doub
   return delta * 6372795;
 }
 
-double TinyGPSPlus::courseTo(double lat1, double long1, double lat2, double long2)
-{
-  // returns course in degrees (North=0, West=270) from position 1 to position 2,
-  // both specified as signed decimal-degrees latitude and longitude.
-  // Because Earth is no exact sphere, calculated course may be off by a tiny fraction.
+double TinyGPSPlus::courseTo(double lat1, double long1, double lat2,
+                             double long2) {
+  // returns course in degrees (North=0, West=270) from position 1 to position
+  // 2, both specified as signed decimal-degrees latitude and longitude. Because
+  // Earth is no exact sphere, calculated course may be off by a tiny fraction.
   // Courtesy of Maarten Lamers
-  double dlon = (long2-long1) * (M_PI/180); // Conversion to Radian
-  lat1 = (lat1) * (M_PI/180);
-  lat2 = (lat2) * (M_PI/180);
+  double dlon = (long2 - long1) * (M_PI / 180); // Conversion to Radian
+  lat1 = (lat1) * (M_PI / 180);
+  lat2 = (lat2) * (M_PI / 180);
   double a1 = sin(dlon) * cos(lat2);
   double a2 = sin(lat1) * cos(lat2) * cos(dlon);
   a2 = cos(lat1) * sin(lat2) - a2;
   a2 = atan2(a1, a2);
-  if (a2 < 0.0)
-  {
-    a2 += M_PI*2;
+  if (a2 < 0.0) {
+    a2 += M_PI * 2;
   }
-  return (a2 * (180/M_PI)); // Conversion to Degree
+  return (a2 * (180 / M_PI)); // Conversion to Degree
 }
 
-const char *TinyGPSPlus::cardinal(double course)
-{
-  static const char* directions[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+const char *TinyGPSPlus::cardinal(double course) {
+  static const char *directions[] = {"N",  "NNE", "NE", "ENE", "E",  "ESE",
+                                     "SE", "SSE", "S",  "SSW", "SW", "WSW",
+                                     "W",  "WNW", "NW", "NNW"};
   int direction = (int)((course + 11.25f) / 22.5f);
   return directions[direction % 16];
 }
 
-void TinyGPSLocation::commit()
-{
-   rawLatData = rawNewLatData;
-   rawLngData = rawNewLngData;
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
+void TinyGPSLocation::commit() {
+  rawLatData = rawNewLatData;
+  rawLngData = rawNewLngData;
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSLocation::setLatitude(const char *term)
-{
-   TinyGPSPlus::parseDegrees(term, rawNewLatData);
+void TinyGPSLocation::setLatitude(const char *term) {
+  TinyGPSPlus::parseDegrees(term, rawNewLatData);
 }
 
-void TinyGPSLocation::setLongitude(const char *term)
-{
-   TinyGPSPlus::parseDegrees(term, rawNewLngData);
+void TinyGPSLocation::setLongitude(const char *term) {
+  TinyGPSPlus::parseDegrees(term, rawNewLngData);
 }
 
-double TinyGPSLocation::lat()
-{
-   updated = false;
-   double ret = rawLatData.deg + rawLatData.billionths / 1000000000.0;
-   return rawLatData.negative ? -ret : ret;
+double TinyGPSLocation::lat() {
+  updated = false;
+  double ret = rawLatData.deg + rawLatData.billionths / 1000000000.0;
+  return rawLatData.negative ? -ret : ret;
 }
 
-double TinyGPSLocation::lng()
-{
-   updated = false;
-   double ret = rawLngData.deg + rawLngData.billionths / 1000000000.0;
-   return rawLngData.negative ? -ret : ret;
+double TinyGPSLocation::lng() {
+  updated = false;
+  double ret = rawLngData.deg + rawLngData.billionths / 1000000000.0;
+  return rawLngData.negative ? -ret : ret;
 }
 
-void TinyGPSDate::commit()
-{
-   date = newDate;
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
+void TinyGPSDate::commit() {
+  date = newDate;
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSTime::commit()
-{
-   time = newTime;
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
+void TinyGPSTime::commit() {
+  time = newTime;
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSTime::setTime(const char *term)
-{
-   newTime = (uint32_t)TinyGPSPlus::parseDecimal(term);
+void TinyGPSTime::setTime(const char *term) {
+  newTime = (uint32_t)TinyGPSPlus::parseDecimal(term);
 }
 
-void TinyGPSDate::setDate(const char *term)
-{
-   newDate = atol(term);
+void TinyGPSDate::setDate(const char *term) { newDate = atol(term); }
+
+uint16_t TinyGPSDate::year() {
+  updated = false;
+  uint16_t year = date % 100;
+  return year + 2000;
 }
 
-uint16_t TinyGPSDate::year()
-{
-   updated = false;
-   uint16_t year = date % 100;
-   return year + 2000;
+uint8_t TinyGPSDate::month() {
+  updated = false;
+  return (date / 100) % 100;
 }
 
-uint8_t TinyGPSDate::month()
-{
-   updated = false;
-   return (date / 100) % 100;
+uint8_t TinyGPSDate::day() {
+  updated = false;
+  return date / 10000;
 }
 
-uint8_t TinyGPSDate::day()
-{
-   updated = false;
-   return date / 10000;
+uint8_t TinyGPSTime::hour() {
+  updated = false;
+  return time / 1000000;
 }
 
-uint8_t TinyGPSTime::hour()
-{
-   updated = false;
-   return time / 1000000;
+uint8_t TinyGPSTime::minute() {
+  updated = false;
+  return (time / 10000) % 100;
 }
 
-uint8_t TinyGPSTime::minute()
-{
-   updated = false;
-   return (time / 10000) % 100;
+uint8_t TinyGPSTime::second() {
+  updated = false;
+  return (time / 100) % 100;
 }
 
-uint8_t TinyGPSTime::second()
-{
-   updated = false;
-   return (time / 100) % 100;
+uint8_t TinyGPSTime::centisecond() {
+  updated = false;
+  return time % 100;
 }
 
-uint8_t TinyGPSTime::centisecond()
-{
-   updated = false;
-   return time % 100;
+void TinyGPSDecimal::commit() {
+  val = newval;
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSDecimal::commit()
-{
-   val = newval;
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
+void TinyGPSDecimal::set(const char *term) {
+  newval = TinyGPSPlus::parseDecimal(term);
 }
 
-void TinyGPSDecimal::set(const char *term)
-{
-   newval = TinyGPSPlus::parseDecimal(term);
+void TinyGPSInteger::commit() {
+  val = newval;
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSInteger::commit()
-{
-   val = newval;
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
+void TinyGPSInteger::set(const char *term) { newval = atol(term); }
+
+TinyGPSCustom::TinyGPSCustom(TinyGPSPlus &gps, const char *_sentenceName,
+                             int _termNumber) {
+  begin(gps, _sentenceName, _termNumber);
 }
 
-void TinyGPSInteger::set(const char *term)
-{
-   newval = atol(term);
+void TinyGPSCustom::begin(TinyGPSPlus &gps, const char *_sentenceName,
+                          int _termNumber) {
+  lastCommitTime = 0;
+  updated = valid = false;
+  sentenceName = _sentenceName;
+  termNumber = _termNumber;
+  memset(stagingBuffer, '\0', sizeof(stagingBuffer));
+  memset(buffer, '\0', sizeof(buffer));
+
+  // Insert this item into the GPS tree
+  gps.insertCustom(this, _sentenceName, _termNumber);
 }
 
-TinyGPSCustom::TinyGPSCustom(TinyGPSPlus &gps, const char *_sentenceName, int _termNumber)
-{
-   begin(gps, _sentenceName, _termNumber);
+void TinyGPSCustom::commit() {
+  strcpy(this->buffer, this->stagingBuffer);
+  lastCommitTime = HAL_GetTick();
+  valid = updated = true;
 }
 
-void TinyGPSCustom::begin(TinyGPSPlus &gps, const char *_sentenceName, int _termNumber)
-{
-   lastCommitTime = 0;
-   updated = valid = false;
-   sentenceName = _sentenceName;
-   termNumber = _termNumber;
-   memset(stagingBuffer, '\0', sizeof(stagingBuffer));
-   memset(buffer, '\0', sizeof(buffer));
-
-   // Insert this item into the GPS tree
-   gps.insertCustom(this, _sentenceName, _termNumber);
+void TinyGPSCustom::set(const char *term) {
+  strncpy(this->stagingBuffer, term, sizeof(this->stagingBuffer));
 }
 
-void TinyGPSCustom::commit()
-{
-   strcpy(this->buffer, this->stagingBuffer);
-   lastCommitTime = HAL_GetTick();
-   valid = updated = true;
-}
+void TinyGPSPlus::insertCustom(TinyGPSCustom *pElt, const char *sentenceName,
+                               int termNumber) {
+  TinyGPSCustom **ppelt;
 
-void TinyGPSCustom::set(const char *term)
-{
-   strncpy(this->stagingBuffer, term, sizeof(this->stagingBuffer));
-}
+  for (ppelt = &this->customElts; *ppelt != NULL; ppelt = &(*ppelt)->next) {
+    int cmp = strcmp(sentenceName, (*ppelt)->sentenceName);
+    if (cmp < 0 || (cmp == 0 && termNumber < (*ppelt)->termNumber))
+      break;
+  }
 
-void TinyGPSPlus::insertCustom(TinyGPSCustom *pElt, const char *sentenceName, int termNumber)
-{
-   TinyGPSCustom **ppelt;
-
-   for (ppelt = &this->customElts; *ppelt != NULL; ppelt = &(*ppelt)->next)
-   {
-      int cmp = strcmp(sentenceName, (*ppelt)->sentenceName);
-      if (cmp < 0 || (cmp == 0 && termNumber < (*ppelt)->termNumber))
-         break;
-   }
-
-   pElt->next = *ppelt;
-   *ppelt = pElt;
+  pElt->next = *ppelt;
+  *ppelt = pElt;
 }
