@@ -1,10 +1,11 @@
 
 #include "Parser.h"
+#include "FHSS/crc.h"
 #include "common.h"
 
 void Parser::parse() {
 
-  cmd_table[opCodeIndex].cmd(buffer, bufferIndex);
+  cmd_table[opCodeIndex].cmd(&buffer[2], dataIndex);
 
   /* Reset the parser buffer */
   reset();
@@ -19,26 +20,43 @@ int32_t Parser::getOpCodeIndex(uint8_t opCode) {
 }
 
 void Parser::process(uint8_t ch) {
-  if (opCodeIndex < 0) {
-    opCode = ch;
-    opCodeIndex = getOpCodeIndex(opCode);
-    if (opCodeIndex < 0) {
+  switch (state) {
+  case STATE_OP:
+    opCodeIndex = getOpCodeIndex(ch);
+    if (opCodeIndex >= 0) {
+      buffer[INDEX_OP] = ch;
+      state = STATE_LEN;
+    }
+    break;
+  case STATE_LEN:
+    if (ch <= 16) {
+      buffer[INDEX_LEN] = ch;
+      if (ch > 0) {
+        state = STATE_DATA;
+      } else {
+        state = STATE_CRC;
+      }
+    }
+    break;
+  case STATE_DATA:
+    if ((buffer[INDEX_LEN] - dataIndex) > 0) {
+      buffer[dataIndex + 2] = ch;
+      dataIndex++;
+    }
+    if ((buffer[INDEX_LEN] - dataIndex) == 0) {
+      state = STATE_CRC;
+    }
+    break;
+  case STATE_CRC: {
+    uint8_t crc = crc8(buffer, dataIndex + 2);
+    if (crc == ch) {
+      parse();
+    } else {
       reset();
     }
-  } else if (validSize == false) {
-    length = ch;
-    if (length <= 16)
-      validSize = true;
-    else {
-      reset();
-    }
-  } else if ((length - bufferIndex) > 0) {
-    buffer[bufferIndex] = ch;
-    bufferIndex++;
-  }
-
-  if ((length - bufferIndex) == 0 && validSize) {
-    parse();
+  } break;
+  default:
+    break;
   }
 }
 
@@ -79,7 +97,7 @@ void Parser::cmdModeIndex(uint8_t *args, uint32_t length) {
 }
 
 void Parser::cmdLinkPhrase(uint8_t *args, uint32_t length) {
-  if (length > 8)
+  if (length != 8)
     return;
 
   if (args[0] != 0) {

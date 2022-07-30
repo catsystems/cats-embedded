@@ -68,7 +68,7 @@ private:
 
   bool radioInitialized = false;
 
-  connectionState_e connectionState;
+  connectionState_e connectionState = disconnected;
   volatile bool busyTransmitting;
   uint8_t linkXOR;
   uint32_t linkCRC;

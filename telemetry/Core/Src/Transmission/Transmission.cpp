@@ -176,7 +176,10 @@ void Transmission::processRFPacket() {
       (uint8_t)crc32((const uint8_t *)Radio.RXdataBuffer, payloadLength - 1);
 
   if ((linkXOR ^ crc) == Radio.RXdataBuffer[payloadLength - 1]) {
-    connectionState = connected;
+    if (connectionState == tentative)
+      connectionState = connected;
+    else if (connectionState == disconnected)
+      connectionState = tentative;
     dataAvailable = true;
     timeout = 0;
 
@@ -227,7 +230,7 @@ void Transmission::rxTimeout() {
   } else {
     if (timeout > 5) {
       timeout = 0;
-      // Radio.SetFrequencyReg(FHSSgetNextFreq());
+      Radio.SetFrequencyReg(FHSSgetNextFreq());
     }
   }
 

@@ -38,7 +38,13 @@ public:
 
   void parse();
 
-  bool ready() { return (length - bufferIndex) == 0 && validSize; }
+  void reset() {
+    dataIndex = 0;
+    opCodeIndex = -1;
+    state = STATE_OP;
+  }
+
+  // bool ready() { return (length - bufferIndex) == 0 && validSize; }
 
   static void cmdDirection(uint8_t *args, uint32_t length);
   static void cmdPAGain(uint8_t *args, uint32_t length);
@@ -59,23 +65,26 @@ public:
   static void cmdGNSSInfo(uint8_t *args, uint32_t length);
 
 private:
-  void reset() {
-    bufferIndex = 0;
-    validSize = false;
-    opCodeIndex = -1;
-  }
-
   int32_t getOpCodeIndex(uint8_t opCode);
 
   uint8_t buffer[MAX_CMD_BUFFER];
-  uint32_t bufferIndex = 0;
-
-  bool validSize = false;
+  uint32_t dataIndex = 0;
 
   int32_t opCodeIndex = -1;
-  uint8_t opCode;
-  uint8_t length;
-  uint8_t remainingLength;
+
+  typedef enum {
+    STATE_OP,
+    STATE_LEN,
+    STATE_DATA,
+    STATE_CRC,
+  } state_e;
+
+  enum {
+    INDEX_OP = 0,
+    INDEX_LEN = 1,
+  };
+
+  state_e state = STATE_OP;
 
   enum {
     CMD_NUMBER = 14,
