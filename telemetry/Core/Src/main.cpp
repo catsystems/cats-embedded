@@ -24,9 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "FHSS/crc.h"
 #include "SerialComm/serial.h"
 #include "common.h"
 #include "gps.h"
+#include <cstring>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -120,6 +122,8 @@ int main(void) {
   while (Link.begin(&htim2) == false) {
     HAL_Delay(10);
   }
+
+  uint8_t oldGpsValue = 20;
   // uint8_t buffer[] = "test123";
   // Link.setLinkPhrase(buffer, 7);
   // Link.setDirection(TX);
@@ -132,7 +136,7 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // if(gpsRun()){
+    uint8_t uartOutBuffer[20];
 
     gpsRun();
     /* Transmit GPS info */
@@ -157,12 +161,45 @@ int main(void) {
       uint8_t rx_data[16];
       Link.readBytes(rx_data, 16);
 
-      uint8_t command = CMD_RX;
-      HAL_UART_Transmit(&huart2, &command, 1, 2);
-      uint8_t length = 16;
-      HAL_UART_Transmit(&huart2, &length, 1, 2);
-      HAL_UART_Transmit(&huart2, rx_data, length, 2);
+      uartOutBuffer[0] = CMD_RX;
+      uartOutBuffer[1] = 16;
+      memcpy(&uartOutBuffer[2], rx_data, 16);
+      uint8_t crc = crc8(uartOutBuffer, 18);
+      uartOutBuffer[18] = crc;
+
+      HAL_UART_Transmit(&huart2, uartOutBuffer, 19, 2);
     }
+
+    if (gps.location.isValid() && gps.location.isUpdated()) {
+      double lat = gps.location.lat();
+      double lng = gps.location.lng();
+
+      if (lat != 0) {
+        uartOutBuffer[0] = CMD_GNSS_LOC;
+        uartOutBuffer[1] = 16;
+        memcpy(&uartOutBuffer[2], &lat, 8);
+        memcpy(&uartOutBuffer[2 + 8], &lng, 8);
+        uint8_t crc = crc8(uartOutBuffer, 18);
+        uartOutBuffer[18] = crc;
+
+        HAL_UART_Transmit(&huart2, uartOutBuffer, 19, 2);
+      }
+    }
+
+    if (gps.satellites.isValid() && gps.satellites.isUpdated()) {
+
+      if (oldGpsValue != gps.satellites.value()) {
+        oldGpsValue = gps.satellites.value();
+        uartOutBuffer[0] = CMD_GNSS_INFO;
+        uartOutBuffer[1] = 1;
+        uartOutBuffer[2] = gps.satellites.value();
+        uint8_t crc = crc8(uartOutBuffer, 3);
+        uartOutBuffer[3] = crc;
+
+        HAL_UART_Transmit(&huart2, uartOutBuffer, 4, 2);
+      }
+    }
+
     /*
         uint8_t command = CMD_GNSS_INFO;
         HAL_UART_Transmit(&huart2, &command, 1, 2);
