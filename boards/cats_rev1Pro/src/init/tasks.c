@@ -48,7 +48,7 @@ SET_TASK_PARAMS(task_peripherals, 256)
 SET_TASK_PARAMS(task_recorder, 1024)
 
 #ifdef CATS_VEGA
-SET_TASK_PARAMS(task_telemetry, 256)
+SET_TASK_PARAMS(task_telemetry, 512)
 #endif
 
 void init_tasks() {
