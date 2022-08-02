@@ -38,7 +38,6 @@
     flight_fsm_e old_fsm_state = MOVING;
     int32_t position_des = 1;
     int8_t sample_divider = 0;
-    init
 
     disable_motor();
 

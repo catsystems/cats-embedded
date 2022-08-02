@@ -142,7 +142,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
       global_baro_sim[i].pressure = pressure + rand_bounds(-25, 25);
     }
 
-    // log_sim("acc: %hd, pressure: %ld", sim_imu_data[0].acc.y, global_baro_sim[0].pressure);
+
 
     if (global_flight_state.flight_state == TOUCHDOWN) {
       log_raw("Simulation Successful.");

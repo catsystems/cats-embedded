@@ -29,9 +29,8 @@
 /** Private Function Declarations **/
 static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sensor_elimination_t *elimination_data);
 static void median_filter(median_filter_t *filter_data, state_estimation_input_t *state_data);
-static void transform_data(float32_t pressure_0, state_estimation_input_t *state_data, const SI_data_t *SI_data,
-                           const calibration_data_t *calibration);
-inline static float calculate_height(float pressure_initial, float pressure);
+static void transform_data(state_estimation_input_t *state_data, const SI_data_t *SI_data,
+                           const calibration_data_t *calibration, float32_t height_0);
 /** Exported Function Definitions **/
 
 /**
@@ -40,6 +39,7 @@ inline static float calculate_height(float pressure_initial, float pressure);
  * @retval None
  */
 [[noreturn]] void task_preprocessing(void *argument) {
+
   /* Create data structs */
   static SI_data_t SI_data = {0};
   static SI_data_t SI_data_old = {0};
@@ -47,18 +47,24 @@ inline static float calculate_height(float pressure_initial, float pressure);
   SI_data_old.acc.y = 0.0f;
   SI_data_old.acc.z = 0.0f;
   SI_data_old.pressure = 98000.0f;
+
 #ifdef USE_MEDIAN_FILTER
   median_filter_t filter_data = {0};
 #endif
+
   sensor_elimination_t sensor_elimination = {0};
+
   /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
    * the linear acceleration calibration */
   calibration_data_t calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
   state_estimation_input_t state_est_input = {.acceleration_z = 0.0f, .height_AGL = 0.0f};
-  float32_t pressure_0 = P_INITIAL;
+  float32_t height_0 = 0.0f;
 
   /* Gyro Calib tag */
   bool gyro_calibrated = false;
+
+  /* Initial height calibration tag */
+  bool height_calibration = true;
 
   /* local fsm enum */
   flight_fsm_e new_fsm_enum = MOVING;
@@ -77,29 +83,34 @@ inline static float calculate_height(float pressure_initial, float pressure);
     /* average and construct SI Data */
     avg_and_to_SI(&SI_data, &SI_data_old, &sensor_elimination);
 
-    // log_info("acc: %ld; height: %ld", (int32_t)((float)SI_data.acc.x*1000),
-    //(int32_t)((float)SI_data.pressure*1000));
-
     /* Compute gravity when changing to READY */
     if ((new_fsm_enum == READY) && (new_fsm_enum != old_fsm_enum)) {
       calibrate_imu(&SI_data.acc, &calibration);
-        log_info("[%lu] Calibration %u: %f", osKernelGetTickCount(),
-                calibration.axis, (double)calibration.angle);
-      pressure_0 = SI_data.pressure;
-      global_flight_stats.pressure_0 = pressure_0;
       global_flight_stats.calibration_data.angle = calibration.angle;
       global_flight_stats.calibration_data.axis = calibration.axis;
     }
 
+    /* calibrate gyro once at startup */
     if (!gyro_calibrated) {
-      gyro_calibrated = compute_gyro_calibration(&SI_data.gyro, &calibration);
+        gyro_calibrated = compute_gyro_calibration(&SI_data.gyro, &calibration);
     } else {
-      calibrate_gyro(&calibration, &SI_data.gyro);
-      global_flight_stats.calibration_data.gyro_calib = calibration.gyro_calib;
+        calibrate_gyro(&calibration, &SI_data.gyro);
+        global_flight_stats.calibration_data.gyro_calib = calibration.gyro_calib;
+    }
+
+    /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
+    if(new_fsm_enum == MOVING){
+        height_0 = approx_moving_average(calculate_height(SI_data.pressure), true);
+        global_flight_stats.height_0 = height_0;
+    }
+      /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
+    if(new_fsm_enum == READY){
+        height_0 = approx_moving_average(calculate_height(SI_data.pressure), false);
+        global_flight_stats.height_0 = height_0;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    transform_data(pressure_0, &state_est_input, &SI_data, &calibration);
+    transform_data(&state_est_input, &SI_data, &calibration, height_0);
 
 #ifdef USE_MEDIAN_FILTER
     /* Filter the data */
@@ -113,7 +124,6 @@ inline static float calculate_height(float pressure_initial, float pressure);
 
     /* write input data into global struct */
     global_estimation_input = state_est_input;
-    //log_raw("Acceleration: %f, Height: %f", global_estimation_input.acceleration_z, global_estimation_input.height_AGL);
 
     /* Global SI data is only used in the fsm task */
     global_SI_data = SI_data;
@@ -234,8 +244,8 @@ static void median_filter(median_filter_t *filter_data, state_estimation_input_t
   state_data->height_AGL = median(filter_data->height_AGL);
 }
 
-static void transform_data(float32_t pressure_0, state_estimation_input_t *state_data, const SI_data_t *SI_data,
-                           const calibration_data_t *calibration) {
+static void transform_data(state_estimation_input_t *state_data, const SI_data_t *SI_data,
+                           const calibration_data_t *calibration, float32_t height_0) {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (calibration->axis) {
@@ -254,9 +264,5 @@ static void transform_data(float32_t pressure_0, state_estimation_input_t *state
     default:
       break;
   }
-  state_data->height_AGL = calculate_height(pressure_0, SI_data->pressure);
-}
-
-inline static float calculate_height(float32_t pressure_initial, float32_t pressure) {
-  return (-(powf(pressure / pressure_initial, (1 / 5.257f)) - 1) * (TEMPERATURE_0 + 273.15f) / 0.0065f);
+  state_data->height_AGL = calculate_height(SI_data->pressure) - height_0;
 }

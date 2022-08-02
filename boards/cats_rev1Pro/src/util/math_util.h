@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 #pragma once
 
 #include "arm_math.h"
-#include "util/types.h"
 
 void quaternion_skew(const float* input, float* output);
 void quaternion_mat(const arm_matrix_instance_f32* input1, const arm_matrix_instance_f32* input2,

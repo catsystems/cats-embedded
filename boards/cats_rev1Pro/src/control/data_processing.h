@@ -19,7 +19,9 @@
 #pragma once
 
 #include <stdint.h>
+#include "arm_math.h"
+#include <stdbool.h>
 
-float median(float input_array[]);
-/* */
-int32_t log2_32(uint32_t value);
+float32_t median(float32_t input_array[]);
+float32_t calculate_height(float32_t pressure);
+float32_t approx_moving_average(float32_t data, bool istransparent);

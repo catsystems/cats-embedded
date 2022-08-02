@@ -136,7 +136,7 @@ typedef struct {
   } max_acceleration;
 
   calibration_data_t calibration_data;
-  float32_t pressure_0;
+  float32_t height_0;
 
 } flight_stats_t;
 

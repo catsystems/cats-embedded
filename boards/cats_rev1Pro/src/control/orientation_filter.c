@@ -17,7 +17,7 @@
  */
 
 #include "control/orientation_filter.h"
-#include "control/quaternion.h"
+#include "util/math_util.h"
 #include "config/globals.h"
 
 /* Orientation Filter */

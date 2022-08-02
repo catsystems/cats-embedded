@@ -22,7 +22,6 @@
 
 #include "cli/settings.h"
 #include "config/globals.h"
-#include "control/data_processing.h"
 #include "flash/lfs_custom.h"
 #include "recorder.h"
 #include "util/enum_str_maps.h"
@@ -259,7 +258,7 @@ void parse_stats(uint16_t number) {
       log_raw("    Max. Acceleration [m/s^2]: %f", (double)local_flight_stats->max_acceleration.val);
       log_raw("========================");
       log_raw("  Calibration Values");
-      log_raw("    P0: %f", (double)local_flight_stats->pressure_0);
+      log_raw("    Height0: %f", (double)local_flight_stats->height_0);
       log_raw("    IMU:");
       log_raw("      Angle: %f", (double)local_flight_stats->calibration_data.angle);
       log_raw("      Axis: %hu", local_flight_stats->calibration_data.axis);

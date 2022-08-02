@@ -19,6 +19,7 @@
 #include "control/data_processing.h"
 #include "config/control_config.h"
 #include <string.h>
+#include <stdbool.h>
 
 /* a temporary variable "tmp" must be defined beforehand to use these macros */
 #define SWAP(a, b, tmp) \
@@ -35,9 +36,9 @@
 
 /* this function returns the median of an array of size MEDIAN_FILTER_SIZE
  * it assumes that the size of "input_array" is equal to MEDIAN_FILTER_SIZE */
-float median(float input_array[]) {
-  float array[MEDIAN_FILTER_SIZE];
-  memcpy(array, input_array, MEDIAN_FILTER_SIZE * sizeof(float));
+float32_t median(float32_t input_array[]) {
+    float32_t array[MEDIAN_FILTER_SIZE];
+  memcpy(array, input_array, MEDIAN_FILTER_SIZE * sizeof(float32_t));
 
 #if MEDIAN_FILTER_SIZE == 9
   /* hardwired algorithm - see https://web.archive.org/web/20060613213236/https://www.xilinx.com/xcell/xl23/xl23_16.pdf
@@ -106,4 +107,21 @@ float median(float input_array[]) {
 
   return array[k];
 #endif
+}
+
+float32_t calculate_height(float32_t pressure) {
+    return (-(powf(pressure / P_INITIAL, (1 / 5.257f)) - 1) * (TEMPERATURE_0 + 273.15f) / 0.0065f);
+}
+
+float32_t approx_moving_average(float32_t data, bool istransparent) {
+    static float32_t avg = 0;
+    if(istransparent){
+        avg -= avg / 10.0f;
+        avg += data / 10.0f;
+    }
+    else{
+        avg -= avg / MOVING_AVERAGE_SIZE;
+        avg += data / MOVING_AVERAGE_SIZE;
+    }
+    return avg;
 }
