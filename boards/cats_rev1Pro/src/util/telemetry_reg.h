@@ -18,15 +18,31 @@
 
 #pragma once
 
-extern const char *const boot_state_map[6];
-extern const char *const fsm_map[14];
-extern const char *const event_map[9];
-extern const char *const action_map[17];
+typedef enum {
+  TX = 0,
+  RX = 1,
+} transmission_direction_e;
 
-#ifdef CATS_VEGA
-extern const char *const direction_map[2];
-#endif
+typedef enum {
+  UNIDIRECTIONAL = 0,
+  BIDIRECTIONAL = 1,
+} transmission_mode_e;
 
-extern char *recorder_speed_map[NUM_REC_SPEEDS];
+#define CMD_DIRECTION   0x10
+#define CMD_PA_GAIN     0x11
+#define CMD_POWER_LEVEL 0x12
+#define CMD_MODE        0x13
+#define CMD_MODE_INDEX  0x14
 
-void init_recorder_speed_map();
+#define CMD_LINK_PHRASE 0x15
+
+#define CMD_ENABLE  0x20
+#define CMD_DISBALE 0x21
+
+#define CMD_TX   0x30
+#define CMD_RX   0x31
+#define CMD_INFO 0x32
+
+#define CMD_GNSS_LOC  0x40
+#define CMD_GNSS_TIME 0x41
+#define CMD_GNSS_INFO 0x42

@@ -40,6 +40,10 @@ const char* const action_map[17] = {
     "LL_TWO", "LL_TREE", "LL_FOUR", "SERVO_ONE", "SERVO_TWO", "SERVO_THREE", "SERVO_FOUR", "RECORDER",
 };
 
+#ifdef CATS_VEGA
+const char* const direction_map[2] = { "TX", "RX", };
+#endif
+
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
 
 void init_recorder_speed_map() {

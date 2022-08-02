@@ -104,6 +104,8 @@ const clicmd_t cmd_table[] = {
 
 const size_t NUM_CLI_COMMANDS = sizeof cmd_table / sizeof cmd_table[0];
 
+static const char *const emptyName = "-";
+
 /** Helper function declarations **/
 
 static void print_control_config();
@@ -332,6 +334,26 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
         value_changed = true;
 
         break;
+      case MODE_STRING: {
+        char *val_ptr = eqptr;
+        val_ptr = skip_space(val_ptr);
+        const void *var_ptr = get_cats_config_member_ptr(&global_cats_config, val);
+        const unsigned int len = strlen(val_ptr);
+        const uint8_t min = val->config.string.min_length;
+        const uint8_t max = val->config.string.max_length;
+        const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 || strlen(var_ptr) == 0 ||
+                                strncmp(val_ptr, var_ptr, len) == 0);
+
+        if (updatable && len > 0 && len <= max) {
+          memset(var_ptr, 0, max);
+          if (len >= min && strncmp(val_ptr, emptyName, len)) {
+            strncpy(var_ptr, val_ptr, len);
+          }
+          value_changed = true;
+        } else {
+          cli_print_error_linef(cmd_name, "STRING MUST BE 1..%d CHARACTERS OR '-' FOR EMPTY", max);
+        }
+      } break;
     }
 
     if (value_changed) {
@@ -384,7 +406,7 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
   cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
-                  (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
+             (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
 
 #ifdef CATS_DEBUG
   if (!strcmp(args, "--heap")) {
