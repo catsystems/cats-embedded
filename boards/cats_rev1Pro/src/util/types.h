@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "target.h"
 
 #include "arm_math.h"
@@ -216,6 +216,14 @@ typedef struct {
   int16_t arg;
 } config_action_t;
 
+#ifdef CATS_VEGA
+typedef struct {
+  uint8_t link_phrase[8];
+  uint8_t power_level;
+  uint8_t direction;
+} config_telemetry_t;
+#endif
+
 typedef bool (*peripheral_act_fp)(int16_t);
 
 typedef struct {
@@ -246,11 +254,7 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
-typedef enum {
-  SIM_INVALID = 0,
-  SIM_HOP,
-  SIM_300M
-} cats_sim_choice_e;
+typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M } cats_sim_choice_e;
 
 typedef struct {
   cats_sim_choice_e sim_choice;

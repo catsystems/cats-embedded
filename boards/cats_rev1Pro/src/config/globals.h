@@ -34,6 +34,10 @@
 /** Sampling Frequencies **/
 #define CONTROL_SAMPLING_FREQ 100  // in Hz
 
+#ifdef CATS_VEGA
+#define TELEMETRY_SAMPLING_FREQ 10  // in Hz
+#endif
+
 #define RECEIVER_SAMPLING_FREQ 50  // in Hz
 
 /** Device Handles **/

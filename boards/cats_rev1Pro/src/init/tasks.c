@@ -30,6 +30,9 @@
 #include "tasks/task_sensor_read.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_airbrake_controller.h"
+#ifdef CATS_VEGA
+#include "tasks/task_telemetry.h"
+#endif
 
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_sensor_read, 512)
@@ -46,6 +49,10 @@ SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_airbrake_controller, 1024)
+
+#ifdef CATS_VEGA
+SET_TASK_PARAMS(task_telemetry, 512)
+#endif
 
 void init_tasks() {
   switch (global_cats_config.config.boot_state) {
@@ -76,8 +83,10 @@ void init_tasks() {
       osThreadNew(task_state_est, NULL, &task_state_est_attributes);
 
       osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
-
-        osThreadNew(task_airbrake_controller, NULL, &task_airbrake_controller_attributes);
+#ifdef CATS_VEGA
+      osThreadNew(task_telemetry, NULL, &task_telemetry_attributes);
+#endif
+      osThreadNew(task_airbrake_controller, NULL, &task_airbrake_controller_attributes);
 
     } break;
     case CATS_CONFIG:
