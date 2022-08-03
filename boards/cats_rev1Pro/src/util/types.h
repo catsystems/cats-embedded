@@ -180,17 +180,17 @@ typedef struct {
 } kalman_filter_t;
 
 typedef struct {
-    float control_input;
-    float reference_error;
-    float integrated_error;
+    float32_t control_input;
+    float32_t reference_error;
+    float32_t integrated_error;
 
-    float sf_ref_altitude_AGL;
-    float sf_velocity;
-    float ref_velocity;
-    float tracking_feedback;
+    float32_t sf_ref_altitude_AGL;
+    float32_t sf_velocity;
+    float32_t ref_velocity;
+    float32_t tracking_feedback;
 
-    float lowerboundary_aw;
-    float upperboundary_aw;
+    float32_t lowerboundary_aw;
+    float32_t upperboundary_aw;
 
     double optimal_trajectory_coeff[POLY_DEG+1];
     double gains[NUM_GAINS];
@@ -254,7 +254,7 @@ typedef enum {
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 
-typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M } cats_sim_choice_e;
+typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML } cats_sim_choice_e;
 
 typedef struct {
   cats_sim_choice_e sim_choice;

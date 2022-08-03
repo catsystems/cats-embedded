@@ -39,4 +39,4 @@ uint8_t uart_receive(UART_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
 void uart_init(UART_BUS* bus);
 
 #define MAX_INSTANCES 10
-#define UART_TIMEOUT   100
+#define UART_TIMEOUT   5

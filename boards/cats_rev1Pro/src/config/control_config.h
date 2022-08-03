@@ -33,5 +33,5 @@ static const float MOVING_AVERAGE_SIZE = 500.0f; // samples -> 5 seconds
 #define CONTROL_DEACTIVATION_ALTITUDE_AGL 4463.63842f  // NEEDS CHANGE
 #define MIN_BOUNDARAY_AW                  0.5f    // -                                                             // -
 #define M_AW                              0.005f  // -
-#define TARGET_AGOGEE                     4478.00f  // m
 #define NUM_GAINS                         3
+#define AIRBRAKE_SAMPLING_PERIOD          20
