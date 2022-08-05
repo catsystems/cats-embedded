@@ -33,6 +33,7 @@
 #include <string.h>
 #ifdef CATS_DEBUG
 #include "tasks/task_simulator.h"
+#include "sensors/epos4.h"
 #endif
 
 /** CLI command function declarations **/
@@ -69,7 +70,10 @@ static void cli_cmd_flash_write(const char *cmd_name, char *args);
 static void cli_cmd_flash_stop(const char *cmd_name, char *args);
 static void cli_cmd_flash_test(const char *cmd_name, char *args);
 
+#ifdef CATS_DEBUG
 static void cli_cmd_start_simulation(const char *cmd_name, char *args);
+static void cli_cmd_test_ab(const char *cmd_name, char *args);
+#endif
 
 /* List of CLI commands; should be sorted in alphabetical order. */
 const clicmd_t cmd_table[] = {
@@ -96,6 +100,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
 #ifdef CATS_DEBUG
     CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
+    CLI_COMMAND_DEF("test_ab", "Extend and retract airbrakes", NULL, cli_cmd_test_ab),
 #endif
     CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
     CLI_COMMAND_DEF("status", "show status", NULL, cli_cmd_status),
@@ -845,6 +850,17 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
 
 #ifdef CATS_DEBUG
 static void cli_cmd_start_simulation(const char *cmd_name, char *args) { start_simulation(args); }
+static void cli_cmd_test_ab(const char *cmd_name, char *args) {
+    enable_motor();
+    osDelay(5);
+    set_position_mode(0x01);
+    osDelay(5);
+    move_to_position(-100);
+    osDelay(1000);
+    home_motor();
+    osDelay(1000);
+    disable_motor();
+}
 #endif
 
 /**  Helper function definitions **/

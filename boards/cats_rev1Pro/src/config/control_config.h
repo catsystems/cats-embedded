@@ -29,9 +29,9 @@ static const float MOVING_AVERAGE_SIZE = 500.0f; // samples -> 5 seconds
 /* For Airbrake Controller */
 #define USE_AIRBRAKE_CONTROL
 #define POLY_DEG                          30           // NEEDS CHANGE
-#define OPT_TRAJ_CONTROL_INPUT            0.50000f     // -
-#define CONTROL_DEACTIVATION_ALTITUDE_AGL 4463.63842f  // NEEDS CHANGE
+#define OPT_TRAJ_CONTROL_INPUT            0.18088f     // -
+#define CONTROL_DEACTIVATION_ALTITUDE_AGL 1099.0f  // NEEDS CHANGE
 #define MIN_BOUNDARAY_AW                  0.5f    // -                                                             // -
 #define M_AW                              0.005f  // -
 #define NUM_GAINS                         3
-#define AIRBRAKE_SAMPLING_PERIOD          20
+#define AIRBRAKE_SAMPLING_FREQ          20

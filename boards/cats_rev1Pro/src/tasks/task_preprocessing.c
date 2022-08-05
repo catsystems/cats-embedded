@@ -63,9 +63,6 @@ static void transform_data(state_estimation_input_t *state_data, const SI_data_t
   /* Gyro Calib tag */
   bool gyro_calibrated = false;
 
-  /* Initial height calibration tag */
-  bool height_calibration = true;
-
   /* local fsm enum */
   flight_fsm_e new_fsm_enum = MOVING;
   flight_fsm_e old_fsm_enum = MOVING;

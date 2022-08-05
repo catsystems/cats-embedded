@@ -104,7 +104,7 @@
     quaternion_kinematics(&orientation_filter, &global_SI_data.gyro);
     orientation_info_t orientation_info;
     /*
-    log_trace("KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", (int32_t)(orientation_filter.estimate_data[0] * 1000),
+    log_raw("[%lu] KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", tickcount, (int32_t)(orientation_filter.estimate_data[0] * 1000),
               (int32_t)(orientation_filter.estimate_data[1] * 1000),
               (int32_t)(orientation_filter.estimate_data[2] * 1000),
               (int32_t)(orientation_filter.estimate_data[3] * 1000));
@@ -135,7 +135,7 @@
     // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
     //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
     //          1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
-    log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, filter.x_bar.pData[0], filter.x_bar.pData[1], filter.x_bar_data[2]);
+    //log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, filter.x_bar.pData[0], filter.x_bar.pData[1], filter.x_bar_data[2]);
 
     /* reset old fsm enum */
     old_fsm_enum = new_fsm_enum;

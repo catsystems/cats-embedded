@@ -34,7 +34,7 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
 
     /* Infinite loop */
     uint32_t tick_count = osKernelGetTickCount();
-    uint32_t tick_update = osKernelGetTickFreq() / AIRBRAKE_SAMPLING_PERIOD;
+    uint32_t tick_update = osKernelGetTickFreq() / AIRBRAKE_SAMPLING_FREQ;
 
     /* Motor Controller */
     flight_fsm_e old_fsm_state = MOVING;
@@ -63,12 +63,14 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
 
         if((old_fsm_state == COASTING) && (global_flight_state.flight_state == APOGEE)){
             home_motor();
-            osDelay(5);
+            osDelay(2000);
             disable_motor();
         }
 
         log_sim("[%lu]: extension: %f, command: %ld", tick_count, control_data.control_input, desired_airbrake_position);
         old_fsm_state = global_flight_state.flight_state;
+
+        /* Todo: control_data.control_input needs to be logged!!! */
 
         /* Sleep */
         osDelayUntil(tick_count);
