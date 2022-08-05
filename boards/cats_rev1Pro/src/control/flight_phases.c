@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data);
+static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, bool ready_transition_allowed);
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL,
                               const control_settings_t *settings);
 static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
@@ -32,14 +32,14 @@ static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
-void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data, float32_t height_AGL,
+void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data, float32_t height_AGL, bool ready_transition_allowed,
                         const control_settings_t *settings) {
   /* Save old FSM state */
   flight_fsm_t old_fsm_state = *fsm_state;
 
   switch (fsm_state->flight_state) {
     case MOVING:
-      check_moving_phase(fsm_state, acc_data, gyro_data);
+      check_moving_phase(fsm_state, acc_data, gyro_data, ready_transition_allowed);
       break;
     case READY:
       check_ready_phase(fsm_state, acc_data, gyro_data, height_AGL, settings);
@@ -77,7 +77,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_
   }
 }
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data) {
+static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, bool ready_transition_allowed) {
   /* Check if the IMU moved between two timesteps */
   if ((fabsf(fsm_state->old_acc_data.x - acc_data->x) < ALLOWED_ACC_ERROR) &&
       (fabsf(fsm_state->old_acc_data.y - acc_data->y) < ALLOWED_ACC_ERROR) &&
@@ -95,7 +95,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t
   fsm_state->old_gyro_data = *gyro_data;
 
   /* Check if we reached the threshold */
-  if (fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_READY) {
+  if ((fsm_state->memory[1] > TIME_THRESHOLD_MOV_TO_READY) && ready_transition_allowed) {
     trigger_event(EV_READY);
     fsm_state->flight_state = READY;
     fsm_state->clock_memory = 0;
