@@ -55,7 +55,7 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
             move_to_position(desired_airbrake_position);
         }
 
-        if((old_fsm_state == THRUSTING_1) && (global_flight_state.flight_state == COASTING)){
+        if((old_fsm_state == MOVING) && (global_flight_state.flight_state == READY)){
             enable_motor();
             osDelay(3);
             set_position_mode(0x01);
@@ -63,7 +63,9 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
 
         if((old_fsm_state == COASTING) && (global_flight_state.flight_state == APOGEE)){
             home_motor();
-            osDelay(2000);
+        }
+
+        if((old_fsm_state == MAIN) && (global_flight_state.flight_state == TOUCHDOWN)){
             disable_motor();
         }
 
