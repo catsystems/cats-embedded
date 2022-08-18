@@ -117,7 +117,11 @@ static void init_magneto() {
 
 static void init_buzzer() {
   buzzer_set_freq(&BUZZER, 3200);
-  buzzer_set_volume(&BUZZER, 60);
+  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
+    buzzer_set_volume(&BUZZER, 0);
+  } else {
+    buzzer_set_volume(&BUZZER, 30);
+  }
 }
 
 void init_devices() {

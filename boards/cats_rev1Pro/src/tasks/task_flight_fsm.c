@@ -39,7 +39,7 @@
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* Check Flight Phases */
-    check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data, global_estimation_input.height_AGL, true,
+    check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data, global_estimation_input.height_AGL, global_arming_bool,
                        &settings);
 
     if (global_flight_state.state_changed) {

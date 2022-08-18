@@ -197,6 +197,10 @@ SI_data_t global_SI_data = {0};
 estimation_output_t global_estimation_data = {0};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};
 
+bool global_arming_bool = false;
+//TODO remove this
+int8_t airbrake_input = 0;
+
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};
 cats_timer_t mach_timer = {};

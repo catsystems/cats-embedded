@@ -94,7 +94,7 @@ extern UART_HandleTypeDef huart2;
 #define SERVO_TIMER_CHANNEL_2 TIM_CHANNEL_1
 
 #define BUZZER_TIMER_HANDLE htim4
-#define BUZZER_TIMER_CHANNEL TIM_CHANNEL_2
+#define BUZZER_TIMER_CHANNEL TIM_CHANNEL_1
 
 /* USB config */
 #define TIMUsb TIM5
@@ -139,6 +139,8 @@ extern sens_info_t baro_info[NUM_BARO];
 #define ACCEL_SPI_HANDLE hspi1
 #define MAG_SPI_HANDLE hspi1
 #define BARO_SPI_HANDLE hspi1
+
+#define USE_PCHANNEL_SAFETY_LOCK
 
 #ifdef __cplusplus
 extern "C" {

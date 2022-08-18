@@ -71,7 +71,12 @@ extern SI_data_t global_SI_data;
 extern flight_fsm_t global_flight_state;
 extern estimation_output_t global_estimation_data;
 
-/** Timers **/
+extern bool global_arming_bool;
+
+//TODO remove this
+extern int8_t airbrake_input;
+
+    /** Timers **/
 extern cats_timer_t ev_timers[NUM_TIMERS];
 extern cats_timer_t mach_timer;
 

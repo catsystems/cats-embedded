@@ -49,8 +49,7 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
         /* Call the Controller */
         compute_control_input(&control_data, global_flight_state.flight_state, &global_estimation_data);
 
-
-        if(old_fsm_state == COASTING){
+        if(old_fsm_state == COASTING && (global_estimation_data.height > 250)){
             desired_airbrake_position = convert_to_extension(control_data.control_input);
             move_to_position(desired_airbrake_position);
         }
@@ -73,6 +72,7 @@ int32_t convert_to_extension(float32_t airbrake_extension_fraction);
         old_fsm_state = global_flight_state.flight_state;
 
         /* Todo: control_data.control_input needs to be logged!!! */
+        airbrake_input = control_data.control_input * 100;
 
         /* Sleep */
         osDelayUntil(tick_count);
