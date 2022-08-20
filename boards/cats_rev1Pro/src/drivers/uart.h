@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,20 @@
 
 #pragma once
 
-#include "arm_math.h"
-#include "util/types.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include "stm32f4xx.h"
 
-void quaternion_skew(const float* input, float* output);
-void quaternion_mat(const arm_matrix_instance_f32* input1, const arm_matrix_instance_f32* input2,
-                    arm_matrix_instance_f32* output);
-void extendR3(const float32_t* input, float32_t* output);
-void normalize_q(float32_t* input);
-void conjugate_q(const float32_t* input, float32_t* output);
+typedef struct uart_bus {
+  UART_HandleTypeDef* const uart_handle;
+  uint8_t initialized;
+  bool busy;
+} UART_BUS;
+
+uint8_t uart_transmit_receive(UART_BUS* bus, uint8_t* tx_buf, uint16_t tx_size, uint8_t* rx_buf, uint16_t rx_size);
+uint8_t uart_transmit(UART_BUS* bus, uint8_t* tx_buf, uint16_t tx_size);
+uint8_t uart_receive(UART_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
+void uart_init(UART_BUS* bus);
+
+#define MAX_INSTANCES 10
+#define UART_TIMEOUT  5

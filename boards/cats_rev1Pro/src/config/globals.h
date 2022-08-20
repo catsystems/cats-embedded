@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "drivers/servo.h"
 #include "drivers/spi.h"
 #include "flash/recorder.h"
-#include "target.h"
 #include "sensors/h3lis100dl.h"
 #include "sensors/icm20601.h"
 #include "sensors/mmc5983ma.h"
@@ -70,6 +69,8 @@ extern state_estimation_input_t global_estimation_input;
 extern SI_data_t global_SI_data;
 extern flight_fsm_t global_flight_state;
 extern estimation_output_t global_estimation_data;
+
+extern bool global_arming_bool;
 
 /** Timers **/
 extern cats_timer_t ev_timers[NUM_TIMERS];

@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2022 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,12 +39,12 @@
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* Check Flight Phases */
+    /* Todo: Check for global arming trigger */
     check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data,
-                       &settings);
+                       global_estimation_input.height_AGL, true, &settings);
 
     if (global_flight_state.state_changed) {
-      log_error("[%lu] State Changed FlightFSM to %s", osKernelGetTickCount(),
-                fsm_map[global_flight_state.flight_state]);
+      log_error("[%lu] State Changed FlightFSM to %s", osKernelGetTickCount(), fsm_map[global_flight_state.flight_state]);
       record(tick_count, FLIGHT_STATE, &global_flight_state.flight_state);
     }
 

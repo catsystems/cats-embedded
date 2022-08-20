@@ -51,6 +51,7 @@ void send_link_phrase(uint8_t* phrase, uint32_t length);
 void send_tx_payload(uint8_t* payload, uint32_t length);
 bool check_valid_op_code(uint8_t op_code);
 void send_enable();
+void send_disable();
 
 typedef struct {
   uint8_t state : 3;
@@ -79,6 +80,23 @@ gnss_data_t gnss_data;
 
 void pack_tx_msg(packed_tx_msg_t* tx_payload) {
   /* TODO add state, error, voltage and continuity information */
+  if(global_flight_state.flight_state == MOVING){
+    tx_payload->state = 0;
+  } else if (global_flight_state.flight_state == READY) {
+    tx_payload->state = 1;
+  } else if (global_flight_state.flight_state == THRUSTING_1) {
+    tx_payload->state = 2;
+  } else if (global_flight_state.flight_state == COASTING) {
+    tx_payload->state = 3;
+  } else if (global_flight_state.flight_state == APOGEE) {
+    tx_payload->state = 4;
+  } else if (global_flight_state.flight_state == DROGUE) {
+    tx_payload->state = 5;
+  } else if (global_flight_state.flight_state == MAIN) {
+    tx_payload->state = 6;
+  } else if (global_flight_state.flight_state == TOUCHDOWN) {
+    tx_payload->state = 7;
+  }
   tx_payload->timestamp = osKernelGetTickCount() / 100;
   tx_payload->altitude =   (int32_t)global_estimation_data.height;
   tx_payload->velocity = (int16_t)global_estimation_data.velocity;
@@ -86,23 +104,26 @@ void pack_tx_msg(packed_tx_msg_t* tx_payload) {
   tx_payload->lon = (int32_t)(gnss_data.lon * 10000);
 }
 
-void parse_tx_msg(packed_tx_msg_t* tx_payload) {
-  uint32_t ts = tx_payload->timestamp;
-  int32_t altitude = tx_payload->altitude;
-  int16_t velocity = tx_payload->velocity;
-  int32_t lat = tx_payload->lat;
-  int32_t lon = tx_payload->lon;
-  log_raw("[TELE] ts: %lu alt: %ld vel: %d lat: %ld lon %ld", ts, altitude, velocity, lat, lon);
+void parse_tx_msg(packed_tx_msg_t* rx_payload) {
+  if (rx_payload->d1 == 0xAA && rx_payload-> d2 == 0xBB && rx_payload->d3 == 0xCC){
+    global_arming_bool = true;
+    log_info("ARM");
+  } else {
+    global_arming_bool = false;
+  }
 }
 
 [[noreturn]] void task_telemetry(__attribute__((unused)) void* argument) {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
+  global_arming_bool = true;
 
   /* Configure the telemetry MCU */
   send_setting(CMD_DIRECTION, global_cats_config.config.telemetry_settings.direction);
   osDelay(100);
   send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+  osDelay(100);
+  send_setting(CMD_MODE, BIDIRECTIONAL);
   osDelay(100);
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.config.telemetry_settings.link_phrase[0] != 0) {
@@ -121,6 +142,8 @@ void parse_tx_msg(packed_tx_msg_t* tx_payload) {
 
   packed_tx_msg_t tx_payload = {};
 
+  uint32_t uart_timeout = osKernelGetTickCount();
+
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (1) {
@@ -130,9 +153,15 @@ void parse_tx_msg(packed_tx_msg_t* tx_payload) {
       send_tx_payload((uint8_t*)&tx_payload, 16);
     }
 
+    if((osKernelGetTickCount() - uart_timeout) > 60000){
+      uart_timeout = osKernelGetTickCount();
+      HAL_UART_Receive_IT(&TELEMETRY_UART_HANDLE, (uint8_t*)&uart_char, 1);
+    }
+
     /* Check for data from the Telemetry MCU */
     while (stream_length(&uart_stream) > 1) {
       uint8_t ch;
+      uart_timeout = osKernelGetTickCount();
       stream_read_byte(&uart_stream, &ch);
       switch(state){
         case STATE_OP:
@@ -239,6 +268,15 @@ void send_setting(uint8_t command, uint8_t value) {
 void send_enable() {
   uint8_t out[3]; // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_ENABLE;
+  out[1] = 0;
+  out[2] = crc8(out, 2);
+
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
+}
+
+void send_disable() {
+  uint8_t out[3]; // 1 OP + 1 LEN + 1 DATA + 1 CRC
+  out[0] = CMD_DISBALE;
   out[1] = 0;
   out[2] = crc8(out, 2);
 
