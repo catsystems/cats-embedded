@@ -138,9 +138,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
     for (int i = 0; i < NUM_ACCELEROMETER; i++) {
       if (elimination_data->faulty_acc[i] == 0) {
         counter++;
-        SI_data->acc.x += (float32_t)global_imu[i].acc.x * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.y += (float32_t)global_imu[i].acc.y * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.z += (float32_t)global_imu[i].acc.z * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.x += (float32_t)global_accel[i].x * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.y += (float32_t)global_accel[i].y * acc_info[NUM_IMU + i].conversion_to_SI;
+        SI_data->acc.z += (float32_t)global_accel[i].z * acc_info[NUM_IMU + i].conversion_to_SI;
       }
     }
   }

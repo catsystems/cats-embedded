@@ -20,20 +20,20 @@
 #include "util/types.h"
 
 /* Todo: check divisions */
-/* CAREFUL: always add acclerometer settings after IMU settings */
+/* CAREFUL: always add accelerometer settings after IMU settings */
 sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {[0].sens_type = ICM20601_ID_ACC,
-                                                     [0].upper_limit = 32.0f,
-                                                     [0].lower_limit = -32.0f,
+                                                     [0].upper_limit = 32.0f * 9.81f,
+                                                     [0].lower_limit = -32.0f * 9.81f,
                                                      [0].resolution = 1.0f,
                                                      [0].conversion_to_SI = 9.81f / 1024.0f,
                                                      [1].sens_type = ICM20601_ID_ACC,
-                                                     [1].upper_limit = 32.0f,
-                                                     [1].lower_limit = -32.0f,
+                                                     [1].upper_limit = 32.0f * 9.81f,
+                                                     [1].lower_limit = -32.0f * 9.81f,
                                                      [1].resolution = 1.0f,
                                                      [1].conversion_to_SI = 9.81f / 1024.0f,
                                                      [2].sens_type = H3LIS100DL_ID,
-                                                     [2].upper_limit = 100.0f,
-                                                     [2].lower_limit = -100.0f,
+                                                     [2].upper_limit = 100.0f * 9.81f,
+                                                     [2].lower_limit = -100.0f * 9.81f,
                                                      [2].resolution = 1.0f,
                                                      [2].conversion_to_SI = 7.6640625f};
 
