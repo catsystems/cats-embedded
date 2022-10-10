@@ -124,6 +124,7 @@ int main(void) {
   }
 
   uint8_t oldGpsValue = 20;
+  uint8_t oldSecond = 0;
   // uint8_t buffer[] = "test123";
   // Link.setLinkPhrase(buffer, 7);
   // Link.setDirection(TX);
@@ -157,6 +158,21 @@ int main(void) {
       start_serial();
     }
 
+    if (Link.infoAvailable()) {
+      linkInfo_t info;
+      Link.readInfo(&info);
+      uartOutBuffer[0] = CMD_INFO;
+      uartOutBuffer[1] = 3;
+      uartOutBuffer[2] = info.lq;
+      uartOutBuffer[3] = info.rssi;
+      uartOutBuffer[4] = info.snr;
+
+      uint8_t crc = crc8(uartOutBuffer, 5);
+      uartOutBuffer[5] = crc;
+
+      HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
+    }
+
     if (Link.available()) {
       uint8_t rx_data[16];
       Link.readBytes(rx_data, 16);
@@ -171,18 +187,20 @@ int main(void) {
     }
 
     if (gps.location.isValid() && gps.location.isUpdated()) {
-      double lat = gps.location.lat();
-      double lng = gps.location.lng();
+      float lat = gps.location.lat();
+      float lng = gps.location.lng();
+      int32_t altitude = gps.altitude.meters();
 
       if (lat != 0) {
         uartOutBuffer[0] = CMD_GNSS_LOC;
-        uartOutBuffer[1] = 16;
-        memcpy(&uartOutBuffer[2], &lat, 8);
-        memcpy(&uartOutBuffer[2 + 8], &lng, 8);
-        uint8_t crc = crc8(uartOutBuffer, 18);
-        uartOutBuffer[18] = crc;
+        uartOutBuffer[1] = 12;
+        memcpy(&uartOutBuffer[2], &lat, 4);
+        memcpy(&uartOutBuffer[2 + 4], &lng, 4);
+        memcpy(&uartOutBuffer[2 + 4 + 4], &altitude, 4);
+        uint8_t crc = crc8(uartOutBuffer, 14);
+        uartOutBuffer[14] = crc;
 
-        HAL_UART_Transmit(&huart2, uartOutBuffer, 19, 2);
+        HAL_UART_Transmit(&huart2, uartOutBuffer, 15, 2);
       }
     }
 
@@ -197,6 +215,21 @@ int main(void) {
         uartOutBuffer[3] = crc;
 
         HAL_UART_Transmit(&huart2, uartOutBuffer, 4, 2);
+      }
+    }
+
+    if (gps.time.isUpdated() && gps.time.isValid()) {
+      if (gps.time.second() != oldSecond) {
+        oldSecond = gps.time.second();
+        uartOutBuffer[0] = CMD_GNSS_TIME;
+        uartOutBuffer[1] = 3;
+        uartOutBuffer[2] = gps.time.second();
+        uartOutBuffer[3] = gps.time.minute();
+        uartOutBuffer[4] = gps.time.hour();
+
+        uint8_t crc = crc8(uartOutBuffer, 5);
+        uartOutBuffer[5] = crc;
+        HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
       }
     }
 

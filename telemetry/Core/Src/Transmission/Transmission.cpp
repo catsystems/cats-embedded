@@ -70,7 +70,12 @@ void Transmission::setDirection(
 }
 
 void Transmission::setMode(transmission_mode_e transmissionMode) {
-  Settings.transmissionMode = transmissionMode;
+  if (Settings.transmissionMode != transmissionMode) {
+    Settings.transmissionMode = transmissionMode;
+    if (Settings.transmissionEnabled) {
+      resetTransmission();
+    }
+  }
 }
 
 void Transmission::setPAGain(int8_t gain) {
@@ -87,10 +92,11 @@ void Transmission::writeBytes(const uint8_t *data, uint32_t length) {
   if (length > payloadLength)
     return;
   memcpy(txData, data, length);
-  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 
 bool Transmission::available() { return dataAvailable; }
+
+bool Transmission::infoAvailable() { return linkInfoAvailable; }
 
 bool Transmission::readBytes(uint8_t *buffer, uint32_t length) {
   if (dataAvailable) {
@@ -99,6 +105,14 @@ bool Transmission::readBytes(uint8_t *buffer, uint32_t length) {
     return true;
   }
   return false;
+}
+
+bool Transmission::readInfo(linkInfo_t *info) {
+  info->lq = LQCalc.getLQ();
+  info->rssi = Radio.LastPacketRSSI;
+  info->snr = Radio.LastPacketSNR;
+  linkInfoAvailable = false;
+  return true;
 }
 
 void Transmission::enableTransmission() {
@@ -181,6 +195,7 @@ void Transmission::processRFPacket() {
     else if (connectionState == disconnected)
       connectionState = tentative;
     dataAvailable = true;
+    linkInfoAvailable = true;
     timeout = 0;
 
     memcpy(rxData, (const uint8_t *)Radio.RXdataBuffer, payloadLength);
@@ -192,26 +207,49 @@ void Transmission::processRFPacket() {
 void Transmission::rxDoneISR() {
   busyTransmitting = false;
 
-  /* Reset the timer */
-  HAL_TIM_Base_Stop_IT(timer);
-  TIM2->CNT = 0;
-  HAL_TIM_Base_Start_IT(timer);
+  if (Settings.transmissionDirection == RX) {
+    /* Reset the timer */
+    HAL_TIM_Base_Stop_IT(timer);
+    TIM2->CNT = 0;
+    HAL_TIM_Base_Start_IT(timer);
 
-  processRFPacket();
+    processRFPacket();
 
-  if (connectionState == connected) {
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    if (connectionState == connected) {
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+      if (Settings.transmissionMode == BIDIRECTIONAL) {
+        txTransmit();
+      } else {
+        Radio.SetFrequencyReg(FHSSgetNextFreq());
+        Radio.RXnb();
+      }
+    } else if (connectionState == tentative) {
+      Radio.SetFrequencyReg(FHSSgetNextFreq());
+      Radio.RXnb();
+    }
   }
-
-  Radio.SetFrequencyReg(FHSSgetNextFreq());
-
-  Radio.RXnb();
+  if (Settings.transmissionDirection == TX) {
+    processRFPacket();
+    if (connectionState == connected) {
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+  }
 }
 
 void Transmission::txDoneISR() {
   busyTransmitting = false;
 
-  Radio.SetFrequencyReg(FHSSgetNextFreq());
+  if (Settings.transmissionMode == UNIDIRECTIONAL) {
+    // Unidirectional TX mode
+  }
+  if (Settings.transmissionDirection == TX) {
+    // Bidirectional TX mode -> Go to RX (Keep the timeout)
+    Radio.RXnb();
+  } else {
+    // Bidirectional RX mode -> After transmitting go to next freq
+    Radio.SetFrequencyReg(FHSSgetNextFreq());
+    Radio.RXnb();
+  }
 }
 
 void Transmission::rxTimeout() {
@@ -227,7 +265,11 @@ void Transmission::rxTimeout() {
   if (connectionState == connected) {
     LQCalc.inc();
     Radio.SetFrequencyReg(FHSSgetNextFreq());
+    linkInfoAvailable = true;
   } else {
+    if (connectionState == tentative) {
+      connectionState = disconnected;
+    }
     if (timeout > 5) {
       timeout = 0;
       Radio.SetFrequencyReg(FHSSgetNextFreq());
@@ -239,6 +281,10 @@ void Transmission::rxTimeout() {
 
 void Transmission::txTransmit() {
   /* Add payload to tx buffer */
+  if (Settings.transmissionDirection == TX) {
+    Radio.SetFrequencyReg(FHSSgetNextFreq());
+  }
+
   for (uint32_t i = 0; i < payloadLength - 1; i++) {
     Radio.TXdataBuffer[i] = txData[i];
   }

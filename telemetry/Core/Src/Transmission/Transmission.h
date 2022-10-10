@@ -24,6 +24,12 @@
 
 #define MAX_PAYLOAD_SIZE 20
 
+typedef struct {
+  uint8_t rssi;
+  uint8_t lq;
+  int8_t snr;
+} linkInfo_t;
+
 class Transmission {
 public:
   bool begin(TIM_HandleTypeDef *t);
@@ -38,6 +44,8 @@ public:
   bool available();
   void writeBytes(const uint8_t *buffer, uint32_t length);
   bool readBytes(uint8_t *buffer, uint32_t length);
+  bool infoAvailable();
+  bool readInfo(linkInfo_t *info);
 
   transmission_direction_e getDirection();
 
@@ -74,6 +82,7 @@ private:
   uint32_t linkCRC;
 
   volatile bool dataAvailable = false;
+  volatile bool linkInfoAvailable = false;
   uint32_t payloadLength = 0;
   uint8_t txData[MAX_PAYLOAD_SIZE];
   uint8_t rxData[MAX_PAYLOAD_SIZE];

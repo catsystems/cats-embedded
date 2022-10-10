@@ -1,3 +1,0 @@
-FHSS.cpp:102:9:uint8_t contains(int, uint8_t)	24	static
-FHSS.cpp:110:6:void FHSSrandomiseFHSSsequence(uint32_t)	32	static
-FHSS.cpp:123:10:uint32_t FHSSgetChannelCount()	8	static

@@ -1,2 +1,0 @@
-crc.cpp:83:10:uint32_t crc32(const uint8_t*, size_t)	24	static
-crc.cpp:93:9:uint8_t crc8(const uint8_t*, size_t)	24	static

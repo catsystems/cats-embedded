@@ -1,7 +1,0 @@
-TransmissionSettings.h:25:7:TransmissionSettings::TransmissionSettings()	24	static
-Transmission.h:27:7:Transmission::Transmission()	16	static
-LQCALC.h:7:3:LQCALC<N>::LQCALC() [with unsigned char N = 30]	16	static
-ringbuffer.h:5:3:RingBuffer<Type, MaxElements>::RingBuffer() [with Type = unsigned char; unsigned int MaxElements = 128]	16	static
-LQCALC.h:60:8:void LQCALC<N>::reset() [with unsigned char N = 30]	24	static
-common.cpp:7:37:void __static_initialization_and_destruction_0(int, int)	16	static
-common.cpp:7:37:cpp)	8	static

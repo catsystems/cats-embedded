@@ -1,5 +1,0 @@
-TinyGPS.h:58:8:bool TinyGPSLocation::isValid() const	16	static
-gps.cpp:18:6:void gpsSetup()	32	static
-gps.cpp:49:6:bool gpsRun()	8	static
-gps.cpp:55:1:void __static_initialization_and_destruction_0(int, int)	16	static
-gps.cpp:55:1:cpp)	8	static
