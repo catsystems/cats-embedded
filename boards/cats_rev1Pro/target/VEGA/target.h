@@ -118,11 +118,11 @@ extern UART_HandleTypeDef huart2;
 
 typedef enum {
     SENS_TYPE_INVALID = 0,
-    ICM20601_ID_ACC,
-    ICM20601_ID_GYRO,
-    MS5607_ID,
-    MMC5983MA_ID,
-    H3LIS100DL_ID,
+    IMU_ID_ACC,
+    IMU_ID_GYRO,
+    BARO_ID,
+    MAG_ID,
+    ACC_ID,
     HEHE4 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } sens_type_e;
 

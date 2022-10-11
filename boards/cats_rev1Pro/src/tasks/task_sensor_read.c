@@ -131,6 +131,7 @@ static void read_baro();
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
         record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
+        log_debug("IMU %hd", global_imu[i].acc.x);
       }
     }
 
@@ -146,8 +147,9 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *tem
 #if IMU_TYPE == ICM20601_TYPE
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
-#endif
-#if IMU_TYPE == LSM6DSR_TYPE
+#elif IMU_TYPE == LSM6DSR_TYPE
+    lsm6dsr_read_accel_raw(&IMU_DEV[id], acceleration);
+    lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyroscope);
 #endif
 
 }

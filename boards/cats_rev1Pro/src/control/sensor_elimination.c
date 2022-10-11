@@ -88,28 +88,28 @@ static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8
   cats_error_e status = CATS_ERR_OK;
 
   switch (sens_info->sens_type) {
-    case MS5607_ID:
+    case BARO_ID:
       if ((((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           (((float32_t)global_baro[index].pressure * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_baro[index] = 1;
         status = (cats_error_e)(CATS_ERR_BARO_0 << index);
       }
       break;
-    case MMC5983MA_ID:
+    case MAG_ID:
       if (((global_magneto[index].x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           ((global_magneto[index].x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_mag[index] = 1;
         status = CATS_ERR_MAG;
       }
       break;
-    case ICM20601_ID_ACC:
+    case IMU_ID_ACC:
       if ((((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           (((float32_t)global_imu[index].acc.x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_imu[index] = 1;
         status = (cats_error_e)(CATS_ERR_IMU_0 << index);
       }
       break;
-    case H3LIS100DL_ID:
+    case ACC_ID:
       if ((((float32_t)global_accel[index].x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
           (((float32_t)global_accel[index].x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         elimination->faulty_acc[index] = 1;
@@ -128,7 +128,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
   cats_error_e status = CATS_ERR_OK;
 
   switch (sens_info->sens_type) {
-    case MS5607_ID:
+    case BARO_ID:
       if (global_baro[index].pressure == elimination->last_value_baro[index]) {
         elimination->freeze_counter_baro[index]++;
         if (elimination->freeze_counter_baro[index] > MAX_NUM_SAME_VALUE) {
@@ -140,7 +140,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
         elimination->freeze_counter_baro[index] = 0;
       }
       break;
-    case MMC5983MA_ID:
+    case MAG_ID:
       if (global_magneto[index].x == elimination->last_value_magneto[index]) {
         elimination->freeze_counter_magneto[index]++;
         if (elimination->freeze_counter_magneto[index] > MAX_NUM_SAME_VALUE) {
@@ -152,7 +152,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
         elimination->freeze_counter_magneto[index] = 0;
       }
       break;
-    case ICM20601_ID_ACC:
+    case IMU_ID_ACC:
       if (global_imu[index].acc.x == elimination->last_value_imu[index]) {
         elimination->freeze_counter_imu[index]++;
         if (elimination->freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
@@ -164,7 +164,7 @@ static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uin
         elimination->freeze_counter_imu[index] = 0;
       }
       break;
-    case H3LIS100DL_ID:
+    case ACC_ID:
       if (global_accel[index].x == elimination->last_value_accel[index]) {
         elimination->freeze_counter_accel[index]++;
         if (elimination->freeze_counter_accel[index] > MAX_NUM_SAME_VALUE) {

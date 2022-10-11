@@ -46,3 +46,5 @@ void lsm6dsr_wakeup_enable(LSM6DSR *dev, uint32_t threshold_ms2);
 void lsm6dsr_wakeup_disable(LSM6DSR *dev);
 
 void lsm6dsr_get_accel(LSM6DSR *dev, float *acceleration);
+void lsm6dsr_read_gyro_raw(LSM6DSR *dev, int16_t *gyro);
+void lsm6dsr_read_accel_raw(LSM6DSR *dev, int16_t *acceleration);
