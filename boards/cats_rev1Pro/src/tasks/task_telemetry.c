@@ -71,8 +71,8 @@ typedef struct {
 } __attribute__((packed)) packed_tx_msg_t;
 
 typedef struct {
-  double lat;
-  double lon;
+  float lat;
+  float lon;
   uint8_t sats;
 } gnss_data_t;
 
@@ -232,8 +232,8 @@ void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length) {
   } else if (op_code == CMD_INFO) {
     //log_info("Link Info received");
   } else if (op_code == CMD_GNSS_LOC) {
-    memcpy(&gnss_data.lat, buffer, 8);
-    memcpy(&gnss_data.lon, &buffer[8], 8);
+    memcpy(&gnss_data.lat, buffer, 4);
+    memcpy(&gnss_data.lon, &buffer[4], 4);
     //log_info("GNSS location received: %f %f",gnss_data.lat, gnss_data.lon);
   } else if (op_code == CMD_GNSS_INFO) {
     gnss_data.sats = buffer[0];
