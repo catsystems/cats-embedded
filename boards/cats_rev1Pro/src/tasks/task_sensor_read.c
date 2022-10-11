@@ -21,7 +21,11 @@
 #include "config/globals.h"
 #include "flash/recorder.h"
 #include "sensors/h3lis100dl.h"
+#if IMU_TYPE == LSM6DSR_TYPE
+#include "sensors/lsm6dsr.h"
+#elif IMU_TYPE == ICM20601_TYPE
 #include "sensors/icm20601.h"
+#endif
 #include "sensors/mmc5983ma.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
@@ -127,6 +131,7 @@ static void read_baro();
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
         record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
+        //log_debug("IMU_Ax %hd, IMU_Gx %hd, Baro %u", global_imu[i].acc.x, global_imu[i].gyro.x, global_baro[0].pressure);
       }
     }
 
@@ -139,9 +144,14 @@ static void read_baro();
 
 static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *temperature, int32_t id) {
   if (id >= NUM_IMU) return;
+#if IMU_TYPE == ICM20601_TYPE
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
-  // icm20601_read_temp_raw(&IMU_DEV[id], temperature);
+#elif IMU_TYPE == LSM6DSR_TYPE
+    lsm6dsr_read_accel_raw(&IMU_DEV[id], acceleration);
+    lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyroscope);
+#endif
+
 }
 
 static void prepare_temp() {

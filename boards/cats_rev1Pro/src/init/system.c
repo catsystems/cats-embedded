@@ -87,10 +87,17 @@ static void init_imu() {
   /* TODO: Add timeout for sensor init */
   // HalDelay_un
   for (int i = 0; i < NUM_IMU; i++) {
+#if IMU_TYPE == ICM20601_TYPE
     while (!icm20601_init(&IMU_DEV[i])) {
       log_error("IMU %d initialization failed", i);
       HAL_Delay(10);
     }
+#elif IMU_TYPE == LSM6DSR_TYPE
+    while (!lsm6dsr_init(&IMU_DEV[i])) {
+        log_error("IMU %d initialization failed", i);
+        HAL_Delay(10);
+    }
+#endif
   }
   for (int i = 0; i < NUM_ACCELEROMETER; i++) {
     while (!h3lis100dl_init(&ACCEL)) {

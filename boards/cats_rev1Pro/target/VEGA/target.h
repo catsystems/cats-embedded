@@ -108,16 +108,21 @@ extern UART_HandleTypeDef huart2;
 #define NUM_ACCELEROMETER 0
 #define NUM_BARO          1
 
+#define ICM20601_TYPE 11
+#define LSM6DSR_TYPE 22
+
+#define IMU_TYPE LSM6DSR_TYPE
+
 #define NUM_PYRO          2
 #define NUM_LOW_LEVEL_IO  1
 
 typedef enum {
     SENS_TYPE_INVALID = 0,
-    ICM20601_ID_ACC,
-    ICM20601_ID_GYRO,
-    MS5607_ID,
-    MMC5983MA_ID,
-    H3LIS100DL_ID,
+    IMU_ID_ACC,
+    IMU_ID_GYRO,
+    BARO_ID,
+    MAG_ID,
+    ACC_ID,
     HEHE4 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
 } sens_type_e;
 
