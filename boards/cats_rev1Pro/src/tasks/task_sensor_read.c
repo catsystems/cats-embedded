@@ -131,7 +131,7 @@ static void read_baro();
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
         record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
-        log_debug("IMU %hd", global_imu[i].acc.x);
+        //log_debug("IMU_Ax %hd, IMU_Gx %hd, Baro %u", global_imu[i].acc.x, global_imu[i].gyro.x, global_baro[0].pressure);
       }
     }
 

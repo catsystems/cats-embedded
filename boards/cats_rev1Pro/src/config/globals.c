@@ -91,7 +91,7 @@ LSM6DSR IMU_DEV[NUM_IMU] = {
             .spi_handle = &IMU_SPI_HANDLE,
             .accel_odr = LSM6DSR_XL_ODR_104Hz,
             .accel_range = LSM6DSR_16g,
-            .gyro_odr = LSM6DSR_GY_ODR_OFF,
+            .gyro_odr = LSM6DSR_GY_ODR_104Hz,
             .gyro_range = LSM6DSR_2000dps,
         },
 #endif

@@ -47,7 +47,7 @@ sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
                                                              .resolution = 1.0f}};
 #endif
 sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
-                                          .conversion_to_SI = 1.0f / 16.4f,
+                                          .conversion_to_SI = 0.07f,
                                           .upper_limit = 2000.0f,
                                           .lower_limit = -2000.0f,
                                           .resolution = 1.0f}};

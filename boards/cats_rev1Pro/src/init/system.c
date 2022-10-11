@@ -97,7 +97,6 @@ static void init_imu() {
         log_error("IMU %d initialization failed", i);
         HAL_Delay(10);
     }
-      lsm6dsr_enable(&IMU_DEV[i]);
 #endif
   }
   for (int i = 0; i < NUM_ACCELEROMETER; i++) {

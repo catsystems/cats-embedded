@@ -67,8 +67,8 @@ typedef vf32_t magneto_data_t;  // Magnetometer units
 typedef struct {
   int32_t pressure;     // Baro unit
   int32_t temperature;  // Baro unit
-} baro_data_t;
 
+} baro_data_t;
 /* Estimator Data */
 typedef struct {
   float32_t acceleration_z;  // m/s^2

@@ -50,6 +50,9 @@ bool lsm6dsr_init(LSM6DSR *dev) {
   /* Disable I3C interface */
   lsm6dsr_i3c_disable_set(dev->dev_ctx, LSM6DSR_I3C_DISABLE);
 
+  lsm6dsr_xl_data_rate_set(dev->dev_ctx, dev->accel_odr);
+  lsm6dsr_gy_data_rate_set(dev->dev_ctx, dev->gyro_odr);
+
   /* Set full scale */
   lsm6dsr_xl_full_scale_set(dev->dev_ctx, dev->accel_range);
   lsm6dsr_gy_full_scale_set(dev->dev_ctx, dev->gyro_range);
