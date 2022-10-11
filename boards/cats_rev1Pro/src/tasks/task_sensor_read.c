@@ -23,8 +23,7 @@
 #include "sensors/h3lis100dl.h"
 #if IMU_TYPE == LSM6DSR_TYPE
 #include "sensors/lsm6dsr.h"
-#endif
-#if IMU_TYPE == ICM20601_TYPE
+#elif IMU_TYPE == ICM20601_TYPE
 #include "sensors/icm20601.h"
 #endif
 #include "sensors/mmc5983ma.h"

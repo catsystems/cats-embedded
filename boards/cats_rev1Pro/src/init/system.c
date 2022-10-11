@@ -92,8 +92,7 @@ static void init_imu() {
       log_error("IMU %d initialization failed", i);
       HAL_Delay(10);
     }
-#endif
-#if IMU_TYPE == LSM6DSR_TYPE
+#elif IMU_TYPE == LSM6DSR_TYPE
     while (!lsm6dsr_init(&IMU_DEV[i])) {
         log_error("IMU %d initialization failed", i);
         HAL_Delay(10);

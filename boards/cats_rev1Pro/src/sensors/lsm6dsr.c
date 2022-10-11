@@ -18,10 +18,8 @@
 
 #include "lsm6dsr.h"
 
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len);
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len);
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 
 static stmdev_ctx_t ctx;
 
@@ -42,11 +40,12 @@ bool lsm6dsr_init(LSM6DSR *dev) {
 
   lsm6dsr_device_id_get(dev->dev_ctx, &whoamI);
 
-  if (whoamI != LSM6DSR_ID)
+  if (whoamI != LSM6DSR_ID) {
     return false;
+  }
 
   lsm6dsr_reset_set(dev->dev_ctx, PROPERTY_ENABLE);
-  osDelay(10);
+  HAL_Delay(10);
 
   /* Disable I3C interface */
   lsm6dsr_i3c_disable_set(dev->dev_ctx, LSM6DSR_I3C_DISABLE);
@@ -91,15 +90,13 @@ void lsm6dsr_enable(LSM6DSR *dev) {
  * @return None
  */
 void lsm6dsr_wakeup_enable(LSM6DSR *dev, uint32_t threshold_ms2) {
-
   lsm6dsr_xl_data_rate_set(dev->dev_ctx, dev->accel_odr);
 
   lsm6dsr_xl_full_scale_set(dev->dev_ctx, dev->accel_range);
   /* Apply high-pass digital filter on Wake-Up function */
   lsm6dsr_xl_hp_path_internal_set(dev->dev_ctx, LSM6DSR_USE_SLOPE);
   /* Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6 */
-  uint8_t threshold =
-      (uint8_t)((float)threshold_ms2 / ((16.0f * 9.81f) / 64.0f));
+  uint8_t threshold = (uint8_t)((float)threshold_ms2 / ((16.0f * 9.81f) / 64.0f));
   lsm6dsr_wkup_threshold_set(dev->dev_ctx, threshold);
 
   lsm6dsr_pin_int1_route_t int1_route;
@@ -129,21 +126,21 @@ void lsm6dsr_wakeup_disable(LSM6DSR *dev) {
  */
 float get_accel_conversion(LSM6DSR *dev) {
   switch (dev->accel_range) {
-  case LSM6DSR_2g:
-    return 0.00059841f;
-    break;
-  case LSM6DSR_4g:
-    return 0.00119682f;
-    break;
-  case LSM6DSR_8g:
-    return 0.00239364f;
-    break;
-  case LSM6DSR_16g:
-    return 0.00478728f;
-    break;
-  default:
-    return 0;
-    break;
+    case LSM6DSR_2g:
+      return 0.00059841f;
+      break;
+    case LSM6DSR_4g:
+      return 0.00119682f;
+      break;
+    case LSM6DSR_8g:
+      return 0.00239364f;
+      break;
+    case LSM6DSR_16g:
+      return 0.00478728f;
+      break;
+    default:
+      return 0;
+      break;
   }
 }
 
@@ -161,8 +158,7 @@ void lsm6dsr_get_accel(LSM6DSR *dev, float *acceleration) {
   }
 }
 
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len) {
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 2);
   HAL_SPI_Transmit(handle, (uint8_t *)bufp, len, 2);
@@ -170,8 +166,7 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
   return 0;
 }
 
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len) {
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
   reg |= 0x80;
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
