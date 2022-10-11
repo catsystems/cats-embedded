@@ -39,18 +39,23 @@ sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
                                                              .upper_limit = 32.0f * 9.81f,
                                                              .lower_limit = -32.0f * 9.81f,
                                                              .resolution = 1.0f}};
+sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
+                                   .conversion_to_SI = 1.0f / 16.4f,
+                                   .upper_limit = 2000.0f,
+                                   .lower_limit = -2000.0f,
+                                   .resolution = 1.0f}};
 #elif IMU_TYPE == LSM6DSR_TYPE
 sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
                                                              .conversion_to_SI = 9.81f / 2048.0f,
                                                              .upper_limit = 16.0f * 9.81f,
                                                              .lower_limit = -16.0f * 9.81f,
                                                              .resolution = 1.0f}};
-#endif
 sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
-                                          .conversion_to_SI = 0.07f,
-                                          .upper_limit = 2000.0f,
-                                          .lower_limit = -2000.0f,
-                                          .resolution = 1.0f}};
+                                   .conversion_to_SI = 0.07f,
+                                   .upper_limit = 2000.0f,
+                                   .lower_limit = -2000.0f,
+                                   .resolution = 1.0f}};
+#endif
 
 sens_info_t mag_info[NUM_MAGNETO] = {};
 
