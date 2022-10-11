@@ -21,7 +21,12 @@
 #include "config/globals.h"
 #include "flash/recorder.h"
 #include "sensors/h3lis100dl.h"
+#if IMU_TYPE == LSM6DSR_TYPE
+#include "sensors/lsm6dsr.h"
+#endif
+#if IMU_TYPE == ICM20601_TYPE
 #include "sensors/icm20601.h"
+#endif
 #include "sensors/mmc5983ma.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
@@ -139,9 +144,13 @@ static void read_baro();
 
 static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *temperature, int32_t id) {
   if (id >= NUM_IMU) return;
+#if IMU_TYPE == ICM20601_TYPE
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
-  // icm20601_read_temp_raw(&IMU_DEV[id], temperature);
+#endif
+#if IMU_TYPE == LSM6DSR_TYPE
+#endif
+
 }
 
 static void prepare_temp() {

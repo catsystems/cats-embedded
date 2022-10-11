@@ -108,6 +108,11 @@ extern UART_HandleTypeDef huart2;
 #define NUM_ACCELEROMETER 0
 #define NUM_BARO          1
 
+#define ICM20601_TYPE 0
+#define LSM6DSR_TYPE 1
+
+#define IMU_TYPE LSM6DSR_TYPE
+
 #define NUM_PYRO          2
 #define NUM_LOW_LEVEL_IO  1
 
