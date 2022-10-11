@@ -82,9 +82,7 @@ const ICM20601 IMU_DEV[NUM_IMU] = {
     }
 #endif
 };
-#endif
-
-#if IMU_TYPE == LSM6DSR_TYPE
+#elif IMU_TYPE == LSM6DSR_TYPE
 LSM6DSR IMU_DEV[NUM_IMU] = {
 #if NUM_IMU > 0
         {
