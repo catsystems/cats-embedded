@@ -236,7 +236,7 @@ void parse_stats(uint16_t number) {
   lfs_file_t curr_file;
 
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
-    flight_stats_t *local_flight_stats = pvPortMalloc(sizeof(flight_stats_t));
+    auto local_flight_stats = static_cast<flight_stats_t *>(pvPortMalloc(sizeof(flight_stats_t)));
 
     if (local_flight_stats == NULL) {
       log_raw("Could not allocate enough memory for flight stats readout.");

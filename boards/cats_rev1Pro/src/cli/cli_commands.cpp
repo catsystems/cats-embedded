@@ -339,7 +339,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       case MODE_STRING: {
         char *val_ptr = eqptr;
         val_ptr = skip_space(val_ptr);
-        const void *var_ptr = get_cats_config_member_ptr(&global_cats_config, val);
+        char *var_ptr = static_cast<char *>(get_cats_config_member_ptr(&global_cats_config, val));
         const unsigned int len = strlen(val_ptr);
         const uint8_t min = val->config.string.min_length;
         const uint8_t max = val->config.string.max_length;
@@ -611,7 +611,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
   char *ptr = strtok(args, " ");
 
   int32_t flight_idx_or_err = get_flight_idx(ptr);
-  rec_entry_type_e filter_mask = 0;
+  rec_entry_type_e filter_mask = static_cast<rec_entry_type_e>(0);
 
   if (flight_idx_or_err < 0) {
     return;
@@ -623,23 +623,23 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
     if (!strcmp(ptr, "--filter")) {
       /*Read filter types */
       while (ptr != NULL) {
-        if (!strcmp(ptr, "IMU")) filter_mask |= IMU;
-        if (!strcmp(ptr, "BARO")) filter_mask |= BARO;
-        if (!strcmp(ptr, "MAGNETO")) filter_mask |= MAGNETO;
-        if (!strcmp(ptr, "ACCELEROMETER")) filter_mask |= ACCELEROMETER;
-        if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask |= FLIGHT_INFO;
-        if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask |= ORIENTATION_INFO;
-        if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask |= FILTERED_DATA_INFO;
-        if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask |= FLIGHT_STATE;
-        if (!strcmp(ptr, "EVENT_INFO")) filter_mask |= EVENT_INFO;
-        if (!strcmp(ptr, "ERROR_INFO")) filter_mask |= ERROR_INFO;
+        if (!strcmp(ptr, "IMU")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | IMU);
+        if (!strcmp(ptr, "BARO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | BARO);
+        if (!strcmp(ptr, "MAGNETO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | MAGNETO);
+        if (!strcmp(ptr, "ACCELEROMETER")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | ACCELEROMETER);
+        if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | FLIGHT_INFO);
+        if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | ORIENTATION_INFO);
+        if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | FILTERED_DATA_INFO);
+        if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | FLIGHT_STATE);
+        if (!strcmp(ptr, "EVENT_INFO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | EVENT_INFO);
+        if (!strcmp(ptr, "ERROR_INFO")) filter_mask = static_cast<rec_entry_type_e>(filter_mask | ERROR_INFO);
         ptr = strtok(NULL, " ");
       }
     } else {
       cli_print_linef("\nBad option: %s!", ptr);
     }
   } else {
-    filter_mask = UINT32_MAX;
+    filter_mask = static_cast<rec_entry_type_e>(UINT32_MAX);
   }
 
   parse_recording(flight_idx_or_err, filter_mask);

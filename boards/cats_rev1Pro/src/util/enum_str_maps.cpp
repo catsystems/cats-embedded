@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "util/enum_str_maps.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/log.h"
@@ -41,7 +42,10 @@ const char* const action_map[17] = {
 };
 
 #ifdef CATS_VEGA
-const char* const direction_map[2] = { "TX", "RX", };
+const char* const direction_map[2] = {
+    "TX",
+    "RX",
+};
 #endif
 
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
