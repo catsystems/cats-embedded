@@ -1,0 +1,85 @@
+#pragma once
+
+#include <Arduino.h>
+#include "config.h"
+
+#define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
+
+typedef enum {
+    STRING = 0,
+    TOGGLE = 1,
+    NUMBER = 2,
+} settings_type_e;
+
+typedef struct {
+    int16_t min;
+    int16_t max;   
+} settings_min_max_t;
+
+
+typedef union {
+    uint32_t stringLength;
+    uint32_t lookup;
+    settings_min_max_t minmax;    
+} settings_limits_u;
+
+
+typedef struct{
+
+    const char* name;
+    const char* description;
+    settings_type_e type;
+    settings_limits_u config;
+
+    void* dataPtr;
+
+} device_settings_t;
+
+typedef enum { 
+    TABLE_MODE = 0,
+    TABLE_UNIT,
+    TABLE_LOGGING,
+} lookup_table_index_e;
+
+const char* const mode_map[2] = {
+    "DIVERSITY", "DUAL",
+};
+
+const char* const unit_map[2] = {
+    "METRIC", "RETARDED",
+};
+
+const char* const logging_map[2] = {
+    "DOWN", "NEVER",
+};
+
+typedef struct {
+  const char *const *values;
+  const uint8_t value_count;
+} lookup_table_entry_t;
+
+#define LOOKUP_TABLE_ENTRY(name) \
+  { name, ARRAYLEN(name) }
+
+const lookup_table_entry_t lookup_tables[] = {
+    LOOKUP_TABLE_ENTRY(mode_map),
+    LOOKUP_TABLE_ENTRY(unit_map),
+    LOOKUP_TABLE_ENTRY(logging_map),
+};
+
+const char* const settingPageName[2] = {
+    "General", "Telemetry",
+};
+
+const device_settings_t settingsTable[][3] = {{
+    {"Time Zone", "Set the time offset", NUMBER, {.minmax = {.min = -12, .max = 12}}, &systemConfig.config.timeZoneOffset},
+    {"Stop Logging", "Stops logging at touchdown or never stops", TOGGLE, {.lookup = TABLE_LOGGING}, &systemConfig.config.neverStopLogging},
+},
+{
+    {"Mode", "Diversity = Track one tracker with 2 antennas", TOGGLE, {.lookup = TABLE_MODE}, &systemConfig.config.receiverMode},
+    {"Link Phrase 1", "", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase1},
+    {"Link Phrase 2", "", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase2},
+},
+};
+
+const uint16_t settingsTableValueCount[2] = {2, 3};
