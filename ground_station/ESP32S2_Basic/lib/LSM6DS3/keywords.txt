@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map For Arduino_LSM6DS3
+####################################### 
+# Class
+#######################################
+
+Arduino_LSM6DS3	KEYWORD1
+LSM6DS3	KEYWORD1
+IMU	KEYWORD1
+
+#######################################
+# Methods and Functions 
+#######################################	
+
+begin	KEYWORD2
+end	KEYWORD2
+
+readAcceleration	KEYWORD2
+readGyroscope	KEYWORD2
+gyroscopeAvailable	KEYWORD2
+accelerationAvailable	KEYWORD2
+accelerationSampleRate	KEYWORD2
+gyroscopeSampleRate	KEYWORD2
+
+#######################################
+# Constants
+#######################################
