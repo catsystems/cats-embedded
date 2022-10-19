@@ -199,9 +199,9 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.event_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            uint8_t action_idx = rec_elem.u.event_info.action_idx;
-            log_raw("%lu|EVENT_INFO|%s|%u", rec_elem.ts,
-                    (lookup_tables[TABLE_EVENTS].values)[rec_elem.u.event_info.event], action_idx);
+            peripheral_act_t action = rec_elem.u.event_info.action;
+            log_raw("%lu|EVENT_INFO|%s|%s|%u", rec_elem.ts, event_map[rec_elem.u.event_info.event],
+                    action_map[rec_elem.u.event_info.action.action], action.action_arg);
           }
         } break;
         case ERROR_INFO: {

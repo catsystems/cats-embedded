@@ -92,7 +92,7 @@ typedef struct {
 
 typedef struct {
   cats_event_e event;
-  uint8_t action_idx;
+  peripheral_act_t action;
 } event_info_t;
 
 typedef struct {

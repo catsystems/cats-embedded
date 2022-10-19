@@ -25,6 +25,7 @@
 #include "arm_math.h"
 #include "cmsis_os2.h"
 #include "config/control_config.h"
+#include "util/actions.h"
 
 /** DEFINES **/
 
@@ -200,13 +201,11 @@ typedef struct {
 } config_telemetry_t;
 #endif
 
-typedef bool (*peripheral_act_fp)(int16_t);
-
 typedef struct {
-  /* Action function pointer */
-  peripheral_act_fp func_ptr;
-  /* Action function argument */
-  int16_t func_arg;
+  /* Action type */
+  action_function_e action;
+  /* Action argument */
+  int16_t action_arg;
 } peripheral_act_t;
 
 typedef struct {
