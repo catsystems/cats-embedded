@@ -72,7 +72,7 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
     old_level = battery_level();
 
     // Periodically check pyros channels as long as we are on the ground
-    if ((global_flight_state.flight_state < THRUSTING_1) && (pyro_check_timer >= 200)) {
+    if ((global_flight_state.flight_state < THRUSTING) && (pyro_check_timer >= 200)) {
       check_high_current_channels();
       pyro_check_timer = 0;
     } else {

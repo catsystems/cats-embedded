@@ -249,7 +249,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
     case MOVING:
       filter->R = STD_NOISE_BARO_INITIAL;
       break;
-    case THRUSTING_1:
+    case THRUSTING:
       filter->R = STD_NOISE_BARO;
       break;
     case COASTING:
@@ -266,7 +266,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
     memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
   } else {
     /* After apogee an acceleration based state estimation does not work, so disable the state estimation */
-    if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) && (flight_state >= APOGEE)) {
+    if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) && (flight_state >= DROGUE)) {
       memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
       memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
     } else {
@@ -284,7 +284,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   }
 
   /* Do not update offset estimation if we took off */
-  if (flight_state >= THRUSTING_1) {
+  if (flight_state >= THRUSTING) {
     filter->x_bar_data[2] = filter->x_hat_data[2];
   }
 

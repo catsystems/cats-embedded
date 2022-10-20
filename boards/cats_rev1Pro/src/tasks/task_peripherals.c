@@ -50,12 +50,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
           }
         }
       }
-      /* start Mach timer if needed */
-      if (curr_event == mach_timer.timer_init_event) {
-        if (mach_timer.timer_duration_ticks > 0) {
-          osTimerStart(mach_timer.timer_id, mach_timer.timer_duration_ticks);
-        }
-      }
+
 #ifdef USE_PCHANNEL_SAFETY_LOCK
       /* Arm the pyro channels when going into ready */
       if (curr_event >= EV_READY){

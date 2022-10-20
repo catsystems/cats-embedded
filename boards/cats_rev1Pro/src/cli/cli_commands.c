@@ -854,7 +854,6 @@ static void print_control_config() {
 
   cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
   cli_printf("  Main Altitude:          %u m\n", global_cats_config.config.control_settings.main_altitude);
-  cli_printf("  Mach Timer Duration:    %u ms\n", global_cats_config.config.control_settings.mach_timer_duration);
 }
 
 static void print_action_config() {

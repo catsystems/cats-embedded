@@ -126,13 +126,8 @@ typedef enum {
   INVALID = 0,
   MOVING = 1,
   READY,
-  THRUSTING_1,
-  THRUSTING_2,
+  THRUSTING,
   COASTING,
-  TRANSONIC_1,
-  SUPERSONIC,
-  TRANSONIC_2,
-  APOGEE,
   DROGUE,
   MAIN,
   TOUCHDOWN,
@@ -182,7 +177,6 @@ typedef struct {
 
 typedef struct {
   uint16_t liftoff_acc_threshold;  // m/s^2
-  uint16_t mach_timer_duration;    // ms
   uint16_t main_altitude;          // m
 } control_settings_t;
 
@@ -228,11 +222,10 @@ typedef enum {
   EV_LIFTOFF,
   EV_MAX_V,
   EV_APOGEE,
-  EV_POST_APOGEE,
+  EV_MAIN,
   EV_TOUCHDOWN,
   EV_CUSTOM_1,
   EV_CUSTOM_2,
-  EV_MACHTIMER,
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_event_e;
 

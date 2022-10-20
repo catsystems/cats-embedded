@@ -24,11 +24,10 @@
 #include <stdlib.h>
 
 static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, bool ready_transition_allowed);
-static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL,
+static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL, bool ready_transition_allowed,
                               const control_settings_t *settings);
-static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
+static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
-static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
@@ -42,22 +41,13 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_
       check_moving_phase(fsm_state, acc_data, gyro_data, ready_transition_allowed);
       break;
     case READY:
-      check_ready_phase(fsm_state, acc_data, gyro_data, height_AGL, settings);
+      check_ready_phase(fsm_state, acc_data, gyro_data, height_AGL, ready_transition_allowed, settings);
       break;
-    case THRUSTING_1:
-      check_thrusting_1_phase(fsm_state, state_data);
-      break;
-    case THRUSTING_2:
+    case THRUSTING:
+      check_thrusting_phase(fsm_state, state_data);
       break;
     case COASTING:
       check_coasting_phase(fsm_state, state_data);
-      break;
-    case TRANSONIC_1:
-      break;
-    case TRANSONIC_2:
-      break;
-    case APOGEE:
-      check_apogee_phase(fsm_state, state_data);
       break;
     case DROGUE:
       check_drogue_phase(fsm_state, state_data);
@@ -107,33 +97,9 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t
     fsm_state->angular_movement[2] = 0;
   }
 
-  /* Check if we move from MOVING to THRUSTING_1 */
-  /* To make sure that the timers start any acceleration direction is accepted here */
-  float32_t accel_x = acc_data->x * acc_data->x;
-  float32_t accel_y = acc_data->y * acc_data->y;
-  float32_t accel_z = acc_data->z * acc_data->z;
-  float32_t acceleration = accel_x + accel_y + accel_z;
-
-  if (acceleration > (MOV_LIFTOFF_THRESHOLD * MOV_LIFTOFF_THRESHOLD)) {
-    fsm_state->memory[2]++;
-  } else {
-    fsm_state->memory[2] = 0;
-  }
-
-  if (fsm_state->memory[2] > MOV_LIFTOFF_SAFETY_COUNTER) {
-    trigger_event(EV_LIFTOFF);
-    fsm_state->flight_state = THRUSTING_1;
-    fsm_state->clock_memory = 0;
-    fsm_state->memory[0] = 0;
-    fsm_state->memory[1] = 0;
-    fsm_state->memory[2] = 0;
-    fsm_state->angular_movement[0] = 0;
-    fsm_state->angular_movement[1] = 0;
-    fsm_state->angular_movement[2] = 0;
-  }
 }
 
-static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL,
+static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL, bool ready_transition_allowed,
                               const control_settings_t *settings) {
   /* Check if we move from READY Back to MOVING */
 
@@ -203,7 +169,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
     fsm_state->angular_movement[2] = 0;
   }
 
-  /* Check if we move from READY To THRUSTING_1 */
+  /* Check if we move from READY To THRUSTING */
   /* The absolut value of the acceleration is used here to make sure that we detect liftoff */
   float32_t accel_x = acc_data->x * acc_data->x;
   float32_t accel_y = acc_data->y * acc_data->y;
@@ -218,7 +184,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
 
   if (fsm_state->memory[1] > LIFTOFF_SAFETY_COUNTER) {
     trigger_event(EV_LIFTOFF);
-    fsm_state->flight_state = THRUSTING_1;
+    fsm_state->flight_state = THRUSTING;
     fsm_state->clock_memory = 0;
     fsm_state->memory[0] = 0;
     fsm_state->memory[1] = 0;
@@ -228,7 +194,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
     fsm_state->angular_movement[2] = 0;
   }
 
-  /* Check if we move from Ready to Thrusting_1 based on baro data */
+  /* Check if we move from Ready to Thrusting based on baro data */
     if (height_AGL > LIFTOFF_HEIGHT_AGL) {
         fsm_state->memory[2]++;
     } else {
@@ -237,7 +203,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
 
     if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER_HEIGHT) {
         trigger_event(EV_LIFTOFF);
-        fsm_state->flight_state = THRUSTING_1;
+        fsm_state->flight_state = THRUSTING;
         fsm_state->clock_memory = 0;
         fsm_state->memory[0] = 0;
         fsm_state->memory[1] = 0;
@@ -246,9 +212,22 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
         fsm_state->angular_movement[1] = 0;
         fsm_state->angular_movement[2] = 0;
     }
+
+    /* Check if we go back to moving due to telemetry */
+    if(!ready_transition_allowed){
+      trigger_event(EV_MOVING);
+      fsm_state->flight_state = MOVING;
+      fsm_state->clock_memory = 0;
+      fsm_state->memory[0] = 0;
+      fsm_state->memory[1] = 0;
+      fsm_state->memory[2] = 0;
+      fsm_state->angular_movement[0] = 0;
+      fsm_state->angular_movement[1] = 0;
+      fsm_state->angular_movement[2] = 0;
+    }
 }
 
-static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
+static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->acceleration < 0) {
     fsm_state->memory[1]++;
   } else {
@@ -269,9 +248,6 @@ static void check_thrusting_1_phase(flight_fsm_t *fsm_state, estimation_output_t
 }
 
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-  if (osTimerIsRunning(mach_timer.timer_id)) {
-    return;
-  }
 
   if (state_data->velocity < 0) {
     fsm_state->memory[1]++;
@@ -279,38 +255,14 @@ static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *s
 
   if (fsm_state->memory[1] > APOGEE_SAFETY_COUNTER) {
     trigger_event(EV_APOGEE);
-    fsm_state->flight_state = APOGEE;
-    fsm_state->clock_memory = 0;
-    fsm_state->memory[0] = 0;
-    fsm_state->memory[1] = 0;
-    fsm_state->memory[2] = 0;
-  }
-}
-
-static void check_apogee_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-  if (state_data->velocity > PARACHUTE_DESCENT_SPEED) {
-    /* Parachute Deployed */
-    fsm_state->memory[1]++;
-  } else {
-    /* Parachute Not deployed */
-    fsm_state->memory[1] = 0;
-  }
-
-  if (fsm_state->memory[1] > PARACHUTE_SAFETY_COUNTER) {
     fsm_state->flight_state = DROGUE;
     fsm_state->clock_memory = 0;
     fsm_state->memory[0] = 0;
     fsm_state->memory[1] = 0;
     fsm_state->memory[2] = 0;
   }
-
-  //  if (fsm_state->memory[2] > BALLISTIC_SAFETY_COUNTER) {
-  //    fsm_state->flight_state = BALLISTIC;
-  //    fsm_state->clock_memory = 0;
-  //    fsm_state->memory[1] = 0;
-  //    fsm_state->memory[2] = 0;
-  //  }
 }
+
 
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
   if (state_data->height < (float)global_cats_config.config.control_settings.main_altitude) {
@@ -322,7 +274,7 @@ static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
   }
 
   if (fsm_state->memory[1] > MAIN_SAFETY_COUNTER) {
-    trigger_event(EV_POST_APOGEE);
+    trigger_event(EV_MAIN);
     fsm_state->flight_state = MAIN;
     fsm_state->clock_memory = 0;
     fsm_state->memory[0] = 0;

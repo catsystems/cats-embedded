@@ -27,8 +27,6 @@
 #define TIME_THRESHOLD_MOV_TO_READY     1000   // num iterations
 #define ALLOWED_ACC_ERROR               0.6f   // m/s^2
 #define ALLOWED_GYRO_ERROR              10.0f  // dps
-#define MOV_LIFTOFF_THRESHOLD           50.0f  // m/s^2
-#define MOV_LIFTOFF_SAFETY_COUNTER      100    // num iterations
 
 /* READY */
 #define TIME_THRESHOLD_READY_TO_MOV     500     // num iterations
@@ -44,15 +42,11 @@
 /* COASTING */
 #define APOGEE_SAFETY_COUNTER           30  // num iterations
 
-/* APOGEE */
-#define PARACHUTE_DESCENT_SPEED         (-100.0f)  // m/s
-#define PARACHUTE_SAFETY_COUNTER        50         // num iterations
-
 /* DROGUE */
-#define MAIN_SAFETY_COUNTER             10  // num iterations
+#define MAIN_SAFETY_COUNTER             30  // num iterations
 
 /* MAIN */
-#define VELOCITY_BOUND_TOUCHDOWN        4.0f  // m/s
+#define VELOCITY_BOUND_TOUCHDOWN        2.0f  // m/s
 #define TOUCHDOWN_SAFETY_COUNTER        100   // num iterations
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data, float32_t height_AGL, bool ready_transition_allowed,

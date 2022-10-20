@@ -67,7 +67,7 @@
 
     /* Soft reset kalman filter when we go from Ready to thrusting */
     /* Reset Orientation Estimate when going to thrusting */
-    if ((new_fsm_enum == THRUSTING_1) && (new_fsm_enum != old_fsm_enum)) {
+    if ((new_fsm_enum == THRUSTING) && (new_fsm_enum != old_fsm_enum)) {
       soft_reset_kalman(&filter);
       reset_orientation_filter(&orientation_filter);
     }
@@ -76,7 +76,7 @@
     /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
      * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
      * due to parachute forces. */
-    if (new_fsm_enum < APOGEE) {
+    if (new_fsm_enum < DROGUE) {
       filter.measured_acceleration = global_estimation_input.acceleration_z;
     } else {
       filter.measured_acceleration = 0;
@@ -125,7 +125,7 @@
     flight_info_t flight_info = {.height = filter.x_bar_data[0],
                                  .velocity = filter.x_bar_data[1],
                                  .acceleration = filter.measured_acceleration + filter.x_bar_data[2]};
-    if (global_flight_state.flight_state >= APOGEE) {
+    if (global_flight_state.flight_state >= DROGUE) {
       flight_info.acceleration = filter.x_bar_data[2];
     }
     record(tick_count, FLIGHT_INFO, &flight_info);

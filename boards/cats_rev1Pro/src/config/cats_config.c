@@ -58,8 +58,8 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
                                       .config.action_array[EV_APOGEE][0] = ACT_HIGH_CURRENT_ONE,
                                       .config.action_array[EV_APOGEE][1] = 1,
-                                      .config.action_array[EV_POST_APOGEE][0] = ACT_HIGH_CURRENT_TWO,
-                                      .config.action_array[EV_POST_APOGEE][1] = 1,
+                                      .config.action_array[EV_MAIN][0] = ACT_HIGH_CURRENT_TWO,
+                                      .config.action_array[EV_MAIN][1] = 1,
                                       .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
                                       .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
                                       .config.initial_servo_position[0] = 0,
@@ -99,8 +99,8 @@ void cc_defaults(bool use_default_outputs) {
   if (!use_default_outputs) {
     memset(global_cats_config.config.action_array[EV_APOGEE], 0,
            sizeof(global_cats_config.config.action_array[EV_APOGEE]));
-    memset(global_cats_config.config.action_array[EV_POST_APOGEE], 0,
-           sizeof(global_cats_config.config.action_array[EV_POST_APOGEE]));
+    memset(global_cats_config.config.action_array[EV_MAIN], 0,
+           sizeof(global_cats_config.config.action_array[EV_MAIN]));
   }
 }
 
