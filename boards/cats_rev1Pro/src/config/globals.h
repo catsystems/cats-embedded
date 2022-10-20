@@ -19,7 +19,6 @@
 #pragma once
 
 #include "drivers/buzzer.h"
-#include "drivers/sbus.h"
 #include "drivers/servo.h"
 #include "drivers/spi.h"
 #include "flash/recorder.h"
