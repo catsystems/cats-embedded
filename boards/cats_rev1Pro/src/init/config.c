@@ -105,12 +105,4 @@ static void init_timers() {
           osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
     }
   }
-
-  /* Init mach Timer */
-  mach_timer.timer_init_event = EV_LIFTOFF;
-  mach_timer.execute_event = EV_MACHTIMER;
-  mach_timer.timer_duration_ticks = global_cats_config.config.control_settings.mach_timer_duration;
-
-  /* Create mach timer */
-  mach_timer.timer_id = osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)mach_timer.execute_event, NULL);
 }

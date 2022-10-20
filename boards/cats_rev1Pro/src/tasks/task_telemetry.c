@@ -84,18 +84,16 @@ void pack_tx_msg(packed_tx_msg_t* tx_payload) {
     tx_payload->state = 0;
   } else if (global_flight_state.flight_state == READY) {
     tx_payload->state = 1;
-  } else if (global_flight_state.flight_state == THRUSTING_1) {
+  } else if (global_flight_state.flight_state == THRUSTING) {
     tx_payload->state = 2;
   } else if (global_flight_state.flight_state == COASTING) {
     tx_payload->state = 3;
-  } else if (global_flight_state.flight_state == APOGEE) {
-    tx_payload->state = 4;
   } else if (global_flight_state.flight_state == DROGUE) {
-    tx_payload->state = 5;
+    tx_payload->state = 4;
   } else if (global_flight_state.flight_state == MAIN) {
-    tx_payload->state = 6;
+    tx_payload->state = 5;
   } else if (global_flight_state.flight_state == TOUCHDOWN) {
-    tx_payload->state = 7;
+    tx_payload->state = 6;
   }
   tx_payload->timestamp = osKernelGetTickCount() / 100;
   tx_payload->altitude =   (int32_t)global_estimation_data.height;
