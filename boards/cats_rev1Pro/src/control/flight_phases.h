@@ -20,34 +20,32 @@
 
 #include "util/types.h"
 
-/* Config */
-#define SAMPLING_FREQUENCY 100
-
 /* MOVING */
-#define TIME_THRESHOLD_MOV_TO_READY     1000   // num iterations
-#define ALLOWED_ACC_ERROR               0.6f   // m/s^2
-#define ALLOWED_GYRO_ERROR              10.0f  // dps
+#define TIME_THRESHOLD_MOV_TO_READY     1000   // num iterations, imu action needs to be 0 for at least 10 seconds
+#define ALLOWED_ACC_ERROR               0.6f   // m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING -> READY
+#define ALLOWED_GYRO_ERROR              10.0f  // dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING -> READY
 
 /* READY */
-#define TIME_THRESHOLD_READY_TO_MOV     500     // num iterations
-#define LIFTOFF_SAFETY_COUNTER          10      // num iterations
-#define GYRO_SENSITIVITY                0.3f    // dps
-#define ANGLE_MOVE_MAX                  120.0f  // dps
-#define LIFTOFF_SAFETY_COUNTER_HEIGHT   100     // num iterations
-#define LIFTOFF_HEIGHT_AGL              50.0f   // m
+#define TIME_THRESHOLD_READY_TO_MOV     500     // num iterations, all 10 seconds (2 * TIME_THRESHOLD_READY_TO_MOV / SAMPLING_FREQUENCY), the integration is reset
+#define LIFTOFF_SAFETY_COUNTER          10      // num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
+#define GYRO_SENSITIVITY                0.3f    // dps, if the GYRO measurement is smaller than 0.3 dps it is not considered as movement for the transition READY -> MOVING
+#define ANGLE_MOVE_MAX                  120.0f  // degrees, if the integrated gyro is bigger than 120°, we go back to moving.
+#define LIFTOFF_SAFETY_COUNTER_HEIGHT   100     // num iterations, if the height is bigger than 50 m for 1 second, detect liftoff
+#define LIFTOFF_HEIGHT_AGL              50.0f   // m, if the height is bigger than 50 m for 1 second, detect liftoff
 
-/* THRUSTING 1 */
-#define COASTING_SAFETY_COUNTER         10  // num iterations
+/* THRUSTING */
+#define COASTING_SAFETY_COUNTER         10      // num iterations, acceleration needs to be smaller than 0 for at least 0.1 s for the transition THRUSTING -> COASTING
 
 /* COASTING */
-#define APOGEE_SAFETY_COUNTER           30  // num iterations
+#define APOGEE_SAFETY_COUNTER           30      // num iterations, velocity needs to be smaller than 0 for at least 0.3 s for the transition COASTING -> DROGUE
 
 /* DROGUE */
-#define MAIN_SAFETY_COUNTER             30  // num iterations
+#define MAIN_SAFETY_COUNTER             30      // num iterations, height needs to be smaller than userdefined for at least 0.3 s for the transition DROGUE -> MAIN
 
 /* MAIN */
-#define VELOCITY_BOUND_TOUCHDOWN        2.0f  // m/s
-#define TOUCHDOWN_SAFETY_COUNTER        100   // num iterations
+#define VELOCITY_BOUND_TOUCHDOWN        2.0f    // m/s, velocity needs to be smaller than this to detect touchdown
+#define TOUCHDOWN_SAFETY_COUNTER        100     // num iterations, for at least 1s it needs to be smaller
 
+/* Function which implements the FSM */
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data, float32_t height_AGL, bool ready_transition_allowed,
                         const control_settings_t *settings);
