@@ -239,7 +239,7 @@ static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
   }
 
   if (fsm_state->memory[1] > MAIN_SAFETY_COUNTER) {
-    trigger_event(EV_MAIN);
+    trigger_event(EV_MAIN_DEPLOYMENT);
     fsm_state->flight_state = MAIN;
     clear_fsm_memory(fsm_state);
   }
