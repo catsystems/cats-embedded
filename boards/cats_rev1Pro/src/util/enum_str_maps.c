@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char* const fsm_map[9] = {"INVALID",  "MOVING", "READY",      "THRUSTING",
-                                 "COASTING", "DROGUE",   "MAIN",        "TOUCHDOWN",  "HEHE"};
+const char* const fsm_map[9] = {"INVALID", "MOVING", "READY",     "THRUSTING", "COASTING",
+                                "DROGUE",  "MAIN",   "TOUCHDOWN", "HEHE"};
 
 const char* const event_map[9] = {
     "MOVING", "READY", "LIFTOFF", "MAX_V", "APOGEE", "MAIN_DEPLOYMENT", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
