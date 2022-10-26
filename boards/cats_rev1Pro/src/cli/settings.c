@@ -27,7 +27,6 @@
   { name, ARRAYLEN(name) }
 
 const lookup_table_entry_t lookup_tables[] = {
-    LOOKUP_TABLE_ENTRY(boot_state_map),
     LOOKUP_TABLE_ENTRY(event_map),
     LOOKUP_TABLE_ENTRY(action_map),
 #ifdef CATS_VEGA
@@ -39,8 +38,6 @@ const lookup_table_entry_t lookup_tables[] = {
 #undef LOOKUP_TABLE_ENTRY
 
 const cli_value_t value_table[] = {
-    {"boot_state", VAR_UINT32 | MODE_LOOKUP, {.lookup = {TABLE_BOOTSTATE}}, offsetof(cats_config_u, config.boot_state)},
-
     // Control
     {"main_altitude",
      VAR_UINT16,

@@ -253,7 +253,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       case MODE_BITSET: {
         int tableIndex;
         if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
-          tableIndex = TABLE_BOOTSTATE;
+          tableIndex = TABLE_EVENTS;
         } else {
           tableIndex = val->config.lookup.table_index;
         }
@@ -401,10 +401,8 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_status(const char *cmd_name, char *args) {
-  const lookup_table_entry_t *p_boot_table = &lookup_tables[TABLE_BOOTSTATE];
   const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("Mode:        %s\n", p_boot_table->values[global_cats_config.config.boot_state]);
   cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,

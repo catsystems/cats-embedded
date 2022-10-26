@@ -29,21 +29,9 @@
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10
 
-typedef enum {
-  CATS_INVALID,
-  CATS_IDLE,
-  CATS_CONFIG,
-  CATS_TIMER,
-  CATS_DROP,
-  CATS_FLIGHT,
-  CATS_HEHE = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
-} cats_boot_state;
-
 typedef struct {
   /* Needs to be in first position */
   uint32_t config_version;
-  /* State according to /concepts/v1/cats_fsm.jpg */
-  cats_boot_state boot_state;
 
   control_settings_t control_settings;
   /* A bit mask that specifies which readings to log to the flash */

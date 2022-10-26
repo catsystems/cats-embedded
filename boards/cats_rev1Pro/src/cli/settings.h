@@ -23,8 +23,7 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum { TABLE_BOOTSTATE = 0,
-               TABLE_EVENTS,
+typedef enum { TABLE_EVENTS = 0,
                TABLE_ACTIONS,
 #ifdef CATS_VEGA
                TABLE_DIRECTION,
