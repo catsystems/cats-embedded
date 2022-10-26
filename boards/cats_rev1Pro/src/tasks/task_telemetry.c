@@ -119,7 +119,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   global_arming_bool = true;
 
   /* Configure the telemetry MCU */
-  send_setting(CMD_DIRECTION, global_cats_config.config.telemetry_settings.direction);
+  send_setting(CMD_DIRECTION, TX);
   osDelay(100);
   send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
   osDelay(100);
@@ -148,10 +148,8 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (1) {
 
-    if(global_cats_config.config.telemetry_settings.direction == TX) {
-      pack_tx_msg(&tx_payload);
-      send_tx_payload((uint8_t*)&tx_payload, 16);
-    }
+    pack_tx_msg(&tx_payload);
+    send_tx_payload((uint8_t*)&tx_payload, 16);
 
     if((osKernelGetTickCount() - uart_timeout) > 60000){
       uart_timeout = osKernelGetTickCount();
