@@ -27,10 +27,6 @@ const char* const fsm_map[14] = {"INVALID",  "MOVING",      "READY",      "THRUS
                                  "COASTING", "TRANSONIC_1", "SUPERSONIC", "TRANSONIC_2", "APOGEE",
                                  "DROGUE",   "MAIN",        "TOUCHDOWN",  "HEHE"};
 
-const char* const boot_state_map[6] = {
-    "CATS_INVALID", "CATS_IDLE", "CATS_CONFIG", "CATS_TIMER", "CATS_DROP", "CATS_FLIGHT",
-};
-
 const char* const event_map[9] = {
     "MOVING", "READY", "LIFTOFF", "MAX_V", "APOGEE", "POST_APOGEE", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
 };

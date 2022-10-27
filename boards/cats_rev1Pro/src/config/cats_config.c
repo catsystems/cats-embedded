@@ -42,7 +42,6 @@
 #endif
 
 const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
-                                      .config.boot_state = CATS_FLIGHT,
                                       .config.control_settings.main_altitude = 200,
                                       .config.control_settings.liftoff_acc_threshold = 35,
                                       .config.timers[0].duration = 0,
