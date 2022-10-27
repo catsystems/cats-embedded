@@ -37,42 +37,42 @@
 #include "lfs.h"
 #endif
 
-const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
-                                      .config.control_settings.liftoff_acc_threshold = 35,
-                                      .config.control_settings.liftoff_detection_agl = 50,
-                                      .config.control_settings.main_altitude = 200,
-                                      .config.timers[0].duration = 0,
-                                      .config.timers[0].start_event = 0,
-                                      .config.timers[0].trigger_event = 0,
-                                      .config.timers[1].duration = 0,
-                                      .config.timers[1].start_event = 0,
-                                      .config.timers[1].trigger_event = 0,
-                                      .config.timers[2].duration = 0,
-                                      .config.timers[2].start_event = 0,
-                                      .config.timers[2].trigger_event = 0,
-                                      .config.timers[3].duration = 0,
-                                      .config.timers[3].start_event = 0,
-                                      .config.timers[3].trigger_event = 0,
-                                      .config.action_array[EV_READY][0] = ACT_SET_RECORDER_STATE,
-                                      .config.action_array[EV_READY][1] = REC_FILL_QUEUE,
-                                      .config.action_array[EV_LIFTOFF][0] = ACT_SET_RECORDER_STATE,
-                                      .config.action_array[EV_LIFTOFF][1] = REC_WRITE_TO_FLASH,
-                                      .config.action_array[EV_APOGEE][0] = ACT_HIGH_CURRENT_ONE,
-                                      .config.action_array[EV_APOGEE][1] = 1,
-                                      .config.action_array[EV_MAIN_DEPLOYMENT][0] = ACT_HIGH_CURRENT_TWO,
-                                      .config.action_array[EV_MAIN_DEPLOYMENT][1] = 1,
-                                      .config.action_array[EV_TOUCHDOWN][0] = ACT_SET_RECORDER_STATE,
-                                      .config.action_array[EV_TOUCHDOWN][1] = REC_OFF,
-                                      .config.initial_servo_position[0] = 0,
-                                      .config.initial_servo_position[1] = 0,
-                                      .config.rec_speed_idx = 0,
-                                      .config.rec_mask = UINT32_MAX,
+const cats_config_u DEFAULT_CONFIG = {.config = {
+                                          .config_version = CONFIG_VERSION,
+                                          .control_settings =
+                                              {
+                                                  .liftoff_acc_threshold = 35,
+                                                  .liftoff_detection_agl = 50,
+                                                  .main_altitude = 200,
+                                              },
+                                          .rec_mask = UINT32_MAX,
+                                          .timers = {},
+                                          .action_array =
+                                              {// EV_MOVING
+                                               {},
+                                               // EV_READY
+                                               {ACT_SET_RECORDER_STATE, REC_FILL_QUEUE},
+                                               // EV_LIFTOFF
+                                               {ACT_SET_RECORDER_STATE, REC_WRITE_TO_FLASH},
+                                               // EV_MAX_V
+                                               {},
+                                               // EV_APOGEE
+                                               {ACT_HIGH_CURRENT_ONE, 1},
+                                               // EV_MAIN_DEPLOYMENT
+                                               {ACT_HIGH_CURRENT_TWO, 1},
+                                               // EV_TOUCHDOWN
+                                               {ACT_SET_RECORDER_STATE, REC_OFF}},
+                                          .initial_servo_position = {0, 0},
+                                          .rec_speed_idx = 0,
 #ifdef CATS_VEGA
-                                      .config.telemetry_settings.power_level = 20,
-                                      .config.telemetry_settings.link_phrase = "",
-                                      .config.telemetry_settings.adaptive_power = OFF,
+                                          .telemetry_settings =
+                                              {
+                                                  .link_phrase = {},
+                                                  .power_level = 20,
+                                                  .adaptive_power = OFF,
+                                              },
 #endif
-};
+                                      }};
 
 cats_config_u global_cats_config = {};
 

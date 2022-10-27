@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "config/cats_config.h"
+
 extern const char *const fsm_map[9];
 extern const char *const event_map[9];
 extern const char *const action_map[17];
