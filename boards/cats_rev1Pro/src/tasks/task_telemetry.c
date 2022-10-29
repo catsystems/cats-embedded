@@ -242,7 +242,7 @@ void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length) {
     //log_info("GNSS info received: %u", gnss_data.sats);
   } else if (op_code == CMD_GNSS_TIME) {
     // log_info("GNSS time received");
-  }  else if (op_code == CMD_TEMP_INFO) {
+  } else if (op_code == CMD_TEMP_INFO) {
     memcpy(&amplifier_temperature, buffer, 4);
   } else {
     log_error("Unknown Op Code");
