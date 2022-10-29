@@ -260,8 +260,8 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   }
 
   /* If all IMUs are disabled, trust the barometer */
-  if(get_error_by_tag(CATS_ERR_FILTER_ACC)){
-      filter->R = STD_NOISE_BARO_INITIAL;
+  if (get_error_by_tag(CATS_ERR_FILTER_ACC)) {
+    filter->R = STD_NOISE_BARO_INITIAL;
   }
 
   kalman_prediction(filter);
@@ -272,5 +272,4 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   if (flight_state >= THRUSTING) {
     filter->x_bar_data[2] = filter->x_hat_data[2];
   }
-
 }

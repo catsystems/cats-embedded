@@ -21,7 +21,6 @@
 #include "cmsis_os.h"
 #include "target.h"
 
-
 typedef enum cs_type {
   LOW_ACTIVE = GPIO_PIN_RESET,
   HIGH_ACTIVE = GPIO_PIN_SET,

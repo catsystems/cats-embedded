@@ -18,10 +18,10 @@
 
 #include "util/buzzer_handler.h"
 
-#include "util/types.h"
 #include "config/globals.h"
-#include "util/error_handler.h"
 #include "control/data_processing.h"
+#include "util/error_handler.h"
+#include "util/types.h"
 
 // TODO right now this file only supports errors, should be updated to support all buzzer things
 

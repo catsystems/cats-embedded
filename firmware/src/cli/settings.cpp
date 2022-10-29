@@ -139,7 +139,9 @@ const cli_value_t value_table[] = {
      offsetof(cats_config_u, config.initial_servo_position[1])},
 
 #ifdef CATS_VEGA
-    {"tele_link_phrase", VAR_UINT8 | MODE_STRING, {.string = {4, 8}},
+    {"tele_link_phrase",
+     VAR_UINT8 | MODE_STRING,
+     {.string = {4, 8}},
      offsetof(cats_config_u, config.telemetry_settings.link_phrase)},
     {"tele_power_level",
      VAR_UINT8,

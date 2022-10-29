@@ -30,12 +30,10 @@ timestamp_t acc_time_array[10] = {0, 9000000, 9000000, 9000000, 9000000, 9000000
 float32_t acc_array[10] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
 /* DataPoints Pressure Rocket*/
-timestamp_t pressure_time_array[15] = {0,       9000000, 9000000, 9000000, 9000000,
-                                       9000000, 9000000, 9000000, 9000000, 9000000,
-                                       9000000, 9000000, 9000000, 9000000, 9000000};
-float32_t pressure_array[15] = {98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f,
-                                98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f,
-                                98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f};
+timestamp_t pressure_time_array[15] = {0,       9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000,
+                                       9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000};
+float32_t pressure_array[15] = {98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f,
+                                98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f};
 
 /* DataPoints Acceleration Rocket*/
 timestamp_t acc_rocket_time_array[3] = {20000, 21000, 9000000};
@@ -58,8 +56,10 @@ timestamp_t acc_periphas_ML_time_array[8] = {20000, 21300, 22200, 23000, 24100, 
 float32_t acc_periphas_ML_array[8] = {1.0f, 3.29f, 3.619f, 3.701f, 3.619f, 1.265f, -0.17f, 0.0f};
 
 /* DataPoints Pressure Rocket*/
-timestamp_t pressure_periphas_ML_time_array[13] = {0, 20000, 22200, 23700, 25500, 28000, 30800, 33000, 35000, 38400, 42000, 49500, 60000};
-float32_t pressure_periphas_ML_array[13] = {84556.0f, 84556.0f, 84038.49f, 83011.15f, 80886.82f, 78025.79f, 75625.68f, 74307.95f, 73517.02f, 73008.88f, 73748.94f, 78513.14f, 84556.00f};
+timestamp_t pressure_periphas_ML_time_array[13] = {0,     20000, 22200, 23700, 25500, 28000, 30800,
+                                                   33000, 35000, 38400, 42000, 49500, 60000};
+float32_t pressure_periphas_ML_array[13] = {84556.0f,  84556.0f,  84038.49f, 83011.15f, 80886.82f, 78025.79f, 75625.68f,
+                                            74307.95f, 73517.02f, 73008.88f, 73748.94f, 78513.14f, 84556.00f};
 
 SET_TASK_PARAMS(task_simulator, 512)
 
@@ -152,8 +152,6 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
       global_baro_sim[i].pressure = pressure + rand_bounds(-25, 25);
     }
 
-
-
     if (global_flight_state.flight_state == TOUCHDOWN) {
       log_raw("Simulation Successful.");
       log_set_mode(prev_log_mode);
@@ -179,10 +177,10 @@ void init_simulation_data(cats_sim_choice_e sim_choice) {
     memcpy(&pressure_time_array[0], &pressure_rocket_time_array[0], 8 * sizeof(timestamp_t));
     memcpy(&pressure_array[0], &pressure_rocket_array[0], 8 * sizeof(float32_t));
   } else if (sim_choice == SIM_PML) {
-      memcpy(&acc_time_array[0], &acc_periphas_ML_time_array[0], 8 * sizeof(timestamp_t));
-      memcpy(&acc_array[0], &acc_periphas_ML_array[0], 8 * sizeof(float32_t));
-      memcpy(&pressure_time_array[0], &pressure_periphas_ML_time_array[0], 13 * sizeof(timestamp_t));
-      memcpy(&pressure_array[0], &pressure_periphas_ML_array[0], 13 * sizeof(float32_t));
+    memcpy(&acc_time_array[0], &acc_periphas_ML_time_array[0], 8 * sizeof(timestamp_t));
+    memcpy(&acc_array[0], &acc_periphas_ML_array[0], 8 * sizeof(float32_t));
+    memcpy(&pressure_time_array[0], &pressure_periphas_ML_time_array[0], 13 * sizeof(timestamp_t));
+    memcpy(&pressure_array[0], &pressure_periphas_ML_array[0], 13 * sizeof(float32_t));
   }
 }
 

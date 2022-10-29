@@ -18,8 +18,6 @@
 
 #pragma once
 
-
-
 #include "cmsis_os.h"
 
 typedef struct {

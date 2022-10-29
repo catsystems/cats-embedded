@@ -20,7 +20,6 @@
 
 #include <cstring>
 
-
 void fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
   fifo->buf = buf;
   fifo->size = size;

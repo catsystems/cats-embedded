@@ -626,10 +626,8 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
         if (!strcmp(ptr, "MAGNETO")) filter_mask = (rec_entry_type_e)(filter_mask | MAGNETO);
         if (!strcmp(ptr, "ACCELEROMETER")) filter_mask = (rec_entry_type_e)(filter_mask | ACCELEROMETER);
         if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_INFO);
-        if (!strcmp(ptr, "ORIENTATION_INFO"))
-          filter_mask = (rec_entry_type_e)(filter_mask | ORIENTATION_INFO);
-        if (!strcmp(ptr, "FILTERED_DATA_INFO"))
-          filter_mask = (rec_entry_type_e)(filter_mask | FILTERED_DATA_INFO);
+        if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ORIENTATION_INFO);
+        if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FILTERED_DATA_INFO);
         if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_STATE);
         if (!strcmp(ptr, "EVENT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | EVENT_INFO);
         if (!strcmp(ptr, "ERROR_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ERROR_INFO);

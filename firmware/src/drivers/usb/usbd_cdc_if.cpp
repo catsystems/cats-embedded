@@ -264,7 +264,7 @@ extern "C" void TIMUsb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
 
 void CDC_Transmit_Elapsed() {
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
-  //hcdc->TxState = 0;
+  // hcdc->TxState = 0;
   if (hcdc->TxState == 0) {
     // Check usb fifo and print out to usb
     uint32_t len = stream_length(USB_SG.out);
@@ -291,8 +291,6 @@ static void TIM_Config(void) {
     /* Initialization Error */
     Error_Handler();
   }
-
-
 
   /* Configure the NVIC for TIMx */
   /* Set Interrupt Group Priority */

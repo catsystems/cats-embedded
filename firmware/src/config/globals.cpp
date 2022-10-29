@@ -85,13 +85,13 @@ const ICM20601 IMU_DEV[NUM_IMU] = {
 #elif IMU_TYPE == LSM6DSR_TYPE
 LSM6DSR IMU_DEV[NUM_IMU] = {
 #if NUM_IMU > 0
-        {
-            .spi_handle = &IMU_SPI_HANDLE,
-            .accel_range = LSM6DSR_16g,
-            .accel_odr = LSM6DSR_XL_ODR_104Hz,
-            .gyro_range = LSM6DSR_2000dps,
-            .gyro_odr = LSM6DSR_GY_ODR_104Hz,
-        },
+    {
+        .spi_handle = &IMU_SPI_HANDLE,
+        .accel_range = LSM6DSR_16g,
+        .accel_odr = LSM6DSR_XL_ODR_104Hz,
+        .gyro_range = LSM6DSR_2000dps,
+        .gyro_odr = LSM6DSR_GY_ODR_104Hz,
+    },
 #endif
 };
 #endif

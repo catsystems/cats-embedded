@@ -28,7 +28,6 @@
 
 #include "target.h"
 
-
 typedef enum {
   W25QINVALID = 0,
   W25Q10 = 1,

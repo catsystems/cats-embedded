@@ -23,8 +23,6 @@
 #include "cmsis_os.h"
 #include "trcRecorder.h"
 
-
-
 /** TRACING SECTION **/
 #if (configUSE_TRACE_FACILITY == 1)
 #define trace_print(ch, str)       vTracePrint(ch, str)

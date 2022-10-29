@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 #include <cstdint>
 #include "arm_math.h"
 

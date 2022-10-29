@@ -20,8 +20,6 @@
 
 #include "cmsis_os.h"
 
-
-
 #define SET_TASK_PARAMS(task, stack_sz)           \
   uint32_t task##_buffer[stack_sz];               \
   StaticTask_t task##_control_block;              \

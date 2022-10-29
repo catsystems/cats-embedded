@@ -88,14 +88,12 @@ static void read_baro();
       stage = READ_BARO_TEMPERATURE;
       /* For Simulator */
       if (simulation_started) {
-          for (int i = 0; i < NUM_BARO; i++) {
-              pressure[i] = global_baro_sim[i].pressure;
-          }
+        for (int i = 0; i < NUM_BARO; i++) {
+          pressure[i] = global_baro_sim[i].pressure;
+        }
       } else {
         get_temp_pres(temperature_baro, pressure);
       }
-
-
 
       /* Read and Save Barometric Data */
       for (int i = 0; i < NUM_BARO; i++) {
@@ -131,7 +129,8 @@ static void read_baro();
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
         record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
-        //log_debug("IMU_Ax %hd, IMU_Gx %hd, Baro %u", global_imu[i].acc.x, global_imu[i].gyro.x, global_baro[0].pressure);
+        // log_debug("IMU_Ax %hd, IMU_Gx %hd, Baro %u", global_imu[i].acc.x, global_imu[i].gyro.x,
+        // global_baro[0].pressure);
       }
     }
 
@@ -148,10 +147,9 @@ static void read_imu(int16_t gyroscope[3], int16_t acceleration[3], int16_t *tem
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
 #elif IMU_TYPE == LSM6DSR_TYPE
-    lsm6dsr_read_accel_raw(&IMU_DEV[id], acceleration);
-    lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyroscope);
+  lsm6dsr_read_accel_raw(&IMU_DEV[id], acceleration);
+  lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyroscope);
 #endif
-
 }
 
 static void prepare_temp() {

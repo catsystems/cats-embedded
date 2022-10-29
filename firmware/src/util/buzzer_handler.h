@@ -18,8 +18,6 @@
 
 #pragma once
 
-
-
 typedef enum {
   CATS_BUZZ_NONE = 0,
   CATS_BUZZ_BOOTUP,

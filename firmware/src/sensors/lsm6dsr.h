@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 #include "cmsis_os.h"
 #include "lsm6dsr_reg.h"
 #include "target.h"

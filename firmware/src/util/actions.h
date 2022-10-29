@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 #include <cstdint>
 
 #define NUM_ACTION_FUNCTIONS 17

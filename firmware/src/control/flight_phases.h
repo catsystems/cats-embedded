@@ -21,29 +21,53 @@
 #include "util/types.h"
 
 /* MOVING */
-#define TIME_THRESHOLD_MOV_TO_READY     1000   // num iterations, imu action needs to be 0 for at least 10 seconds
-#define ALLOWED_ACC_ERROR               0.6f   // m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING -> READY
-#define ALLOWED_GYRO_ERROR              10.0f  // dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING -> READY
+// num iterations, imu action needs to be 0 for at least 10 seconds
+#define TIME_THRESHOLD_MOV_TO_READY 1000
+
+// m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING ->
+// READY
+#define ALLOWED_ACC_ERROR 0.6f
+
+// dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING ->
+// READY
+#define ALLOWED_GYRO_ERROR 10.0f
 
 /* READY */
-#define TIME_THRESHOLD_READY_TO_MOV     500     // num iterations, all 10 seconds (2 * TIME_THRESHOLD_READY_TO_MOV / SAMPLING_FREQUENCY), the integration is reset
-#define LIFTOFF_SAFETY_COUNTER          10      // num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
-#define GYRO_SENSITIVITY                0.3f    // dps, if the GYRO measurement is smaller than 0.3 dps it is not considered as movement for the transition READY -> MOVING
-#define ANGLE_MOVE_MAX                  120.0f  // degrees, if the integrated gyro is bigger than 120°, we go back to moving.
-#define LIFTOFF_SAFETY_COUNTER_HEIGHT   100     // num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 1 second, detect liftoff
+// num iterations, all 10 seconds (2 * TIME_THRESHOLD_READY_TO_MOV / SAMPLING_FREQUENCY), the integration is reset
+#define TIME_THRESHOLD_READY_TO_MOV 500
+
+// num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
+#define LIFTOFF_SAFETY_COUNTER 10
+
+// dps, if the GYRO measurement is smaller than 0.3 dps it is not considered as movement for the transition READY ->
+// MOVING
+#define GYRO_SENSITIVITY 0.3f
+
+// degrees, if the integrated gyro is bigger than 120°, we go back to moving.
+#define ANGLE_MOVE_MAX 120.0f
+
+// num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 1 second, detect
+// liftoff
+#define LIFTOFF_SAFETY_COUNTER_HEIGHT 100
 
 /* THRUSTING */
-#define COASTING_SAFETY_COUNTER         10      // num iterations, acceleration needs to be smaller than 0 for at least 0.1 s for the transition THRUSTING -> COASTING
+// num iterations, acceleration needs to be smaller than 0 for at least 0.1 s for the transition THRUSTING -> COASTING
+#define COASTING_SAFETY_COUNTER 10
 
 /* COASTING */
-#define APOGEE_SAFETY_COUNTER           30      // num iterations, velocity needs to be smaller than 0 for at least 0.3 s for the transition COASTING -> DROGUE
+// num iterations, velocity needs to be smaller than 0 for at least 0.3 s for the transition COASTING -> DROGUE
+#define APOGEE_SAFETY_COUNTER 30
 
 /* DROGUE */
-#define MAIN_SAFETY_COUNTER             30      // num iterations, height needs to be smaller than user-defined for at least 0.3 s for the transition DROGUE -> MAIN
+// num iterations, height needs to be smaller than user-defined for at least 0.3 s for the transition DROGUE -> MAIN
+#define MAIN_SAFETY_COUNTER 30
 
 /* MAIN */
-#define VELOCITY_BOUND_TOUCHDOWN        2.0f    // m/s, velocity needs to be smaller than this to detect touchdown
-#define TOUCHDOWN_SAFETY_COUNTER        100     // num iterations, for at least 1s it needs to be smaller
+// m/s, velocity needs to be smaller than this to detect touchdown
+#define VELOCITY_BOUND_TOUCHDOWN 2.0f
+
+// num iterations, for at least 1s it needs to be smaller
+#define TOUCHDOWN_SAFETY_COUNTER 100
 
 /* Function which implements the FSM */
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,

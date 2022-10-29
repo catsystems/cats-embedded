@@ -697,7 +697,7 @@ static inline void w25qxx_write_status_register(uint8_t status_register, uint8_t
 
 w25q_status_e w25q_init(void) {
   w25q.lock = 1;
-  //while (osKernelGetTickCount() < 100) sysDelay(1);
+  // while (osKernelGetTickCount() < 100) sysDelay(1);
   HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);
   sysDelay(100);
 
