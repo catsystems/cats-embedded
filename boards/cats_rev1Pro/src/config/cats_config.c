@@ -25,10 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef CATS_VEGA
-#include "util/telemetry_reg.h"
-#endif
-
 #define CONFIG_SOURCE_EEPROM 1
 #define CONFIG_SOURCE_LFS    2
 #define CONFIG_SOURCE        CONFIG_SOURCE_LFS
@@ -72,7 +68,6 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
                                       .config.rec_mask = UINT32_MAX,
 #ifdef CATS_VEGA
                                       .config.telemetry_settings.power_level = 20,
-                                      .config.telemetry_settings.direction = TX,
                                       .config.telemetry_settings.link_phrase = "",
 #endif
 };

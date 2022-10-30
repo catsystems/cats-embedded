@@ -29,9 +29,6 @@
 const lookup_table_entry_t lookup_tables[] = {
     LOOKUP_TABLE_ENTRY(event_map),
     LOOKUP_TABLE_ENTRY(action_map),
-#ifdef CATS_VEGA
-    LOOKUP_TABLE_ENTRY(direction_map),
-#endif
     {(const char *const *)recorder_speed_map, NUM_REC_SPEEDS},
 };
 
@@ -143,7 +140,6 @@ const cli_value_t value_table[] = {
      offsetof(cats_config_u, config.telemetry_settings.link_phrase)},
     {"tele_power_level",VAR_UINT8,     {.minmax_unsigned = {16, 30}},
      offsetof(cats_config_u, config.telemetry_settings.power_level)},
-    {"tele_direction", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_DIRECTION}}, offsetof(cats_config_u, config.telemetry_settings.direction)},
 #endif
 
     {"rec_elements", VAR_UINT32, {.u32_max = UINT32_MAX}, offsetof(cats_config_u, config.rec_mask)},

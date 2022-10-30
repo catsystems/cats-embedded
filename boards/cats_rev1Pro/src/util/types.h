@@ -203,7 +203,6 @@ typedef struct {
 typedef struct {
   uint8_t link_phrase[8];
   uint8_t power_level;
-  uint8_t direction;
 } config_telemetry_t;
 #endif
 
