@@ -78,6 +78,8 @@ typedef struct {
 
 gnss_data_t gnss_data;
 
+static float amplifier_temperature;
+
 void pack_tx_msg(packed_tx_msg_t* tx_payload) {
   /* TODO add state, error, voltage and continuity information */
   if(global_flight_state.flight_state == MOVING){
@@ -210,7 +212,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
 bool check_valid_op_code(uint8_t op_code) {
   /* TODO loop over all opcodes and check if it exists */
   if (op_code == CMD_GNSS_INFO || op_code == CMD_GNSS_LOC || op_code == CMD_RX || op_code == CMD_INFO ||
-      op_code == CMD_GNSS_TIME) {
+      op_code == CMD_GNSS_TIME || op_code == CMD_TEMP_INFO) {
     return true;
   } else {
     return false;
@@ -235,7 +237,9 @@ void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length) {
     gnss_data.sats = buffer[0];
     //log_info("GNSS info received: %u", gnss_data.sats);
   } else if (op_code == CMD_GNSS_TIME) {
-    //log_info("GNSS time received");
+    // log_info("GNSS time received");
+  } else if (op_code == CMD_TEMP_INFO) {
+    memcpy(&amplifier_temperature, buffer, 4);
   } else {
     log_error("Unknown Op Code");
   }
