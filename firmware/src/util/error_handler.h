@@ -21,27 +21,28 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// clang-format off
 typedef enum {
-  CATS_ERR_OK = 0,
-  CATS_ERR_NO_CONFIG = 0x01,
-  CATS_ERR_NO_PYRO = 0x02,
-  CATS_ERR_LOG_FULL = 0x04,
-  CATS_ERR_USB_CONNECTED = 0x08,
-  CATS_ERR_BAT_LOW = 0x10,
-  CATS_ERR_BAT_CRITICAL = 0x20,
-  CATS_ERR_IMU_0 = 0x40,
-  CATS_ERR_IMU_1 = 0x80,
-  CATS_ERR_IMU_2 = 0x100,
-  CATS_ERR_BARO_0 = 0x200,
-  CATS_ERR_BARO_1 = 0x400,
-  CATS_ERR_BARO_2 = 0x800,
-  CATS_ERR_MAG = 0x1000,
-  CATS_ERR_ACC = 0x2000,
-  CATS_ERR_FILTER_ACC = 0x4000,
-  CATS_ERR_FILTER_HEIGHT = 0x8000,
-  CATS_ERR_HARD_FAULT = 0x10000,
+  CATS_ERR_OK =             0,
+  CATS_ERR_NO_CONFIG =      1 << 0,   // 0x01
+  CATS_ERR_NO_PYRO =        1 << 1,   // 0x02
+  CATS_ERR_LOG_FULL =       1 << 2,   // 0x04
+  CATS_ERR_BAT_LOW =        1 << 3,   // 0x08
+  CATS_ERR_BAT_CRITICAL =   1 << 4,   // 0x10
+  CATS_ERR_IMU_0 =          1 << 5,   // 0x20
+  CATS_ERR_IMU_1 =          1 << 6,   // 0x40
+  CATS_ERR_IMU_2 =          1 << 7,   // 0x80
+  CATS_ERR_BARO_0 =         1 << 8,   // 0x100
+  CATS_ERR_BARO_1 =         1 << 9,   // 0x200
+  CATS_ERR_BARO_2 =         1 << 10,   // 0x400
+  CATS_ERR_MAG =            1 << 11,   // 0x800
+  CATS_ERR_ACC =            1 << 12,   // 0x1000
+  CATS_ERR_FILTER_ACC =     1 << 13,   // 0x2000
+  CATS_ERR_FILTER_HEIGHT =  1 << 14,   // 0x4000
+  CATS_ERR_HARD_FAULT =     1 << 15,   // 0x8000
   CATS_ERR_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
 } cats_error_e;
+// clang-format on
 
 void add_error(cats_error_e err);
 void clear_error(cats_error_e err);
