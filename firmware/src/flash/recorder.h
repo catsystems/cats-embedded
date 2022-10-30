@@ -20,6 +20,7 @@
 
 #include "util/error_handler.h"
 #include "util/types.h"
+#include "util/gnss.h"
 
 #include "cmsis_os.h"
 #include "config/cats_config.h"
@@ -56,10 +57,11 @@ typedef enum {
   FLIGHT_INFO        = 1 << 8,   // 0x200
   ORIENTATION_INFO   = 1 << 9,   // 0x400
   FILTERED_DATA_INFO = 1 << 10,  // 0x800
-  // Sporadic recorder types, they will always be logged
+// Sporadic recorder types, they will always be logged
   FLIGHT_STATE       = 1 << 11,  // 0x1000
   EVENT_INFO         = 1 << 12,  // 0x2000
   ERROR_INFO         = 1 << 13,  // 0x4000
+  GNSS_INFO          = 1 << 14,  // 0x8000
   HEHE               = 0xFFFFFFFF,
 } rec_entry_type_e;
 // clang-format on
@@ -108,6 +110,7 @@ typedef union {
   flight_fsm_e flight_state;
   event_info_t event_info;
   error_info_t error_info;
+  gnss_position_t gnss_info;
 } rec_elem_u;
 
 typedef struct {

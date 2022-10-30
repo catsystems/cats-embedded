@@ -22,6 +22,7 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/crc.h"
+#include "util/gnss.h"
 #include "util/log.h"
 #include "util/telemetry_reg.h"
 
@@ -45,7 +46,7 @@ typedef enum {
 #define INDEX_LEN 1
 
 void send_setting(uint8_t command, uint8_t value);
-void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length);
+bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss);
 void send_link_phrase(uint8_t* phrase, uint32_t length);
 void send_tx_payload(uint8_t* payload, uint32_t length);
 bool check_valid_op_code(uint8_t op_code);
@@ -69,17 +70,9 @@ typedef struct {
   uint8_t d3;   // dummy
 } __attribute__((packed)) packed_tx_msg_t;
 
-typedef struct {
-  float lat;
-  float lon;
-  uint8_t sats;
-} gnss_data_t;
+static float amplifier_temperature = 0.0F;
 
-gnss_data_t gnss_data;
-
-static float amplifier_temperature;
-
-void pack_tx_msg(packed_tx_msg_t* tx_payload) {
+void pack_tx_msg(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload) {
   /* TODO add state, error, voltage and continuity information */
   if (global_flight_state.flight_state == MOVING) {
     tx_payload->state = 0;
@@ -96,11 +89,11 @@ void pack_tx_msg(packed_tx_msg_t* tx_payload) {
   } else if (global_flight_state.flight_state == TOUCHDOWN) {
     tx_payload->state = 6;
   }
-  tx_payload->timestamp = osKernelGetTickCount() / 100;
+  tx_payload->timestamp = ts / 100;
   tx_payload->altitude = (int32_t)global_estimation_data.height;
   tx_payload->velocity = (int16_t)global_estimation_data.velocity;
-  tx_payload->lat = (int32_t)(gnss_data.lat * 10000);
-  tx_payload->lon = (int32_t)(gnss_data.lon * 10000);
+  tx_payload->lat = (int32_t)(gnss->position.lat * 10000);
+  tx_payload->lon = (int32_t)(gnss->position.lon * 10000);
 }
 
 void parse_tx_msg(packed_tx_msg_t* rx_payload) {
@@ -139,6 +132,9 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   state_e state = STATE_OP;
   bool valid_op = false;
 
+  gnss_data_t gnss_data = {};
+  bool gnss_position_received = false;
+
   packed_tx_msg_t tx_payload = {};
 
   uint32_t uart_timeout = osKernelGetTickCount();
@@ -146,19 +142,18 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (1) {
-
-    pack_tx_msg(&tx_payload);
+    pack_tx_msg(tick_count, &gnss_data, &tx_payload);
     send_tx_payload((uint8_t*)&tx_payload, 16);
 
-    if ((osKernelGetTickCount() - uart_timeout) > 60000) {
-      uart_timeout = osKernelGetTickCount();
+    if ((tick_count - uart_timeout) > 60000) {
+      uart_timeout = tick_count;
       HAL_UART_Receive_IT(&TELEMETRY_UART_HANDLE, (uint8_t*)&uart_char, 1);
     }
 
     /* Check for data from the Telemetry MCU */
     while (stream_length(&uart_stream) > 1) {
       uint8_t ch;
-      uart_timeout = osKernelGetTickCount();
+      uart_timeout = tick_count;
       stream_read_byte(&uart_stream, &ch);
       switch (state) {
         case STATE_OP:
@@ -191,7 +186,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
           uint8_t crc;
           crc = crc8(uart_buffer, uart_index + 2);
           if (crc == ch) {
-            parse(uart_buffer[INDEX_OP], &uart_buffer[2], uart_buffer[INDEX_LEN]);
+            gnss_position_received = parse(uart_buffer[INDEX_OP], &uart_buffer[2], uart_buffer[INDEX_LEN], &gnss_data);
           }
           uart_index = 0;
           state = STATE_OP;
@@ -199,6 +194,12 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
         default:
           break;
       }
+    }
+
+    /* Log GNSS data if we received it in this iteration. */
+    if (gnss_position_received) {
+      record(tick_count, GNSS_INFO, &(gnss_data.position));
+      gnss_position_received = false;
     }
 
     tick_count += tick_update;
@@ -216,8 +217,19 @@ bool check_valid_op_code(uint8_t op_code) {
   }
 }
 
-void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length) {
-  if (length < 1) return;
+/**
+ * Parse telemetry message.
+ *
+ * @param op_code [in]
+ * @param buffer [in]
+ * @param length [in]
+ * @param gnss [out]
+ * @return
+ */
+bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) {
+  if (length < 1) return false;
+
+  bool gnss_position_received = false;
 
   if (op_code == CMD_RX) {
     packed_tx_msg_t rx_payload;
@@ -227,19 +239,24 @@ void parse(uint8_t op_code, const uint8_t* buffer, uint32_t length) {
   } else if (op_code == CMD_INFO) {
     // log_info("Link Info received");
   } else if (op_code == CMD_GNSS_LOC) {
-    memcpy(&gnss_data.lat, buffer, 4);
-    memcpy(&gnss_data.lon, &buffer[4], 4);
-    log_info("GNSS location received: %f %f", gnss_data.lat, gnss_data.lon);
+    gnss_position_received = true;
+    memcpy(&(gnss->position.lat), buffer, 4);
+    memcpy(&(gnss->position.lon), &buffer[4], 4);
+    log_info("[GNSS location]: LAT: %f, LON: %f", (double)gnss->position.lat, (double)gnss->position.lon);
   } else if (op_code == CMD_GNSS_INFO) {
-    gnss_data.sats = buffer[0];
-    log_info("GNSS info received: %u", gnss_data.sats);
+    gnss_position_received = true;
+    gnss->position.sats = buffer[0];
+    log_info("[GNSS info]: sats: %u", gnss->position.sats);
   } else if (op_code == CMD_GNSS_TIME) {
-    log_info("GNSS time received");
+    gnss->time = (gnss_time_t){.hour = buffer[2], .min = buffer[1], .sec = buffer[0]};
+    log_info("[GNSS time]: %02hu:%02hu:%02hu UTC", gnss->time.hour, gnss->time.min, gnss->time.sec);
   } else if (op_code == CMD_TEMP_INFO) {
     memcpy(&amplifier_temperature, buffer, 4);
   } else {
     log_error("Unknown Op Code");
   }
+
+  return gnss_position_received;
 }
 
 void send_link_phrase(uint8_t* phrase, uint32_t length) {

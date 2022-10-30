@@ -225,6 +225,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
     case ERROR_INFO:
       rec_elem_size += sizeof(rec_elem->u.error_info);
       break;
+    case GNSS_INFO:
+      rec_elem_size += sizeof(rec_elem->u.gnss_info);
+      break;
     default:
       log_fatal("Impossible recorder entry type!");
       break;

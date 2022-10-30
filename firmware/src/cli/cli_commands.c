@@ -631,6 +631,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
         if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask |= FLIGHT_STATE;
         if (!strcmp(ptr, "EVENT_INFO")) filter_mask |= EVENT_INFO;
         if (!strcmp(ptr, "ERROR_INFO")) filter_mask |= ERROR_INFO;
+        if (!strcmp(ptr, "GNSS_INFO")) filter_mask |= GNSS_INFO;
         ptr = strtok(NULL, " ");
       }
     } else {
