@@ -30,6 +30,7 @@ static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
 static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data);
 
 static void clear_fsm_memory(flight_fsm_t *fsm_state);
+static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigger, flight_fsm_t *fsm_state);
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,
                         float32_t height_AGL, bool ready_transition_allowed, const control_settings_t *settings) {
@@ -70,7 +71,6 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_
 
 static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data,
                                bool ready_transition_allowed) {
-
   /* Check if the IMU moved between two timesteps */
   /* Add an error bound as the IMU is noisy which is accepted */
   if ((fabsf(fsm_state->old_acc_data.x - acc_data->x) < ALLOWED_ACC_ERROR) &&
@@ -90,15 +90,18 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t
 
   /* Check if we reached the threshold */
   if ((fsm_state->memory[0] > TIME_THRESHOLD_MOV_TO_READY) && ready_transition_allowed) {
-    trigger_event(EV_READY);
-    fsm_state->flight_state = READY;
-    clear_fsm_memory(fsm_state);
+    change_state_to(READY, EV_READY, fsm_state);
   }
 }
 
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, float32_t height_AGL,
                               bool ready_transition_allowed, const control_settings_t *settings) {
   /* Check if we move from READY Back to MOVING */
+
+  /* Check if we go back to moving due to telemetry */
+  if (!ready_transition_allowed) {
+    change_state_to(MOVING, EV_MOVING, fsm_state);
+  }
 
   /* Check if the IMU moved between two timesteps */
   if ((fabsf(fsm_state->old_acc_data.x - acc_data->x) > ALLOWED_ACC_ERROR) ||
@@ -113,8 +116,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
   /* Update Time */
   fsm_state->clock_memory += 1;
 
-  /* Half of the samples have to be over the specified threshold to detect
-   * movement */
+  /* Half of the samples have to be over the specified threshold to detect movement */
   /* Periodically reset the counter */
   if (fsm_state->clock_memory > 2 * TIME_THRESHOLD_READY_TO_MOV) {
     fsm_state->clock_memory = 0;
@@ -130,9 +132,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
 
   /* Check if we reached the threshold */
   if (fsm_state->memory[0] > TIME_THRESHOLD_READY_TO_MOV) {
-    trigger_event(EV_MOVING);
-    fsm_state->flight_state = MOVING;
-    clear_fsm_memory(fsm_state);
+    change_state_to(MOVING, EV_MOVING, fsm_state);
   }
 
   /* Integrate Gyro Movement, but only if the value is big enough */
@@ -151,13 +151,11 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
   /* If the total angle is larger than the threshold, move back to moving */
   if ((fabsf(fsm_state->angular_movement[0]) + fabsf(fsm_state->angular_movement[1]) +
        fabsf(fsm_state->angular_movement[2])) > ANGLE_MOVE_MAX) {
-    trigger_event(EV_MOVING);
-    fsm_state->flight_state = MOVING;
-    clear_fsm_memory(fsm_state);
+    change_state_to(MOVING, EV_MOVING, fsm_state);
   }
 
   /* Check if we move from READY To THRUSTING */
-  /* The absolut value of the acceleration is used here to make sure that we detect liftoff */
+  /* The absolute value of the acceleration is used here to make sure that we detect liftoff */
   float32_t accel_x = acc_data->x * acc_data->x;
   float32_t accel_y = acc_data->y * acc_data->y;
   float32_t accel_z = acc_data->z * acc_data->z;
@@ -170,9 +168,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
   }
 
   if (fsm_state->memory[1] > LIFTOFF_SAFETY_COUNTER) {
-    trigger_event(EV_LIFTOFF);
-    fsm_state->flight_state = THRUSTING;
-    clear_fsm_memory(fsm_state);
+    change_state_to(THRUSTING, EV_LIFTOFF, fsm_state);
   }
 
   /* Check if we move from Ready to Thrusting based on baro data */
@@ -184,21 +180,11 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t 
 
   /* If the above condition is correct for some samples, detect liftoff */
   if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER_HEIGHT) {
-    trigger_event(EV_LIFTOFF);
-    fsm_state->flight_state = THRUSTING;
-    clear_fsm_memory(fsm_state);
-  }
-
-  /* Check if we go back to moving due to telemetry */
-  if (!ready_transition_allowed) {
-    trigger_event(EV_MOVING);
-    fsm_state->flight_state = MOVING;
-    clear_fsm_memory(fsm_state);
+    change_state_to(THRUSTING, EV_LIFTOFF, fsm_state);
   }
 }
 
 static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-
   /* When acceleration is below 0, liftoff concludes */
   if (state_data->acceleration < 0) {
     fsm_state->memory[0]++;
@@ -207,28 +193,22 @@ static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t *
   }
 
   if (fsm_state->memory[0] > COASTING_SAFETY_COUNTER) {
-    trigger_event(EV_MAX_V);
-    fsm_state->flight_state = COASTING;
-    clear_fsm_memory(fsm_state);
+    change_state_to(COASTING, EV_MAX_V, fsm_state);
   }
 }
 
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-
   /* When velocity is below 0, coasting concludes */
   if (state_data->velocity < 0) {
     fsm_state->memory[0]++;
   }
 
   if (fsm_state->memory[0] > APOGEE_SAFETY_COUNTER) {
-    trigger_event(EV_APOGEE);
-    fsm_state->flight_state = DROGUE;
-    clear_fsm_memory(fsm_state);
+    change_state_to(DROGUE, EV_APOGEE, fsm_state);
   }
 }
 
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-
   /* If the height is smaller than the configured Main height, main deployment needs to be actuated */
   if (state_data->height < (float)global_cats_config.config.control_settings.main_altitude) {
     /* Achieved Height to deploy Main */
@@ -239,14 +219,11 @@ static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t *sta
   }
 
   if (fsm_state->memory[1] > MAIN_SAFETY_COUNTER) {
-    trigger_event(EV_MAIN_DEPLOYMENT);
-    fsm_state->flight_state = MAIN;
-    clear_fsm_memory(fsm_state);
+    change_state_to(MAIN, EV_MAIN_DEPLOYMENT, fsm_state);
   }
 }
 
 static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state_data) {
-
   /* If the velocity is very small we have touchdown */
   if (fabsf(state_data->velocity) < VELOCITY_BOUND_TOUCHDOWN) {
     /* Touchdown achieved */
@@ -257,13 +234,11 @@ static void check_main_phase(flight_fsm_t *fsm_state, estimation_output_t *state
   }
 
   if (fsm_state->memory[0] > TOUCHDOWN_SAFETY_COUNTER) {
-    trigger_event(EV_TOUCHDOWN);
-    fsm_state->flight_state = TOUCHDOWN;
-    clear_fsm_memory(fsm_state);
+    change_state_to(TOUCHDOWN, EV_TOUCHDOWN, fsm_state);
   }
 }
 
-/* Function which needs to be called, every time that a state transition is done */
+/* Function that needs to be called every time that a state transition is done */
 static void clear_fsm_memory(flight_fsm_t *fsm_state) {
   fsm_state->clock_memory = 0;
   fsm_state->memory[0] = 0;
@@ -272,4 +247,10 @@ static void clear_fsm_memory(flight_fsm_t *fsm_state) {
   fsm_state->angular_movement[0] = 0;
   fsm_state->angular_movement[1] = 0;
   fsm_state->angular_movement[2] = 0;
+}
+
+static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigger, flight_fsm_t *fsm_state) {
+  trigger_event(event_to_trigger);
+  fsm_state->flight_state = new_state;
+  clear_fsm_memory(fsm_state);
 }
