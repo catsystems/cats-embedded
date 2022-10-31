@@ -18,4 +18,22 @@
 
 #pragma once
 
-[[noreturn]] void task_telemetry(void *argument);
+#include <arm_math.h>
+#include <stdint.h>
+
+typedef struct {
+  uint8_t hour;
+  uint8_t min;
+  uint8_t sec;
+} gnss_time_t;
+
+typedef struct {
+  float32_t lat;
+  float32_t lon;
+  uint8_t sats;
+} __attribute__((packed)) gnss_position_t;
+
+typedef struct {
+  gnss_position_t position;
+  gnss_time_t time;
+} gnss_data_t;

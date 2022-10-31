@@ -20,6 +20,7 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/log.h"
+#include "util/gnss.h"
 
 #include <math.h>
 
@@ -161,6 +162,9 @@ void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_v
         break;
       case ERROR_INFO:
         e.u.error_info = *((error_info_t *)rec_value);
+        break;
+      case GNSS_INFO:
+        e.u.gnss_info = *((gnss_position_t *)rec_value);
         break;
       default:
         log_fatal("Impossible recorder entry type %d!", pure_rec_type);

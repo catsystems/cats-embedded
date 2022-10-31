@@ -40,7 +40,7 @@ void dump_recording(uint16_t number) {
   char *string_buffer2 = (char *)(pvPortMalloc(STRING_BUF_SZ * sizeof(char)));
   uint8_t *read_buf = (uint8_t *)(pvPortMalloc(READ_BUF_SZ * sizeof(uint8_t)));
 
-  if (string_buffer1 == NULL || string_buffer2 == NULL || read_buf == NULL){
+  if (string_buffer1 == NULL || string_buffer2 == NULL || read_buf == NULL) {
     log_raw("Cannot allocate enough memory for flight dumping!");
     return;
   }
@@ -209,6 +209,14 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             log_raw("%lu|ERROR_INFO|%d", rec_elem.ts, rec_elem.u.error_info.error);
+          }
+        } break;
+        case GNSS_INFO: {
+          size_t elem_sz = sizeof(rec_elem.u.gnss_info);
+          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            log_raw("%lu|GNSS_INFO|%f|%f|%hu", rec_elem.ts, (double)rec_elem.u.gnss_info.lat,
+                    (double)rec_elem.u.gnss_info.lon, rec_elem.u.gnss_info.sats);
           }
         } break;
         default:
