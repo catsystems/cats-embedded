@@ -349,7 +349,7 @@ void Hmi::update(void *pvParameter){
             barUpdate = millis();
             float voltage = analogRead(18)*0.00059154929;
             if(link2.time.isUpdated()){
-                setTime(link2.time.hour(), link2.time.minute(), link2.time.second());
+                setTime(link2.time.hour(), link2.time.minute(), link2.time.second(),0,0,0);
                 adjustTime(systemConfig.config.timeZoneOffset * 3600);
                 timeValid = true;
             }

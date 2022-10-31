@@ -29,7 +29,7 @@ bool Recorder::begin(){
         return false;
     }
 
-    file.println("ts, state, errors, lat, lon, altitude, velocity, airbrake");
+    file.println("ts,state,errors,lat,lon,altitude,velocity,airbrake");
     file.sync();
 
     queue = xQueueCreate(10, sizeof(packedRXMessage));
