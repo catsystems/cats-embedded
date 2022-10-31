@@ -275,6 +275,9 @@ void parse_stats(uint16_t number) {
       log_raw("      y: %f", (double)local_flight_stats->calibration_data.gyro_calib.y);
       log_raw("      z: %f", (double)local_flight_stats->calibration_data.gyro_calib.z);
       log_raw("========================");
+      log_raw("  Liftoff Time: %02hu:%02hu:%02hu UTC", local_flight_stats->liftoff_time.hour,
+              local_flight_stats->liftoff_time.min, local_flight_stats->liftoff_time.sec);
+      log_raw("========================");
       log_raw("  Config");
       print_cats_config("cli", &(local_flight_stats->config), false);
 

@@ -135,6 +135,10 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   gnss_data_t gnss_data = {};
   bool gnss_position_received = false;
 
+  /* local fsm enum */
+  flight_fsm_e new_fsm_enum = MOVING;
+  flight_fsm_e old_fsm_enum = MOVING;
+
   packed_tx_msg_t tx_payload = {};
 
   uint32_t uart_timeout = osKernelGetTickCount();
@@ -201,6 +205,19 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
       record(tick_count, GNSS_INFO, &(gnss_data.position));
       gnss_position_received = false;
     }
+
+    new_fsm_enum = global_flight_state.flight_state;
+
+    /* Log GNSS time when changing to THRUSTING. */
+    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == READY)) {
+      /* Time will be 0 if it was never received. */
+      /* TODO: Keep track of the last timestamp when the GNSS time was received and add the difference between that and
+       * current one to the GNSS time. This should be done when the date information is also sent via UART. */
+      log_info("Logging GNSS Time: %02hu:%02hu:%02hu UTC", gnss_data.time.hour, gnss_data.time.min, gnss_data.time.sec);
+      global_flight_stats.liftoff_time = gnss_data.time;
+    }
+
+    old_fsm_enum = new_fsm_enum;
 
     tick_count += tick_update;
     osDelayUntil(tick_count);

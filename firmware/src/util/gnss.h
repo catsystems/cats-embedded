@@ -25,7 +25,7 @@ typedef struct {
   uint8_t hour;
   uint8_t min;
   uint8_t sec;
-} gnss_time_t;
+} __attribute__((packed)) gnss_time_t;
 
 typedef struct {
   float32_t lat;
