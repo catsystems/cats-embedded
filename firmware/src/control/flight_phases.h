@@ -30,8 +30,7 @@
 #define LIFTOFF_SAFETY_COUNTER          10      // num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
 #define GYRO_SENSITIVITY                0.3f    // dps, if the GYRO measurement is smaller than 0.3 dps it is not considered as movement for the transition READY -> MOVING
 #define ANGLE_MOVE_MAX                  120.0f  // degrees, if the integrated gyro is bigger than 120°, we go back to moving.
-#define LIFTOFF_SAFETY_COUNTER_HEIGHT   100     // num iterations, if the height is bigger than 50 m for 1 second, detect liftoff
-#define LIFTOFF_HEIGHT_AGL              50.0f   // m, if the height is bigger than 50 m for 1 second, detect liftoff
+#define LIFTOFF_SAFETY_COUNTER_HEIGHT   100     // num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 1 second, detect liftoff
 
 /* THRUSTING */
 #define COASTING_SAFETY_COUNTER         10      // num iterations, acceleration needs to be smaller than 0 for at least 0.1 s for the transition THRUSTING -> COASTING

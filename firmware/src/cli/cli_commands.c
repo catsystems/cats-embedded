@@ -854,6 +854,7 @@ static void print_control_config() {
   cli_print_line("\n * CONTROL SETTINGS *\n");
 
   cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
+  cli_printf("  Liftoff Detection AGL:  %u m\n", global_cats_config.config.control_settings.liftoff_detection_agl);
   cli_printf("  Main Altitude:          %u m\n", global_cats_config.config.control_settings.main_altitude);
 }
 

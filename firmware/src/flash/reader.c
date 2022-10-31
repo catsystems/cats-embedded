@@ -276,15 +276,20 @@ void parse_stats(uint16_t number) {
       log_raw("      z: %f", (double)local_flight_stats->calibration_data.gyro_calib.z);
       log_raw("========================");
       log_raw("  Config");
-      print_cats_config("cli", &(local_flight_stats->config), false);
+      if (local_flight_stats->config.config.config_version == CONFIG_VERSION) {
+        print_cats_config("cli", &(local_flight_stats->config), false);
+      } else {
+        log_raw("    Config versions do not match, cannot print -- stats file: %lu, current: %u",
+                local_flight_stats->config.config.config_version, CONFIG_VERSION);
+      }
 
-      vPortFree(local_flight_stats);
     } else {
       log_raw("Error while reading Stats %d", number);
     }
+
+    vPortFree(local_flight_stats);
+    lfs_file_close(&lfs, &curr_file);
   } else {
     log_raw("Stats %d not found!", number);
   }
-
-  lfs_file_close(&lfs, &curr_file);
 }

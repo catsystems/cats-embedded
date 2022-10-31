@@ -23,8 +23,8 @@
 #include "target.h"
 
 /* The system will reload the default config when the number changes */
-/* Config version 2 / Minor 2 */
-#define CONFIG_VERSION 203
+/* Config version 2 / Minor 4 */
+#define CONFIG_VERSION 204
 
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10

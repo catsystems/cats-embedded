@@ -36,14 +36,19 @@ const lookup_table_entry_t lookup_tables[] = {
 
 const cli_value_t value_table[] = {
     // Control
-    {"main_altitude",
-     VAR_UINT16,
-     {.minmax_unsigned = {10, 65535}},
-     offsetof(cats_config_u, config.control_settings.main_altitude)},
     {"acc_threshold",
      VAR_UINT16,
      {.minmax_unsigned = {30, 80}},
      offsetof(cats_config_u, config.control_settings.liftoff_acc_threshold)},
+    {"liftoff_detection_agl",
+     VAR_UINT16,
+     {.minmax_unsigned = {50, 100}},
+     offsetof(cats_config_u, config.control_settings.liftoff_detection_agl)},
+    {"main_altitude",
+     VAR_UINT16,
+     {.minmax_unsigned = {10, 65535}},
+     offsetof(cats_config_u, config.control_settings.main_altitude)},
+
 
     // Timers
     {"timer1_start",
