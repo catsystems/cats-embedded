@@ -19,8 +19,8 @@
 #pragma once
 
 #include "util/error_handler.h"
-#include "util/types.h"
 #include "util/gnss.h"
+#include "util/types.h"
 
 #include "cmsis_os.h"
 #include "config/cats_config.h"
@@ -141,6 +141,7 @@ typedef struct {
   calibration_data_t calibration_data;
   float32_t height_0;
 
+  gnss_time_t liftoff_time;
 } flight_stats_t;
 
 /** Exported Variables **/

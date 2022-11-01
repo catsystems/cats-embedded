@@ -39,7 +39,7 @@
 #define APOGEE_SAFETY_COUNTER           30      // num iterations, velocity needs to be smaller than 0 for at least 0.3 s for the transition COASTING -> DROGUE
 
 /* DROGUE */
-#define MAIN_SAFETY_COUNTER             30      // num iterations, height needs to be smaller than userdefined for at least 0.3 s for the transition DROGUE -> MAIN
+#define MAIN_SAFETY_COUNTER             30      // num iterations, height needs to be smaller than user-defined for at least 0.3 s for the transition DROGUE -> MAIN
 
 /* MAIN */
 #define VELOCITY_BOUND_TOUCHDOWN        2.0f    // m/s, velocity needs to be smaller than this to detect touchdown
