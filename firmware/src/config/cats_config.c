@@ -70,6 +70,7 @@ const cats_config_u DEFAULT_CONFIG = {.config.config_version = CONFIG_VERSION,
 #ifdef CATS_VEGA
                                       .config.telemetry_settings.power_level = 20,
                                       .config.telemetry_settings.link_phrase = "",
+                                      .config.telemetry_settings.adaptive_power = OFF,
 #endif
 };
 

@@ -25,6 +25,9 @@
 
 typedef enum { TABLE_EVENTS = 0,
                TABLE_ACTIONS,
+#ifdef CATS_VEGA
+               TABLE_POWER,
+#endif
                TABLE_SPEEDS } lookup_table_index_e;
 
 typedef struct {
