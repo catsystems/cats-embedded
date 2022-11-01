@@ -42,8 +42,8 @@ typedef enum {
   STATE_CRC,
 } state_e;
 
-#define INDEX_OP  0
-#define INDEX_LEN 1
+#define INDEX_OP       0
+#define INDEX_LEN      1
 #define TELE_MAX_POWER 30
 
 void send_setting(uint8_t command, uint8_t value);
@@ -219,7 +219,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
     }
 
     /* Go to high power mode if adaptive power is enabled */
-    if(global_cats_config.config.telemetry_settings.adaptive_power == 1){
+    if (global_cats_config.config.telemetry_settings.adaptive_power == ON) {
       if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == THRUSTING)) {
         send_setting(CMD_POWER_LEVEL, TELE_MAX_POWER);
       }
@@ -227,7 +227,6 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
         send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
       }
     }
-
 
     old_fsm_enum = new_fsm_enum;
 
