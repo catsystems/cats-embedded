@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "comm/fifo.h"
 
@@ -32,6 +32,10 @@ typedef struct {
   /* Timeout after which the stream will stop trying to read from the fifo. */
   uint32_t timeout_msec;
 } stream_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Initialize a stream with a fifo and timeout.
@@ -79,3 +83,7 @@ bool stream_read(const stream_t *stream, uint8_t *data, uint32_t len);
  * @return
  */
 bool stream_write(const stream_t *stream, const uint8_t *data, uint32_t len);
+
+#ifdef __cplusplus
+}
+#endif

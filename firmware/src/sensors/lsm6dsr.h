@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "cmsis_os.h"
 #include "lsm6dsr_reg.h"
 #include "target.h"
-#include <stdbool.h>
 
 typedef struct lsm6dsr_dev {
   // Hardware Configuration
