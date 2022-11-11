@@ -41,7 +41,7 @@
     /* Check Flight Phases */
     /* Todo: Check for global arming trigger */
     check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data,
-                       global_estimation_input.height_AGL, true, &settings);
+                       global_estimation_input.height_AGL, global_arming_bool, &settings);
 
     if (global_flight_state.state_changed) {
       log_error("State Changed FlightFSM to %s", fsm_map[global_flight_state.flight_state]);
