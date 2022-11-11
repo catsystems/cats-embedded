@@ -241,7 +241,7 @@ float32_t R_interpolation(float32_t velocity) {
 }
 
 void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
-  /* Update imu trust value based on flight phase */
+  /* Update IMU trust value based on flight phase */
   switch (flight_state) {
     case READY:
       filter->R = STD_NOISE_BARO_INITIAL;
@@ -259,7 +259,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
       break;
   }
 
-  /* If all IMU's are disabled, trust the barometer */
+  /* If all IMUs are disabled, trust the barometer */
   if(get_error_by_tag(CATS_ERR_FILTER_ACC)){
       filter->R = STD_NOISE_BARO_INITIAL;
   }
