@@ -195,10 +195,16 @@ typedef struct {
   int16_t arg;
 } config_action_t;
 
+typedef enum {
+  OFF,
+  ON
+} adaptive_power_e;
+
 #ifdef CATS_VEGA
 typedef struct {
   uint8_t link_phrase[8];
   uint8_t power_level;
+  adaptive_power_e adaptive_power;
 } config_telemetry_t;
 #endif
 

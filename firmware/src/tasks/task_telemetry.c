@@ -42,8 +42,9 @@ typedef enum {
   STATE_CRC,
 } state_e;
 
-#define INDEX_OP  0
-#define INDEX_LEN 1
+#define INDEX_OP       0
+#define INDEX_LEN      1
+#define TELE_MAX_POWER 30
 
 void send_setting(uint8_t command, uint8_t value);
 bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss);
@@ -209,12 +210,22 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
     new_fsm_enum = global_flight_state.flight_state;
 
     /* Log GNSS time when changing to THRUSTING. */
-    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == READY)) {
+    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == THRUSTING)) {
       /* Time will be 0 if it was never received. */
       /* TODO: Keep track of the last timestamp when the GNSS time was received and add the difference between that and
        * current one to the GNSS time. This should be done when the date information is also sent via UART. */
       log_info("Logging GNSS Time: %02hu:%02hu:%02hu UTC", gnss_data.time.hour, gnss_data.time.min, gnss_data.time.sec);
       global_flight_stats.liftoff_time = gnss_data.time;
+    }
+
+    /* Go to high power mode if adaptive power is enabled */
+    if (global_cats_config.config.telemetry_settings.adaptive_power == ON) {
+      if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == THRUSTING)) {
+        send_setting(CMD_POWER_LEVEL, TELE_MAX_POWER);
+      }
+      if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == TOUCHDOWN)) {
+        send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+      }
     }
 
     old_fsm_enum = new_fsm_enum;

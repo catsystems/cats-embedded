@@ -22,6 +22,10 @@ extern const char *const fsm_map[9];
 extern const char *const event_map[9];
 extern const char *const action_map[17];
 
+#ifdef CATS_VEGA
+extern const char *const on_off_map[2];
+#endif
+
 extern char *recorder_speed_map[NUM_REC_SPEEDS];
 
 void init_recorder_speed_map();
