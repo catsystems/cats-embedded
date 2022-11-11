@@ -241,7 +241,7 @@ float32_t R_interpolation(float32_t velocity) {
 }
 
 void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
-  /* Update R Value */
+  /* Update IMU trust value based on flight phase */
   switch (flight_state) {
     case READY:
       filter->R = STD_NOISE_BARO_INITIAL;
@@ -259,34 +259,18 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
       break;
   }
 
-  /* if all ACCELS have been eliminated, only work with the BARO */
-  /* Meaning that the prediction step is only done if an accel is available */
-  if (get_error_by_tag(CATS_ERR_FILTER_ACC)) {
-    memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
-    memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
-  } else {
-    /* After apogee an acceleration based state estimation does not work, so disable the state estimation */
-    if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT) && (flight_state >= DROGUE)) {
-      memcpy(filter->x_hat_data, filter->x_bar_data, sizeof(filter->x_bar_data));
-      memcpy(filter->P_hat_data, filter->P_bar_data, sizeof(filter->P_bar_data));
-    } else {
-      kalman_prediction(filter);
-    }
+  /* If all IMUs are disabled, trust the barometer */
+  if(get_error_by_tag(CATS_ERR_FILTER_ACC)){
+      filter->R = STD_NOISE_BARO_INITIAL;
   }
 
-  /* if all BAROS have been eliminated, only work with the ACCEL */
-  /* Meaning that the update step is only done if a baro is available */
-  if (get_error_by_tag(CATS_ERR_FILTER_HEIGHT)) {
-    memcpy(filter->x_bar_data, filter->x_hat_data, sizeof(filter->x_hat_data));
-    memcpy(filter->P_bar_data, filter->P_hat_data, sizeof(filter->P_hat_data));
-  } else {
-    kalman_update(filter);
-  }
+  kalman_prediction(filter);
+
+  kalman_update(filter);
 
   /* Do not update offset estimation if we took off */
   if (flight_state >= THRUSTING) {
     filter->x_bar_data[2] = filter->x_hat_data[2];
   }
 
-  /* If both are eliminated, the state estimation is just stuck. It doesn't change any values anymore. */
 }
