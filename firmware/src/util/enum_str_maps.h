@@ -23,7 +23,7 @@ extern const char *const event_map[9];
 extern const char *const action_map[17];
 
 #ifdef CATS_VEGA
-extern const char* const power_map[2];
+extern const char *const on_off_map[2];
 #endif
 
 extern char *recorder_speed_map[NUM_REC_SPEEDS];

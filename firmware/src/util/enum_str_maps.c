@@ -38,7 +38,10 @@ const char* const action_map[17] = {
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
 
 #ifdef CATS_VEGA
-const char* const power_map[2] = { "OFF", "ON", };
+const char* const on_off_map[2] = {
+    "OFF",
+    "ON",
+};
 #endif
 
 void init_recorder_speed_map() {
