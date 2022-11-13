@@ -126,7 +126,6 @@ file(GLOB_RECURSE SOURCES
         "lib/LittleFS/*.*"
         "lib/Tracing/*.*"
         "target/${CATS_TARGET}/*.*"
-        "target/${CATS_TARGET}/target.c"
         "src/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/target/${CATS_TARGET}/${FLASH_LD})

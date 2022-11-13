@@ -171,8 +171,8 @@ void lsm6dsr_read_gyro_raw(LSM6DSR *dev, int16_t *gyro){
 
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 2);
-  HAL_SPI_Transmit(handle, (uint8_t *)bufp, len, 2);
+  HAL_SPI_Transmit((SPI_HandleTypeDef*)(handle), &reg, 1, 2);
+  HAL_SPI_Transmit((SPI_HandleTypeDef*)(handle), (uint8_t *)bufp, len, 2);
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_SET);
   return 0;
 }
@@ -180,8 +180,8 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, ui
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
   reg |= 0x80;
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 5);
-  HAL_SPI_Receive(handle, bufp, len, 5);
+  HAL_SPI_Transmit((SPI_HandleTypeDef*)(handle), &reg, 1, 5);
+  HAL_SPI_Receive((SPI_HandleTypeDef*)(handle), bufp, len, 5);
   HAL_GPIO_WritePin(CS_IMU1_GPIO_Port, CS_IMU1_Pin, GPIO_PIN_SET);
   return 0;
 }

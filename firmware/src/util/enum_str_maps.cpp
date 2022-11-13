@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "util/enum_str_maps.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "util/log.h"

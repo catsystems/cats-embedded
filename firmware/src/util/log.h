@@ -46,6 +46,7 @@ typedef enum { LOG_MODE_NONE, LOG_MODE_DEFAULT, LOG_MODE_SIM } log_mode_e;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 void log_set_level(int level);
 void log_set_mode(log_mode_e mode);
 log_mode_e log_get_mode();

@@ -76,7 +76,7 @@ static void create_event_map() {
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
         if (cc_get_action((cats_event_e)(ev_idx), act_idx, &action) == true) {
-          event_action_map[ev_idx].action_list[act_idx].action = action.action_idx;
+          event_action_map[ev_idx].action_list[act_idx].action = static_cast<action_function_e>(action.action_idx);
           event_action_map[ev_idx].action_list[act_idx].action_arg = action.arg;
         } else {
           // If we cannot find the action in the config, set the num of actions to the last successfully found action

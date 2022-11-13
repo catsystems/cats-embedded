@@ -109,7 +109,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
 [[noreturn]] void task_telemetry(__attribute__((unused)) void* argument) {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
-  global_arming_bool = true;
+  // global_arming_bool = true;
 
   /* Configure the telemetry MCU */
   send_setting(CMD_DIRECTION, TX);

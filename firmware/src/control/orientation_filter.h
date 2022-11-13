@@ -21,18 +21,14 @@
 #include "util/types.h"
 
 typedef struct {
-    float32_t gyro_data[4];
-    float32_t estimate_data[4];
-    float32_t t_sampl;
-    arm_matrix_instance_f32 gyro;
-    arm_matrix_instance_f32 estimate;
+  float32_t gyro_data[4];
+  float32_t estimate_data[4];
+  float32_t t_sampl;
+  arm_matrix_instance_f32 gyro;
+  arm_matrix_instance_f32 estimate;
 } orientation_filter_t;
 
 /* Filter Functions */
 void init_orientation_filter(orientation_filter_t* filter);
 void reset_orientation_filter(orientation_filter_t* filter);
 void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_vel);
-
-
-
-
