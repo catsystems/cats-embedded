@@ -42,7 +42,7 @@ void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
     /* Toggle the red LED. */
     HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 
-    if (hcdc != NULL) {
+    if (hcdc != nullptr) {
       /* Force the TxState to 0 because someone might have been writing to the USB before, but we don't care anymore. */
       hcdc->TxState = 0;
       CDC_Transmit_FS((uint8_t *)print_buf, msg_len);

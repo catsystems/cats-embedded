@@ -145,6 +145,6 @@ static void check_high_current_channels() {
 }
 
 static void init_communication() {
-  osThreadNew(task_usb_communicator, NULL, &task_usb_communicator_attributes);
+  osThreadNew(task_usb_communicator, nullptr, &task_usb_communicator_attributes);
   usb_communication_complete = true;
 }

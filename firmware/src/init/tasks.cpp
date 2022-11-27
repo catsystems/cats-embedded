@@ -59,27 +59,27 @@ void init_tasks() {
 #endif
 
   // TODO: Check rec_queue for validity here
-  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), NULL);
-  rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), NULL);
-  event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), NULL);
+  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
+  rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
+  event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
 #if (configUSE_TRACE_FACILITY == 1)
   vTraceSetQueueName(rec_queue, "Recorder Queue");
 #endif
 
-  osThreadNew(task_recorder, NULL, &task_recorder_attributes);
+  osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
 
-  osThreadNew(task_sensor_read, NULL, &task_sensor_read_attributes);
+  osThreadNew(task_sensor_read, nullptr, &task_sensor_read_attributes);
 
-  osThreadNew(task_preprocessing, NULL, &task_preprocessing_attributes);
+  osThreadNew(task_preprocessing, nullptr, &task_preprocessing_attributes);
 
-  osThreadNew(task_flight_fsm, NULL, &task_flight_fsm_attributes);
+  osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
-  osThreadNew(task_peripherals, NULL, &task_peripherals_attributes);
+  osThreadNew(task_peripherals, nullptr, &task_peripherals_attributes);
 
-  osThreadNew(task_state_est, NULL, &task_state_est_attributes);
+  osThreadNew(task_state_est, nullptr, &task_state_est_attributes);
 
-  osThreadNew(task_health_monitor, NULL, &task_health_monitor_attributes);
+  osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
 #ifdef CATS_VEGA
-  osThreadNew(task_telemetry, NULL, &task_telemetry_attributes);
+  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
 #endif
 }

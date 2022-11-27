@@ -209,7 +209,7 @@ uint16_t cc_get_num_actions(cats_event_e event) {
  * @return
  */
 bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action) {
-  if ((action == NULL) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
+  if ((action == nullptr) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
 
   int16_t idx = global_cats_config.config.action_array[event][act_idx * 2];
   int16_t arg = global_cats_config.config.action_array[event][act_idx * 2 + 1];

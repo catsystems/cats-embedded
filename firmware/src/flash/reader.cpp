@@ -40,7 +40,7 @@ void dump_recording(uint16_t number) {
   char *string_buffer2 = (char *)(pvPortMalloc(STRING_BUF_SZ * sizeof(char)));
   uint8_t *read_buf = (uint8_t *)(pvPortMalloc(READ_BUF_SZ * sizeof(uint8_t)));
 
-  if (string_buffer1 == NULL || string_buffer2 == NULL || read_buf == NULL) {
+  if (string_buffer1 == nullptr || string_buffer2 == nullptr || read_buf == nullptr) {
     log_raw("Cannot allocate enough memory for flight dumping!");
     return;
   }
@@ -246,7 +246,7 @@ void parse_stats(uint16_t number) {
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
     flight_stats_t *local_flight_stats = (flight_stats_t *)(pvPortMalloc(sizeof(flight_stats_t)));
 
-    if (local_flight_stats == NULL) {
+    if (local_flight_stats == nullptr) {
       log_raw("Could not allocate enough memory for flight stats readout.");
       return;
     }

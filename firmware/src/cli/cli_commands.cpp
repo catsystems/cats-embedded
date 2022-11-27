@@ -75,33 +75,33 @@ static void cli_cmd_start_simulation(const char *cmd_name, char *args);
 
 /* List of CLI commands; should be sorted in alphabetical order. */
 const clicmd_t cmd_table[] = {
-    CLI_COMMAND_DEF("bl", "reset into bootloader", NULL, cli_cmd_bl),
-    CLI_COMMAND_DEF("cd", "change current working directory", NULL, cli_cmd_cd),
-    CLI_COMMAND_DEF("config", "print the flight config", NULL, cli_cmd_config),
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cli_cmd_defaults),
-    CLI_COMMAND_DEF("dump", "Dump configuration", NULL, cli_cmd_dump),
-    CLI_COMMAND_DEF("flash_erase", "erase the flash", NULL, cli_cmd_erase_flash),
-    CLI_COMMAND_DEF("flash_test", "test the flash", NULL, cli_cmd_flash_test),
-    CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", NULL, cli_cmd_flash_write),
-    CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", NULL, cli_cmd_flash_stop),
+    CLI_COMMAND_DEF("bl", "reset into bootloader", nullptr, cli_cmd_bl),
+    CLI_COMMAND_DEF("cd", "change current working directory", nullptr, cli_cmd_cd),
+    CLI_COMMAND_DEF("config", "print the flight config", nullptr, cli_cmd_config),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", nullptr, cli_cmd_defaults),
+    CLI_COMMAND_DEF("dump", "Dump configuration", nullptr, cli_cmd_dump),
+    CLI_COMMAND_DEF("flash_erase", "erase the flash", nullptr, cli_cmd_erase_flash),
+    CLI_COMMAND_DEF("flash_test", "test the flash", nullptr, cli_cmd_flash_test),
+    CLI_COMMAND_DEF("flash_start_write", "set recorder state to REC_WRITE_TO_FLASH", nullptr, cli_cmd_flash_write),
+    CLI_COMMAND_DEF("flash_stop_write", "set recorder state to REC_FILL_QUEUE", nullptr, cli_cmd_flash_stop),
     CLI_COMMAND_DEF("flight_dump", "print a specific flight", "<flight_number>", cli_cmd_dump_flight),
     CLI_COMMAND_DEF("flight_parse", "print a specific flight", "<flight_number>", cli_cmd_parse_flight),
     CLI_COMMAND_DEF("get", "get variable value", "[cmd_name]", cli_cmd_get),
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cli_cmd_help),
-    CLI_COMMAND_DEF("lfs_format", "reformat lfs", NULL, cli_cmd_lfs_format),
-    CLI_COMMAND_DEF("log_enable", "enable the logging output", NULL, cli_cmd_log_enable),
-    CLI_COMMAND_DEF("ls", "list all files in current working directory", NULL, cli_cmd_ls),
-    CLI_COMMAND_DEF("reboot", "reboot without saving", NULL, cli_cmd_reboot),
-    CLI_COMMAND_DEF("rec_info", "get the info about flash", NULL, cli_cmd_rec_info),
+    CLI_COMMAND_DEF("lfs_format", "reformat lfs", nullptr, cli_cmd_lfs_format),
+    CLI_COMMAND_DEF("log_enable", "enable the logging output", nullptr, cli_cmd_log_enable),
+    CLI_COMMAND_DEF("ls", "list all files in current working directory", nullptr, cli_cmd_ls),
+    CLI_COMMAND_DEF("reboot", "reboot without saving", nullptr, cli_cmd_reboot),
+    CLI_COMMAND_DEF("rec_info", "get the info about flash", nullptr, cli_cmd_rec_info),
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
-    CLI_COMMAND_DEF("save", "save configuration", NULL, cli_cmd_save),
+    CLI_COMMAND_DEF("save", "save configuration", nullptr, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
 #ifdef CATS_DEBUG
     CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
 #endif
     CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
-    CLI_COMMAND_DEF("status", "show status", NULL, cli_cmd_status),
-    CLI_COMMAND_DEF("version", "show version", NULL, cli_cmd_version),
+    CLI_COMMAND_DEF("status", "show status", nullptr, cli_cmd_status),
+    CLI_COMMAND_DEF("version", "show version", nullptr, cli_cmd_version),
 };
 
 const size_t NUM_CLI_COMMANDS = sizeof cmd_table / sizeof cmd_table[0];
@@ -207,7 +207,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
     print_cats_config(cmd_name, &global_cats_config, len);
 
-  } else if ((eqptr = strstr(args, "=")) != NULL) {
+  } else if ((eqptr = strstr(args, "=")) != nullptr) {
     // has equals
 
     uint8_t variable_name_length = get_word_length(args, eqptr);
@@ -228,7 +228,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     switch (val->type & VALUE_MODE_MASK) {
       case MODE_DIRECT: {
         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-          uint32_t value = strtoul(eqptr, NULL, 10);
+          uint32_t value = strtoul(eqptr, nullptr, 10);
 
           if (value <= val->config.u32_max) {
             cli_set_var(val, value);
@@ -273,7 +273,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
         char *valPtr = eqptr;
 
         int i = 0;
-        while (i < array_length && valPtr != NULL) {
+        while (i < array_length && valPtr != nullptr) {
           // skip spaces
           valPtr = skip_space(valPtr);
 
@@ -320,7 +320,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
               // fetch data pointer
               uint32_t *data = (uint32_t *)var_ptr + i;
               // store value
-              *data = (uint32_t)strtoul((const char *)valPtr, NULL, 10);
+              *data = (uint32_t)strtoul((const char *)valPtr, nullptr, 10);
             }
 
             break;
@@ -361,7 +361,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     if (value_changed) {
       cli_printf("%s set to ", val->name);
       cli_print_var(cmd_name, &global_cats_config, val, 0);
-      if (val->cb != NULL) {
+      if (val->cb != nullptr) {
         val->cb(val);
       }
     } else {
@@ -435,7 +435,7 @@ static void cli_cmd_version(const char *cmd_name, char *args) {
 static void cli_cmd_log_enable(const char *cmd_name, char *args) { log_enable(); }
 
 static void cli_cmd_ls(const char *cmd_name, char *args) {
-  if (args == NULL) {
+  if (args == nullptr) {
     lfs_ls(cwd);
   } else {
     uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
@@ -454,12 +454,12 @@ static void cli_cmd_ls(const char *cmd_name, char *args) {
 
 static void cli_cmd_cd(const char *cmd_name, char *args) {
   /* TODO - check if a directory actually exists */
-  if (args == NULL || strcmp(args, "/") == 0) {
+  if (args == nullptr || strcmp(args, "/") == 0) {
     strncpy(cwd, "/", sizeof(cwd));
   } else if (strcmp(args, "..") == 0) {
     /* Return one lvl back by clearing everything after the last path separator. */
     const char *last_path_sep = strrchr(cwd, '/');
-    if (last_path_sep != NULL) {
+    if (last_path_sep != nullptr) {
       uint32_t last_path_sep_loc = last_path_sep - cwd;
       cwd[last_path_sep_loc + 1] = '\0';
     }
@@ -501,7 +501,7 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_rm(const char *cmd_name, char *args) {
-  if (args != NULL) {
+  if (args != nullptr) {
     /* +1 for the path separator (/) */
     uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
     if (full_path_len > LFS_NAME_MAX) {
@@ -562,7 +562,7 @@ static void cli_cmd_rec_info(const char *cmd_name, char *args) {
  * @return
  */
 static int32_t get_flight_idx(const char *log_idx_arg) {
-  if (log_idx_arg == NULL) {
+  if (log_idx_arg == nullptr) {
     cli_print_line("\nArgument not provided!");
     return -1;
   }
@@ -616,11 +616,11 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
   }
 
   /* Read filter command */
-  ptr = strtok(NULL, " ");
-  if (ptr != NULL) {
+  ptr = strtok(nullptr, " ");
+  if (ptr != nullptr) {
     if (!strcmp(ptr, "--filter")) {
       /*Read filter types */
-      while (ptr != NULL) {
+      while (ptr != nullptr) {
         if (!strcmp(ptr, "IMU")) filter_mask = (rec_entry_type_e)(filter_mask | IMU);
         if (!strcmp(ptr, "BARO")) filter_mask = (rec_entry_type_e)(filter_mask | BARO);
         if (!strcmp(ptr, "MAGNETO")) filter_mask = (rec_entry_type_e)(filter_mask | MAGNETO);
@@ -634,7 +634,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
         if (!strcmp(ptr, "EVENT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | EVENT_INFO);
         if (!strcmp(ptr, "ERROR_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ERROR_INFO);
         if (!strcmp(ptr, "GNSS_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | GNSS_INFO);
-        ptr = strtok(NULL, " ");
+        ptr = strtok(nullptr, " ");
       }
     } else {
       cli_print_linef("\nBad option: %s!", ptr);
