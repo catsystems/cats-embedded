@@ -29,8 +29,8 @@
 #include "util/battery.h"
 #include "util/log.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #ifdef CATS_DEBUG
 #include "tasks/task_simulator.h"
 #endif

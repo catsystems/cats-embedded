@@ -21,8 +21,8 @@
 #include "config/globals.h"
 #include "util/log.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 const char* const fsm_map[9] = {"INVALID", "MOVING", "READY",     "THRUSTING", "COASTING",
                                 "DROGUE",  "MAIN",   "TOUCHDOWN", "HEHE"};

@@ -18,6 +18,6 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 uint8_t crc8(const uint8_t *buf, uint32_t size);

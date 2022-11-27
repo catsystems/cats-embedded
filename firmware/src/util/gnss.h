@@ -19,7 +19,7 @@
 #pragma once
 
 #include <arm_math.h>
-#include <stdint.h>
+#include <cstdint>
 
 typedef struct {
   uint8_t hour;

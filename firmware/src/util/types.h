@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+
+#include <cstdint>
 #include "target.h"
 
 #include "arm_math.h"

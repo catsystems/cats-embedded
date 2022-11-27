@@ -23,7 +23,7 @@
 #include "cmsis_os.h"
 #include "trcRecorder.h"
 
-#include <stdbool.h>
+
 
 /** TRACING SECTION **/
 #if (configUSE_TRACE_FACILITY == 1)

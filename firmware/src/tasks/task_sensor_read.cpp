@@ -30,7 +30,7 @@
 #include "sensors/ms5607.h"
 #include "util/log.h"
 
-#include <string.h>
+#include <cstring>
 
 /** Private Constants **/
 enum {

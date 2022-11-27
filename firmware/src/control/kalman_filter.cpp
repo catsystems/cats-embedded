@@ -18,8 +18,8 @@
 
 #include "control/kalman_filter.h"
 #include <arm_neon.h>
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 #include "cmsis_os.h"
 #include "util/error_handler.h"
 

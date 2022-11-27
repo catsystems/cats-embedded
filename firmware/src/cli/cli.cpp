@@ -19,10 +19,10 @@
 
 #include "cli/cli.h"
 
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
 #include "cli/cli_commands.h"
 #include "comm/stream_group.h"

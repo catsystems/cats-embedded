@@ -21,7 +21,7 @@
 #include "cli/cli.h"
 #include "util/enum_str_maps.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #define LOOKUP_TABLE_ENTRY(name) \
   { name, ARRAYLEN(name) }

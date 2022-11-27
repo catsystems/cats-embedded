@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 
-#include <stdbool.h>
+
 
 #define SET_TASK_PARAMS(task, stack_sz)           \
   uint32_t task##_buffer[stack_sz];               \

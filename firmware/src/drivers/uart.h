@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <cstdint>
 #include "stm32f4xx.h"
 
 typedef struct uart_bus {
