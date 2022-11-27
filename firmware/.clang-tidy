@@ -1,0 +1,19 @@
+Checks: >
+  llvm-*,
+  bugprone-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-*
+
+# Example for future CheckOptions configuration
+#CheckOptions:
+#  - key: bugprone-argument-comment.StrictMode
+#    value: 1
+
+FormatStyle: 'file'

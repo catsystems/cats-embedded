@@ -335,7 +335,7 @@ void send_tx_payload(uint8_t* payload, uint32_t length) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
+extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   if (huart == &TELEMETRY_UART_HANDLE) {
     uint8_t tmp = uart_char;
     HAL_UART_Receive_IT(&TELEMETRY_UART_HANDLE, &uart_char, 1);

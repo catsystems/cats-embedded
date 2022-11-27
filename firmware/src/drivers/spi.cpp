@@ -62,7 +62,7 @@ void spi_init(SPI_BUS *bus) {
   return 1;
 }
 
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
   for (int i = 0; i < instance_count; i++) {
     if (buses[i]->busy) {
       HAL_GPIO_WritePin(buses[i]->cs_port, buses[i]->cs_pin, (GPIO_PinState)(!buses[i]->cs_type));
@@ -71,7 +71,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
   }
 }
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+extern "C" void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
   for (int i = 0; i < instance_count; i++) {
     if (buses[i]->busy) {
       HAL_GPIO_WritePin(buses[i]->cs_port, buses[i]->cs_pin, (GPIO_PinState)(!buses[i]->cs_type));
