@@ -23,7 +23,7 @@ jobs:
 
     - name: Configure CMake
       working-directory: ./firmware
-      run: cmake -B build -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE="cmake/arm-gcc-cortex-m4.cmake" 
+      run: cmake -B build -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} 
 
     - name: Build
       working-directory: ./firmware
