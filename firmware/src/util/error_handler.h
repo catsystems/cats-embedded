@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 #include <cstdint>
 
 // clang-format off

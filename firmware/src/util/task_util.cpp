@@ -19,8 +19,6 @@
 #include "util/task_util.h"
 #include "target.h"
 
-
-
 volatile bool rtos_started = false;
 
 void sysDelay(uint32_t delay) {

@@ -29,7 +29,7 @@ void check_sensors(sensor_elimination_t *elimination) {
   /* Accelerometers */
   for (uint8_t i = 0; i < NUM_ACCELEROMETER; i++) {
     status = (cats_error_e)(check_sensor_bounds(elimination, i, &acc_info[NUM_IMU + i]) |
-                                       check_sensor_freezing(elimination, i, &acc_info[NUM_IMU + i]));
+                            check_sensor_freezing(elimination, i, &acc_info[NUM_IMU + i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_acc[i] = 0;
@@ -43,7 +43,7 @@ void check_sensors(sensor_elimination_t *elimination) {
   /* IMU */
   for (uint8_t i = 0; i < NUM_IMU; i++) {
     status = (cats_error_e)(check_sensor_bounds(elimination, i, &acc_info[i]) |
-                                       check_sensor_freezing(elimination, i, &acc_info[i]));
+                            check_sensor_freezing(elimination, i, &acc_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_imu[i] = 0;
@@ -57,7 +57,7 @@ void check_sensors(sensor_elimination_t *elimination) {
   /* Barometer */
   for (uint8_t i = 0; i < NUM_BARO; i++) {
     status = (cats_error_e)(check_sensor_bounds(elimination, i, &baro_info[i]) |
-                                       check_sensor_freezing(elimination, i, &baro_info[i]));
+                            check_sensor_freezing(elimination, i, &baro_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_baro[i] = 0;
@@ -71,7 +71,7 @@ void check_sensors(sensor_elimination_t *elimination) {
   /* Magneto */
   for (uint8_t i = 0; i < NUM_MAGNETO; i++) {
     status = (cats_error_e)(check_sensor_bounds(elimination, i, &mag_info[i]) |
-                                       check_sensor_freezing(elimination, i, &mag_info[i]));
+                            check_sensor_freezing(elimination, i, &mag_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       elimination->faulty_mag[i] = 0;

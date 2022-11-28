@@ -60,9 +60,7 @@ const struct lfs_config lfs_cfg = {
     .prog_buffer = prog_buffer,
     .lookahead_buffer = lookahead_buffer};
 
-const struct lfs_config *get_lfs_cfg() {
-  return &lfs_cfg;
-};
+const struct lfs_config *get_lfs_cfg() { return &lfs_cfg; };
 
 char cwd[LFS_NAME_MAX] = {};
 

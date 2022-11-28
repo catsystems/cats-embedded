@@ -23,12 +23,14 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum { TABLE_EVENTS = 0,
-               TABLE_ACTIONS,
+typedef enum {
+  TABLE_EVENTS = 0,
+  TABLE_ACTIONS,
 #ifdef CATS_VEGA
-               TABLE_POWER,
+  TABLE_POWER,
 #endif
-               TABLE_SPEEDS } lookup_table_index_e;
+  TABLE_SPEEDS
+} lookup_table_index_e;
 
 typedef struct {
   const char *const *values;

@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 #include <cstdint>
 #include "target.h"
 
@@ -195,10 +194,7 @@ typedef struct {
   int16_t arg;
 } config_action_t;
 
-typedef enum {
-  OFF,
-  ON
-} adaptive_power_e;
+typedef enum { OFF, ON } adaptive_power_e;
 
 #ifdef CATS_VEGA
 typedef struct {

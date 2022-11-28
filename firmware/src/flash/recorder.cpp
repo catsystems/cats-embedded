@@ -19,8 +19,8 @@
 #include "recorder.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
-#include "util/log.h"
 #include "util/gnss.h"
+#include "util/log.h"
 
 #include <cmath>
 

@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/adc.h"
 #include "util/battery.h"
+#include "drivers/adc.h"
 
 #define ADC_LINFIT_A 0.00818474f
 #define ADC_LINFIT_B 0.476469f

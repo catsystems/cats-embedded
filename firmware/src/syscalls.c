@@ -22,17 +22,17 @@
  */
 
 /* Includes */
-#include <sys/stat.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <stdio.h>
 #include <signal.h>
-#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <time.h>
 
 /* Variables */
-//#undef errno
+// #undef errno
 extern int errno;
 extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
