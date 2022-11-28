@@ -36,7 +36,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         # Artifact name
-        name: build
+        name: build-artifacts
         path: ./firmware/build/**
         if-no-files-found: error
         retention-days: 90
