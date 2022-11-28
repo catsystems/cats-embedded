@@ -40,7 +40,7 @@ static char old_cli_buffer[CLI_IN_BUFFER_SIZE];
 static void cli_print_error_va(const char *cmdName, const char *format, va_list va);
 static void cli_print_error(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
-bool is_empty(const char *string) { return (string == NULL || *string == '\0') ? true : false; }
+bool is_empty(const char *string) { return (string == nullptr || *string == '\0') ? true : false; }
 
 void get_min_max(const cli_value_t *var, int *min, int *max) {
   switch (var->type & VALUE_TYPE_MASK) {
@@ -128,7 +128,7 @@ static char *check_command(char *cmdline, const char *command) {
       && (isspace((unsigned)cmdline[strlen(command)]) || cmdline[strlen(command)] == 0)) {
     return skip_space(cmdline + strlen(command) + 1);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -140,7 +140,7 @@ static void process_character(const char c) {
     // Strip comment starting with # from line
     char *p = cli_buffer;
     p = strchr(p, '#');
-    if (NULL != p) {
+    if (nullptr != p) {
       buffer_index = (uint32_t)(p - cli_buffer);
     }
     // Strip trailing whitespace
@@ -153,7 +153,7 @@ static void process_character(const char c) {
       cli_buffer[buffer_index] = 0;  // null terminate
 
       const clicmd_t *cmd;
-      char *options = NULL;
+      char *options = nullptr;
       for (cmd = cmd_table; cmd < cmd_table + NUM_CLI_COMMANDS; cmd++) {
         options = check_command(cli_buffer, cmd->name);
         if (options) break;
@@ -187,7 +187,7 @@ static void process_character_interactive(const char c) {
   }
   if (c == '\t' || c == '?') {
     // do tab completion
-    const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
+    const clicmd_t *cmd, *pstart = nullptr, *pend = nullptr;
     uint32_t i = buffer_index;
     for (cmd = cmd_table; cmd < cmd_table + NUM_CLI_COMMANDS; cmd++) {
       if (buffer_index && (strncasecmp(cli_buffer, cmd->name, buffer_index) != 0)) {

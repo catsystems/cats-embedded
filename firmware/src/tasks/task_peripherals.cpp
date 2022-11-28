@@ -42,10 +42,10 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
 [[noreturn]] void task_peripherals(__attribute__((unused)) void* argument) {
   cats_event_e curr_event;
   while (true) {
-    if (osMessageQueueGet(event_queue, &curr_event, NULL, osWaitForever) == osOK) {
+    if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
-        if ((ev_timers[i].timer_id != NULL) && (curr_event == ev_timers[i].timer_init_event)) {
+        if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {
           if (osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
             log_warn("Starting TIMER %lu with event %u failed.", i, curr_event);
           }
@@ -68,7 +68,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
         timestamp_t curr_ts = osKernelGetTickCount();
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_table[action_list[i].action];
-        if (curr_fp != NULL) {
+        if (curr_fp != nullptr) {
           log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %u", event_map[curr_event],
                     action_map[action_list[i].action], action_list[i].action_arg);
           /* call the actuator function */

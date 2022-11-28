@@ -53,7 +53,7 @@ static void create_stats_file();
 
   while (1) {
     rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
-    if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, NULL, osWaitForever) != osOK) {
+    if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, nullptr, osWaitForever) != osOK) {
       log_error("Something wrong with the command recorder queue");
       continue;
     }
@@ -73,7 +73,7 @@ static void create_stats_file();
             /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
              * detected we will have around REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the next loop
              * iteration we will start to write the elements to the flash. */
-            osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
+            osMessageQueueGet(rec_queue, &dummy_log_elem, nullptr, 10);
             // osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
             // osMessageQueueGet(rec_queue, &dummy_log_elem, 0, 10);
           } else {
@@ -124,7 +124,7 @@ static void create_stats_file();
             //}
 
             /* Wait 100 ticks to receive a recording element */
-            if (osMessageQueueGet(rec_queue, &curr_log_elem, NULL, 100U) == osOK) {
+            if (osMessageQueueGet(rec_queue, &curr_log_elem, nullptr, 100U) == osOK) {
               // trace_print(flash_channel, "write_value start");
               write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
               // trace_print(flash_channel, "write_value end");

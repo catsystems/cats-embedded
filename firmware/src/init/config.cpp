@@ -50,7 +50,7 @@ void load_and_set_config() {
 static void create_event_map() {
   /* number of event types + 0th element */
   event_action_map = (event_action_map_elem_t *)(pvPortMalloc(NUM_EVENTS * sizeof(event_action_map_elem_t)));
-  if (event_action_map == NULL) {
+  if (event_action_map == nullptr) {
     // TODO: set some error, beep!!
     log_raw("Could not allocate memory for event_action_map!");
     return;
@@ -66,7 +66,7 @@ static void create_event_map() {
     if (nr_actions > 0) {
       event_action_map[ev_idx].num_actions = nr_actions;
       event_action_map[ev_idx].action_list = (peripheral_act_t *)(pvPortMalloc(nr_actions * sizeof(peripheral_act_t)));
-      if (event_action_map[ev_idx].action_list == NULL) {
+      if (event_action_map[ev_idx].action_list == nullptr) {
         // TODO: set some error, beep!!
         log_raw("Could not allocate memory for actions in event_action_map[%d].action_list!", ev_idx);
         return;
@@ -102,7 +102,7 @@ static void init_timers() {
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.config.timers[i].duration > 0) {
       ev_timers[i].timer_id =
-          osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, NULL);
+          osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, nullptr);
     }
   }
 }

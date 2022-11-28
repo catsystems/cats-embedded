@@ -193,9 +193,9 @@ int32_t linear_interpol(float32_t time, float32_t LB_time, float32_t UB_time, fl
 int32_t rand_bounds(int32_t lower_b, int32_t upper_b) { return rand() % (upper_b - lower_b) - lower_b; }
 
 void start_simulation(char *args) {
-  static osThreadId_t task_simulator_id = NULL;
+  static osThreadId_t task_simulator_id = nullptr;
 
-  if (task_simulator_id != NULL) {
+  if (task_simulator_id != nullptr) {
     log_raw("Simulation already started.");
     return;
   }
@@ -207,7 +207,7 @@ void start_simulation(char *args) {
   sim_config->sim_choice = SIM_HOP;
   char *token = strtok(args, " ");
 
-  while (token != NULL) {
+  while (token != nullptr) {
     if (strcmp(token, "--hop") == 0) {
       sim_config->sim_choice = SIM_HOP;
     }
@@ -235,7 +235,7 @@ void start_simulation(char *args) {
     if (strcmp(token, "--ns69") == 0) {
       sim_config->noise_seed = 69;
     }
-    token = strtok(NULL, " ");
+    token = strtok(nullptr, " ");
   }
   simulation_started = true;
   log_info("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");

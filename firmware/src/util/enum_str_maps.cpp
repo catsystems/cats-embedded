@@ -48,7 +48,7 @@ const char* const on_off_map[2] = {
 void init_recorder_speed_map() {
   for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
     recorder_speed_map[i] = (char*)pvPortMalloc(14 * sizeof(char));
-    if (recorder_speed_map[i] == NULL) {
+    if (recorder_speed_map[i] == nullptr) {
       log_raw("Could not allocate memory for recorder_speed_map[%lu]!", i);
       return;
     }
