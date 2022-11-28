@@ -260,7 +260,7 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
   return result;
 }
 
-void TIMUsb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
+extern "C" void TIMUsb_IRQHandler(void) { HAL_TIM_IRQHandler(&TimHandle); }
 
 void CDC_Transmit_Elapsed() {
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
