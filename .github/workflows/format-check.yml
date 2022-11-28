@@ -1,14 +1,14 @@
 name: Format Check
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches: master
+
 jobs:
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        path:
-          - check: 'firmware/src'
 
     steps:
     - uses: actions/checkout@v3
