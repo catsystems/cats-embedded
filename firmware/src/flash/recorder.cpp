@@ -22,7 +22,7 @@
 #include "util/log.h"
 #include "util/gnss.h"
 
-#include <math.h>
+#include <cmath>
 
 flight_stats_t global_flight_stats = {
     .max_height = {.val = -INFINITY}, .max_velocity = {.val = -INFINITY}, .max_acceleration = {.val = -INFINITY}};

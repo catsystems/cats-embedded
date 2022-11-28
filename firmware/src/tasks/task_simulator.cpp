@@ -22,7 +22,7 @@
 #include "util/log.h"
 #include "util/task_util.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 
 /** Private Constants **/
 /* DataPoints Acceleration Rocket*/

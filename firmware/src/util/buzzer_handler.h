@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <stdbool.h>
+
 
 typedef enum {
   CATS_BUZZ_NONE = 0,

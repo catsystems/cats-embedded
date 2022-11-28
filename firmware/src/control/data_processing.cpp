@@ -18,8 +18,8 @@
 
 #include "control/data_processing.h"
 #include "config/control_config.h"
-#include <string.h>
-#include <stdbool.h>
+#include <cstring>
+
 
 /* a temporary variable "tmp" must be defined beforehand to use these macros */
 #define SWAP(a, b, tmp) \

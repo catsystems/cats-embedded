@@ -22,8 +22,8 @@
 #include "util/enum_str_maps.h"
 #include "util/task_util.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #define CONFIG_SOURCE_EEPROM 1
 #define CONFIG_SOURCE_LFS    2

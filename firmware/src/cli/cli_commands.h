@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
 
 typedef void cli_command_fn(const char *cmd_name, char *args);
 

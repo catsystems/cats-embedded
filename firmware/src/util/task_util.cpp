@@ -19,7 +19,7 @@
 #include "util/task_util.h"
 #include "target.h"
 
-#include <stdbool.h>
+
 
 volatile bool rtos_started = false;
 

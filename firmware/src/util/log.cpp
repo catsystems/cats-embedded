@@ -23,7 +23,7 @@
 #ifdef CATS_DEBUG
 #include "cmsis_os.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #define CATS_RAINBOW_LOG
 

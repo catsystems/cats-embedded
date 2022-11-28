@@ -23,8 +23,8 @@
 #include "sensors/icm20601.h"
 #include "util/types.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 /** Private Defines **/
 
 #define REG_SELF_TEST_X_GYRO   0x00

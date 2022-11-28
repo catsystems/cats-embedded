@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+
+#include <cstdint>
 #include "arm_math.h"
 
 float32_t median(float32_t input_array[]);

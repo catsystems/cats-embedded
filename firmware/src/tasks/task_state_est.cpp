@@ -21,7 +21,7 @@
 #include "control/kalman_filter.h"
 #include "control/orientation_filter.h"
 
-#include <math.h>
+#include <cmath>
 
 /** Private Constants **/
 
