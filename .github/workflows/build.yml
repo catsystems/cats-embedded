@@ -22,7 +22,7 @@ jobs:
       uses: seanmiddleditch/gha-setup-ninja@v3
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE="cmake/arm-gcc-cortex-m4.cmake" 
+      run: cmake -B ${{github.workspace}}/firmware/build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE="cmake/arm-gcc-cortex-m4.cmake" 
 
     - name: Build
       run: cmake --build build
