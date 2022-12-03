@@ -213,7 +213,7 @@ static void process_character_interactive(const char c) {
     if (!buffer_index || pstart != pend) {
       /* Print list of ambiguous matches */
       cli_print("\r\n\033[K");
-      for (cmd = pstart; cmd <= pend; cmd++) {
+      for (cmd = pstart; cmd <= pend && cmd != nullptr; cmd++) {
         cli_print(cmd->name);
         cli_write('\t');
       }

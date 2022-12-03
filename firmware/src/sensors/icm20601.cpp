@@ -218,7 +218,7 @@ bool icm20601_init(const ICM20601 *dev) {
 
 // Read out raw acceleration data
 void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel) {
-  uint8_t accel_8bit[6] = {0};
+  uint8_t accel_8bit[6] = {};
   uint8_t reg = REG_ACCEL_XOUT_H;
   icm_read_bytes(dev, reg, accel_8bit, 6);
 
@@ -230,7 +230,7 @@ void icm20601_read_accel_raw(const ICM20601 *dev, int16_t *accel) {
 // Read out processed acceleration data
 void icm20601_read_accel(const ICM20601 *dev, float *accel) {
   float accel_sensitivity;
-  int16_t accel_raw[3] = {0};
+  int16_t accel_raw[3] = {};
 
   accel_sensitivity = get_accel_sensitivity(dev->accel_g);
 
@@ -243,7 +243,7 @@ void icm20601_read_accel(const ICM20601 *dev, float *accel) {
 
 // Read out raw gyro data
 void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro) {
-  uint8_t gyro_8bit[6] = {0};
+  uint8_t gyro_8bit[6] = {};
   uint8_t reg = REG_GYRO_XOUT_H;
   icm_read_bytes(dev, reg, gyro_8bit, 6);
 
@@ -255,7 +255,7 @@ void icm20601_read_gyro_raw(const ICM20601 *dev, int16_t *gyro) {
 // Read out processed gyro data
 void icm20601_read_gyro(const ICM20601 *dev, float *gyro) {
   float gyro_sensitivity;
-  int16_t gyro_raw[3] = {0};
+  int16_t gyro_raw[3] = {};
 
   gyro_sensitivity = get_gyro_sensitivity(dev->gyro_dps);
 
@@ -268,7 +268,7 @@ void icm20601_read_gyro(const ICM20601 *dev, float *gyro) {
 
 // Read out raw temperature data
 void icm20601_read_temp_raw(const ICM20601 *dev, int16_t *temp) {
-  uint8_t temp_8bit[2] = {0};
+  uint8_t temp_8bit[2] = {};
   uint8_t reg = REG_TEMP_OUT_H;
   icm_read_bytes(dev, reg, temp_8bit, 2);
 
@@ -286,8 +286,8 @@ void icm20601_read_temp(const ICM20601 *dev, float *temp) {
 }
 
 void icm20601_accel_calib(const ICM20601 *dev) {
-  uint8_t accel_offset_8bit[2] = {0};
-  int16_t accel_real[3] = {0};
+  uint8_t accel_offset_8bit[2] = {};
+  int16_t accel_real[3] = {};
 
   int16_t accel_offset[3];
 

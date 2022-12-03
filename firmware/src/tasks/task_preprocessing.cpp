@@ -42,18 +42,18 @@ static void transform_data(const SI_data_t *SI_data, const calibration_data_t *c
  */
 [[noreturn]] void task_preprocessing(void *argument) {
   /* Create data structs */
-  static SI_data_t SI_data = {0};
-  static SI_data_t SI_data_old = {0};
+  static SI_data_t SI_data = {};
+  static SI_data_t SI_data_old = {};
   SI_data_old.acc.x = GRAVITY;
   SI_data_old.acc.y = 0.0f;
   SI_data_old.acc.z = 0.0f;
   SI_data_old.pressure = P_INITIAL;
 
 #ifdef USE_MEDIAN_FILTER
-  median_filter_t filter_data = {0};
+  median_filter_t filter_data = {};
 #endif
 
-  sensor_elimination_t sensor_elimination = {0};
+  sensor_elimination_t sensor_elimination = {};
 
   /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
    * the linear acceleration calibration */

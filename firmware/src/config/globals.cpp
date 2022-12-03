@@ -197,17 +197,17 @@ SERVO SERVO2 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_2, 
 
 /** State Estimation **/
 
-baro_data_t global_baro[NUM_BARO] = {0};
-imu_data_t global_imu[NUM_IMU] = {0};
+baro_data_t global_baro[NUM_BARO] = {};
+imu_data_t global_imu[NUM_IMU] = {};
 accel_data_t global_accel[NUM_ACCELEROMETER] = {};
 magneto_data_t global_magneto[NUM_MAGNETO] = {};
 
 baro_data_t global_baro_sim[NUM_BARO] = {};
 imu_data_t global_imu_sim[NUM_BARO] = {};
 
-state_estimation_input_t global_estimation_input = {0};
-SI_data_t global_SI_data = {0};
-estimation_output_t global_estimation_data = {0};
+state_estimation_input_t global_estimation_input = {};
+SI_data_t global_SI_data = {};
+estimation_output_t global_estimation_data = {};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};
 
 bool global_arming_bool = false;
