@@ -34,57 +34,57 @@
 /** BASIC TYPES **/
 
 /* Timestamp */
-typedef uint32_t timestamp_t;  // ms
+using timestamp_t = uint32_t;  // ms
 
 /* 3D vector types */
-typedef struct {
+struct vi8_t {
   int8_t x, y, z;
-} vi8_t;
+};
 
-typedef struct {
+struct vi16_t {
   int16_t x, y, z;
-} vi16_t;
+};
 
-typedef struct {
+struct vf32_t {
   float32_t x, y, z;
-} vf32_t;
+};
 
 /** SENSOR DATA TYPES **/
 
 /* Accelerometer data */
-typedef vi8_t accel_data_t;  // Accelerometer units
+using accel_data_t = vi8_t;  // Accelerometer units
 
 /* IMU data */
-typedef struct {
+struct imu_data_t {
   vi16_t acc;   // IMU unit
   vi16_t gyro;  // IMU unit
-} imu_data_t;
+};
 
 /* Magnetometer data */
-typedef vf32_t magneto_data_t;  // Magnetometer units
+using magneto_data_t = vf32_t;  // Magnetometer units
 
 /* Barometer data */
-typedef struct {
+struct baro_data_t {
   int32_t pressure;     // Baro unit
   int32_t temperature;  // Baro unit
-} baro_data_t;
+};
 
 /* Estimator Data */
-typedef struct {
+struct state_estimation_input_t {
   float32_t acceleration_z;  // m/s^2
   float32_t height_AGL;      // m
-} state_estimation_input_t;
+};
 
 /* Todo: #if on SI data */
-typedef struct {
+struct SI_data_t {
   vf32_t acc;          // m/s^2
   vf32_t gyro;         // dps
   vf32_t mag;          // mG
   float32_t pressure;  // hPa
-} SI_data_t;
+};
 
 /* Elimination Data */
-typedef struct {
+struct sensor_elimination_t {
   int16_t freeze_counter_imu[NUM_IMU];
   int16_t freeze_counter_baro[NUM_BARO];
   int16_t freeze_counter_magneto[NUM_MAGNETO];
@@ -97,32 +97,32 @@ typedef struct {
   uint8_t faulty_baro[NUM_BARO];
   uint8_t faulty_mag[NUM_MAGNETO];
   uint8_t faulty_acc[NUM_ACCELEROMETER];
-} sensor_elimination_t;
+};
 
-typedef struct {
+struct median_filter_t {
   float32_t acc[MEDIAN_FILTER_SIZE];         // m/s^2
   float32_t height_AGL[MEDIAN_FILTER_SIZE];  // m
   uint8_t counter;
-} median_filter_t;
+};
 
-typedef struct {
+struct estimation_output_t {
   float32_t height;        // m
   float32_t velocity;      // m/s
   float32_t acceleration;  // m/s^2
-} estimation_output_t;
+};
 
-typedef struct {
+struct calibration_data_t {
   vf32_t gyro_calib;
   float32_t angle;
   uint8_t axis;
-} calibration_data_t;
+};
 
-typedef struct {
+struct magneto_calibration_data_t {
   float magneto_beta[3];
   float magneto_radius;
-} magneto_calibration_data_t;
+};
 
-typedef enum {
+enum flight_fsm_e {
   INVALID = 0,
   MOVING = 1,
   READY,
@@ -132,10 +132,10 @@ typedef enum {
   MAIN,
   TOUCHDOWN,
   HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
-} flight_fsm_e;
+};
 
 /* Todo: Comment out this struct */
-typedef struct {
+struct flight_fsm_t {
   flight_fsm_e flight_state;
   vf32_t old_acc_data;
   vf32_t old_gyro_data;
@@ -144,9 +144,9 @@ typedef struct {
   uint32_t clock_memory;
   uint32_t memory[3];
   bool state_changed;
-} flight_fsm_t;
+};
 
-typedef struct {
+struct kalman_filter_t {
   float32_t Ad_data[9];
   float32_t Ad_T_data[9];
   float32_t Bd_data[3];
@@ -173,52 +173,52 @@ typedef struct {
   float32_t measured_AGL;
   float32_t R;
   float32_t t_sampl;
-} kalman_filter_t;
+};
 
-typedef struct {
+struct control_settings_t {
   uint16_t liftoff_acc_threshold;  // m/s^2
   uint16_t liftoff_detection_agl;  // m; if the height is bigger than this for 1 second, detect liftoff
   uint16_t main_altitude;          // m
-} control_settings_t;
+};
 
-typedef struct {
+struct config_timer_t {
   uint32_t duration;
   /* Event on which the timer starts. */
   uint8_t start_event;
   /* Event that the timer triggers. */
   uint8_t trigger_event;
-} config_timer_t;
+};
 
-typedef struct {
+struct config_action_t {
   int16_t action_idx;
   int16_t arg;
-} config_action_t;
+};
 
-typedef enum { OFF, ON } adaptive_power_e;
+enum adaptive_power_e { OFF, ON };
 
 #ifdef CATS_VEGA
-typedef struct {
+struct config_telemetry_t {
   uint8_t link_phrase[8];
   uint8_t power_level;
   adaptive_power_e adaptive_power;
-} config_telemetry_t;
+};
 #endif
 
-typedef struct {
+struct peripheral_act_t {
   /* Action type */
   action_function_e action;
   /* Action argument */
   int16_t action_arg;
-} peripheral_act_t;
+};
 
-typedef struct {
+struct event_action_map_elem_t {
   /* Number of actions tied to an event */
   uint8_t num_actions;
   /* List of actions tied to an event */
   peripheral_act_t *action_list;
-} event_action_map_elem_t;
+};
 
-typedef enum {
+enum cats_event_e {
   EV_MOVING = 0,
   EV_READY,
   EV_LIFTOFF,
@@ -229,24 +229,24 @@ typedef enum {
   EV_CUSTOM_1,
   EV_CUSTOM_2,
   EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
-} cats_event_e;
+};
 
-typedef enum { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML } cats_sim_choice_e;
+enum cats_sim_choice_e { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML };
 
-typedef struct {
+struct cats_sim_config_t {
   cats_sim_choice_e sim_choice;
   uint32_t noise_seed;
   int32_t sim_axis;
-} cats_sim_config_t;
+};
 
-typedef enum { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH } recorder_status_e;
+enum recorder_status_e { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH };
 
-typedef struct {
+struct cats_timer_t {
   cats_event_e timer_init_event;
   cats_event_e execute_event;
   osTimerId_t timer_id;
   uint32_t timer_duration_ticks;
-} cats_timer_t;
+};
 
 /** CONVERSION FUNCTIONS **/
 

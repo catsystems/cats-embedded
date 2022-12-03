@@ -22,11 +22,11 @@
 
 #define NUM_ACTION_FUNCTIONS 17
 
-typedef bool (*peripheral_act_fp)(int16_t);
+using peripheral_act_fp = bool (*)(int16_t);
 
 extern const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS];
 
-typedef enum {
+enum action_function_e {
   ACT_NO_OP = 0,
   ACT_OS_DELAY,
   ACT_HIGH_CURRENT_ONE,
@@ -44,7 +44,7 @@ typedef enum {
   ACT_SERVO_THREE,
   ACT_SERVO_FOUR,
   ACT_SET_RECORDER_STATE,
-} action_function_e;
+};
 
 /* TODO - don't export this anymore after the flash is working */
 bool set_recorder_state(int16_t state);

@@ -23,9 +23,9 @@
 /**
  * A wrapper for a pair of input and output streams.
  */
-typedef struct {
+struct stream_group_t {
   const stream_t *in;
   const stream_t *out;
-} stream_group_t;
+};
 
 extern const stream_group_t USB_SG;

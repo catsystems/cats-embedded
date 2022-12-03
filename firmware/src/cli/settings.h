@@ -23,25 +23,25 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-typedef enum {
+enum lookup_table_index_e {
   TABLE_EVENTS = 0,
   TABLE_ACTIONS,
 #ifdef CATS_VEGA
   TABLE_POWER,
 #endif
   TABLE_SPEEDS
-} lookup_table_index_e;
+};
 
-typedef struct {
+struct lookup_table_entry_t {
   const char *const *values;
   const uint8_t value_count;
-} lookup_table_entry_t;
+};
 
 #define VALUE_TYPE_OFFSET    0
 #define VALUE_SECTION_OFFSET 3
 #define VALUE_MODE_OFFSET    5
 
-typedef enum {
+enum cli_value_flag_e {
   // value type, bits 0-2
   VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
   VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
@@ -55,40 +55,40 @@ typedef enum {
   MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
   MODE_BITSET = (3 << VALUE_MODE_OFFSET),
   MODE_STRING = (4 << VALUE_MODE_OFFSET),
-} cli_value_flag_e;
+};
 
 #define VALUE_TYPE_MASK    (0x07)
 #define VALUE_SECTION_MASK (0x18)
 #define VALUE_MODE_MASK    (0xE0)
 
-typedef struct {
+struct cli_minmax_config_t {
   const int16_t min;
   const int16_t max;
-} cli_minmax_config_t;
+};
 
-typedef struct {
+struct cli_minmax_unsigned_config_t {
   const uint16_t min;
   const uint16_t max;
-} cli_minmax_unsigned_config_t;
+};
 
-typedef struct {
+struct cli_lookup_table_config_t {
   const lookup_table_index_e table_index;
-} cli_lookup_table_config_t;
+};
 
-typedef struct {
+struct cli_array_length_config_t {
   const uint8_t length;
-} cli_array_length_config_t;
+};
 
-typedef struct {
+struct cli_string_length_config_t {
   const uint8_t min_length;
   const uint8_t max_length;
   const uint8_t flags;
-} cli_string_length_config_t;
+};
 
 #define STRING_FLAGS_NONE      (0)
 #define STRING_FLAGS_WRITEONCE (1 << 0)
 
-typedef union {
+union cli_value_config_u {
   cli_lookup_table_config_t lookup;              // used for MODE_LOOKUP excl. VAR_UINT32
   cli_minmax_config_t minmax;                    // used for MODE_DIRECT with signed parameters
   cli_minmax_unsigned_config_t minmax_unsigned;  // used for MODE_DIRECT with unsigned parameters
@@ -96,18 +96,18 @@ typedef union {
   cli_string_length_config_t string;             // used for MODE_STRING
   uint8_t bitpos;                                // used for MODE_BITSET
   uint32_t u32_max;                              // used for MODE_DIRECT with VAR_UINT32
-} cli_value_config_t;
+};
 
-struct cli_value;
-typedef void (*callback_f)(const struct cli_value *arg);
+struct cli_value_t;
+using callback_f = void (*)(const struct cli_value_t *);
 
-typedef struct cli_value {
+struct cli_value_t {
   const char *name;
   const uint8_t type;  // see cli_value_flag_e
-  const cli_value_config_t config;
+  const cli_value_config_u config;
   uint16_t member_offset;
   callback_f cb;
-} __attribute__((packed)) cli_value_t;
+} __attribute__((packed));
 
 extern const lookup_table_entry_t lookup_tables[];
 extern const uint16_t value_table_entry_count;

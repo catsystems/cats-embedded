@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 
-typedef struct {
+struct fifo_t {
   uint32_t head;
   uint32_t tail;
 
@@ -30,7 +30,7 @@ typedef struct {
   uint8_t *buf;
 
   volatile bool mutex;
-} fifo_t;
+};
 
 /**
  * Initializes the fifo with an underlying buffer.

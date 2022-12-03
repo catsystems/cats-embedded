@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/log.h"
+#include <cstdarg>
+
 #include "comm/stream_group.h"
+#include "util/log.h"
 #include "util/task_util.h"
 
 #ifdef CATS_DEBUG
