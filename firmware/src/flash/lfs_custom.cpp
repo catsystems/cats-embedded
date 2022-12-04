@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <optional>
+
 #include "cli/cli.h"
 #include "drivers/w25q.h"
 #include "lfs.h"
@@ -36,31 +38,35 @@ static uint8_t lookahead_buffer[LFS_LOOKAHEAD_SIZE] = {};
 
 /* File System Handle  -- NOT THREAD-SAFE!!! */
 lfs_t lfs;
-const struct lfs_config lfs_cfg = {
-    // block device operations
-    .read = w25q_lfs_read,
-    .prog = w25q_lfs_prog,
-    .erase = w25q_lfs_erase,
-    .sync = w25q_lfs_sync,
 
+std::optional<lfs_config> lfs_cfg;
+void init_lfs_cfg(const w25q_t *w25q_ptr) {
+  /* Flash must be initialized before initializing LFS */
+  assert(w25q_ptr->initialized);
+  /* Blocks in LFS correspond to Sectors on W25Q chips. */
+  lfs_cfg.emplace(lfs_config({
+    // block device operations
+    .read = w25q_lfs_read, .prog = w25q_lfs_prog, .erase = w25q_lfs_erase, .sync = w25q_lfs_sync,
     // block device configuration
-    .read_size = 256,
-    .prog_size = 256,
-    .block_size = 4096,
+        .read_size = w25q_ptr->page_size, .prog_size = w25q_ptr->page_size, .block_size = w25q_ptr->sector_size,
 #if defined(CATS_ORION)
     // 8k pages for 256 Mbit flash
-    .block_count = 8192,
+        .block_count = 8192,
 #elif defined(CATS_VEGA)
-    .block_count = 4096,
-    .block_cycles = 500,
+    .block_count = w25q_ptr->sector_count, .block_cycles = 500,
 #endif
-    .cache_size = LFS_CACHE_SIZE,
-    .lookahead_size = LFS_LOOKAHEAD_SIZE,
-    .read_buffer = read_buffer,
-    .prog_buffer = prog_buffer,
-    .lookahead_buffer = lookahead_buffer};
+    .cache_size = LFS_CACHE_SIZE, .lookahead_size = LFS_LOOKAHEAD_SIZE, .read_buffer = read_buffer,
+    .prog_buffer = prog_buffer, .lookahead_buffer = lookahead_buffer
+  }));
+}
 
-const struct lfs_config *get_lfs_cfg() { return &lfs_cfg; };
+const lfs_config *get_lfs_cfg() noexcept {
+  if (!lfs_cfg.has_value()) {
+    init_lfs_cfg(&w25q);
+  }
+  assert(lfs_cfg.has_value());
+  return &(lfs_cfg.value());
+};
 
 char cwd[LFS_NAME_MAX] = {};
 
