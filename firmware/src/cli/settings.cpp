@@ -29,9 +29,7 @@
 const lookup_table_entry_t lookup_tables[] = {
     LOOKUP_TABLE_ENTRY(event_map),
     LOOKUP_TABLE_ENTRY(action_map),
-#ifdef CATS_VEGA
     LOOKUP_TABLE_ENTRY(on_off_map),
-#endif
     {(const char *const *)recorder_speed_map, NUM_REC_SPEEDS},
 };
 
@@ -138,7 +136,6 @@ const cli_value_t value_table[] = {
      {.minmax_unsigned = {0, 180}},
      offsetof(cats_config_u, config.initial_servo_position[1])},
 
-#ifdef CATS_VEGA
     {"tele_link_phrase",
      VAR_UINT8 | MODE_STRING,
      {.string = {4, 8}},
@@ -151,7 +148,6 @@ const cli_value_t value_table[] = {
      VAR_UINT8 | MODE_LOOKUP,
      {.lookup = {TABLE_POWER}},
      offsetof(cats_config_u, config.telemetry_settings.adaptive_power)},
-#endif
 
     {"rec_elements", VAR_UINT32, {.u32_max = UINT32_MAX}, offsetof(cats_config_u, config.rec_mask)},
     {"rec_speed", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_SPEEDS}}, offsetof(cats_config_u, config.rec_speed_idx)}};
@@ -163,7 +159,7 @@ void *get_cats_config_member_ptr(const cats_config_u *cfg, const cli_value_t *va
 }
 
 void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits) {
-  char *prefix = "";
+  const char *prefix = "";
   if (!strcmp(cmd_name, "dump")) {
     prefix = "set ";
   }

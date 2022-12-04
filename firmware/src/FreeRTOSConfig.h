@@ -78,11 +78,7 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
 //#define configAPPLICATION_ALLOCATED_HEAP          1
 //#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP 1
-#if defined(CATS_ORION)
-#define configTOTAL_HEAP_SIZE ((size_t)18 * 1024)
-#elif defined(CATS_VEGA)
 #define configTOTAL_HEAP_SIZE ((size_t)32 * 1024)
-#endif
 
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK 0

@@ -731,11 +731,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu pages written...", i, w25q.page_count);
       }
-#if defined(CATS_ORION)
-      w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
-#elif defined(CATS_VEGA)
       w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
-#endif
       if (write_status != W25Q_OK) {
         cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
         osDelay(5000);
@@ -748,12 +744,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu pages read...", i, w25q.page_count);
       }
-#if defined(CATS_ORION)
-      w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
-#elif defined(CATS_VEGA)
-
       w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
-#endif
       if (read_status != W25Q_OK) {
         cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
         osDelay(1);
@@ -799,11 +790,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
         if (i % 4 == 0) {
           cli_print_linef("%lu / %lu pages written...", i - start_page_idx, pages_per_sector);
         }
-#if defined(CATS_ORION)
-        w25q_status_e write_status = w25q_write_buffer(write_buf, i * w25q.page_size, 256);
-#elif defined(CATS_VEGA)
         w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
-#endif
         if (write_status != W25Q_OK) {
           cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
           osDelay(5000);
@@ -816,12 +803,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
         if (i % 4 == 0) {
           cli_print_linef("%lu / %lu pages read...", i - start_page_idx, pages_per_sector);
         }
-#if defined(CATS_ORION)
-        w25q_status_e read_status = w25q_read_buffer(read_buf, i * w25q.page_size, 256);
-#elif defined(CATS_VEGA)
-
         w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
-#endif
         if (read_status != W25Q_OK) {
           cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
           osDelay(1);

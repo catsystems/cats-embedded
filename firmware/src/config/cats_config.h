@@ -44,9 +44,7 @@ struct cats_config_t {
   int16_t initial_servo_position[2];
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
 
-#ifdef CATS_VEGA
   config_telemetry_t telemetry_settings;
-#endif
 };
 
 union cats_config_u {
