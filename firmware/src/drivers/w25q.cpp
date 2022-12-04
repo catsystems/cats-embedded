@@ -56,9 +56,6 @@ w25q_t w25q = {.id = W25QINVALID};
 /* Status register 1 write enabled bit */
 #define W25Q_STATUS_REG1_WEL 0x02
 
-#define W25Q_PAGE_SIZE_BYTES   256
-#define W25Q_SECTOR_SIZE_BYTES 4096
-
 static inline void w25qxx_spi_transmit(uint8_t data) { HAL_SPI_Transmit(&FLASH_SPI_HANDLE, &data, 1, 100); }
 
 static inline uint8_t w25qxx_spi_receive() {
@@ -196,8 +193,6 @@ w25q_status_e w25q_init(void) {
       log_debug("W25Q Unknown ID");
       return W25Q_ERR_INIT;
   }
-  w25q.page_size = W25Q_PAGE_SIZE_BYTES;
-  w25q.sector_size = W25Q_SECTOR_SIZE_BYTES;  // 4kB
   w25q.sector_count = w25q.block_count * 16;
   w25q.page_count = (w25q.sector_count * w25q.sector_size) / w25q.page_size;
   w25q.block_size = w25q.sector_size * 16;
@@ -231,6 +226,7 @@ w25q_status_e w25q_init(void) {
   log_debug("w25qxx Init Done");
 
   w25q.lock = 0;
+  w25q.initialized = true;
   return W25Q_OK;
 }
 

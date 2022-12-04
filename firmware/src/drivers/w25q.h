@@ -42,18 +42,22 @@ typedef enum {
   W25Q512,
 } w25q_id_e;
 
-typedef struct {
+#define W25Q_PAGE_SIZE_BYTES   256
+#define W25Q_SECTOR_SIZE_BYTES 4096  // 4kB
+
+struct w25q_t {
+  const uint16_t page_size{W25Q_PAGE_SIZE_BYTES};
+  const uint32_t sector_size{W25Q_SECTOR_SIZE_BYTES};
   w25q_id_e id;
-  uint16_t page_size;
   uint32_t page_count;
-  uint32_t sector_size;
   uint32_t sector_count;
   uint32_t block_size;
   uint32_t block_count;
   uint32_t capacity_in_kilobytes;
   bool needs_4_byte_addressing;
   uint8_t lock;
-} w25q_t;
+  bool initialized{false};
+};
 
 typedef enum {
   W25Q_OK = 0,
