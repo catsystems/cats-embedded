@@ -35,7 +35,6 @@ TIM_HandleTypeDef TimHandle;
 /* Private macro -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
-trace_command_buffer_t trace_command_buffer;
 
 /** @defgroup USBD_CDC_IF_Private_Variables USBD_CDC_IF_Private_Variables
  * @brief Private variables.

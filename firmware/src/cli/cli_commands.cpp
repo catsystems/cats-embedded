@@ -25,6 +25,7 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 #include "flash/reader.h"
+#include "main.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/log.h"

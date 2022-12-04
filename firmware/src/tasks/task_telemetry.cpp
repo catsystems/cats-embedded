@@ -35,12 +35,12 @@ static fifo_t uart_fifo = {
     .head = 0, .tail = 0, .used = 0, .size = UART_FIFO_SIZE, .buf = usb_fifo_in_buf, .mutex = false};
 static stream_t uart_stream = {.fifo = &uart_fifo, .timeout_msec = 1};
 
-typedef enum {
+enum state_e {
   STATE_OP,
   STATE_LEN,
   STATE_DATA,
   STATE_CRC,
-} state_e;
+};
 
 #define INDEX_OP       0
 #define INDEX_LEN      1
@@ -54,7 +54,7 @@ bool check_valid_op_code(uint8_t op_code);
 void send_enable();
 void send_disable();
 
-typedef struct {
+struct packed_tx_msg_t {
   uint8_t state : 3;
   uint8_t errors : 4;
   uint16_t timestamp : 15;
@@ -69,7 +69,7 @@ typedef struct {
   uint8_t d1;   // dummy
   uint8_t d2;   // dummy
   uint8_t d3;   // dummy
-} __attribute__((packed)) packed_tx_msg_t;
+} __attribute__((packed));
 
 static float amplifier_temperature = 0.0F;
 

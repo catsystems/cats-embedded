@@ -58,7 +58,7 @@ static inline void collect_flight_info_stats(timestamp_t ts, flight_info_t fligh
 }
 
 /* Counter used for determining whether individual types should be recorded. */
-typedef struct {
+struct skip_counter_t {
   uint8_t imu;
   uint8_t baro;
   uint8_t magneto;
@@ -66,7 +66,7 @@ typedef struct {
   uint8_t flight_info;
   uint8_t orientation;
   uint8_t filtered_data;
-} skip_counter_t;
+};
 
 static skip_counter_t skip_counter = {};
 

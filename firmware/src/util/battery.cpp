@@ -24,7 +24,7 @@
 
 #define BATTERY_VOLTAGE_HYSTERESIS 0.2f
 
-typedef enum { LI_ION = 0, LI_PO, ALKALINE } battery_type_e;
+enum battery_type_e { LI_ION = 0, LI_PO, ALKALINE };
 
 // TODO The battery type needs to be defined in the config
 const battery_type_e battery_type = LI_PO;
@@ -40,7 +40,7 @@ static uint32_t cell_count = 1;
  * --------------------------------
  */
 const float voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
-typedef enum { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK } battery_level_index_e;
+enum battery_level_index_e { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK };
 
 // Automatically check how many cells are connected
 void battery_monitor_init() {
