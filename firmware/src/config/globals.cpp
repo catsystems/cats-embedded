@@ -220,13 +220,6 @@ osMessageQueueId_t rec_queue;
 osMessageQueueId_t rec_cmd_queue;
 osMessageQueueId_t event_queue;
 
-/** Tracing Channels **/
-
-#if (configUSE_TRACE_FACILITY == 1)
-traceString baro_channel;
-traceString flash_channel;
-#endif
-
 volatile bool global_usb_detection = false;
 volatile bool usb_communication_complete = false;
 volatile bool simulation_started = false;

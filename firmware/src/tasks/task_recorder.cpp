@@ -60,7 +60,6 @@ static void create_stats_file();
       continue;
     }
     log_info("recorder command %u received", curr_rec_cmd);
-    // trace_printf(flash_channel, "received command %d", curr_rec_cmd);
     switch (curr_rec_cmd) {
       case REC_CMD_INVALID:
         log_error("Invalid command value!");
@@ -127,9 +126,7 @@ static void create_stats_file();
 
             /* Wait 100 ticks to receive a recording element */
             if (osMessageQueueGet(rec_queue, &curr_log_elem, nullptr, 100U) == osOK) {
-              // trace_print(flash_channel, "write_value start");
               write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
-              // trace_print(flash_channel, "write_value end");
             } else {
               if (global_recorder_status < REC_FILL_QUEUE) {
                 log_raw("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
@@ -140,9 +137,7 @@ static void create_stats_file();
             }
           }
           // log_info("lfw start");
-          // trace_print(flash_channel, "lfw start");
           int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
-          // trace_printf(flash_channel, "lfw end, written %ld", sz);
           ++sync_counter;
           /* Check for a new command */
           if ((sync_counter % 32) == 0) {
