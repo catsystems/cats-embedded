@@ -711,8 +711,8 @@ static void cli_cmd_flash_stop(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_flash_test(const char *cmd_name, char *args) {
-  uint8_t write_buf[256] = {0};
-  uint8_t read_buf[256] = {0};
+  uint8_t write_buf[256] = {};
+  uint8_t read_buf[256] = {};
   fill_buf(write_buf, 256);
   // w25q_chip_erase();
   if (!strcmp(args, "full")) {

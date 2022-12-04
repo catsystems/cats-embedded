@@ -105,7 +105,7 @@ void calibrate_gyro(const calibration_data_t *calibration, vf32_t *gyro_data) {
 void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t *calibration_data) {
   float test_radii[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
   float test_bias[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
-  int32_t smallest_indices[4] = {0};
+  int32_t smallest_indices[4] = {};
   float smallest_value = 10000;
   float value;
   for (int radius_i = 0; radius_i < 10; radius_i++) {
