@@ -56,6 +56,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_
       break;
     case MAIN:
       check_main_phase(fsm_state, state_data);
+      break;
     case TOUCHDOWN:
       break;
     default:

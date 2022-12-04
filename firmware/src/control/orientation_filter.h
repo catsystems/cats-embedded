@@ -20,13 +20,13 @@
 #include "arm_math.h"
 #include "util/types.h"
 
-typedef struct {
+struct orientation_filter_t {
   float32_t gyro_data[4];
   float32_t estimate_data[4];
   float32_t t_sampl;
   arm_matrix_instance_f32 gyro;
   arm_matrix_instance_f32 estimate;
-} orientation_filter_t;
+};
 
 /* Filter Functions */
 void init_orientation_filter(orientation_filter_t* filter);

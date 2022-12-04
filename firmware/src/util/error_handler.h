@@ -21,7 +21,7 @@
 #include <cstdint>
 
 // clang-format off
-typedef enum {
+ enum cats_error_e {
   CATS_ERR_OK =             0,
   CATS_ERR_NO_CONFIG =      1 << 0,   // 0x01
   CATS_ERR_NO_PYRO =        1 << 1,   // 0x02
@@ -40,7 +40,7 @@ typedef enum {
   CATS_ERR_FILTER_HEIGHT =  1 << 14,   // 0x4000
   CATS_ERR_HARD_FAULT =     1 << 15,   // 0x8000
   CATS_ERR_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
-} cats_error_e;
+} ;
 // clang-format on
 
 void add_error(cats_error_e err);

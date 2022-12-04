@@ -72,7 +72,7 @@ enum icm20601_gyro_dps {
   ICM20601_GYRO_RANGE_4000_DPS = 3,
 };
 
-typedef struct icm20601_dev {
+struct ICM20601 {
   // Hardware Configuration
   SPI_BUS *spi;
   // Sensor Configuration
@@ -83,7 +83,7 @@ typedef struct icm20601_dev {
 
   // Offsets
   int16_t accel_offset[3];
-} ICM20601;
+};
 
 /** Exported Functions **/
 

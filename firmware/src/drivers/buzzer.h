@@ -22,7 +22,7 @@
 
 /** Exported Types **/
 
-typedef struct buzzer_dev {
+struct BUZ {
   // Hardware Configuration
   TIM_HandleTypeDef *timer;
   uint32_t channel;
@@ -31,7 +31,7 @@ typedef struct buzzer_dev {
   uint8_t start;
   uint16_t volume;
   uint32_t end_time;
-} BUZ;
+};
 
 /** Exported Functions **/
 

@@ -19,6 +19,7 @@
 #include "reader.h"
 
 #include <cstddef>
+#include <cstdio>
 
 #include "cli/settings.h"
 #include "config/globals.h"

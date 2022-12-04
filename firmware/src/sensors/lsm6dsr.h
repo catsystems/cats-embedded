@@ -22,7 +22,7 @@
 #include "lsm6dsr_reg.h"
 #include "target.h"
 
-typedef struct lsm6dsr_dev {
+struct LSM6DSR {
   // Hardware Configuration
   SPI_HandleTypeDef *const spi_handle;
 
@@ -34,7 +34,7 @@ typedef struct lsm6dsr_dev {
 
   lsm6dsr_fs_g_t gyro_range;
   lsm6dsr_odr_g_t gyro_odr;
-} LSM6DSR;
+};
 
 bool lsm6dsr_init(LSM6DSR *dev);
 void lsm6dsr_shutdown(LSM6DSR *dev);

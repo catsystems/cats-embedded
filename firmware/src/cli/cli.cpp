@@ -40,7 +40,7 @@ static char old_cli_buffer[CLI_IN_BUFFER_SIZE];
 static void cli_print_error_va(const char *cmdName, const char *format, va_list va);
 static void cli_print_error(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
-bool is_empty(const char *string) { return (string == nullptr || *string == '\0') ? true : false; }
+bool is_empty(const char *string) { return (string == nullptr || *string == '\0'); }
 
 void get_min_max(const cli_value_t *var, int *min, int *max) {
   switch (var->type & VALUE_TYPE_MASK) {
@@ -60,9 +60,9 @@ void get_min_max(const cli_value_t *var, int *min, int *max) {
 
 void cli_print(const char *str) { stream_write(USB_SG.out, (uint8_t *)str, strlen(str)); }
 
-static void cli_prompt(void) { cli_printf("\r\n^._.^:%s> ", cwd); }
+static void cli_prompt() { cli_printf("\r\n^._.^:%s> ", cwd); }
 
-void cli_print_linefeed(void) { cli_print("\r\n"); }
+void cli_print_linefeed() { cli_print("\r\n"); }
 
 void cli_print_line(const char *str) {
   cli_print(str);
@@ -107,6 +107,7 @@ static void cli_print_error(const char *cmdName, const char *format, ...) {
   va_list va;
   va_start(va, format);
   cli_print_error_va(cmdName, format, va);
+  va_end(va);
 }
 
 void cli_print_error_linef(const char *cmdName, const char *format, ...) {
@@ -114,6 +115,7 @@ void cli_print_error_linef(const char *cmdName, const char *format, ...) {
   va_start(va, format);
   cli_print_error_va(cmdName, format, va);
   cli_print("\r\n");
+  va_end(va);
 }
 
 char *skip_space(char *buffer) {
@@ -213,7 +215,7 @@ static void process_character_interactive(const char c) {
     if (!buffer_index || pstart != pend) {
       /* Print list of ambiguous matches */
       cli_print("\r\n\033[K");
-      for (cmd = pstart; cmd <= pend; cmd++) {
+      for (cmd = pstart; cmd <= pend && cmd != nullptr; cmd++) {
         cli_print(cmd->name);
         cli_write('\t');
       }
@@ -244,7 +246,7 @@ static void process_character_interactive(const char c) {
       cli_buffer[--buffer_index] = 0;
       cli_print("\010 \010");
     }
-    for (int i = 0; i < sizeof(old_cli_buffer); i++) {
+    for (uint32_t i = 0; i < sizeof(old_cli_buffer); i++) {
       if (old_cli_buffer[i] == 0) break;
       process_character(old_cli_buffer[i]);
     }

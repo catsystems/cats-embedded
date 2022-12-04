@@ -50,14 +50,14 @@ enum h3lis100dl_filter {
   H3LIS100DL_NO_FILTER = 0xFF,
 };
 
-typedef struct h3lis100dl_dev {
+struct H3LIS100DL {
   // Hardware configuration
   SPI_BUS *spi;
   // Sensor configuration
   enum h3lis100dl_power_mode power_mode;
   enum h3lis100dl_sample_rate sample_rate;
   enum h3lis100dl_filter filter;
-} H3LIS100DL;
+};
 
 /**
  * Initializes the high g accelerometer

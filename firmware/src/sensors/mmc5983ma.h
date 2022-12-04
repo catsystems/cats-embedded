@@ -49,7 +49,7 @@ enum mmc5983ma_setreset {
   MMC5983MA_SET_2000 = 0x07,
 };
 
-typedef struct mmc5983ma_dev {
+struct MMC5983MA {
   // Hardware Configuration
   SPI_BUS *spi;
   // Sensor Configuration
@@ -59,7 +59,7 @@ typedef struct mmc5983ma_dev {
   // Calibraion Data
   float mag_bias[3];   // Hard iron offset
   float mag_scale[3];  // Soft iron
-} MMC5983MA;
+};
 
 void mmc5983ma_init(const MMC5983MA *dev);
 bool mmc5983ma_selftest(const MMC5983MA *dev);

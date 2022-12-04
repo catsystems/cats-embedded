@@ -38,7 +38,7 @@ enum ms5607_data {
   MS5607_TEMPERATURE = 2,
 };
 
-typedef struct ms5607_dev {
+struct MS5607 {
   // Hardware Configuration
   GPIO_TypeDef *const cs_port;
   uint16_t cs_pin;
@@ -53,7 +53,7 @@ typedef struct ms5607_dev {
 
   uint8_t raw_pres[3];
   uint8_t raw_temp[3];
-} MS5607;
+};
 
 /** Exported Functions **/
 

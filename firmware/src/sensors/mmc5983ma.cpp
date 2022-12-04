@@ -82,7 +82,7 @@ void mmc5983ma_read_calibrated(const MMC5983MA *dev, float *destination) {
 }
 
 bool mmc5983ma_selftest(const MMC5983MA *dev) {
-  uint32_t data_set[3] = {0}, data_reset[3] = {0};
+  uint32_t data_set[3] = {}, data_reset[3] = {};
 
   // Reset registers
   write_register(dev->spi, MMC5983MA_CONTROL_0, 0x00);

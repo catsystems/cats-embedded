@@ -25,8 +25,10 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 #include "flash/reader.h"
+#include "main.h"
 #include "util/actions.h"
 #include "util/battery.h"
+#include "util/enum_str_maps.h"
 #include "util/log.h"
 
 #include <cstdlib>
@@ -154,7 +156,6 @@ static void cli_cmd_help(const char *cmd_name, char *args) {
 
 static void cli_cmd_reboot(const char *cmd_name, char *args) { NVIC_SystemReset(); }
 
-extern RTC_HandleTypeDef hrtc;
 static void cli_cmd_bl(const char *cmd_name, char *args) {
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, BOOTLOADER_MAGIC_PATTERN);
   __disable_irq();
@@ -162,9 +163,9 @@ static void cli_cmd_bl(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_save(const char *cmd_name, char *args) {
-  if (cc_save() == false) {
+  if (!cc_save()) {
     cli_print_line("Saving unsuccessful, trying force save...");
-    if (cc_format_save() == false) {
+    if (!cc_format_save()) {
       cli_print_line("Force save failed!");
       return;
     }
@@ -183,7 +184,7 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
         cli_print_linefeed();
       }
       cli_printf("%s = ", value_table[i].name);
-      cli_print_var(cmd_name, &global_cats_config, val, 0);
+      cli_print_var(cmd_name, &global_cats_config, val, false);
       cli_print_linefeed();
       cli_print_var_range(val);
       // cliPrintVarDefault(cmd_name, val);
@@ -199,7 +200,7 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
 
 static void cli_cmd_set(const char *cmd_name, char *args) {
   const uint32_t len = strlen(args);
-  char *eqptr;
+  char *eqptr = nullptr;
 
   if (len == 0 || (len == 1 && args[0] == '*')) {
     cli_print_line("Current settings: ");
@@ -237,8 +238,8 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
         } else {
           int value = atoi(eqptr);
 
-          int min;
-          int max;
+          int min = 0;
+          int max = 0;
           get_min_max(val, &min, &max);
 
           if (value >= min && value <= max) {
@@ -251,7 +252,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       break;
       case MODE_LOOKUP:
       case MODE_BITSET: {
-        int tableIndex;
+        int tableIndex = 0;
         if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
           tableIndex = TABLE_EVENTS;
         } else {
@@ -360,7 +361,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
 
     if (value_changed) {
       cli_printf("%s set to ", val->name);
-      cli_print_var(cmd_name, &global_cats_config, val, 0);
+      cli_print_var(cmd_name, &global_cats_config, val, false);
       if (val->cb != nullptr) {
         val->cb(val);
       }
@@ -401,9 +402,8 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_status(const char *cmd_name, char *args) {
-  const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
+  cli_printf("State:       %s\n", fsm_map[global_flight_state.flight_state]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
              (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
@@ -567,7 +567,7 @@ static int32_t get_flight_idx(const char *log_idx_arg) {
     return -1;
   }
 
-  char *endptr;
+  char *endptr = nullptr;
   int32_t flight_idx = strtol(log_idx_arg, &endptr, 10);
 
   if (log_idx_arg == endptr) {
@@ -609,7 +609,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
   char *ptr = strtok(args, " ");
 
   int32_t flight_idx_or_err = get_flight_idx(ptr);
-  rec_entry_type_e filter_mask = (rec_entry_type_e)(0);
+  auto filter_mask = static_cast<rec_entry_type_e>(0);
 
   if (flight_idx_or_err < 0) {
     return;
@@ -656,7 +656,7 @@ static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
 static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
   cli_print_line("\nTrying LFS format");
   lfs_format(&lfs, get_lfs_cfg());
-  int err = lfs_mount(&lfs, get_lfs_cfg());
+  const int err = lfs_mount(&lfs, get_lfs_cfg());
   if (err != 0) {
     cli_print_linef("LFS mounting failed with error %d!", err);
   } else {
@@ -676,20 +676,19 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   cli_print_line("Flash erased!");
   cli_print_line("Mounting LFS");
 
-  int err = lfs_mount(&lfs, get_lfs_cfg());
+  const int err = lfs_mount(&lfs, get_lfs_cfg());
   if (err == 0) {
     cli_print_line("LFS mounted successfully!");
   } else {
     cli_print_linef("LFS mounting failed with error %d!", err);
     cli_print_line("Trying LFS format");
     lfs_format(&lfs, get_lfs_cfg());
-    int err2 = lfs_mount(&lfs, get_lfs_cfg());
+    const int err2 = lfs_mount(&lfs, get_lfs_cfg());
     if (err2 != 0) {
       cli_print_linef("LFS mounting failed again with error %d!", err2);
       return;
-    } else {
-      cli_print_line("Mounting successful!");
     }
+    cli_print_line("Mounting successful!");
   }
   flight_counter = 0;
   /* create the flights directory */
@@ -710,8 +709,8 @@ static void cli_cmd_flash_stop(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_flash_test(const char *cmd_name, char *args) {
-  uint8_t write_buf[256] = {0};
-  uint8_t read_buf[256] = {0};
+  uint8_t write_buf[256] = {};
+  uint8_t read_buf[256] = {};
   fill_buf(write_buf, 256);
   // w25q_chip_erase();
   if (!strcmp(args, "full")) {
@@ -777,7 +776,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       }
     }
   } else {
-    char *endptr;
+    char *endptr = nullptr;
     uint32_t sector_idx = strtoul(args, &endptr, 10);
     if (args != endptr) {
       if (sector_idx >= w25q.sector_count) {
@@ -894,8 +893,8 @@ static void print_timer_config() {
 static void cli_set_var(const cli_value_t *var, const uint32_t value) {
   const void *ptr = get_cats_config_member_ptr(&global_cats_config, var);
 
-  uint32_t work_value;
-  uint32_t mask;
+  uint32_t work_value = 0;
+  uint32_t mask = 0;
 
   if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
     switch (var->type & VALUE_TYPE_MASK) {
