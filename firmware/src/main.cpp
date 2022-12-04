@@ -79,10 +79,6 @@ int main(void) {
   battery_monitor_init();
   log_info("Battery monitor initialization complete.");
 
-#if (configUSE_TRACE_FACILITY == 1)
-  vTraceEnable(TRC_INIT);
-#endif
-
   /* Init scheduler */
   osKernelInitialize();
 
@@ -99,7 +95,7 @@ int main(void) {
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
-  while (1) {
+  while (true) {
   }
 }
 

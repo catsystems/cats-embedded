@@ -71,13 +71,13 @@ extern uint32_t SystemCoreClock;
 #define configSTACK_DEPTH_TYPE                  uint16_t
 #define configMESSAGE_BUFFER_LENGTH_TYPE        size_t  // TODO: see if this can be reduced to uint8_t
 #define configUSE_TASK_NOTIFICATIONS            1       // added, TODO: see if we can benefit from this
-//#define configTASK_NOTIFICATION_ARRAY_ENTRIES 1 // dependant on above
+// #define configTASK_NOTIFICATION_ARRAY_ENTRIES 1 // dependant on above
 
 /* Memory allocation related definitions. */
 #define configSUPPORT_STATIC_ALLOCATION  1
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
-//#define configAPPLICATION_ALLOCATED_HEAP          1
-//#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP 1
+// #define configAPPLICATION_ALLOCATED_HEAP          1
+// #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP 1
 #define configTOTAL_HEAP_SIZE ((size_t)32 * 1024)
 
 /* Hook function related definitions. */
@@ -166,18 +166,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* IMPORTANT: This define is commented when used with STM32Cube firmware, when the timebase source is SysTick, to
  * prevent overwriting SysTick_Handler defined within STM32Cube HAL */
-
 #define xPortSysTickHandler SysTick_Handler
-
-/* USER CODE BEGIN Defines */
-/* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
-/* Integrates the Tracealyzer recorder with FreeRTOS */
-#if (configUSE_TRACE_FACILITY == 1)
-#undef xPortSysTickHandler
-#define SysTick_Handler xPortSysTickHandler
-#include "trcRecorder.h"
-#endif
-/* USER CODE END Defines */
 
 #ifdef __cplusplus
 }

@@ -27,11 +27,7 @@
 
 /** Exported Defines **/
 
-#if (configUSE_TRACE_FACILITY == 1)
-#define REC_QUEUE_SIZE 256
-#else
 #define REC_QUEUE_SIZE 512
-#endif
 
 #define REC_CMD_QUEUE_SIZE 16
 

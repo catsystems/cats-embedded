@@ -119,7 +119,6 @@ file(GLOB_RECURSE SOURCES
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
         "lib/LittleFS/*.*"
-        "lib/Tracing/*.*"
         "target/${CATS_TARGET}/*.*"
         "src/*.*")
 

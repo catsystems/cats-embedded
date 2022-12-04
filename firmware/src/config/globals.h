@@ -85,14 +85,6 @@ extern osMessageQueueId_t rec_queue;
 extern osMessageQueueId_t rec_cmd_queue;
 extern osMessageQueueId_t event_queue;
 
-/** Tracing Channels **/
-
-#if (configUSE_TRACE_FACILITY == 1)
-#include "trcRecorder.h"
-extern traceString baro_channel;
-extern traceString flash_channel;
-#endif
-
 extern volatile bool global_usb_detection;
 extern volatile bool usb_communication_complete;
 extern volatile bool simulation_started;

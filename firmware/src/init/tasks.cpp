@@ -48,18 +48,10 @@ SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_telemetry, 512)
 
 void init_tasks() {
-#if (configUSE_TRACE_FACILITY == 1)
-  baro_channel = xTraceRegisterString("Baro Channel");
-  flash_channel = xTraceRegisterString("Flash Channel");
-#endif
-
   // TODO: Check rec_queue for validity here
   rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
   rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
   event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
-#if (configUSE_TRACE_FACILITY == 1)
-  vTraceSetQueueName(rec_queue, "Recorder Queue");
-#endif
 
   osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
 
