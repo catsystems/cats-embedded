@@ -21,14 +21,14 @@
 
 #include <cstddef>
 
-typedef void cli_command_fn(const char *cmd_name, char *args);
+using cli_command_fn = void(const char *, char *);
 
-typedef struct {
+struct clicmd_t {
   const char *name;
   const char *description;
   const char *args;
   cli_command_fn *cli_command;
-} clicmd_t;
+};
 
 #define CLI_COMMAND_DEF(name, description, args, cli_command) \
   { name, description, args, cli_command }

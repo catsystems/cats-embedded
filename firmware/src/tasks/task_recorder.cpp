@@ -16,11 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_recorder.h"
+#include <cstdio>
+
 #include "cmsis_os.h"
 #include "config/globals.h"
 #include "flash/lfs_custom.h"
 #include "flash/recorder.h"
+#include "tasks/task_recorder.h"
 #include "util/log.h"
 
 /** Private Constants **/

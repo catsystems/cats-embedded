@@ -28,7 +28,7 @@
 
 #include "target.h"
 
-typedef enum {
+enum w25q_id_e {
   W25QINVALID = 0,
   W25Q10 = 1,
   W25Q20,
@@ -40,9 +40,9 @@ typedef enum {
   W25Q128,
   W25Q256,
   W25Q512,
-} w25q_id_e;
+};
 
-typedef struct {
+struct w25q_t {
   w25q_id_e id;
   uint16_t page_size;
   uint32_t page_count;
@@ -53,9 +53,9 @@ typedef struct {
   uint32_t capacity_in_kilobytes;
   bool needs_4_byte_addressing;
   uint8_t lock;
-} w25q_t;
+};
 
-typedef enum {
+enum w25q_status_e {
   W25Q_OK = 0,
   W25Q_ERR_INIT,
   W25Q_ERR_WRITE_ENABLE,
@@ -64,7 +64,7 @@ typedef enum {
   W25Q_ERR_TRANSMIT,
   W25Q_ERR_TRANSMIT_CMD,
   W25Q_ERR_INVALID_PARAM
-} w25q_status_e;
+};
 
 /**
  * Initializes the W25Q flash chip.

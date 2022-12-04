@@ -25,8 +25,10 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 #include "flash/reader.h"
+#include "main.h"
 #include "util/actions.h"
 #include "util/battery.h"
+#include "util/enum_str_maps.h"
 #include "util/log.h"
 
 #include <cstdlib>
@@ -400,9 +402,8 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_status(const char *cmd_name, char *args) {
-  const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("State:       %s\n", p_event_table->values[global_flight_state.flight_state - 1]);
+  cli_printf("State:       %s\n", fsm_map[global_flight_state.flight_state]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
              (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
@@ -708,8 +709,8 @@ static void cli_cmd_flash_stop(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_flash_test(const char *cmd_name, char *args) {
-  uint8_t write_buf[256] = {0};
-  uint8_t read_buf[256] = {0};
+  uint8_t write_buf[256] = {};
+  uint8_t read_buf[256] = {};
   fill_buf(write_buf, 256);
   // w25q_chip_erase();
   if (!strcmp(args, "full")) {

@@ -58,7 +58,7 @@ static void read_baro();
   /* Initialize IMU data variables */
   int16_t gyroscope[3] = {};    /* 0 = x, 1 = y, 2 = z */
   int16_t acceleration[3] = {}; /* 0 = x, 1 = y, 2 = z */
-  int16_t temperature_imu = {0};
+  int16_t temperature_imu = {};
 
   /* Initialize BARO data variables */
   uint32_t stage = READ_BARO_TEMPERATURE;

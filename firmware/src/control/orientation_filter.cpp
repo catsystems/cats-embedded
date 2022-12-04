@@ -41,11 +41,11 @@ void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_v
   filter->gyro_data[3] = angular_vel->z / 180.0f * PI;  // Convert to rad/s
 
   /* x_hat = x_bar + 1/2*Ts(quat_mult(velocity, x_bar)) */
-  float32_t holder_data[4] = {0};
+  float32_t holder_data[4] = {};
   arm_matrix_instance_f32 holder_mat;
   arm_mat_init_f32(&holder_mat, 4, 1, holder_data);
 
-  float32_t holder2_data[4] = {0};
+  float32_t holder2_data[4] = {};
   arm_matrix_instance_f32 holder2_mat;
   arm_mat_init_f32(&holder2_mat, 4, 1, holder2_data);
   quaternion_mat(&filter->estimate, &filter->gyro, &holder_mat);

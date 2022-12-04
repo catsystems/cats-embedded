@@ -29,7 +29,7 @@
 /* Number supported recording speeds */
 #define NUM_REC_SPEEDS 10
 
-typedef struct {
+struct cats_config_t {
   /* Needs to be in first position */
   uint32_t config_version;
 
@@ -47,13 +47,12 @@ typedef struct {
 #ifdef CATS_VEGA
   config_telemetry_t telemetry_settings;
 #endif
+};
 
-} cats_config_t;
-
-typedef union {
+union cats_config_u {
   cats_config_t config;
   uint32_t config_array[sizeof(cats_config_t) / sizeof(uint32_t)];
-} cats_config_u;
+};
 
 extern cats_config_u global_cats_config;
 

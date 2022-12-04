@@ -126,8 +126,8 @@
     // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
     //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
     //          1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
-    log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, filter.x_bar.pData[0], filter.x_bar.pData[1],
-            filter.x_bar_data[2]);
+    log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, static_cast<double>(filter.x_bar.pData[0]),
+            static_cast<double>(filter.x_bar.pData[1]), static_cast<double>(filter.x_bar_data[2]));
 
     /* reset old fsm enum */
     old_fsm_enum = new_fsm_enum;

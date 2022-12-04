@@ -18,15 +18,15 @@
 
 #pragma once
 
-typedef enum {
+enum transmission_direction_e {
   TX = 0,
   RX = 1,
-} transmission_direction_e;
+};
 
-typedef enum {
+enum transmission_mode_e {
   UNIDIRECTIONAL = 0,
   BIDIRECTIONAL = 1,
-} transmission_mode_e;
+};
 
 #define CMD_DIRECTION   0x10
 #define CMD_PA_GAIN     0x11

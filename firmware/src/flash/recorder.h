@@ -48,7 +48,7 @@
 /** Exported Types **/
 
 // clang-format off
-typedef enum {
+ enum rec_entry_type_e {
   // Periodic recorder types, their recording speed is affected by global_cats_config.config.rec_speed_idx
   IMU                = 1 << 4,   // 0x20
   BARO               = 1 << 5,   // 0x40
@@ -63,43 +63,37 @@ typedef enum {
   ERROR_INFO         = 1 << 13,  // 0x4000
   GNSS_INFO          = 1 << 14,  // 0x8000
   HEHE               = 0xFFFFFFFF,
-} rec_entry_type_e;
+} ;
 // clang-format on
 
-typedef enum {
-  REC_CMD_INVALID = 0,
-  REC_CMD_FILL_Q = 1,
-  REC_CMD_FILL_Q_STOP,
-  REC_CMD_WRITE,
-  REC_CMD_WRITE_STOP
-} rec_cmd_type_e;
+enum rec_cmd_type_e { REC_CMD_INVALID = 0, REC_CMD_FILL_Q = 1, REC_CMD_FILL_Q_STOP, REC_CMD_WRITE, REC_CMD_WRITE_STOP };
 
-typedef struct {
+struct flight_info_t {
   float height;
   float velocity;
   float acceleration; /* Acceleration with removed offset from inside the KF */
-} flight_info_t;
+};
 
-typedef struct {
+struct orientation_info_t {
   int16_t estimated_orientation[4];
-} orientation_info_t;
+};
 
-typedef struct {
+struct filtered_data_info_t {
   float filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
   float filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the right coordinate
                                   frame. */
-} filtered_data_info_t;
+};
 
-typedef struct {
+struct event_info_t {
   cats_event_e event;
   peripheral_act_t action;
-} event_info_t;
+};
 
-typedef struct {
+struct error_info_t {
   cats_error_e error;
-} error_info_t;
+};
 
-typedef union {
+union rec_elem_u {
   imu_data_t imu;
   baro_data_t baro;
   magneto_data_t magneto_info;
@@ -111,17 +105,17 @@ typedef union {
   event_info_t event_info;
   error_info_t error_info;
   gnss_position_t gnss_info;
-} rec_elem_u;
+};
 
-typedef struct {
+struct rec_elem_t {
   timestamp_t ts;
   rec_entry_type_e rec_type;
   rec_elem_u u;
-} rec_elem_t;
+};
 
 /* Flight Statistics */
 
-typedef struct {
+struct flight_stats_t {
   cats_config_u config;
   struct {
     timestamp_t ts;
@@ -142,7 +136,7 @@ typedef struct {
   float32_t height_0;
 
   gnss_time_t liftoff_time;
-} flight_stats_t;
+};
 
 /** Exported Variables **/
 extern flight_stats_t global_flight_stats;

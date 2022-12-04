@@ -119,7 +119,7 @@ static void ms_write_command(MS5607 *dev, uint8_t command) { spi_transmit(dev->s
 
 static void read_calibration(MS5607 *dev) {
   for (int i = 0; i < 6; i++) {
-    uint8_t rec[2] = {0};
+    uint8_t rec[2] = {};
     ms_read_bytes(dev, COMMAND_PROM_READ_BASE + (2 * (i + 1)), rec, 2);
     dev->coefficients[i] = uint8_to_uint16(rec[0], rec[1]);
   }

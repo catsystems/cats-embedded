@@ -21,19 +21,19 @@
 #include <arm_math.h>
 #include <cstdint>
 
-typedef struct {
+struct gnss_time_t {
   uint8_t hour;
   uint8_t min;
   uint8_t sec;
-} __attribute__((packed)) gnss_time_t;
+} __attribute__((packed));
 
-typedef struct {
+struct gnss_position_t {
   float32_t lat;
   float32_t lon;
   uint8_t sats;
-} __attribute__((packed)) gnss_position_t;
+} __attribute__((packed));
 
-typedef struct {
+struct gnss_data_t {
   gnss_position_t position;
   gnss_time_t time;
-} gnss_data_t;
+};

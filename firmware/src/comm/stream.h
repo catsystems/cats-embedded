@@ -25,12 +25,12 @@
 /**
  * A wrapper for a fifo with a retry timeout.
  */
-typedef struct {
+struct stream_t {
   /* Pointer to the fifo. */
   fifo_t *fifo;
   /* Timeout after which the stream will stop trying to read from the fifo. */
   uint32_t timeout_msec;
-} stream_t;
+};
 
 #ifdef __cplusplus
 extern "C" {
