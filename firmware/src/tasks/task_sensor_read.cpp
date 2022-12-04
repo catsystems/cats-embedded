@@ -62,8 +62,8 @@ static void read_baro();
 
   /* Initialize BARO data variables */
   uint32_t stage = READ_BARO_TEMPERATURE;
-  int32_t temperature_baro[NUM_BARO];
-  int32_t pressure[NUM_BARO];
+  int32_t temperature_baro[NUM_BARO] = {};
+  int32_t pressure[NUM_BARO] = {};
   prepare_temp();
   osDelay(5);
 
@@ -74,8 +74,8 @@ static void read_baro();
   /* This task is sampled with 2 times the control sampling frequency to maximize speed of the barometer. In one
    * timestep the Baro pressure is read out and then the Baro Temperature. The other sensors are only read out one in
    * two times. */
-  uint32_t tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
-  while (1) {
+  const uint32_t tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
+  while (true) {
     // Readout the baro register
     read_baro();
 
