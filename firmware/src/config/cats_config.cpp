@@ -64,14 +64,12 @@ const cats_config_u DEFAULT_CONFIG = {.config = {
                                                {ACT_SET_RECORDER_STATE, REC_OFF}},
                                           .initial_servo_position = {0, 0},
                                           .rec_speed_idx = 0,
-#ifdef CATS_VEGA
                                           .telemetry_settings =
                                               {
                                                   .link_phrase = {},
                                                   .power_level = 20,
                                                   .adaptive_power = OFF,
                                               },
-#endif
                                       }};
 
 cats_config_u global_cats_config = {};

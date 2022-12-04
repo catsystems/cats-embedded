@@ -196,13 +196,11 @@ struct config_action_t {
 
 enum adaptive_power_e { OFF, ON };
 
-#ifdef CATS_VEGA
-struct config_telemetry_t {
+typedef struct {
   uint8_t link_phrase[8];
   uint8_t power_level;
   adaptive_power_e adaptive_power;
-};
-#endif
+} config_telemetry_t;
 
 struct peripheral_act_t {
   /* Action type */
