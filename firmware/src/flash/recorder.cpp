@@ -167,7 +167,7 @@ void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_v
         e.u.gnss_info = *((gnss_position_t *)rec_value);
         break;
       default:
-        log_fatal("Impossible recorder entry type %d!", pure_rec_type);
+        log_fatal("Impossible recorder entry type %lu!", pure_rec_type);
         break;
     }
 
