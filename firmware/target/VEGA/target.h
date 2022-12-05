@@ -22,8 +22,6 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 
-// #include <cstdint>
-
 /***** Pin config *****/
 #define LED1_Pin           GPIO_PIN_13
 #define LED1_GPIO_Port     GPIOC
@@ -117,22 +115,22 @@ extern UART_HandleTypeDef huart2;
 #define NUM_PYRO         2
 #define NUM_LOW_LEVEL_IO 1
 
-typedef enum : uint32_t {
+enum sens_type_e : uint32_t {
   SENS_TYPE_INVALID = 0,
   IMU_ID_ACC,
   IMU_ID_GYRO,
   BARO_ID,
   MAG_ID,
   ACC_ID,
-} sens_type_e;
+};
 
-typedef struct {
+struct sens_info_t {
   sens_type_e sens_type;
   float32_t conversion_to_SI;
   float32_t upper_limit;
   float32_t lower_limit;
   float32_t resolution;
-} sens_info_t;
+};
 
 extern sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER];
 extern sens_info_t gyro_info[NUM_IMU];
