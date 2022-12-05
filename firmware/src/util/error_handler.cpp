@@ -25,7 +25,7 @@ static uint32_t errors = 0;
 void add_error(cats_error_e err) {
   if (err != CATS_ERR_OK) {
     if (errors != (errors | err)) {
-      log_error("Encountered error 0x%x", err);
+      log_error("Encountered error 0x%lx", err);
 
       errors |= err;
 

@@ -47,7 +47,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
         if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {
           if (osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
-            log_warn("Starting TIMER %lu with event %u failed.", i, curr_event);
+            log_warn("Starting TIMER %lu with event %lu failed.", i, curr_event);
           }
         }
       }
@@ -88,7 +88,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
 }
 
 osStatus_t trigger_event(cats_event_e ev) {
-  log_warn("Event %d added to the queue", ev);
+  log_warn("Event %lu added to the queue", ev);
   /* TODO: check if timeout should be 0 here */
   return osMessageQueuePut(event_queue, &ev, 0U, 10U);
 }

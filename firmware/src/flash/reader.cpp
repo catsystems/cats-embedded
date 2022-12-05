@@ -209,7 +209,7 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.error_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|ERROR_INFO|%d", rec_elem.ts, rec_elem.u.error_info.error);
+            log_raw("%lu|ERROR_INFO|%lu", rec_elem.ts, rec_elem.u.error_info.error);
           }
         } break;
         case GNSS_INFO: {
