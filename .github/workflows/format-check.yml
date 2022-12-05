@@ -16,5 +16,6 @@ jobs:
       uses: jidicula/clang-format-action@v4.9.0
       with:
         clang-format-version: '13'
-        check-path: 'firmware/src'
-  
+        check-path: 'firmware'
+        exclude-regex: '(firmware/lib)'
+
