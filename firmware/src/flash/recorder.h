@@ -44,7 +44,7 @@
 /** Exported Types **/
 
 // clang-format off
- enum rec_entry_type_e {
+ enum rec_entry_type_e: uint32_t {
   // Periodic recorder types, their recording speed is affected by global_cats_config.config.rec_speed_idx
   IMU                = 1 << 4,   // 0x20
   BARO               = 1 << 5,   // 0x40
@@ -58,8 +58,7 @@
   EVENT_INFO         = 1 << 12,  // 0x2000
   ERROR_INFO         = 1 << 13,  // 0x4000
   GNSS_INFO          = 1 << 14,  // 0x8000
-  HEHE               = 0xFFFFFFFF,
-} ;
+};
 // clang-format on
 
 enum rec_cmd_type_e { REC_CMD_INVALID = 0, REC_CMD_FILL_Q = 1, REC_CMD_FILL_Q_STOP, REC_CMD_WRITE, REC_CMD_WRITE_STOP };

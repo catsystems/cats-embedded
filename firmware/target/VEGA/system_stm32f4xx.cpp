@@ -142,7 +142,7 @@ const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
 
 
   /* Custom BootLoad Jumper Function */
-  _Noreturn void BootLoaderJump(void){
+  [[noreturn]] void BootLoaderJump(void){
     void (*SysMemBootJump)(void);
 
     HAL_RCC_DeInit();

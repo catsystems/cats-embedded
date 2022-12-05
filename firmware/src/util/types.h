@@ -122,17 +122,7 @@ struct magneto_calibration_data_t {
   float magneto_radius;
 };
 
-enum flight_fsm_e {
-  INVALID = 0,
-  MOVING = 1,
-  READY,
-  THRUSTING,
-  COASTING,
-  DROGUE,
-  MAIN,
-  TOUCHDOWN,
-  HEHE2 = 0x7FFFFFFF /* TODO <- optimize these enums and remove this guy */
-};
+enum flight_fsm_e : uint32_t { INVALID = 0, MOVING = 1, READY, THRUSTING, COASTING, DROGUE, MAIN, TOUCHDOWN };
 
 /* Todo: Comment out this struct */
 struct flight_fsm_t {
@@ -216,7 +206,7 @@ struct event_action_map_elem_t {
   peripheral_act_t *action_list;
 };
 
-enum cats_event_e {
+enum cats_event_e : uint32_t {
   EV_MOVING = 0,
   EV_READY,
   EV_LIFTOFF,
@@ -225,8 +215,7 @@ enum cats_event_e {
   EV_MAIN_DEPLOYMENT,
   EV_TOUCHDOWN,
   EV_CUSTOM_1,
-  EV_CUSTOM_2,
-  EV_HEHE = 0xFFFFFFFF /* TODO <- optimize these enums and remove this guy */
+  EV_CUSTOM_2
 };
 
 enum cats_sim_choice_e { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML };

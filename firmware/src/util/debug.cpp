@@ -17,6 +17,7 @@
  */
 
 #include "cmsis_os.h"
+#include "target.h"
 #include "usbd_cdc_if.h"
 
 #include <cstdio>
@@ -38,7 +39,7 @@ void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
 
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
 
-  while (1) {
+  while (true) {
     /* Toggle the red LED. */
     HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 
