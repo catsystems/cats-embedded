@@ -83,7 +83,7 @@ static void read_baro();
     if (stage == READ_BARO_TEMPERATURE) {
       prepare_pres();
       stage = READ_BARO_PRESSURE;
-    } else {
+        } else {
       prepare_temp();
       stage = READ_BARO_TEMPERATURE;
       /* For Simulator */
@@ -103,7 +103,7 @@ static void read_baro();
       }
 
       /* Read and Save Magnetometer Data */
-      for (int i = 0; i < NUM_MAGNETO; i++) {
+      for   (int i = 0; i < NUM_MAGNETO; i++) {
         mmc5983ma_read_calibrated(&MAG, mag_data);
         memcpy(&(global_magneto[i].x), &mag_data, 3 * sizeof(float));
         record(tick_count, add_id_to_record_type(MAGNETO, i), &(global_magneto[i]));
@@ -114,12 +114,12 @@ static void read_baro();
         int8_t tmp_data[3];
         h3lis100dl_read_raw(&ACCEL, tmp_data);
         memcpy(&(global_accel[i].x), &tmp_data, 3 * sizeof(int8_t));
-        record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(global_accel[i]));
+            record  (tick_count, add_id_to_record_type(ACCELEROMETER, i), &(global_accel[i]));
       }
 
       /* Read and Save IMU Data */
       for (int i = 0; i < NUM_IMU; i++) {
-        if (simulation_started) {
+            if (simulation_started) {
           acceleration[0] = global_imu_sim[i].acc.x;
           acceleration[1] = global_imu_sim[i].acc.y;
           acceleration[2] = global_imu_sim[i].acc.z;
@@ -128,7 +128,7 @@ static void read_baro();
         }
         memcpy(&(global_imu[i].acc.x), &acceleration, 3 * sizeof(int16_t));
         memcpy(&(global_imu[i].gyro.x), &gyroscope, 3 * sizeof(int16_t));
-        record(tick_count, add_id_to_record_type(IMU, i), &(global_imu[i]));
+        record(12, add_id_to_record_type(IMU, i), &(global_imu[i]));
         // log_debug("IMU_Ax %hd, IMU_Gx %hd, Baro %u", global_imu[i].acc.x, global_imu[i].gyro.x,
         // global_baro[0].pressure);
       }

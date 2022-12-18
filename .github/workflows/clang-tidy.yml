@@ -39,10 +39,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: file
-        files-changed-only: false
         repo-root: ./firmware
-        version: 14
-        ignore: lib
+        version: 12
+        ignore: lib|build
         database: build/compile_commands.json
      
     - name: Upload Artifacts
