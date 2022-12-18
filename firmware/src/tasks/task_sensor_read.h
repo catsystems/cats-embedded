@@ -18,4 +18,40 @@
 
 #pragma once
 
-[[noreturn]] void task_sensor_read(void *argument);
+#include <optional>
+
+#include "util/types.h"
+#include "util/log.h"
+
+namespace task {
+    [[noreturn]] void task_sensor_read(void *argument);
+
+
+    class SensorRead {
+    public:
+        friend void task_sensor_read(void *argument);
+
+        void Run();
+
+        enum class BaroReadoutType {
+            kReadBaroTemperature = 1,
+            kReadBaroPressure = 2,
+        };
+
+        bool PreparePressure();
+
+        static SensorRead &GetInstance() {
+            if (!s_instance) {
+                s_instance = SensorRead();
+            }
+            return *s_instance;
+        }
+
+    private:
+        imu_data_t m_imu_data[NUM_IMU]{};
+        baro_data_t m_baro_data[NUM_BARO]{};
+        BaroReadoutType m_current_readout{BaroReadoutType::kReadBaroTemperature};
+
+        static std::optional<SensorRead> s_instance;
+    };
+} // namespace task
