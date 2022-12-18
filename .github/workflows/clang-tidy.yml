@@ -39,6 +39,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: file
+        files-changed-only: false
      
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
