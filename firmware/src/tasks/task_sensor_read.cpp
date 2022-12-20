@@ -54,9 +54,6 @@ static void read_mag(vf32_t *data);
 static void read_accel(vi8_t *data);
 
 namespace task {
-
-std::optional<SensorRead> SensorRead::s_instance = std::nullopt;
-
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_sensor_read, 512)
 

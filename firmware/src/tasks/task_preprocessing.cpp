@@ -38,8 +38,6 @@ static void transform_data(const SI_data_t *SI_data, const calibration_data_t *c
 
 namespace task {
 
-std::optional<Preprocessing> Preprocessing::s_instance = std::nullopt;
-
 SET_TASK_PARAMS(task_preprocessing, 512);
 
 void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_preprocessing_attributes); }

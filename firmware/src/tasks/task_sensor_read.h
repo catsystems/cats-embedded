@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <optional>
+#include "task.h"
 
 #include "util/log.h"
 #include "util/types.h"
@@ -26,11 +26,12 @@
 namespace task {
 [[noreturn]] void task_sensor_read(void *argument);
 
-class SensorRead {
+class SensorRead : public Task<SensorRead> {
  public:
+  friend class Task<SensorRead>;
   friend void task_sensor_read(void *argument);
 
-  void Run();
+  void Run() override;
 
   enum class BaroReadoutType {
     kReadBaroTemperature = 1,
@@ -38,31 +39,17 @@ class SensorRead {
   };
 
   baro_data_t GetBaro(uint8_t index);
-
   imu_data_t GetImu(uint8_t index);
-
   magneto_data_t GetMag(uint8_t index);
-
   accel_data_t GetAccel(uint8_t index);
-
-  static SensorRead &GetInstance() {
-    if (!s_instance.has_value()) {
-      log_raw("Class Sensor Read Created.");
-      s_instance = SensorRead();
-    }
-    return *s_instance;
-  }
 
  private:
   SensorRead() = default;
-  // SensorRead& operator=(const SensorRead&) = default;
-  // SensorRead& operator=(const SensorRead&&) = default;
+
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
   magneto_data_t m_magneto_data[NUM_MAGNETO]{};
   accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
   BaroReadoutType m_current_readout{BaroReadoutType::kReadBaroTemperature};
-
-  static std::optional<SensorRead> s_instance;
 };
 }  // namespace task

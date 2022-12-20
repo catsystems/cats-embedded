@@ -21,8 +21,10 @@
 #include "util/error_handler.h"
 #include "util/types.h"
 
-/* maximum times a value is allowed to be the same value before we assume that
- * it is faulty */
+/* Maximum times a value is allowed to be the same value before we assume that it is faulty */
 #define MAX_NUM_SAME_VALUE 7  // num iterations
 
 void check_sensors(sensor_elimination_t *elimination);
+
+cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);
+cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);

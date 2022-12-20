@@ -18,33 +18,32 @@
 
 #pragma once
 
-#include <optional>
+#include "task.h"
 
+#include "util/error_handler.h"
 #include "util/log.h"
 #include "util/types.h"
+
+#include "control/sensor_elimination.h"
 
 namespace task {
 [[noreturn]] void task_preprocessing(void *argument);
 
-class Preprocessing {
+class Preprocessing : public Task<Preprocessing> {
  public:
+  friend class Task<Preprocessing>;
   friend void task_preprocessing(void *argument);
 
-  void Run();
+  void Run() override;
 
-  static Preprocessing &GetInstance() {
-    if (!s_instance.has_value()) {
-      log_raw("Class Sensor Read Created.");
-      s_instance = Preprocessing();
-    }
-    return *s_instance;
-  }
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
   magneto_data_t m_magneto_data[NUM_MAGNETO]{};
   accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
 
  private:
+  Preprocessing() = default;
+
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {};
 
@@ -65,7 +64,5 @@ class Preprocessing {
   /* local fsm enum */
   flight_fsm_e new_fsm_enum = MOVING;
   flight_fsm_e old_fsm_enum = MOVING;
-
-  static std::optional<Preprocessing> s_instance;
 };
 }  // namespace task

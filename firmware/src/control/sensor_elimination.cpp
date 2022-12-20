@@ -19,9 +19,6 @@
 #include "control/sensor_elimination.h"
 #include "tasks/task_preprocessing.h"
 
-static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);
-static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index,
-                                          const sens_info_t *sens_info);
 
 void check_sensors(sensor_elimination_t *elimination) {
   cats_error_e status = CATS_ERR_OK;
@@ -83,8 +80,7 @@ void check_sensors(sensor_elimination_t *elimination) {
   }
 }
 
-static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index,
-                                        const sens_info_t *sens_info) {
+cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info) {
   cats_error_e status = CATS_ERR_OK;
 
   auto &task = task::Preprocessing::GetInstance();
@@ -125,11 +121,10 @@ static cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8
   return status;
 }
 
-static cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index,
-                                          const sens_info_t *sens_info) {
+cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info) {
   cats_error_e status = CATS_ERR_OK;
 
-  auto task = task::Preprocessing::GetInstance();
+  auto &task = task::Preprocessing::GetInstance();
 
   switch (sens_info->sens_type) {
     case BARO_ID:
