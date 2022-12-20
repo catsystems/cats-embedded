@@ -31,10 +31,6 @@
 #include "tasks/task_state_est.h"
 #include "tasks/task_telemetry.h"
 
-
-/* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_preprocessing, 512)
-
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_state_est, 512)
 SET_TASK_PARAMS(task_health_monitor, 256)
@@ -56,7 +52,7 @@ void init_tasks() {
 
   task::SensorRead::GetInstance().Run();
 
-  osThreadNew(task_preprocessing, nullptr, &task_preprocessing_attributes);
+  task::Preprocessing::GetInstance().Run();
 
   osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
@@ -67,6 +63,4 @@ void init_tasks() {
   osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
 
   osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
-
 }
-

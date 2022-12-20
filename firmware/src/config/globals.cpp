@@ -197,11 +197,6 @@ SERVO SERVO2 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_2, 
 
 /** State Estimation **/
 
-baro_data_t global_baro[NUM_BARO] = {};
-imu_data_t global_imu[NUM_IMU] = {};
-accel_data_t global_accel[NUM_ACCELEROMETER] = {};
-magneto_data_t global_magneto[NUM_MAGNETO] = {};
-
 baro_data_t global_baro_sim[NUM_BARO] = {};
 imu_data_t global_imu_sim[NUM_BARO] = {};
 
