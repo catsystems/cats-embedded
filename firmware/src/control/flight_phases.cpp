@@ -252,6 +252,7 @@ static void clear_fsm_memory(flight_fsm_t *fsm_state) {
 
 static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigger, flight_fsm_t *fsm_state) {
   trigger_event(event_to_trigger);
+  osEventFlagsSet(fsm_flag_id, new_state);
   fsm_state->flight_state = new_state;
   clear_fsm_memory(fsm_state);
 }

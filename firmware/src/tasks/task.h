@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <typeinfo>
 #include <utility>
+#include "config/globals.h"
 
 #include "cmsis_os.h"
 
@@ -33,6 +34,24 @@ class Task {
   Task() = default;
 
   virtual void Run() noexcept = 0;
+  flight_fsm_e m_fsm_enum = INVALID;
+
+    /* Update FSM enum */
+  bool GetNewFsmEnum() {
+    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+
+    /* If this happens, there is an error on the Event Flag.*/
+    if (new_enum > TOUCHDOWN) {
+      return false;
+    }
+
+    if (new_enum == this->m_fsm_enum) {
+      return false;
+    } else {
+      this->m_fsm_enum = new_enum;
+      return true;
+    }
+  }
 
  private:
   std::array<uint32_t, STACK_SZ> m_task_buffer{};
@@ -49,6 +68,9 @@ class Task {
       .priority = (osPriority_t)osPriorityNormal,
   };
   // clang-format on
+
+  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
+
 
  public:
   /* Deleted move constructor & move assignment operator */
@@ -71,8 +93,6 @@ class Task {
     static T instance(std::forward<Args>(args)...);
     return instance;
   }
-
-  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
 
   static constexpr void Start() noexcept {
     auto& task = T::GetInstance();

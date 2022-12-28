@@ -204,6 +204,7 @@ state_estimation_input_t global_estimation_input = {};
 SI_data_t global_SI_data = {};
 estimation_output_t global_estimation_data = {};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};
+osEventFlagsId_t fsm_flag_id;
 
 bool global_arming_bool = true;
 

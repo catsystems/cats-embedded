@@ -64,8 +64,5 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   /* Gyro Calib tag */
   bool m_gyro_calibrated = false;
 
-  /* local fsm enum */
-  flight_fsm_e m_new_fsm_enum = MOVING;
-  flight_fsm_e m_old_fsm_enum = MOVING;
 };
 }  // namespace task

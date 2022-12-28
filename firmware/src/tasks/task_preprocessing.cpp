@@ -43,7 +43,7 @@ namespace task {
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* update fsm enum */
-    m_new_fsm_enum = global_flight_state.flight_state;
+    bool fsm_updated = GetNewFsmEnum();
 
     /* get new sensor data */
     m_baro_data[0] = sensor_read_task.GetBaro(0);
@@ -58,7 +58,7 @@ namespace task {
     AvgToSi();
 
     /* Compute gravity when changing to READY */
-    if ((m_new_fsm_enum != m_old_fsm_enum) && (m_new_fsm_enum == READY)) {
+    if (fsm_updated && (m_fsm_enum == READY)) {
       calibrate_imu(&m_si_data.acc, &m_calibration);
       global_flight_stats.calibration_data.angle = m_calibration.angle;
       global_flight_stats.calibration_data.axis = m_calibration.axis;
@@ -73,13 +73,15 @@ namespace task {
     }
 
     /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
-    if (m_new_fsm_enum == MOVING) {
-      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), true);
+    if (m_fsm_enum == MOVING) {
+      m_height_0 =
+          approx_moving_average(calculate_height(m_si_data.pressure), true);
       global_flight_stats.height_0 = m_height_0;
     }
     /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
-    if (m_new_fsm_enum == READY) {
-      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), false);
+    if (m_fsm_enum == READY) {
+      m_height_0 =
+          approx_moving_average(calculate_height(m_si_data.pressure), false);
       global_flight_stats.height_0 = m_height_0;
     }
 
@@ -90,9 +92,6 @@ namespace task {
     /* Filter the data */
     MedianFilter();
 #endif
-
-    /* reset old fsm enum */
-    m_old_fsm_enum = m_new_fsm_enum;
 
     memcpy(&m_si_data_old, &m_si_data, sizeof(m_si_data));
 

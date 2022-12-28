@@ -33,6 +33,9 @@
 [[noreturn]] void task_flight_fsm(__attribute__((unused)) void *argument) {
   const control_settings_t settings = global_cats_config.config.control_settings;
 
+  fsm_flag_id = osEventFlagsNew(NULL);
+  osEventFlagsSet(fsm_flag_id, MOVING);
+
   trigger_event(EV_MOVING);
 
   uint32_t tick_count = osKernelGetTickCount();
