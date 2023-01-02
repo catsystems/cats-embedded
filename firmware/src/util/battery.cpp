@@ -19,6 +19,8 @@
 #include "util/battery.h"
 #include "drivers/adc.h"
 
+#include <cmath>
+
 #define ADC_LINFIT_A 0.00818474f
 #define ADC_LINFIT_B 0.476469f
 
@@ -39,32 +41,34 @@ static uint32_t cell_count = 1;
  * Alkaline (9V)  7.0   7.5   9.5
  * --------------------------------
  */
-const float voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
+const float32_t voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
 enum battery_level_index_e { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK };
 
-// Automatically check how many cells are connected
+/* Automatically check how many cells are connected */
 void battery_monitor_init() {
   if (battery_type == ALKALINE) return;
   uint32_t i = 1;
-  float voltage = battery_voltage();
-  while (((float)i * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
+  float32_t voltage = battery_voltage();
+  while (((float32_t)i * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
     i++;
   }
   cell_count = i;
 }
 
-// Returns battery voltage
-float battery_voltage() {
+/* Returns battery voltage */
+float32_t battery_voltage() {
   // https://www.wolframalpha.com/input/?i=linear+fit+%28675%2C6%29%2C%28919%2C8%29%2C%281408%2C12%29%2C%282141%2C18%29
-  return (float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B;
+  return static_cast<float32_t>(adc_get(ADC_BATTERY)) * ADC_LINFIT_A + ADC_LINFIT_B;
 }
 
-float battery_cell_voltage() { return ((float)adc_get(ADC_BATTERY) * ADC_LINFIT_A + ADC_LINFIT_B) / (float)cell_count; }
+/* Returns battery voltage as uint16, used for recording */
+uint16_t battery_voltage_short() { return static_cast<uint16_t>(round(battery_voltage() * 1000)); }
+
+float32_t battery_cell_voltage() { return battery_voltage() / static_cast<float32_t>(cell_count); }
 
 battery_level_e battery_level() {
-  float voltage;
   static battery_level_e level = BATTERY_OK;
-  voltage = battery_cell_voltage();
+  float32_t voltage = battery_cell_voltage();
 
   /* Battery level can only go back up when voltage + hysteresis voltage is reached */
   switch (level) {

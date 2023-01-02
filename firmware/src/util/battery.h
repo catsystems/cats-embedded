@@ -18,8 +18,13 @@
 
 #pragma once
 
+#include "arm_math.h"
+
 enum battery_level_e { BATTERY_CRIT = 1, BATTERY_LOW, BATTERY_OK };
 
 void battery_monitor_init();
-float battery_voltage();
+
+float32_t battery_voltage();
+uint16_t battery_voltage_short();
+
 battery_level_e battery_level();

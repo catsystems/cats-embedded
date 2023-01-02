@@ -38,8 +38,6 @@
 
 #define TELEMETRY_SAMPLING_FREQ 10  // in Hz
 
-#define RECEIVER_SAMPLING_FREQ 50  // in Hz
-
 /** Device Handles **/
 
 extern SPI_BUS SPI2_FLASH;
