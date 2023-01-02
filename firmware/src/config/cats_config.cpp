@@ -17,25 +17,10 @@
  */
 
 #include "config/cats_config.h"
-#include "config/globals.h"
-#include "util/actions.h"
-#include "util/enum_str_maps.h"
-#include "util/task_util.h"
-
-#include <cstdio>
-#include <cstdlib>
-
-#define CONFIG_SOURCE_EEPROM 1
-#define CONFIG_SOURCE_LFS    2
-#define CONFIG_SOURCE        CONFIG_SOURCE_LFS
-
-#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
-#include "eeprom_emul.h"
-#include "util/log.h"
-#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
 #include "flash/lfs_custom.h"
 #include "lfs.h"
-#endif
+#include "util/actions.h"
+#include "util/enum_str_maps.h"
 
 const cats_config_u DEFAULT_CONFIG = {.config = {
                                           .config_version = CONFIG_VERSION,
@@ -74,9 +59,7 @@ const cats_config_u DEFAULT_CONFIG = {.config = {
 
 cats_config_u global_cats_config = {};
 
-#if CONFIG_SOURCE == CONFIG_SOURCE_LFS
 lfs_file_t config_file;
-#endif
 
 /** cats config initialization **/
 
@@ -84,13 +67,6 @@ void cc_init() {
   /* Fill lookup_table_speeds with the string representation of the available speeds. The speeds are placed in the array
    * in descending order and are dependent on CONTROL_SAMPLING_FREQ. */
   init_recorder_speed_map();
-#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
-  HAL_FLASH_Unlock();
-  EE_Status ee_status = EE_Init(EE_FORCED_ERASE);
-  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
-  sysDelay(5);
-  HAL_FLASH_Lock();
-#endif
 }
 
 void cc_defaults(bool use_default_outputs) {
@@ -108,16 +84,10 @@ void cc_defaults(bool use_default_outputs) {
 
 bool cc_load() {
   bool ret = true;
-#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
-  for (int i = 0; i < sizeof(cats_config_t) / sizeof(uint32_t); i++) {
-    ret &= EE_ReadVariable32bits(i + 1, &global_cats_config.config_array[i]) == EE_OK;
-  }
-#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
   ret &= lfs_file_open(&lfs, &config_file, "config", LFS_O_RDONLY | LFS_O_CREAT) >= 0;
   ret &= lfs_file_read(&lfs, &config_file, &global_cats_config.config, sizeof(global_cats_config.config)) ==
          sizeof(global_cats_config.config);
   ret &= lfs_file_close(&lfs, &config_file) >= 0;
-#endif
 
   /* Check if the read config makes sense */
   if (global_cats_config.config.config_version != CONFIG_VERSION) {
@@ -129,46 +99,9 @@ bool cc_load() {
   return ret;
 }
 
-bool cc_format_save() {
-#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
-  HAL_FLASH_Unlock();
-  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
-  EE_Status ee_status = EE_Format(EE_FORCED_ERASE);
-  if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
-  return cc_save();
-#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
-  return cc_save();
-#endif
-}
+bool cc_format_save() { return cc_save(); }
 
 bool cc_save() {
-#if CONFIG_SOURCE == CONFIG_SOURCE_EEPROM
-  HAL_FLASH_Unlock();
-  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
-  // loop through all elements of the config
-  for (int i = 0; i < sizeof(cats_config_t) / sizeof(uint32_t); i++) {
-    uint32_t tmp;
-    EE_ReadVariable32bits(i + 1, &tmp);
-    // Compare the value from ram to the value from flash
-    if (tmp != global_cats_config.config_array[i]) {
-      // If different override the value in flash
-      EE_Status ee_status;
-      int errors = 0;
-      do {
-        ee_status = EE_WriteVariable32bits(i + 1, global_cats_config.config_array[i]);
-        errors++;
-      } while ((ee_status & EE_STATUSMASK_ERROR) == EE_STATUSMASK_ERROR && errors < 5);
-      if ((ee_status & EE_STATUSMASK_CLEANUP) == EE_STATUSMASK_CLEANUP) EE_CleanUp();
-      // If writing failed 5 times, stop and return an error
-      if (errors == 5) {
-        HAL_FLASH_Lock();
-        return false;
-      }
-    }
-  }
-  HAL_FLASH_Lock();
-  return true;
-#elif CONFIG_SOURCE == CONFIG_SOURCE_LFS
   lfs_file_open(&lfs, &config_file, "config", LFS_O_WRONLY | LFS_O_CREAT);
   lfs_file_rewind(&lfs, &config_file);
   /* Config saving is successful if the entire global_cats_config struct is written. */
@@ -179,7 +112,6 @@ bool cc_save() {
     log_error("Error while saving configuration file!");
   }
   return ret;
-#endif
 }
 
 /**
