@@ -220,6 +220,14 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
                     (double)rec_elem.u.gnss_info.lon, rec_elem.u.gnss_info.sats);
           }
         } break;
+        case VOLTAGE_INFO: {
+          size_t elem_sz = sizeof(rec_elem.u.voltage_info);
+          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            /* Convert mV to V by dividing with 1000. */
+            log_raw("%lu|VOLTAGE_INFO|%.3f", rec_elem.ts, static_cast<double>(rec_elem.u.voltage_info) / 1000);
+          }
+        } break;
         default:
           log_raw("Impossible recorder entry type!");
           break;

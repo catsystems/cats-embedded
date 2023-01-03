@@ -24,6 +24,7 @@
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
+#include "util/log.h"
 #include "util/task_util.h"
 
 #include "tasks/task_simulator.h"
@@ -44,6 +45,7 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
   // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
   uint32_t pyro_check_timer = 0;
+  uint32_t voltage_logging_timer = 0;
   flight_fsm_e old_fsm_state = MOVING;
   battery_level_e old_level = BATTERY_OK;
 
@@ -69,6 +71,13 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
       clear_error(CATS_ERR_BAT_CRITICAL);
     }
 
+    /* Record voltage information with 1Hz. */
+    if (++voltage_logging_timer >= 100) {
+      voltage_logging_timer = 0;
+      uint16_t voltage = battery_voltage_short();
+      record(osKernelGetTickCount(), VOLTAGE_INFO, &voltage);
+    }
+
     old_level = battery_level();
 
     // Periodically check pyros channels as long as we are on the ground
@@ -76,7 +85,7 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
       check_high_current_channels();
       pyro_check_timer = 0;
     } else {
-      pyro_check_timer++;
+      ++pyro_check_timer;
     }
 
     // Beep out ready buzzer
@@ -84,7 +93,7 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
       buzzer_queue_status(CATS_BUZZ_READY);
       ready_timer = 0;
     } else if (global_flight_state.flight_state == READY) {
-      ready_timer++;
+      ++ready_timer;
     }
 
     // Beep out transitions from moving to ready and back

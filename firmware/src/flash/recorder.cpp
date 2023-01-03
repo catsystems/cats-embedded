@@ -166,6 +166,9 @@ void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *rec_v
       case GNSS_INFO:
         e.u.gnss_info = *((gnss_position_t *)rec_value);
         break;
+      case VOLTAGE_INFO:
+        e.u.voltage_info = *(static_cast<const voltage_info_t *>(rec_value));
+        break;
       default:
         log_fatal("Impossible recorder entry type %lu!", pure_rec_type);
         break;

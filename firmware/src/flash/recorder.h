@@ -18,12 +18,13 @@
 
 #pragma once
 
+#include "config/cats_config.h"
 #include "util/error_handler.h"
 #include "util/gnss.h"
 #include "util/types.h"
 
+#include "arm_math.h"
 #include "cmsis_os.h"
-#include "config/cats_config.h"
 
 /** Exported Defines **/
 
@@ -58,15 +59,16 @@
   EVENT_INFO         = 1 << 12,  // 0x2000
   ERROR_INFO         = 1 << 13,  // 0x4000
   GNSS_INFO          = 1 << 14,  // 0x8000
+  VOLTAGE_INFO       = 1 << 15,  // 0x10000
 };
 // clang-format on
 
 enum rec_cmd_type_e { REC_CMD_INVALID = 0, REC_CMD_FILL_Q = 1, REC_CMD_FILL_Q_STOP, REC_CMD_WRITE, REC_CMD_WRITE_STOP };
 
 struct flight_info_t {
-  float height;
-  float velocity;
-  float acceleration; /* Acceleration with removed offset from inside the KF */
+  float32_t height;
+  float32_t velocity;
+  float32_t acceleration; /* Acceleration with removed offset from inside the KF */
 };
 
 struct orientation_info_t {
@@ -74,9 +76,9 @@ struct orientation_info_t {
 };
 
 struct filtered_data_info_t {
-  float filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
-  float filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the right coordinate
-                                  frame. */
+  float32_t filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
+  float32_t filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the correct
+                                  coordinate frame. */
 };
 
 struct event_info_t {
@@ -87,6 +89,9 @@ struct event_info_t {
 struct error_info_t {
   cats_error_e error;
 };
+
+/* Voltage in mV */
+using voltage_info_t = uint16_t;
 
 union rec_elem_u {
   imu_data_t imu;
@@ -100,6 +105,7 @@ union rec_elem_u {
   event_info_t event_info;
   error_info_t error_info;
   gnss_position_t gnss_info;
+  voltage_info_t voltage_info;
 };
 
 struct rec_elem_t {
@@ -114,17 +120,17 @@ struct flight_stats_t {
   cats_config_u config;
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_height;
 
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_velocity;
 
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_acceleration;
 
   calibration_data_t calibration_data;

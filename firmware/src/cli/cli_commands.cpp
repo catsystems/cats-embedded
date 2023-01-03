@@ -632,6 +632,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
         if (!strcmp(ptr, "EVENT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | EVENT_INFO);
         if (!strcmp(ptr, "ERROR_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ERROR_INFO);
         if (!strcmp(ptr, "GNSS_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | GNSS_INFO);
+        if (!strcmp(ptr, "VOLTAGE_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | VOLTAGE_INFO);
         ptr = strtok(nullptr, " ");
       }
     } else {
