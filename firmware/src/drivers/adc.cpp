@@ -21,10 +21,7 @@
 
 static uint32_t adc_value[ADC_NUM_CHANNELS];
 
-void adc_init() {
-  HAL_ADC_Stop_DMA(&ADC_HANDLE);
-  HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS);
-}
+void adc_init() { HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS); }
 
 uint32_t adc_get(adc_channels_e channel) {
   // If data of the first and last adc channel is frozen, reset the hardware
