@@ -45,7 +45,7 @@ class Preprocessing : public Task<Preprocessing> {
   Preprocessing() = default;
 
   SI_data_t m_si_data = {};
-  SI_data_t m_si_data_old = {};
+  SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};
 
 #ifdef USE_MEDIAN_FILTER
   median_filter_t filter_data = {};
@@ -55,8 +55,8 @@ class Preprocessing : public Task<Preprocessing> {
   /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
    * the linear acceleration calibration */
   calibration_data_t calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
-  state_estimation_input_t state_est_input = {.acceleration_z = 0.0f, .height_AGL = 0.0f};
-  float32_t height_0 = 0.0f;
+  state_estimation_input_t state_est_input = {.acceleration_z = 0.0F, .height_AGL = 0.0F};
+  float32_t height_0 = 0.0F;
 
   /* Gyro Calib tag */
   bool gyro_calibrated = false;

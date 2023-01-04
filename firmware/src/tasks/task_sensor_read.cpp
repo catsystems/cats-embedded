@@ -151,8 +151,8 @@ static void read_imu(vi16_t &gyroscope, vi16_t &acceleration, int32_t id) {
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
 #elif IMU_TYPE == LSM6DSR_TYPE
-    // lsm6dsr_read_accel_raw(&IMU_DEV[id], acc);
-    // lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyro);
+  lsm6dsr_read_accel_raw(&IMU_DEV[id], acc);
+  lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyro);
 #endif
   memcpy(&acceleration, acc, 3 * sizeof(int16_t));
   memcpy(&gyroscope, gyro, 3 * sizeof(int16_t));
@@ -184,7 +184,7 @@ static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
 }
 
 static void read_mag(vf32_t *data) {
-  float tmp[3];
+  float tmp[3] = {};
   mmc5983ma_read_calibrated(&MAG, tmp);
   data->x = tmp[0];
   data->y = tmp[1];
@@ -192,7 +192,7 @@ static void read_mag(vf32_t *data) {
 }
 
 static void read_accel(vi8_t *data) {
-  int8_t tmp[3];
+  int8_t tmp[3] = {};
   h3lis100dl_read_raw(&ACCEL, tmp);
   data->x = tmp[0];
   data->y = tmp[1];

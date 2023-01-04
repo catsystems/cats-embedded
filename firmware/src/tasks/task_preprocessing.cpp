@@ -54,16 +54,10 @@ void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_prepr
   auto &sensor_read_task = SensorRead::GetInstance();
   auto &preprocessing_task = Preprocessing::GetInstance();
 
-  /* Initialise data structs */
-  preprocessing_task.m_si_data_old.acc.x = GRAVITY;
-  preprocessing_task.m_si_data_old.acc.y = 0.0f;
-  preprocessing_task.m_si_data_old.acc.z = 0.0f;
-  preprocessing_task.m_si_data_old.pressure = P_INITIAL;
-
   /* Infinite loop */
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  while (true) {
     /* update fsm enum */
     preprocessing_task.new_fsm_enum = global_flight_state.flight_state;
 
@@ -74,6 +68,7 @@ void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_prepr
     preprocessing_task.m_accel_data[0] = sensor_read_task.GetAccel(0);
 
     /* Do the sensor elimination */
+    /* Todo: Function of the Class */
     check_sensors(&preprocessing_task.sensor_elimination);
 
     /* average and construct SI Data */

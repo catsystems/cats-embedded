@@ -29,15 +29,14 @@ class Task {
 
   virtual void Run() = 0;
 
- private:
-  /* Deleted copy constructor & assignment operator */
-  Task(const Task&) = delete;
-  Task& operator=(const Task&) = delete;
-
  public:
   /* Deleted move constructor & move assignment operator */
   Task(Task&&) = delete;
   Task& operator=(Task&&) = delete;
+
+  /* Deleted copy constructor & assignment operator */
+  Task(const Task&) = delete;
+  Task& operator=(const Task&) = delete;
 
   /* Deleted new & delete operators */
   static void* operator new(std::size_t size) = delete;
