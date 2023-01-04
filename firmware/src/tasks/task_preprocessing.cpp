@@ -29,12 +29,6 @@
 /** Private Constants **/
 
 /** Private Function Declarations **/
-static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sensor_elimination_t *elimination_data);
-
-static void median_filter(median_filter_t *filter_data, state_estimation_input_t *state_data);
-
-static void transform_data(const SI_data_t *SI_data, const calibration_data_t *calibration, float32_t height_0,
-                           state_estimation_input_t *state_data);
 
 namespace task {
 
@@ -59,7 +53,7 @@ void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_prepr
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* update fsm enum */
-    preprocessing_task.new_fsm_enum = global_flight_state.flight_state;
+    preprocessing_task.m_new_fsm_enum = global_flight_state.flight_state;
 
     /* get new sensor data */
     preprocessing_task.m_baro_data[0] = sensor_read_task.GetBaro(0);
@@ -69,58 +63,56 @@ void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_prepr
 
     /* Do the sensor elimination */
     /* Todo: Function of the Class */
-    check_sensors(&preprocessing_task.sensor_elimination);
+    preprocessing_task.CheckSensors();
 
     /* average and construct SI Data */
-    avg_and_to_SI(&preprocessing_task.m_si_data, &preprocessing_task.m_si_data_old,
-                  &preprocessing_task.sensor_elimination);
+    preprocessing_task.AvgToSI();
 
     /* Compute gravity when changing to READY */
-    if ((preprocessing_task.new_fsm_enum != preprocessing_task.old_fsm_enum) &&
-        (preprocessing_task.new_fsm_enum == READY)) {
-      calibrate_imu(&preprocessing_task.m_si_data.acc, &preprocessing_task.calibration);
-      global_flight_stats.calibration_data.angle = preprocessing_task.calibration.angle;
-      global_flight_stats.calibration_data.axis = preprocessing_task.calibration.axis;
+    if ((preprocessing_task.m_new_fsm_enum != preprocessing_task.m_old_fsm_enum) &&
+        (preprocessing_task.m_new_fsm_enum == READY)) {
+      calibrate_imu(&preprocessing_task.m_si_data.acc, &preprocessing_task.m_calibration);
+      global_flight_stats.calibration_data.angle = preprocessing_task.m_calibration.angle;
+      global_flight_stats.calibration_data.axis = preprocessing_task.m_calibration.axis;
     }
 
     /* calibrate gyro once at startup */
-    if (!preprocessing_task.gyro_calibrated) {
-      preprocessing_task.gyro_calibrated =
-          compute_gyro_calibration(&preprocessing_task.m_si_data.gyro, &preprocessing_task.calibration);
+    if (!preprocessing_task.m_gyro_calibrated) {
+      preprocessing_task.m_gyro_calibrated =
+          compute_gyro_calibration(&preprocessing_task.m_si_data.gyro, &preprocessing_task.m_calibration);
     } else {
-      calibrate_gyro(&preprocessing_task.calibration, &preprocessing_task.m_si_data.gyro);
-      global_flight_stats.calibration_data.gyro_calib = preprocessing_task.calibration.gyro_calib;
+      calibrate_gyro(&preprocessing_task.m_calibration, &preprocessing_task.m_si_data.gyro);
+      global_flight_stats.calibration_data.gyro_calib = preprocessing_task.m_calibration.gyro_calib;
     }
 
     /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
-    if (preprocessing_task.new_fsm_enum == MOVING) {
-      preprocessing_task.height_0 =
+    if (preprocessing_task.m_new_fsm_enum == MOVING) {
+      preprocessing_task.m_height_0 =
           approx_moving_average(calculate_height(preprocessing_task.m_si_data.pressure), true);
-      global_flight_stats.height_0 = preprocessing_task.height_0;
+      global_flight_stats.height_0 = preprocessing_task.m_height_0;
     }
     /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
-    if (preprocessing_task.new_fsm_enum == READY) {
-      preprocessing_task.height_0 =
+    if (preprocessing_task.m_new_fsm_enum == READY) {
+      preprocessing_task.m_height_0 =
           approx_moving_average(calculate_height(preprocessing_task.m_si_data.pressure), false);
-      global_flight_stats.height_0 = preprocessing_task.height_0;
+      global_flight_stats.height_0 = preprocessing_task.m_height_0;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    transform_data(&preprocessing_task.m_si_data, &preprocessing_task.calibration, preprocessing_task.height_0,
-                   &preprocessing_task.state_est_input);
+    preprocessing_task.TransformData();
 
 #ifdef USE_MEDIAN_FILTER
     /* Filter the data */
-    median_filter(&preprocessing_task.filter_data, &preprocessing_task.state_est_input);
+    preprocessing_task.MedianFilter();
 #endif
 
     /* reset old fsm enum */
-    preprocessing_task.old_fsm_enum = preprocessing_task.new_fsm_enum;
+    preprocessing_task.m_old_fsm_enum = preprocessing_task.m_new_fsm_enum;
 
     memcpy(&preprocessing_task.m_si_data_old, &preprocessing_task.m_si_data, sizeof(preprocessing_task.m_si_data));
 
     /* write input data into global struct */
-    global_estimation_input = preprocessing_task.state_est_input;
+    global_estimation_input = preprocessing_task.m_state_est_input;
 
     /* Global SI data is only used in the fsm task */
     global_SI_data = preprocessing_task.m_si_data;
@@ -130,30 +122,27 @@ void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_prepr
   }
 }
 
-}  // namespace task
-
-static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sensor_elimination_t *elimination_data) {
+void Preprocessing::AvgToSI() {
   float32_t counter = 0;
-  auto &preprocessing_task = task::Preprocessing::GetInstance();
 #if NUM_IMU > 0
   /* Reset SI data */
-  SI_data->acc.x = 0;
-  SI_data->acc.y = 0;
-  SI_data->acc.z = 0;
-  SI_data->gyro.x = 0;
-  SI_data->gyro.y = 0;
-  SI_data->gyro.z = 0;
+  m_si_data.acc.x = 0;
+  m_si_data.acc.y = 0;
+  m_si_data.acc.z = 0;
+  m_si_data.gyro.x = 0;
+  m_si_data.gyro.y = 0;
+  m_si_data.gyro.z = 0;
 
   /* Sum up all non-eliminated IMUs and transform to SI */
   for (int i = 0; i < NUM_IMU; i++) {
-    if (elimination_data->faulty_imu[i] == 0) {
+    if (m_sensor_elimination.faulty_imu[i] == 0) {
       counter++;
-      SI_data->acc.x += (float32_t)preprocessing_task.m_imu_data[i].acc.x * acc_info[i].conversion_to_SI;
-      SI_data->acc.y += (float32_t)preprocessing_task.m_imu_data[i].acc.y * acc_info[i].conversion_to_SI;
-      SI_data->acc.z += (float32_t)preprocessing_task.m_imu_data[i].acc.z * acc_info[i].conversion_to_SI;
-      SI_data->gyro.x += (float32_t)preprocessing_task.m_imu_data[i].gyro.x * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.y += (float32_t)preprocessing_task.m_imu_data[i].gyro.y * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.z += (float32_t)preprocessing_task.m_imu_data[i].gyro.z * gyro_info[i].conversion_to_SI;
+      m_si_data.acc.x += (float32_t)m_imu_data[i].acc.x * acc_info[i].conversion_to_SI;
+      m_si_data.acc.y += (float32_t)m_imu_data[i].acc.y * acc_info[i].conversion_to_SI;
+      m_si_data.acc.z += (float32_t)m_imu_data[i].acc.z * acc_info[i].conversion_to_SI;
+      m_si_data.gyro.x += (float32_t)m_imu_data[i].gyro.x * gyro_info[i].conversion_to_SI;
+      m_si_data.gyro.y += (float32_t)m_imu_data[i].gyro.y * gyro_info[i].conversion_to_SI;
+      m_si_data.gyro.z += (float32_t)m_imu_data[i].gyro.z * gyro_info[i].conversion_to_SI;
     }
   }
 
@@ -163,9 +152,9 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
     for (int i = 0; i < NUM_ACCELEROMETER; i++) {
       if (elimination_data->faulty_acc[i] == 0) {
         counter++;
-        SI_data->acc.x += (float32_t)global_acc[i].x * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.y += (float32_t)global_acc[i].y * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.z += (float32_t)global_acc[i].z * acc_info[NUM_IMU + i].conversion_to_SI;
+        this->m_si_data.acc.x += (float32_t)global_acc[i].x * acc_info[NUM_IMU + i].conversion_to_SI;
+        this->m_si_data.acc.y += (float32_t)global_acc[i].y * acc_info[NUM_IMU + i].conversion_to_SI;
+        this->m_si_data.acc.z += (float32_t)global_acc[i].z * acc_info[NUM_IMU + i].conversion_to_SI;
       }
     }
   }
@@ -173,16 +162,16 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 
   /* average for SI data */
   if (counter > 0) {
-    SI_data->acc.x /= counter;
-    SI_data->acc.y /= counter;
-    SI_data->acc.z /= counter;
-    SI_data->gyro.x /= counter;
-    SI_data->gyro.y /= counter;
-    SI_data->gyro.z /= counter;
+    m_si_data.acc.x /= counter;
+    m_si_data.acc.y /= counter;
+    m_si_data.acc.z /= counter;
+    m_si_data.gyro.x /= counter;
+    m_si_data.gyro.y /= counter;
+    m_si_data.gyro.z /= counter;
     clear_error(CATS_ERR_FILTER_ACC);
   } else {
-    SI_data->acc = SI_data_old->acc;
-    SI_data->gyro = SI_data_old->gyro;
+    m_si_data.acc = m_si_data_old.acc;
+    m_si_data.gyro = m_si_data_old.gyro;
     add_error(CATS_ERR_FILTER_ACC);
   }
 
@@ -190,18 +179,18 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 
 #if NUM_BARO > 0
   counter = 0;
-  SI_data->pressure = 0;
+  m_si_data.pressure = 0;
   for (int i = 0; i < NUM_BARO; i++) {
-    if (elimination_data->faulty_baro[i] == 0) {
+    if (m_sensor_elimination.faulty_baro[i] == 0) {
       counter++;
-      SI_data->pressure += (float32_t)preprocessing_task.m_baro_data[i].pressure * baro_info[i].conversion_to_SI;
+      m_si_data.pressure += (float32_t)m_baro_data[i].pressure * baro_info[i].conversion_to_SI;
     }
   }
   if (counter > 0) {
-    SI_data->pressure /= counter;
+    m_si_data.pressure /= counter;
     clear_error(CATS_ERR_FILTER_HEIGHT);
   } else {
-    SI_data->pressure = SI_data_old->pressure;
+    m_si_data.pressure = m_si_data_old.pressure;
     add_error(CATS_ERR_FILTER_HEIGHT);
   }
 #endif
@@ -230,39 +219,40 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 #endif
 }
 
-static void median_filter(median_filter_t *filter_data, state_estimation_input_t *state_data) {
+void Preprocessing::MedianFilter() {
   /* Insert into array */
-  filter_data->acc[filter_data->counter] = state_data->acceleration_z;
-  filter_data->height_AGL[filter_data->counter] = state_data->height_AGL;
+  m_filter_data.acc[m_filter_data.counter] = m_state_est_input.acceleration_z;
+  m_filter_data.height_AGL[m_filter_data.counter] = m_state_est_input.height_AGL;
 
   /* Update Counter */
-  filter_data->counter++;
-  filter_data->counter = filter_data->counter % MEDIAN_FILTER_SIZE;
+  m_filter_data.counter++;
+  m_filter_data.counter = m_filter_data.counter % MEDIAN_FILTER_SIZE;
 
   /* Filter data */
-  state_data->acceleration_z = median(filter_data->acc);
-  state_data->height_AGL = median(filter_data->height_AGL);
+  m_state_est_input.acceleration_z = median(m_filter_data.acc);
+  m_state_est_input.height_AGL = median(m_filter_data.height_AGL);
 }
 
-static void transform_data(const SI_data_t *SI_data, const calibration_data_t *calibration, float32_t height_0,
-                           state_estimation_input_t *state_data) {
+void Preprocessing::TransformData() {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
-  switch (calibration->axis) {
+  switch (this->m_calibration.axis) {
     case 0:
       /* Choose X Axis */
-      state_data->acceleration_z = SI_data->acc.x / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.x / m_calibration.angle - GRAVITY;
       break;
     case 1:
       /* Choose Y Axis */
-      state_data->acceleration_z = SI_data->acc.y / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.y / m_calibration.angle - GRAVITY;
       break;
     case 2:
       /* Choose Z Axis */
-      state_data->acceleration_z = SI_data->acc.z / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.z / m_calibration.angle - GRAVITY;
       break;
     default:
       break;
   }
-  state_data->height_AGL = calculate_height(SI_data->pressure) - height_0;
+  this->m_state_est_input.height_AGL = calculate_height(m_si_data.pressure) - m_height_0;
 }
+
+}  // namespace task

@@ -44,25 +44,30 @@ class Preprocessing : public Task<Preprocessing> {
  private:
   Preprocessing() = default;
 
+  void AvgToSI();
+  void MedianFilter();
+  void TransformData();
+  void CheckSensors();
+
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};
 
 #ifdef USE_MEDIAN_FILTER
-  median_filter_t filter_data = {};
+  median_filter_t m_filter_data = {};
 #endif
-  sensor_elimination_t sensor_elimination = {};
+  sensor_elimination_t m_sensor_elimination = {};
 
   /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
    * the linear acceleration calibration */
-  calibration_data_t calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
-  state_estimation_input_t state_est_input = {.acceleration_z = 0.0F, .height_AGL = 0.0F};
-  float32_t height_0 = 0.0F;
+  calibration_data_t m_calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
+  state_estimation_input_t m_state_est_input = {.acceleration_z = 0.0F, .height_AGL = 0.0F};
+  float32_t m_height_0 = 0.0F;
 
   /* Gyro Calib tag */
-  bool gyro_calibrated = false;
+  bool m_gyro_calibrated = false;
 
   /* local fsm enum */
-  flight_fsm_e new_fsm_enum = MOVING;
-  flight_fsm_e old_fsm_enum = MOVING;
+  flight_fsm_e m_new_fsm_enum = MOVING;
+  flight_fsm_e m_old_fsm_enum = MOVING;
 };
 }  // namespace task

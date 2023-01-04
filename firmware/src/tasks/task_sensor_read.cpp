@@ -59,13 +59,13 @@ SET_TASK_PARAMS(task_sensor_read, 512)
 
 void SensorRead::Run() { osThreadNew(task_sensor_read, nullptr, &task_sensor_read_attributes); }
 
-baro_data_t SensorRead::GetBaro(uint8_t index) { return this->m_baro_data[index]; }
+baro_data_t SensorRead::GetBaro(uint8_t index) { return m_baro_data[index]; }
 
-imu_data_t SensorRead::GetImu(uint8_t index) { return this->m_imu_data[index]; }
+imu_data_t SensorRead::GetImu(uint8_t index) { return m_imu_data[index]; }
 
-magneto_data_t SensorRead::GetMag(uint8_t index) { return this->m_magneto_data[index]; }
+magneto_data_t SensorRead::GetMag(uint8_t index) { return m_magneto_data[index]; }
 
-accel_data_t SensorRead::GetAccel(uint8_t index) { return this->m_accel_data[index]; }
+accel_data_t SensorRead::GetAccel(uint8_t index) { return m_accel_data[index]; }
 
 /** Exported Function Definitions **/
 
@@ -146,13 +146,15 @@ accel_data_t SensorRead::GetAccel(uint8_t index) { return this->m_accel_data[ind
 static void read_imu(vi16_t &gyroscope, vi16_t &acceleration, int32_t id) {
   int16_t acc[3] = {};
   int16_t gyro[3] = {};
-  if (id >= NUM_IMU) return;
+  if (id >= NUM_IMU) {
+    return;
+  }
 #if IMU_TYPE == ICM20601_TYPE
   icm20601_read_accel_raw(&IMU_DEV[id], acceleration);
   icm20601_read_gyro_raw(&IMU_DEV[id], gyroscope);
 #elif IMU_TYPE == LSM6DSR_TYPE
-  lsm6dsr_read_accel_raw(&IMU_DEV[id], acc);
-  lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyro);
+  // lsm6dsr_read_accel_raw(&IMU_DEV[id], acc);
+  // lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyro);
 #endif
   memcpy(&acceleration, acc, 3 * sizeof(int16_t));
   memcpy(&gyroscope, gyro, 3 * sizeof(int16_t));
