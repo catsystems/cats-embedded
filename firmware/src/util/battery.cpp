@@ -21,8 +21,8 @@
 
 #include <cmath>
 
-#define ADC_LINFIT_A 0.00818474f
-#define ADC_LINFIT_B 0.476469f
+#define ADC_LINFIT_A 0.00826849f
+#define ADC_LINFIT_B 0.169868f
 
 #define BATTERY_VOLTAGE_HYSTERESIS 0.2f
 
@@ -57,7 +57,7 @@ void battery_monitor_init() {
 
 /* Returns battery voltage */
 float32_t battery_voltage() {
-  // https://www.wolframalpha.com/input/?i=linear+fit+%28675%2C6%29%2C%28919%2C8%29%2C%281408%2C12%29%2C%282141%2C18%29
+  // https://www.wolframalpha.com/input?i=linear+fit+%28707%2C6%29%2C%281068%2C9%29%2C%281430%2C12%29%2C%281792%2C15%29%2C%282154%2C18%29%2C%282520%2C21%29%2C%282884%2C24%29
   return static_cast<float32_t>(adc_get(ADC_BATTERY)) * ADC_LINFIT_A + ADC_LINFIT_B;
 }
 

@@ -137,12 +137,6 @@ static void check_high_current_channels() {
                 error_encountered = true;
               }
               break;
-            case ACT_HIGH_CURRENT_THREE:
-              if (adc_get(ADC_PYRO3) < 500) {
-                add_error(CATS_ERR_NO_PYRO);
-                error_encountered = true;
-              }
-              break;
             default:
               break;
           }
