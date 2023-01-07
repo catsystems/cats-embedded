@@ -22,6 +22,7 @@
 
 #include "drivers/spi.h"
 
+#include "util/task_util.h"
 #include "util/types.h"
 
 // Commands
@@ -46,8 +47,7 @@ static void read_calibration(MS5607 *dev);
 /** Exported Function Definitions **/
 
 void ms5607_init(MS5607 *dev) {
-  uint32_t reset_time;
-  reset_time = 3 * osKernelGetTickFreq() / 1000;
+  constexpr uint32_t reset_time = 3 * sysGetTickFreq() / 1000;
   // General Procedure:
   //  1. reset chip
   //  2. Read out calibration
@@ -103,8 +103,7 @@ bool ms5607_get_temp_pres(MS5607 *dev, int32_t *temperature, int32_t *pressure) 
 /** Private Function Definitions **/
 
 static uint32_t get_conversion_ticks(MS5607 *dev) {
-  uint32_t time;
-  time = (BARO_CONVERSION_TIME_OSR_BASE * ((float)dev->osr + 1) * osKernelGetTickFreq()) / 1000;
+  uint32_t time = (BARO_CONVERSION_TIME_OSR_BASE * ((float)dev->osr + 1) * sysGetTickFreq()) / 1000;
   if (time < 1) time = 1;
   return time;
 }

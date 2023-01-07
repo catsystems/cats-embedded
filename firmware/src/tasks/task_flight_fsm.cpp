@@ -26,6 +26,7 @@
 #include "tasks/task_state_est.h"
 #include "util/enum_str_maps.h"
 #include "util/log.h"
+#include "util/task_util.h"
 
 /**
  * @brief Function implementing the task_flight_fsm thread.
@@ -49,7 +50,7 @@ namespace task {
   flight_fsm_t flight_state = {.flight_state = MOVING};
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* Check Flight Phases */
     check_flight_phase(&flight_state, preprocessing_task.GetSIData().acc, preprocessing_task.GetSIData().gyro,

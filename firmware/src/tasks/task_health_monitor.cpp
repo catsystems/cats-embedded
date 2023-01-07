@@ -52,7 +52,7 @@ static void init_communication();
   battery_level_e old_level = BATTERY_OK;
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   while (true) {
     /* Uncomment the code below to enable stack usage monitoring:

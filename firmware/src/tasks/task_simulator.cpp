@@ -92,7 +92,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
   srand(sim_config.noise_seed);
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   /* initialise time */
   timestamp_t sim_start = osKernelGetTickCount();

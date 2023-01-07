@@ -24,6 +24,7 @@
 #include "tasks/task_preprocessing.h"
 #include "tasks/task_sensor_read.h"
 #include "util/log.h"
+#include "util/task_util.h"
 
 #define MAX_NUM_SAME_VALUE 7
 
@@ -44,7 +45,7 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
 
   /* Infinite loop */
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* update fsm enum */
     bool fsm_updated = GetNewFsmEnum();

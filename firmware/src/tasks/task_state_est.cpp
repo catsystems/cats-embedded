@@ -18,6 +18,7 @@
 
 #include "tasks/task_state_est.h"
 #include "config/globals.h"
+#include "util/task_util.h"
 
 namespace task {
 
@@ -65,7 +66,7 @@ estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
   reset_orientation_filter(&m_orientation_filter);
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* update fsm enum */
     bool fsm_updated = GetNewFsmEnum();

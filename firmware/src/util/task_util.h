@@ -18,6 +18,10 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include "FreeRTOSConfig.h"
+
 #include "cmsis_os.h"
 
 #define SET_TASK_PARAMS(task, stack_sz)           \
@@ -35,3 +39,5 @@
 extern volatile bool rtos_started;
 
 void sysDelay(uint32_t delay);
+
+constexpr uint32_t sysGetTickFreq() { return configTICK_RATE_HZ; }

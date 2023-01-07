@@ -25,6 +25,7 @@
 #include "util/crc.h"
 #include "util/gnss.h"
 #include "util/log.h"
+#include "util/task_util.h"
 #include "util/telemetry_reg.h"
 
 namespace task {
@@ -121,7 +122,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
   uint32_t uart_timeout = osKernelGetTickCount();
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
+  constexpr uint32_t tick_update = sysGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (true) {
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
