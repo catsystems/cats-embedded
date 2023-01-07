@@ -288,11 +288,11 @@ void parse_stats(uint16_t number) {
               local_flight_stats->liftoff_time.min, local_flight_stats->liftoff_time.sec);
       log_raw("========================");
       log_raw("  Config");
-      if (local_flight_stats->config.config.config_version == CONFIG_VERSION) {
+      if (local_flight_stats->config.config_version == CONFIG_VERSION) {
         print_cats_config("cli", &(local_flight_stats->config), false);
       } else {
         log_raw("    Config versions do not match, cannot print -- stats file: %lu, current: %u",
-                local_flight_stats->config.config.config_version, CONFIG_VERSION);
+                local_flight_stats->config.config_version, CONFIG_VERSION);
       }
 
     } else {

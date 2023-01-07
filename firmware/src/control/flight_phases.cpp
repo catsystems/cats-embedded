@@ -173,7 +173,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t g
   }
 
   /* Check if we move from Ready to Thrusting based on baro data */
-  if (height_AGL > (float32_t)global_cats_config.config.control_settings.liftoff_detection_agl) {
+  if (height_AGL > (float32_t)global_cats_config.control_settings.liftoff_detection_agl) {
     fsm_state->memory[2]++;
   } else {
     fsm_state->memory[2] = 0;
@@ -216,7 +216,7 @@ static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t st
 
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t state_data) {
   /* If the height is smaller than the configured Main height, main deployment needs to be actuated */
-  if (state_data.height < (float32_t)global_cats_config.config.control_settings.main_altitude) {
+  if (state_data.height < (float32_t)global_cats_config.control_settings.main_altitude) {
     /* Achieved Height to deploy Main */
     fsm_state->memory[0]++;
   } else {

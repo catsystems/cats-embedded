@@ -26,7 +26,7 @@
 /* Config version 2 / Minor 4 */
 #define CONFIG_VERSION 204
 
-/* Number supported recording speeds */
+/* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10
 
 struct cats_config_t {
@@ -47,12 +47,7 @@ struct cats_config_t {
   config_telemetry_t telemetry_settings;
 };
 
-union cats_config_u {
-  cats_config_t config;
-  uint32_t config_array[sizeof(cats_config_t) / sizeof(uint32_t)];
-};
-
-extern cats_config_u global_cats_config;
+extern cats_config_t global_cats_config;
 
 /** cats config initialization **/
 void cc_init();

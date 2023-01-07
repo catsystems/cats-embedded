@@ -46,7 +46,7 @@
 
 // clang-format off
  enum rec_entry_type_e: uint32_t {
-  // Periodic recorder types, their recording speed is affected by global_cats_config.config.rec_speed_idx
+  // Periodic recorder types, their recording speed is affected by global_cats_config.rec_speed_idx
   IMU                = 1 << 4,   // 0x20
   BARO               = 1 << 5,   // 0x40
   MAGNETO            = 1 << 6,   // 0x80
@@ -117,7 +117,7 @@ struct rec_elem_t {
 /* Flight Statistics */
 
 struct flight_stats_t {
-  cats_config_u config;
+  cats_config_t config;
   struct {
     timestamp_t ts;
     float32_t val;

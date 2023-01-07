@@ -36,7 +36,7 @@
 namespace task {
 
 [[noreturn]] void task_flight_fsm(__attribute__((unused)) void *argument) {
-  const control_settings_t settings = global_cats_config.config.control_settings;
+  const control_settings_t settings = global_cats_config.control_settings;
 
   fsm_flag_id = osEventFlagsNew(nullptr);
   osEventFlagsSet(fsm_flag_id, MOVING);
