@@ -23,8 +23,8 @@
 #include "util/types.h"
 
 /* The system will reload the default config when the number changes */
-/* Config version 2 / Minor 4 */
-#define CONFIG_VERSION 204
+/* Config version 2 / Minor 5 */
+#define CONFIG_VERSION 205
 
 /* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10
@@ -33,7 +33,6 @@ struct cats_config_t {
   /* Needs to be in first position */
   uint32_t config_version;
 
-  control_settings_t control_settings;
   /* A bit mask that specifies which readings to log to the flash */
   uint32_t rec_mask;
 
@@ -42,9 +41,10 @@ struct cats_config_t {
   // Event action map
   int16_t action_array[NUM_EVENTS][16];  // 8 (16/2) actions for each event
   int16_t initial_servo_position[2];
-  uint8_t rec_speed_idx;  // == inverse recording rate - 1
 
   config_telemetry_t telemetry_settings;
+  control_settings_t control_settings;
+  uint8_t rec_speed_idx;  // == inverse recording rate - 1
 };
 
 extern cats_config_t global_cats_config;

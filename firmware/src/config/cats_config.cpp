@@ -24,12 +24,6 @@
 
 const cats_config_t DEFAULT_CONFIG = {
     .config_version = CONFIG_VERSION,
-    .control_settings =
-        {
-            .liftoff_acc_threshold = 35,
-            .liftoff_detection_agl = 50,
-            .main_altitude = 200,
-        },
     .rec_mask = UINT32_MAX,
     .timers = {},
     .action_array =
@@ -48,13 +42,19 @@ const cats_config_t DEFAULT_CONFIG = {
          // EV_TOUCHDOWN
          {ACT_SET_RECORDER_STATE, REC_OFF}},
     .initial_servo_position = {0, 0},
-    .rec_speed_idx = 0,
     .telemetry_settings =
         {
             .link_phrase = {},
             .power_level = 20,
             .adaptive_power = OFF,
         },
+    .control_settings =
+        {
+            .liftoff_acc_threshold = 35,
+            .liftoff_detection_agl = 50,
+            .main_altitude = 200,
+        },
+    .rec_speed_idx = 0,
 };
 
 cats_config_t global_cats_config = {};
