@@ -129,7 +129,7 @@ static void create_stats_file();
               write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
             } else {
               if (global_recorder_status < REC_FILL_QUEUE) {
-                log_raw("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
+                log_warn("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
               } else {
                 log_error("Something wrong with the recording queue!");
               }
