@@ -35,6 +35,7 @@
 #include "sensors/mmc5983ma.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
+#include "util/task_util.h"
 
 /** Private Function Declarations **/
 
@@ -79,7 +80,7 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
   /* This task is sampled with 2 times the control sampling frequency to maximize speed of the barometer. In one
    * timestep the Baro pressure is read out and then the Baro Temperature. The other sensors are only read out one in
    * two times. */
-  const uint32_t tick_update = osKernelGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
+  constexpr uint32_t tick_update = sysGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
   while (true) {
     // Readout the baro register
     read_baro();
