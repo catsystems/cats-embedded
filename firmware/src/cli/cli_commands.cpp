@@ -214,7 +214,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
   } else if ((eqptr = strstr(args, "=")) != nullptr) {
     // has equals
 
-    uint8_t variable_name_length = get_word_length(args, eqptr);
+    const uint8_t variable_name_length = get_word_length(args, eqptr);
 
     // skip the '=' and any ' ' characters
     eqptr++;
@@ -232,7 +232,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     switch (val->type & VALUE_MODE_MASK) {
       case MODE_DIRECT: {
         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-          uint32_t value = strtoul(eqptr, nullptr, 10);
+          const uint32_t value = strtoul(eqptr, nullptr, 10);
 
           if (value <= val->config.u32_max) {
             cli_set_var(val, value);
@@ -368,6 +368,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       if (val->cb != nullptr) {
         val->cb(val);
       }
+      global_cats_config.is_set_by_user = true;
     } else {
       cli_print_error_linef(cmd_name, "INVALID VALUE");
       cli_print_var_range(val);
@@ -391,7 +392,7 @@ static void cli_cmd_defaults(const char *cmd_name, char *args) {
   if (!strcmp(args, "--no-outputs")) {
     use_default_outputs = false;
   }
-  cc_defaults(use_default_outputs);
+  cc_defaults(use_default_outputs, true);
   cli_print_linef("Reset to default values%s", use_default_outputs ? "" : " [no outputs]");
 }
 

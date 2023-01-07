@@ -55,7 +55,8 @@ const cats_config_t DEFAULT_CONFIG = {
             .main_altitude = 200,
         },
     .rec_speed_idx = 0,
-};
+    /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
+    .is_set_by_user = true};
 
 cats_config_t global_cats_config = {};
 
@@ -69,7 +70,7 @@ void cc_init() {
   init_recorder_speed_map();
 }
 
-void cc_defaults(bool use_default_outputs) {
+void cc_defaults(bool use_default_outputs, bool set_by_user) {
   memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
   /* Remove APOGEE & POST_APOGEE actions */
   if (!use_default_outputs) {
@@ -77,6 +78,8 @@ void cc_defaults(bool use_default_outputs) {
     memset(global_cats_config.action_array[EV_MAIN_DEPLOYMENT], 0,
            sizeof(global_cats_config.action_array[EV_MAIN_DEPLOYMENT]));
   }
+
+  global_cats_config.is_set_by_user = set_by_user;
 }
 
 /** persistence functions **/
@@ -91,20 +94,23 @@ bool cc_load() {
   /* Check if the read config makes sense */
   if (global_cats_config.config_version != CONFIG_VERSION) {
     log_error("Configuration changed or error in config!");
-    cc_defaults(true);
+    cc_defaults(true, false);
     ret &= cc_save();
   }
 
   return ret;
 }
 
-bool cc_format_save() { return cc_save(); }
+bool cc_format_save() {
+  /* TODO: format lfs and try saving. */
+  return cc_save();
+}
 
 bool cc_save() {
   lfs_file_open(&lfs, &config_file, "config", LFS_O_WRONLY | LFS_O_CREAT);
   lfs_file_rewind(&lfs, &config_file);
   /* Config saving is successful if the entire global_cats_config struct is written. */
-  bool ret =
+  const bool ret =
       lfs_file_write(&lfs, &config_file, &global_cats_config, sizeof(global_cats_config)) == sizeof(global_cats_config);
   lfs_file_close(&lfs, &config_file);
   if (ret == false) {
