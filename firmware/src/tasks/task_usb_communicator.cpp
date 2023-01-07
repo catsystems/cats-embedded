@@ -29,7 +29,7 @@
 
   // usb_fifo_reset();
   cli_enter();
-  while (1) {
+  while (true) {
     if (stream_length(USB_SG.in) > 0) {
       cli_process();
     }

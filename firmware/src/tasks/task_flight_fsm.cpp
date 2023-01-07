@@ -50,7 +50,7 @@ namespace task {
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  while (true) {
     /* Check Flight Phases */
     check_flight_phase(&flight_state, preprocessing_task.GetSIData().acc, preprocessing_task.GetSIData().gyro,
                        state_est_task.GetEstimationOutput(), preprocessing_task.GetEstimationInput().height_AGL,

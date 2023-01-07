@@ -53,7 +53,7 @@ static void create_stats_file();
   lfs_file_t current_flight_file;
   char current_flight_filename[MAX_FILENAME_SIZE] = {};
 
-  while (1) {
+  while (true) {
     rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
     if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, nullptr, osWaitForever) != osOK) {
       log_error("Something wrong with the command recorder queue");
@@ -68,7 +68,7 @@ static void create_stats_file();
         rec_elem_t dummy_log_elem;
         uint32_t cmd_check_counter = 0;
         log_info("Started filling pre recording queue");
-        while (1) {
+        while (true) {
           uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
           if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT) {
             /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
@@ -115,7 +115,7 @@ static void create_stats_file();
         rec_elem_t curr_log_elem;
         uint32_t sync_counter = 0;
         log_info("Started writing to flash");
-        while (1) {
+        while (true) {
           /* TODO: check if this should be < or <= */
           while (rec_buffer_idx < REC_BUFFER_LEN) {
             // uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
