@@ -22,42 +22,42 @@
 #include "util/actions.h"
 #include "util/enum_str_maps.h"
 
-const cats_config_u DEFAULT_CONFIG = {.config = {
-                                          .config_version = CONFIG_VERSION,
-                                          .control_settings =
-                                              {
-                                                  .liftoff_acc_threshold = 35,
-                                                  .liftoff_detection_agl = 50,
-                                                  .main_altitude = 200,
-                                              },
-                                          .rec_mask = UINT32_MAX,
-                                          .timers = {},
-                                          .action_array =
-                                              {// EV_MOVING
-                                               {},
-                                               // EV_READY
-                                               {ACT_SET_RECORDER_STATE, REC_FILL_QUEUE},
-                                               // EV_LIFTOFF
-                                               {ACT_SET_RECORDER_STATE, REC_WRITE_TO_FLASH},
-                                               // EV_MAX_V
-                                               {},
-                                               // EV_APOGEE
-                                               {ACT_HIGH_CURRENT_ONE, 1},
-                                               // EV_MAIN_DEPLOYMENT
-                                               {ACT_HIGH_CURRENT_TWO, 1},
-                                               // EV_TOUCHDOWN
-                                               {ACT_SET_RECORDER_STATE, REC_OFF}},
-                                          .initial_servo_position = {0, 0},
-                                          .rec_speed_idx = 0,
-                                          .telemetry_settings =
-                                              {
-                                                  .link_phrase = {},
-                                                  .power_level = 20,
-                                                  .adaptive_power = OFF,
-                                              },
-                                      }};
+const cats_config_t DEFAULT_CONFIG = {
+    .config_version = CONFIG_VERSION,
+    .control_settings =
+        {
+            .liftoff_acc_threshold = 35,
+            .liftoff_detection_agl = 50,
+            .main_altitude = 200,
+        },
+    .rec_mask = UINT32_MAX,
+    .timers = {},
+    .action_array =
+        {// EV_MOVING
+         {},
+         // EV_READY
+         {ACT_SET_RECORDER_STATE, REC_FILL_QUEUE},
+         // EV_LIFTOFF
+         {ACT_SET_RECORDER_STATE, REC_WRITE_TO_FLASH},
+         // EV_MAX_V
+         {},
+         // EV_APOGEE
+         {ACT_HIGH_CURRENT_ONE, 1},
+         // EV_MAIN_DEPLOYMENT
+         {ACT_HIGH_CURRENT_TWO, 1},
+         // EV_TOUCHDOWN
+         {ACT_SET_RECORDER_STATE, REC_OFF}},
+    .initial_servo_position = {0, 0},
+    .rec_speed_idx = 0,
+    .telemetry_settings =
+        {
+            .link_phrase = {},
+            .power_level = 20,
+            .adaptive_power = OFF,
+        },
+};
 
-cats_config_u global_cats_config = {};
+cats_config_t global_cats_config = {};
 
 lfs_file_t config_file;
 
@@ -73,10 +73,9 @@ void cc_defaults(bool use_default_outputs) {
   memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
   /* Remove APOGEE & POST_APOGEE actions */
   if (!use_default_outputs) {
-    memset(global_cats_config.config.action_array[EV_APOGEE], 0,
-           sizeof(global_cats_config.config.action_array[EV_APOGEE]));
-    memset(global_cats_config.config.action_array[EV_MAIN_DEPLOYMENT], 0,
-           sizeof(global_cats_config.config.action_array[EV_MAIN_DEPLOYMENT]));
+    memset(global_cats_config.action_array[EV_APOGEE], 0, sizeof(global_cats_config.action_array[EV_APOGEE]));
+    memset(global_cats_config.action_array[EV_MAIN_DEPLOYMENT], 0,
+           sizeof(global_cats_config.action_array[EV_MAIN_DEPLOYMENT]));
   }
 }
 
@@ -85,12 +84,12 @@ void cc_defaults(bool use_default_outputs) {
 bool cc_load() {
   bool ret = true;
   ret &= lfs_file_open(&lfs, &config_file, "config", LFS_O_RDONLY | LFS_O_CREAT) >= 0;
-  ret &= lfs_file_read(&lfs, &config_file, &global_cats_config.config, sizeof(global_cats_config.config)) ==
-         sizeof(global_cats_config.config);
+  ret &=
+      lfs_file_read(&lfs, &config_file, &global_cats_config, sizeof(global_cats_config)) == sizeof(global_cats_config);
   ret &= lfs_file_close(&lfs, &config_file) >= 0;
 
   /* Check if the read config makes sense */
-  if (global_cats_config.config.config_version != CONFIG_VERSION) {
+  if (global_cats_config.config_version != CONFIG_VERSION) {
     log_error("Configuration changed or error in config!");
     cc_defaults(true);
     ret &= cc_save();
@@ -105,8 +104,8 @@ bool cc_save() {
   lfs_file_open(&lfs, &config_file, "config", LFS_O_WRONLY | LFS_O_CREAT);
   lfs_file_rewind(&lfs, &config_file);
   /* Config saving is successful if the entire global_cats_config struct is written. */
-  bool ret = lfs_file_write(&lfs, &config_file, &global_cats_config.config, sizeof(global_cats_config.config)) ==
-             sizeof(global_cats_config.config);
+  bool ret =
+      lfs_file_write(&lfs, &config_file, &global_cats_config, sizeof(global_cats_config)) == sizeof(global_cats_config);
   lfs_file_close(&lfs, &config_file);
   if (ret == false) {
     log_error("Error while saving configuration file!");
@@ -124,7 +123,7 @@ uint16_t cc_get_num_actions(cats_event_e event) {
   uint16_t nr_actions;
   if (event > (NUM_EVENTS - 1)) return 0;
   // Count the number of entries
-  while ((global_cats_config.config.action_array[event][i] != 0) && (i < 16)) {
+  while ((global_cats_config.action_array[event][i] != 0) && (i < 16)) {
     i += 2;
   }
   nr_actions = i / 2;
@@ -141,8 +140,8 @@ uint16_t cc_get_num_actions(cats_event_e event) {
 bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action) {
   if ((action == nullptr) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
 
-  int16_t idx = global_cats_config.config.action_array[event][act_idx * 2];
-  int16_t arg = global_cats_config.config.action_array[event][act_idx * 2 + 1];
+  int16_t idx = global_cats_config.action_array[event][act_idx * 2];
+  int16_t arg = global_cats_config.action_array[event][act_idx * 2 + 1];
 
   if (idx > 0 && idx <= NUM_ACTION_FUNCTIONS) {
     action->action_idx = idx;

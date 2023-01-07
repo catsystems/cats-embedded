@@ -94,13 +94,13 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);
   osDelay(100);
-  SendSettings(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+  SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
   osDelay(100);
   SendSettings(CMD_MODE, BIDIRECTIONAL);
   osDelay(100);
   /* Only start the telemetry when a link phrase is set */
-  if (global_cats_config.config.telemetry_settings.link_phrase[0] != 0) {
-    SendLinkPhrase(global_cats_config.config.telemetry_settings.link_phrase, 8);
+  if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
+    SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
     osDelay(100);
     SendEnable();
   }
@@ -196,12 +196,12 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
     }
 
     /* Go to high power mode if adaptive power is enabled */
-    if (global_cats_config.config.telemetry_settings.adaptive_power == ON) {
+    if (global_cats_config.telemetry_settings.adaptive_power == ON) {
       if (fsm_updated && (m_fsm_enum == THRUSTING)) {
         SendSettings(CMD_POWER_LEVEL, TELE_MAX_POWER);
       }
       if (fsm_updated && (m_fsm_enum == TOUCHDOWN)) {
-        SendSettings(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+        SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
       }
     }
 

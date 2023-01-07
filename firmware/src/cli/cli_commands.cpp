@@ -843,9 +843,9 @@ static void cli_cmd_start_simulation(const char *cmd_name, char *args) { start_s
 static void print_control_config() {
   cli_print_line("\n * CONTROL SETTINGS *\n");
 
-  cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
-  cli_printf("  Liftoff Detection AGL:  %u m\n", global_cats_config.config.control_settings.liftoff_detection_agl);
-  cli_printf("  Main Altitude:          %u m\n", global_cats_config.config.control_settings.main_altitude);
+  cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.control_settings.liftoff_acc_threshold);
+  cli_printf("  Liftoff Detection AGL:  %u m\n", global_cats_config.control_settings.liftoff_detection_agl);
+  cli_printf("  Main Altitude:          %u m\n", global_cats_config.control_settings.main_altitude);
 }
 
 static void print_action_config() {
@@ -872,11 +872,11 @@ static void print_timer_config() {
 
   cli_printf("\n\n * TIMER CONFIGURATION *\n");
   for (int i = 0; i < NUM_TIMERS; i++) {
-    if (global_cats_config.config.timers[i].duration > 0) {
+    if (global_cats_config.timers[i].duration > 0) {
       cli_printf("\nTIMER %d\n", i + 1);
-      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
-      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.config.timers[i].trigger_event]);
-      cli_printf("  Duration: %lu ms\n", global_cats_config.config.timers[i].duration);
+      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.timers[i].start_event]);
+      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.timers[i].trigger_event]);
+      cli_printf("  Duration: %lu ms\n", global_cats_config.timers[i].duration);
     }
   }
 }

@@ -107,6 +107,6 @@ extern const uint16_t value_table_entry_count;
 
 extern const cli_value_t value_table[];
 
-void *get_cats_config_member_ptr(const cats_config_u *cfg, const cli_value_t *var);
+void *get_cats_config_member_ptr(const cats_config_t *cfg, const cli_value_t *var);
 
-void print_cats_config(const char *cmd_name, const cats_config_u *cfg, bool print_limits);
+void print_cats_config(const char *cmd_name, const cats_config_t *cfg, bool print_limits);

@@ -33,9 +33,7 @@ flight_stats_t global_flight_stats = {
  * @param rec_type - recorder entry type
  * @return true if the given rec_type should be recorded
  */
-static inline bool should_record(rec_entry_type_e rec_type) {
-  return (global_cats_config.config.rec_mask & rec_type) > 0;
-}
+static inline bool should_record(rec_entry_type_e rec_type) { return (global_cats_config.rec_mask & rec_type) > 0; }
 
 /* TODO: See whether this is optimized in assembler. Here we copy the entire struct but the alternative is to pass a
  * pointer and this will cause too many indirect accesses. */
@@ -78,7 +76,7 @@ static skip_counter_t skip_counter = {};
  *
  * Task frequency = 100Hz (== 10ms)
  * Recording frequency = 50Hz (== 20ms)
- *   => global_cats_config.config.rec_speed_idx = 1 (["100Hz", "50Hz", "33.33Hz"...])
+ *   => global_cats_config.rec_speed_idx = 1 (["100Hz", "50Hz", "33.33Hz"...])
  *   => inv_rec_rate = 2 (== we are keeping every 2nd entry that comes in)
  * Number of elements of the same type per task iteration (num_reps_per_iter) = 3
  *   - We want to record all elements of the same type in a single task iteration, that's why we need to know how many
@@ -109,8 +107,8 @@ static skip_counter_t skip_counter = {};
  */
 inline static bool should_skip(uint8_t *cnt, uint8_t num_reps_per_iter) {
   /* Return right away if everything should be recorded */
-  if (global_cats_config.config.rec_speed_idx == 0) return false;
-  uint8_t inv_rec_rate = global_cats_config.config.rec_speed_idx + 1;
+  if (global_cats_config.rec_speed_idx == 0) return false;
+  uint8_t inv_rec_rate = global_cats_config.rec_speed_idx + 1;
   /* Skip the entry if we already recorded all entries from the iteration that should be recorded */
   bool skip = (*cnt % (inv_rec_rate * num_reps_per_iter)) >= num_reps_per_iter;
   /* Increment the counter and reset it to 0 if the max value is reached */

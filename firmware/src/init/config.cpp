@@ -40,8 +40,8 @@ void load_and_set_config() {
   init_timers();
 
   HAL_Delay(100);
-  servo_set_position(&SERVO1, global_cats_config.config.initial_servo_position[0]);
-  servo_set_position(&SERVO2, global_cats_config.config.initial_servo_position[1]);
+  servo_set_position(&SERVO1, global_cats_config.initial_servo_position[0]);
+  servo_set_position(&SERVO2, global_cats_config.initial_servo_position[1]);
 
   servo_start(&SERVO1);
   servo_start(&SERVO2);
@@ -91,16 +91,16 @@ static void create_event_map() {
 static void init_timers() {
   /* Init timers */
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
-    if (global_cats_config.config.timers[i].duration > 0) {
-      ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.config.timers[i].start_event;
-      ev_timers[i].execute_event = (cats_event_e)global_cats_config.config.timers[i].trigger_event;
-      ev_timers[i].timer_duration_ticks = global_cats_config.config.timers[i].duration;
+    if (global_cats_config.timers[i].duration > 0) {
+      ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.timers[i].start_event;
+      ev_timers[i].execute_event = (cats_event_e)global_cats_config.timers[i].trigger_event;
+      ev_timers[i].timer_duration_ticks = global_cats_config.timers[i].duration;
     }
   }
 
   /* Create Timers */
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
-    if (global_cats_config.config.timers[i].duration > 0) {
+    if (global_cats_config.timers[i].duration > 0) {
       ev_timers[i].timer_id =
           osTimerNew((osTimerFunc_t)trigger_event, osTimerOnce, (void *)ev_timers[i].execute_event, nullptr);
     }
