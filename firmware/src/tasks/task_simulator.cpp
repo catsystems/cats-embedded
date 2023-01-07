@@ -100,7 +100,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
 
   init_simulation_data(sim_config.sim_choice);
 
-  while (1) {
+  while (true) {
     time_since_start = osKernelGetTickCount() - sim_start;
 
     /* Check if we need to use new acceleration datapoint */

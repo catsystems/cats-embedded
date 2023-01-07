@@ -54,7 +54,7 @@ static void init_communication();
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
-  while (1) {
+  while (true) {
     /* Uncomment the code below to enable stack usage monitoring:
      *
      * static uint32_t initial_stack_sz = 0xFFFFFFFF;

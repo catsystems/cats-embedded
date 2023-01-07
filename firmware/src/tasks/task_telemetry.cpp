@@ -122,7 +122,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
-  while (1) {
+  while (true) {
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
 

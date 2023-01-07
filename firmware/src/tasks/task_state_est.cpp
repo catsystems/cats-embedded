@@ -66,7 +66,7 @@ estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  while (true) {
     /* update fsm enum */
     bool fsm_updated = GetNewFsmEnum();
 

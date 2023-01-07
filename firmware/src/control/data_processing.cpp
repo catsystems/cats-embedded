@@ -82,7 +82,7 @@ float32_t median(float32_t input_array[]) {
     j = r;
     a = array[l + 1];
 
-    while (1) {
+    while (true) {
       i++;
       j--;
       while (array[i] < a) i++;
