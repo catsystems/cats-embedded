@@ -39,6 +39,7 @@
   CATS_ERR_FILTER_ACC =     1 << 13,   // 0x2000
   CATS_ERR_FILTER_HEIGHT =  1 << 14,   // 0x4000
   CATS_ERR_HARD_FAULT =     1 << 15,   // 0x8000
+  CATS_ERR_NON_USER_CFG =   1 << 16,   // 0x10000
 };
 // clang-format on
 

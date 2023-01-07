@@ -152,4 +152,9 @@ void print_cats_config(const char *cmd_name, const cats_config_t *cfg, bool prin
     cli_print_var(cmd_name, cfg, val, print_limits);
     cli_print_linefeed();
   }
+
+  /* Print out the 'set_by_user' flag when requested by commands other than 'dump'. */
+  if (strcmp(cmd_name, "dump") != 0) {
+    cli_printf("set_by_user: %s", cfg->is_set_by_user ? "TRUE" : "FALSE");
+  }
 }

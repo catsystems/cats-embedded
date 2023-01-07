@@ -17,6 +17,7 @@
  */
 
 #include "tasks/task_simulator.h"
+#include "cli/cli.h"
 #include "config/globals.h"
 #include "target.h"
 #include "util/log.h"
@@ -158,6 +159,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
     if (new_enum == TOUCHDOWN) {
       log_raw("Simulation Successful.");
       log_set_mode(prev_log_mode);
+      cli_enter();
       osThreadExit();
     }
 

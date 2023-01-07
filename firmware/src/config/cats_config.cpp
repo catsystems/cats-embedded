@@ -21,6 +21,7 @@
 #include "lfs.h"
 #include "util/actions.h"
 #include "util/enum_str_maps.h"
+#include "util/error_handler.h"
 
 const cats_config_t DEFAULT_CONFIG = {
     .config_version = CONFIG_VERSION,
@@ -96,6 +97,14 @@ bool cc_load() {
     log_error("Configuration changed or error in config!");
     cc_defaults(true, false);
     ret &= cc_save();
+    if (ret) {
+      /* If the default config was successfully saved, emit a CATS_ERR_NON_USER_CFG error */
+      add_error(CATS_ERR_NON_USER_CFG);
+    }
+  }
+
+  if (!global_cats_config.is_set_by_user) {
+    log_warn("Configuration not set by user!");
   }
 
   return ret;
