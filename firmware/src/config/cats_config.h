@@ -45,13 +45,14 @@ struct cats_config_t {
   config_telemetry_t telemetry_settings;
   control_settings_t control_settings;
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
+  bool is_set_by_user;
 };
 
 extern cats_config_t global_cats_config;
 
 /** cats config initialization **/
 void cc_init();
-void cc_defaults(bool use_default_outputs);
+void cc_defaults(bool use_default_outputs, bool set_by_user);
 
 /** persistence functions - return true on success **/
 bool cc_load();
