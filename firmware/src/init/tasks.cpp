@@ -43,6 +43,8 @@ SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_telemetry, 512)
 
 void init_tasks() {
+  using namespace task;
+
   // TODO: Check rec_queue for validity here
   rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
   rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
@@ -50,9 +52,9 @@ void init_tasks() {
 
   osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
 
-  task::SensorRead::GetInstance().Run();
+  Task<Preprocessing, 512>::Start();
 
-  task::Preprocessing::GetInstance().Run();
+  Task<SensorRead, 512>::Start();
 
   osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
@@ -62,5 +64,5 @@ void init_tasks() {
 
   osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
 
-  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
+//  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
 }

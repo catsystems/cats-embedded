@@ -54,10 +54,6 @@ static void read_mag(vf32_t *data);
 static void read_accel(vi8_t *data);
 
 namespace task {
-/* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_sensor_read, 512)
-
-void SensorRead::Run() { osThreadNew(task_sensor_read, nullptr, &task_sensor_read_attributes); }
 
 baro_data_t SensorRead::GetBaro(uint8_t index) { return m_baro_data[index]; }
 
@@ -74,10 +70,8 @@ accel_data_t SensorRead::GetAccel(uint8_t index) { return m_accel_data[index]; }
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_sensor_read(void *argument [[maybe_unused]]) {
+[[noreturn]] void SensorRead::Run() {
   /* Initialize IMU data variables */
-
-  auto &task = SensorRead::GetInstance();
 
   prepare_temp();
   osDelay(5);
@@ -92,46 +86,46 @@ accel_data_t SensorRead::GetAccel(uint8_t index) { return m_accel_data[index]; }
     read_baro();
 
     // Prepare new readout for the baro
-    if (task.m_current_readout == SensorRead::BaroReadoutType::kReadBaroPressure) {
+    if (m_current_readout == SensorRead::BaroReadoutType::kReadBaroPressure) {
       prepare_pres();
-      task.m_current_readout = SensorRead::BaroReadoutType::kReadBaroTemperature;
+      m_current_readout = SensorRead::BaroReadoutType::kReadBaroTemperature;
     } else {
       prepare_temp();
-      task.m_current_readout = SensorRead::BaroReadoutType::kReadBaroPressure;
+      m_current_readout = SensorRead::BaroReadoutType::kReadBaroPressure;
       /* For Simulator */
       if (simulation_started) {
         for (int i = 0; i < NUM_BARO; i++) {
-          task.m_baro_data[i].pressure = global_baro_sim[i].pressure;
+          m_baro_data[i].pressure = global_baro_sim[i].pressure;
         }
       } else {
-        get_temp_pres(&(task.m_baro_data[0].temperature), &(task.m_baro_data[0].pressure));
+        get_temp_pres(&(m_baro_data[0].temperature), &(m_baro_data[0].pressure));
       }
 
       /* Read and Save Barometric Data */
       for (int i = 0; i < NUM_BARO; i++) {
-        record(tick_count, add_id_to_record_type(BARO, i), &(task.m_baro_data[0]));
+        record(tick_count, add_id_to_record_type(BARO, i), &(m_baro_data[0]));
       }
 
       /* Read and Save Magnetometer Data */
       for (int i = 0; i < NUM_MAGNETO; i++) {
-        read_mag(&task.m_magneto_data[i]);
-        record(tick_count, add_id_to_record_type(MAGNETO, i), &(task.m_magneto_data[i]));
+        read_mag(&m_magneto_data[i]);
+        record(tick_count, add_id_to_record_type(MAGNETO, i), &(m_magneto_data[i]));
       }
 
       /* Read and Save High-G ACC Data */
       for (int i = 0; i < NUM_ACCELEROMETER; i++) {
-        read_accel(&task.m_accel_data[i]);
-        record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(task.m_accel_data[i]));
+        read_accel(&m_accel_data[i]);
+        record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(m_accel_data[i]));
       }
 
       /* Read and Save IMU Data */
       for (int i = 0; i < NUM_IMU; i++) {
         if (simulation_started) {
-          task.m_imu_data[i].acc = global_imu_sim[i].acc;
+          m_imu_data[i].acc = global_imu_sim[i].acc;
         } else {
-          read_imu(task.m_imu_data[i].gyro, task.m_imu_data[i].acc, i);
+          read_imu(m_imu_data[i].gyro, m_imu_data[i].acc, i);
         }
-        record(tick_count, add_id_to_record_type(IMU, i), &(task.m_imu_data[i]));
+        record(tick_count, add_id_to_record_type(IMU, i), &(m_imu_data[i]));
       }
     }
 

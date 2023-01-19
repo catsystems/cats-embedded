@@ -24,14 +24,12 @@
 #include "util/types.h"
 
 namespace task {
-[[noreturn]] void task_sensor_read(void *argument);
 
-class SensorRead : public Task<SensorRead> {
+class SensorRead : public Task<SensorRead, 512> {
  public:
-  friend class Task<SensorRead>;
-  friend void task_sensor_read(void *argument);
+  friend class Task<SensorRead, 512>;
 
-  void Run() override;
+  [[noreturn]] void Run() override;
 
   enum class BaroReadoutType {
     kReadBaroTemperature = 1,

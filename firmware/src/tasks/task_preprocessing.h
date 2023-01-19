@@ -27,14 +27,12 @@
 #include "control/sensor_elimination.h"
 
 namespace task {
-[[noreturn]] void task_preprocessing(void *argument);
 
-class Preprocessing : public Task<Preprocessing> {
+class Preprocessing : public Task<Preprocessing, 512> {
  public:
-  friend class Task<Preprocessing>;
-  friend void task_preprocessing(void *argument);
+  friend class Task<Preprocessing, 512>;
 
-  void Run() override;
+  [[noreturn]] void Run() override;
 
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
@@ -44,7 +42,7 @@ class Preprocessing : public Task<Preprocessing> {
  private:
   Preprocessing() = default;
 
-  void AvgToSI();
+  void AvgToSi();
   void MedianFilter();
   void TransformData();
   void CheckSensors();

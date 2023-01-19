@@ -32,97 +32,85 @@
 
 namespace task {
 
-SET_TASK_PARAMS(task_preprocessing, 512);
-
-void Preprocessing::Run() { osThreadNew(task_preprocessing, nullptr, &task_preprocessing_attributes); }
-
-/** Exported Function Definitions **/
-
 /**
  * @brief Function implementing the task_preprocessing thread.
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_preprocessing(void *argument) {
+[[noreturn]] void Preprocessing::Run() {
   /* Get Tasks */
   auto &sensor_read_task = SensorRead::GetInstance();
-  auto &preprocessing_task = Preprocessing::GetInstance();
 
   /* Infinite loop */
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* update fsm enum */
-    preprocessing_task.m_new_fsm_enum = global_flight_state.flight_state;
+    m_new_fsm_enum = global_flight_state.flight_state;
 
     /* get new sensor data */
-    preprocessing_task.m_baro_data[0] = sensor_read_task.GetBaro(0);
-    preprocessing_task.m_imu_data[0] = sensor_read_task.GetImu(0);
-    preprocessing_task.m_magneto_data[0] = sensor_read_task.GetMag(0);
-    preprocessing_task.m_accel_data[0] = sensor_read_task.GetAccel(0);
+    m_baro_data[0] = sensor_read_task.GetBaro(0);
+    m_imu_data[0] = sensor_read_task.GetImu(0);
+    m_magneto_data[0] = sensor_read_task.GetMag(0);
+    m_accel_data[0] = sensor_read_task.GetAccel(0);
 
     /* Do the sensor elimination */
-    /* Todo: Function of the Class */
-    preprocessing_task.CheckSensors();
+    CheckSensors();
 
     /* average and construct SI Data */
-    preprocessing_task.AvgToSI();
+    AvgToSi();
 
     /* Compute gravity when changing to READY */
-    if ((preprocessing_task.m_new_fsm_enum != preprocessing_task.m_old_fsm_enum) &&
-        (preprocessing_task.m_new_fsm_enum == READY)) {
-      calibrate_imu(&preprocessing_task.m_si_data.acc, &preprocessing_task.m_calibration);
-      global_flight_stats.calibration_data.angle = preprocessing_task.m_calibration.angle;
-      global_flight_stats.calibration_data.axis = preprocessing_task.m_calibration.axis;
+    if ((m_new_fsm_enum != m_old_fsm_enum) && (m_new_fsm_enum == READY)) {
+      calibrate_imu(&m_si_data.acc, &m_calibration);
+      global_flight_stats.calibration_data.angle = m_calibration.angle;
+      global_flight_stats.calibration_data.axis = m_calibration.axis;
     }
 
     /* calibrate gyro once at startup */
-    if (!preprocessing_task.m_gyro_calibrated) {
-      preprocessing_task.m_gyro_calibrated =
-          compute_gyro_calibration(&preprocessing_task.m_si_data.gyro, &preprocessing_task.m_calibration);
+    if (!m_gyro_calibrated) {
+      m_gyro_calibrated = compute_gyro_calibration(&m_si_data.gyro, &m_calibration);
     } else {
-      calibrate_gyro(&preprocessing_task.m_calibration, &preprocessing_task.m_si_data.gyro);
-      global_flight_stats.calibration_data.gyro_calib = preprocessing_task.m_calibration.gyro_calib;
+      calibrate_gyro(&m_calibration, &m_si_data.gyro);
+      global_flight_stats.calibration_data.gyro_calib = m_calibration.gyro_calib;
     }
 
     /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
-    if (preprocessing_task.m_new_fsm_enum == MOVING) {
-      preprocessing_task.m_height_0 =
-          approx_moving_average(calculate_height(preprocessing_task.m_si_data.pressure), true);
-      global_flight_stats.height_0 = preprocessing_task.m_height_0;
+    if (m_new_fsm_enum == MOVING) {
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), true);
+      global_flight_stats.height_0 = m_height_0;
     }
     /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
-    if (preprocessing_task.m_new_fsm_enum == READY) {
-      preprocessing_task.m_height_0 =
-          approx_moving_average(calculate_height(preprocessing_task.m_si_data.pressure), false);
-      global_flight_stats.height_0 = preprocessing_task.m_height_0;
+    if (m_new_fsm_enum == READY) {
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), false);
+      global_flight_stats.height_0 = m_height_0;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    preprocessing_task.TransformData();
+    TransformData();
 
 #ifdef USE_MEDIAN_FILTER
     /* Filter the data */
-    preprocessing_task.MedianFilter();
+    MedianFilter();
 #endif
 
     /* reset old fsm enum */
-    preprocessing_task.m_old_fsm_enum = preprocessing_task.m_new_fsm_enum;
+    m_old_fsm_enum = m_new_fsm_enum;
 
-    memcpy(&preprocessing_task.m_si_data_old, &preprocessing_task.m_si_data, sizeof(preprocessing_task.m_si_data));
+    memcpy(&m_si_data_old, &m_si_data, sizeof(m_si_data));
 
     /* write input data into global struct */
-    global_estimation_input = preprocessing_task.m_state_est_input;
+    global_estimation_input = m_state_est_input;
 
     /* Global SI data is only used in the fsm task */
-    global_SI_data = preprocessing_task.m_si_data;
+    global_SI_data = m_si_data;
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
-void Preprocessing::AvgToSI() {
+void Preprocessing::AvgToSi() {
   float32_t counter = 0;
 #if NUM_IMU > 0
   /* Reset SI data */
