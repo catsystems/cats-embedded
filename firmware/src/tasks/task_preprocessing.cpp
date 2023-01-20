@@ -37,8 +37,8 @@ namespace task {
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void Preprocessing::Run() {
-  /* Get Tasks */
+[[noreturn]] void Preprocessing::Run() noexcept {
+  /* Get Sensor Read Task */
   auto &sensor_read_task = SensorRead::GetInstance();
 
   /* Infinite loop */
@@ -110,7 +110,67 @@ namespace task {
   }
 }
 
-void Preprocessing::AvgToSi() {
+void Preprocessing::CheckSensors() noexcept {
+  cats_error_e status = CATS_ERR_OK;
+
+  /* Accelerometers */
+  for (uint8_t i = 0; i < NUM_ACCELEROMETER; i++) {
+    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &acc_info[NUM_IMU + i]) |
+                            check_sensor_freezing(&m_sensor_elimination, i, &acc_info[NUM_IMU + i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_acc[i] = 0;
+      clear_error(CATS_ERR_ACC);
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+
+  /* IMU */
+  for (uint8_t i = 0; i < NUM_IMU; i++) {
+    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &acc_info[i]) |
+                            check_sensor_freezing(&m_sensor_elimination, i, &acc_info[i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_imu[i] = 0;
+      clear_error((cats_error_e)(CATS_ERR_IMU_0 << i));
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+
+  /* Barometer */
+  for (uint8_t i = 0; i < NUM_BARO; i++) {
+    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &baro_info[i]) |
+                            check_sensor_freezing(&m_sensor_elimination, i, &baro_info[i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_baro[i] = 0;
+      clear_error((cats_error_e)(CATS_ERR_BARO_0 << i));
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+
+  /* Magneto */
+  for (uint8_t i = 0; i < NUM_MAGNETO; i++) {
+    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &mag_info[i]) |
+                            check_sensor_freezing(&m_sensor_elimination, i, &mag_info[i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_mag[i] = 0;
+      clear_error(CATS_ERR_MAG);
+    } else {
+      add_error(status);
+    }
+    status = CATS_ERR_OK;
+  }
+}
+
+void Preprocessing::AvgToSi() noexcept {
   float32_t counter = 0;
 #if NUM_IMU > 0
   /* Reset SI data */
@@ -207,7 +267,7 @@ void Preprocessing::AvgToSi() {
 #endif
 }
 
-void Preprocessing::MedianFilter() {
+void Preprocessing::MedianFilter() noexcept {
   /* Insert into array */
   m_filter_data.acc[m_filter_data.counter] = m_state_est_input.acceleration_z;
   m_filter_data.height_AGL[m_filter_data.counter] = m_state_est_input.height_AGL;
@@ -221,7 +281,7 @@ void Preprocessing::MedianFilter() {
   m_state_est_input.height_AGL = median(m_filter_data.height_AGL);
 }
 
-void Preprocessing::TransformData() {
+void Preprocessing::TransformData() noexcept {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
   switch (this->m_calibration.axis) {

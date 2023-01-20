@@ -31,7 +31,7 @@ class Task {
   /* Protected constructor */
   Task() = default;
 
-  virtual void Run() = 0;
+  virtual void Run() noexcept = 0;
 
  private:
   std::array<uint32_t, STACK_SZ> m_task_buffer;
@@ -65,15 +65,18 @@ class Task {
   static void operator delete[](void* ptr) = delete;
 
   template <typename... Args>
-  static T& GetInstance(Args&&... args) {
+  static T& GetInstance(Args&&... args) noexcept {
     /* Static local variable */
     static T instance(std::forward<Args>(args)...);
     return instance;
   }
 
-  static void RunWrapper(void* task_ptr) { static_cast<T*>(task_ptr)->Run(); }
+  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
 
-  static void Start() { osThreadNew(RunWrapper, &T::GetInstance(), &T::GetInstance().m_task_attributes); }
+  static constexpr void Start() noexcept {
+    auto& task = T::GetInstance();
+    osThreadNew(RunWrapper, &task, &task.m_task_attributes);
+  }
 };
 
 }  // namespace task

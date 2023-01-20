@@ -28,11 +28,11 @@
 
 namespace task {
 
-class Preprocessing : public Task<Preprocessing, 512> {
+class Preprocessing final : public Task<Preprocessing, 512> {
  public:
   friend class Task<Preprocessing, 512>;
 
-  [[noreturn]] void Run() override;
+  [[noreturn]] void Run() noexcept override;
 
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
@@ -42,10 +42,10 @@ class Preprocessing : public Task<Preprocessing, 512> {
  private:
   Preprocessing() = default;
 
-  void AvgToSi();
-  void MedianFilter();
-  void TransformData();
-  void CheckSensors();
+  void AvgToSi() noexcept;
+  void MedianFilter() noexcept;
+  void TransformData() noexcept;
+  void CheckSensors() noexcept;
 
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};

@@ -55,13 +55,13 @@ static void read_accel(vi8_t *data);
 
 namespace task {
 
-baro_data_t SensorRead::GetBaro(uint8_t index) { return m_baro_data[index]; }
+baro_data_t SensorRead::GetBaro(uint8_t index) const noexcept { return m_baro_data[index]; }
 
-imu_data_t SensorRead::GetImu(uint8_t index) { return m_imu_data[index]; }
+imu_data_t SensorRead::GetImu(uint8_t index) const noexcept { return m_imu_data[index]; }
 
-magneto_data_t SensorRead::GetMag(uint8_t index) { return m_magneto_data[index]; }
+magneto_data_t SensorRead::GetMag(uint8_t index) const noexcept { return m_magneto_data[index]; }
 
-accel_data_t SensorRead::GetAccel(uint8_t index) { return m_accel_data[index]; }
+accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel_data[index]; }
 
 /** Exported Function Definitions **/
 
@@ -70,7 +70,7 @@ accel_data_t SensorRead::GetAccel(uint8_t index) { return m_accel_data[index]; }
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void SensorRead::Run() {
+[[noreturn]] void SensorRead::Run() noexcept {
   /* Initialize IMU data variables */
 
   prepare_temp();

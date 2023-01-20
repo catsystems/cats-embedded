@@ -118,7 +118,7 @@ inline static bool should_skip(uint8_t *cnt, uint8_t num_reps_per_iter) {
   return skip;
 }
 
-void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void * const rec_value) {
+void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *const rec_value) {
   rec_entry_type_e pure_rec_type = get_record_type_without_id(rec_type_with_id);
 
   if (global_recorder_status >= REC_FILL_QUEUE && should_record(pure_rec_type)) {

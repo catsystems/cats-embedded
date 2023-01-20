@@ -19,75 +19,10 @@
 #include "control/sensor_elimination.h"
 #include "tasks/task_preprocessing.h"
 
-namespace task {
-
-cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);
-cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info);
-
-void Preprocessing::CheckSensors() {
-  cats_error_e status = CATS_ERR_OK;
-
-  /* Accelerometers */
-  for (uint8_t i = 0; i < NUM_ACCELEROMETER; i++) {
-    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &acc_info[NUM_IMU + i]) |
-                            check_sensor_freezing(&m_sensor_elimination, i, &acc_info[NUM_IMU + i]));
-    /* Check if accel is not faulty anymore */
-    if (status == CATS_ERR_OK) {
-      m_sensor_elimination.faulty_acc[i] = 0;
-      clear_error(CATS_ERR_ACC);
-    } else {
-      add_error(status);
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* IMU */
-  for (uint8_t i = 0; i < NUM_IMU; i++) {
-    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &acc_info[i]) |
-                            check_sensor_freezing(&m_sensor_elimination, i, &acc_info[i]));
-    /* Check if accel is not faulty anymore */
-    if (status == CATS_ERR_OK) {
-      m_sensor_elimination.faulty_imu[i] = 0;
-      clear_error((cats_error_e)(CATS_ERR_IMU_0 << i));
-    } else {
-      add_error(status);
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Barometer */
-  for (uint8_t i = 0; i < NUM_BARO; i++) {
-    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &baro_info[i]) |
-                            check_sensor_freezing(&m_sensor_elimination, i, &baro_info[i]));
-    /* Check if accel is not faulty anymore */
-    if (status == CATS_ERR_OK) {
-      m_sensor_elimination.faulty_baro[i] = 0;
-      clear_error((cats_error_e)(CATS_ERR_BARO_0 << i));
-    } else {
-      add_error(status);
-    }
-    status = CATS_ERR_OK;
-  }
-
-  /* Magneto */
-  for (uint8_t i = 0; i < NUM_MAGNETO; i++) {
-    status = (cats_error_e)(check_sensor_bounds(&m_sensor_elimination, i, &mag_info[i]) |
-                            check_sensor_freezing(&m_sensor_elimination, i, &mag_info[i]));
-    /* Check if accel is not faulty anymore */
-    if (status == CATS_ERR_OK) {
-      m_sensor_elimination.faulty_mag[i] = 0;
-      clear_error(CATS_ERR_MAG);
-    } else {
-      add_error(status);
-    }
-    status = CATS_ERR_OK;
-  }
-}
-
 cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info) {
   cats_error_e status = CATS_ERR_OK;
 
-  auto &task = task::Preprocessing::GetInstance();
+  const auto &task = task::Preprocessing::GetInstance();
 
   switch (sens_info->sens_type) {
     case BARO_ID:
@@ -128,7 +63,7 @@ cats_error_e check_sensor_bounds(sensor_elimination_t *elimination, uint8_t inde
 cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t index, const sens_info_t *sens_info) {
   cats_error_e status = CATS_ERR_OK;
 
-  auto &task = task::Preprocessing::GetInstance();
+  const auto &task = task::Preprocessing::GetInstance();
 
   switch (sens_info->sens_type) {
     case BARO_ID:
@@ -185,4 +120,3 @@ cats_error_e check_sensor_freezing(sensor_elimination_t *elimination, uint8_t in
 
   return status;
 }
-}  // namespace task

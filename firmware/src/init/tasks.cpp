@@ -52,9 +52,9 @@ void init_tasks() {
 
   osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
 
-  Task<Preprocessing, 512>::Start();
+  Preprocessing::Start();
 
-  Task<SensorRead, 512>::Start();
+  SensorRead::Start();
 
   osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
@@ -64,5 +64,5 @@ void init_tasks() {
 
   osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
 
-//  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
+  //  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
 }
