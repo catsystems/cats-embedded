@@ -21,7 +21,6 @@
 #include "config/globals.h"
 #include "flash/recorder.h"
 #include "sensors/h3lis100dl.h"
-#include "util/task_util.h"
 
 #if IMU_TYPE == LSM6DSR_TYPE
 
@@ -31,11 +30,11 @@
 #include "sensors/icm20601.h"
 #endif
 
+#include <cstring>
+
 #include "sensors/mmc5983ma.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
-
-#include <cstring>
 
 /** Private Function Declarations **/
 

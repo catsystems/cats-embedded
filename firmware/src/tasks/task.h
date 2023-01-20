@@ -18,10 +18,11 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <typeinfo>
 #include <utility>
 
-#include "util/task_util.h"
+#include "cmsis_os.h"
 
 namespace task {
 
@@ -34,8 +35,8 @@ class Task {
   virtual void Run() noexcept = 0;
 
  private:
-  std::array<uint32_t, STACK_SZ> m_task_buffer;
-  StaticTask_t m_task_control_block;
+  std::array<uint32_t, STACK_SZ> m_task_buffer{};
+  StaticTask_t m_task_control_block{};
 
   // clang-format off
   const osThreadAttr_t m_task_attributes = {

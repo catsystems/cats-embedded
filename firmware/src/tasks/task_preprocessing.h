@@ -24,8 +24,6 @@
 #include "util/log.h"
 #include "util/types.h"
 
-#include "control/sensor_elimination.h"
-
 namespace task {
 
 class Preprocessing final : public Task<Preprocessing, 512> {
@@ -46,6 +44,8 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   void MedianFilter() noexcept;
   void TransformData() noexcept;
   void CheckSensors() noexcept;
+  cats_error_e CheckSensorBounds(uint8_t index, const sens_info_t *sens_info) noexcept;
+  cats_error_e CheckSensorFreezing(uint8_t index, const sens_info_t *sens_info) noexcept;
 
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};
