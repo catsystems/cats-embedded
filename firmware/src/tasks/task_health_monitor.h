@@ -18,4 +18,18 @@
 
 #pragma once
 
-[[noreturn]] void task_health_monitor(void *argument);
+#include "task.h"
+#include "util/types.h"
+
+namespace task {
+
+class HealthMonitor final : public Task<HealthMonitor, 512> {
+ public:
+  friend class Task<HealthMonitor, 512>;
+
+  [[noreturn]] void Run() noexcept override;
+
+ private:
+  HealthMonitor() = default;
+};
+}  // namespace task

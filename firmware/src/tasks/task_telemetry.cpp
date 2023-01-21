@@ -21,10 +21,13 @@
 #include "comm/stream.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "tasks/task_state_est.h"
 #include "util/crc.h"
 #include "util/gnss.h"
 #include "util/log.h"
 #include "util/telemetry_reg.h"
+
+namespace task {
 
 static uint8_t uart_char;
 
@@ -46,58 +49,34 @@ enum state_e {
 #define INDEX_LEN      1
 #define TELE_MAX_POWER 30
 
-void send_setting(uint8_t command, uint8_t value);
-bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss);
-void send_link_phrase(uint8_t* phrase, uint32_t length);
-void send_tx_payload(uint8_t* payload, uint32_t length);
-bool check_valid_op_code(uint8_t op_code);
-void send_enable();
-void send_disable();
-
-struct packed_tx_msg_t {
-  uint8_t state : 3;
-  uint8_t errors : 4;
-  uint16_t timestamp : 15;
-  int32_t lat : 22;
-  int32_t lon : 22;
-  int32_t altitude : 17;
-  int16_t velocity : 10;
-  uint16_t voltage : 8;
-  uint16_t continuity : 3;
-  // fill up to 16 bytes
-  uint8_t : 0;  // sent
-  uint8_t d1;   // dummy
-  uint8_t d2;   // dummy
-  uint8_t d3;   // dummy
-} __attribute__((packed));
-
 static float amplifier_temperature = 0.0F;
 
-void pack_tx_msg(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload) {
+void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
+                              estimation_output_t estimation_data) {
   /* TODO add state, error, voltage and continuity information */
-  if (global_flight_state.flight_state == MOVING) {
+  if (m_fsm_enum == MOVING) {
     tx_payload->state = 0;
-  } else if (global_flight_state.flight_state == READY) {
+  } else if (m_fsm_enum == READY) {
     tx_payload->state = 1;
-  } else if (global_flight_state.flight_state == THRUSTING) {
+  } else if (m_fsm_enum == THRUSTING) {
     tx_payload->state = 2;
-  } else if (global_flight_state.flight_state == COASTING) {
+  } else if (m_fsm_enum == COASTING) {
     tx_payload->state = 3;
-  } else if (global_flight_state.flight_state == DROGUE) {
+  } else if (m_fsm_enum == DROGUE) {
     tx_payload->state = 4;
-  } else if (global_flight_state.flight_state == MAIN) {
+  } else if (m_fsm_enum == MAIN) {
     tx_payload->state = 5;
-  } else if (global_flight_state.flight_state == TOUCHDOWN) {
+  } else if (m_fsm_enum == TOUCHDOWN) {
     tx_payload->state = 6;
   }
   tx_payload->timestamp = ts / 100;
-  tx_payload->altitude = (int32_t)global_estimation_data.height;
-  tx_payload->velocity = (int16_t)global_estimation_data.velocity;
+  tx_payload->altitude = (int32_t)estimation_data.height;
+  tx_payload->velocity = (int16_t)estimation_data.velocity;
   tx_payload->lat = (int32_t)(gnss->position.lat * 10000);
   tx_payload->lon = (int32_t)(gnss->position.lon * 10000);
 }
 
-void parse_tx_msg(packed_tx_msg_t* rx_payload) {
+void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) {
   if (rx_payload->d1 == 0xAA && rx_payload->d2 == 0xBB && rx_payload->d3 == 0xCC) {
     global_arming_bool = true;
     log_info("ARM");
@@ -106,23 +85,24 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   }
 }
 
-[[noreturn]] void task_telemetry(__attribute__((unused)) void* argument) {
+[[noreturn]] void Telemetry::Run() noexcept {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
-  // global_arming_bool = true;
+
+  auto& state_est_task = StateEstimation::GetInstance();
 
   /* Configure the telemetry MCU */
-  send_setting(CMD_DIRECTION, TX);
+  SendSettings(CMD_DIRECTION, TX);
   osDelay(100);
-  send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+  SendSettings(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
   osDelay(100);
-  send_setting(CMD_MODE, BIDIRECTIONAL);
+  SendSettings(CMD_MODE, BIDIRECTIONAL);
   osDelay(100);
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.config.telemetry_settings.link_phrase[0] != 0) {
-    send_link_phrase(global_cats_config.config.telemetry_settings.link_phrase, 8);
+    SendLinkPhrase(global_cats_config.config.telemetry_settings.link_phrase, 8);
     osDelay(100);
-    send_enable();
+    SendEnable();
   }
 
   /* Start the interrupt request for the UART */
@@ -136,10 +116,6 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   gnss_data_t gnss_data = {};
   bool gnss_position_received = false;
 
-  /* local fsm enum */
-  flight_fsm_e new_fsm_enum = MOVING;
-  flight_fsm_e old_fsm_enum = MOVING;
-
   packed_tx_msg_t tx_payload = {};
 
   uint32_t uart_timeout = osKernelGetTickCount();
@@ -147,8 +123,11 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / TELEMETRY_SAMPLING_FREQ;
   while (1) {
-    pack_tx_msg(tick_count, &gnss_data, &tx_payload);
-    send_tx_payload((uint8_t*)&tx_payload, 16);
+    /* Get new FSM enum */
+    bool fsm_updated = GetNewFsmEnum();
+
+    PackTxMessage(tick_count, &gnss_data, &tx_payload, state_est_task.GetEstimationOutput());
+    SendTxPayload((uint8_t*)&tx_payload, 16);
 
     if ((tick_count - uart_timeout) > 60000) {
       uart_timeout = tick_count;
@@ -162,7 +141,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
       stream_read_byte(&uart_stream, &ch);
       switch (state) {
         case STATE_OP:
-          valid_op = check_valid_op_code(ch);
+          valid_op = CheckValidOpCode(ch);
           if (valid_op) {
             uart_buffer[INDEX_OP] = ch;
             state = STATE_LEN;
@@ -191,7 +170,7 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
           uint8_t crc;
           crc = crc8(uart_buffer, uart_index + 2);
           if (crc == ch) {
-            gnss_position_received = parse(uart_buffer[INDEX_OP], &uart_buffer[2], uart_buffer[INDEX_LEN], &gnss_data);
+            gnss_position_received = Parse(uart_buffer[INDEX_OP], &uart_buffer[2], uart_buffer[INDEX_LEN], &gnss_data);
           }
           uart_index = 0;
           state = STATE_OP;
@@ -207,10 +186,8 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
       gnss_position_received = false;
     }
 
-    new_fsm_enum = global_flight_state.flight_state;
-
     /* Log GNSS time when changing to THRUSTING. */
-    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == THRUSTING)) {
+    if (fsm_updated && (m_fsm_enum == THRUSTING)) {
       /* Time will be 0 if it was never received. */
       /* TODO: Keep track of the last timestamp when the GNSS time was received and add the difference between that and
        * current one to the GNSS time. This should be done when the date information is also sent via UART. */
@@ -220,22 +197,20 @@ void parse_tx_msg(packed_tx_msg_t* rx_payload) {
 
     /* Go to high power mode if adaptive power is enabled */
     if (global_cats_config.config.telemetry_settings.adaptive_power == ON) {
-      if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == THRUSTING)) {
-        send_setting(CMD_POWER_LEVEL, TELE_MAX_POWER);
+      if (fsm_updated && (m_fsm_enum == THRUSTING)) {
+        SendSettings(CMD_POWER_LEVEL, TELE_MAX_POWER);
       }
-      if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == TOUCHDOWN)) {
-        send_setting(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
+      if (fsm_updated && (m_fsm_enum == TOUCHDOWN)) {
+        SendSettings(CMD_POWER_LEVEL, global_cats_config.config.telemetry_settings.power_level);
       }
     }
-
-    old_fsm_enum = new_fsm_enum;
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
-bool check_valid_op_code(uint8_t op_code) {
+bool Telemetry::CheckValidOpCode(uint8_t op_code) {
   /* TODO loop over all opcodes and check if it exists */
   if (op_code == CMD_GNSS_INFO || op_code == CMD_GNSS_LOC || op_code == CMD_RX || op_code == CMD_INFO ||
       op_code == CMD_GNSS_TIME || op_code == CMD_TEMP_INFO) {
@@ -254,7 +229,7 @@ bool check_valid_op_code(uint8_t op_code) {
  * @param gnss [out]
  * @return
  */
-bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) {
+bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) {
   if (length < 1) return false;
 
   bool gnss_position_received = false;
@@ -262,7 +237,7 @@ bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t*
   if (op_code == CMD_RX) {
     packed_tx_msg_t rx_payload;
     memcpy(&rx_payload, buffer, length);
-    parse_tx_msg(&rx_payload);
+    ParseTxMessage(&rx_payload);
     // log_info("RX received");
   } else if (op_code == CMD_INFO) {
     // log_info("Link Info received");
@@ -287,7 +262,7 @@ bool parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t*
   return gnss_position_received;
 }
 
-void send_link_phrase(uint8_t* phrase, uint32_t length) {
+void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) {
   uint8_t out[11];  // 1 OP + 1 LEN + 8 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = (uint8_t)length;
@@ -297,7 +272,7 @@ void send_link_phrase(uint8_t* phrase, uint32_t length) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
 }
 
-void send_setting(uint8_t command, uint8_t value) {
+void Telemetry::SendSettings(uint8_t command, uint8_t value) {
   uint8_t out[4];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = command;
   out[1] = 1;
@@ -307,7 +282,7 @@ void send_setting(uint8_t command, uint8_t value) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 4, 2);
 }
 
-void send_enable() {
+void Telemetry::SendEnable() {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_ENABLE;
   out[1] = 0;
@@ -316,7 +291,7 @@ void send_enable() {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void send_disable() {
+void Telemetry::SendDisable() {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_DISBALE;
   out[1] = 0;
@@ -325,7 +300,7 @@ void send_disable() {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void send_tx_payload(uint8_t* payload, uint32_t length) {
+void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) {
   uint8_t out[19];  // 1 OP + 1 LEN + 16 DATA + 1 CRC
   out[0] = CMD_TX;
   out[1] = (uint8_t)length;
@@ -342,3 +317,5 @@ extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     stream_write_byte(&uart_stream, tmp);
   }
 }
+
+}  // namespace task

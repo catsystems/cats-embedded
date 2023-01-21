@@ -32,15 +32,10 @@
 #include "tasks/task_telemetry.h"
 
 /* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_state_est, 512)
-SET_TASK_PARAMS(task_health_monitor, 256)
-
-/* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_flight_fsm, 512)
 SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1024)
-SET_TASK_PARAMS(task_telemetry, 512)
 
 void init_tasks() {
   using namespace task;
@@ -60,9 +55,9 @@ void init_tasks() {
 
   osThreadNew(task_peripherals, nullptr, &task_peripherals_attributes);
 
-  osThreadNew(task_state_est, nullptr, &task_state_est_attributes);
+  StateEstimation::Start();
 
-  osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
+  HealthMonitor::Start();
 
-  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
+  Telemetry::Start();
 }

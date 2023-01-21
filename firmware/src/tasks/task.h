@@ -22,6 +22,7 @@
 #include <typeinfo>
 #include <utility>
 #include "config/globals.h"
+#include "util/log.h"
 
 #include "cmsis_os.h"
 
@@ -36,12 +37,12 @@ class Task {
   virtual void Run() noexcept = 0;
   flight_fsm_e m_fsm_enum = INVALID;
 
-    /* Update FSM enum */
+  /* Update FSM enum */
   bool GetNewFsmEnum() {
     auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
 
     /* If this happens, there is an error on the Event Flag.*/
-    if (new_enum > TOUCHDOWN) {
+    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
       return false;
     }
 
@@ -70,7 +71,6 @@ class Task {
   // clang-format on
 
   static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
-
 
  public:
   /* Deleted move constructor & move assignment operator */

@@ -29,6 +29,10 @@
 
 namespace task {
 
+state_estimation_input_t Preprocessing::GetEstimationInput() const noexcept { return m_state_est_input; }
+
+SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
+
 /**
  * @brief Function implementing the task_preprocessing thread.
  * @param argument: Not used
@@ -74,14 +78,12 @@ namespace task {
 
     /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
     if (m_fsm_enum == MOVING) {
-      m_height_0 =
-          approx_moving_average(calculate_height(m_si_data.pressure), true);
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), true);
       global_flight_stats.height_0 = m_height_0;
     }
     /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
     if (m_fsm_enum == READY) {
-      m_height_0 =
-          approx_moving_average(calculate_height(m_si_data.pressure), false);
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), false);
       global_flight_stats.height_0 = m_height_0;
     }
 
@@ -94,12 +96,6 @@ namespace task {
 #endif
 
     memcpy(&m_si_data_old, &m_si_data, sizeof(m_si_data));
-
-    /* write input data into global struct */
-    global_estimation_input = m_state_est_input;
-
-    /* Global SI data is only used in the fsm task */
-    global_SI_data = m_si_data;
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
