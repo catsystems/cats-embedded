@@ -64,5 +64,5 @@ void init_tasks() {
 
   osThreadNew(task_health_monitor, nullptr, &task_health_monitor_attributes);
 
-  //  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
+  osThreadNew(task_telemetry, nullptr, &task_telemetry_attributes);
 }

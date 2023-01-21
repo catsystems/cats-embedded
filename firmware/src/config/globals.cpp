@@ -205,7 +205,7 @@ SI_data_t global_SI_data = {};
 estimation_output_t global_estimation_data = {};
 flight_fsm_t global_flight_state = {.flight_state = MOVING};
 
-bool global_arming_bool = false;
+bool global_arming_bool = true;
 
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};

@@ -202,7 +202,7 @@ void start_simulation(char *args) {
   sim_config = (cats_sim_config_t *)pvPortMalloc(sizeof(cats_sim_config_t));
   sim_config->noise_seed = 1;
   sim_config->sim_axis = 0;
-  sim_config->sim_choice = SIM_HOP;
+  sim_config->sim_choice = SIM_300M;
   char *token = strtok(args, " ");
 
   while (token != nullptr) {
