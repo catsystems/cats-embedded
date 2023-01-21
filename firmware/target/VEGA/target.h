@@ -153,7 +153,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 void Error_Handler(void);
 void target_pre_init();
-void target_init();
+bool target_init();
 #ifdef __cplusplus
 }
 #endif

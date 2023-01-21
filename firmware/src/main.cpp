@@ -23,11 +23,11 @@
 
 #include "drivers/adc.h"
 
+#include "config/globals.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
 #include "util/log.h"
 #include "util/task_util.h"
-#include "util/types.h"
 
 #include "init/config.h"
 #include "init/system.h"
@@ -56,7 +56,7 @@ int main(void) {
     BootLoaderJump();                                  // Does not return!
   }
 
-  target_init();
+  usb_device_initialized = target_init();
 
   init_logging();
   HAL_Delay(100);

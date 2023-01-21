@@ -21,6 +21,7 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "drivers/adc.h"
+#include "usb_device.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/buzzer_handler.h"
@@ -60,7 +61,11 @@ static void init_communication();
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
-
+    if (usb_device_initialized == false) {
+      if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
+        MX_USB_DEVICE_Init();
+      }
+    }
     // Check battery level
     battery_level_e level = battery_level();
     bool level_changed = (old_level != level);

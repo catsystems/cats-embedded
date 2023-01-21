@@ -526,7 +526,7 @@ void target_pre_init() {
   RTC_Init();
 }
 
-void target_init() {
+bool target_init() {
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
@@ -538,5 +538,7 @@ void target_init() {
   MX_USART2_UART_Init();
   if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
     MX_USB_DEVICE_Init();
+    return true;
   }
+  return false;
 }

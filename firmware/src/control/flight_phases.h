@@ -60,7 +60,8 @@
 
 /* DROGUE */
 // num iterations, height needs to be smaller than user-defined for at least 0.3 s for the transition DROGUE -> MAIN
-#define MAIN_SAFETY_COUNTER 30
+#define MAIN_SAFETY_COUNTER               30
+#define MIN_TIME_BETWEEN_THRUSTING_APOGEE 1500
 
 /* MAIN */
 // m/s, velocity needs to be smaller than this to detect touchdown

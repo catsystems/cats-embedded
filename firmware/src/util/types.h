@@ -133,6 +133,7 @@ struct flight_fsm_t {
   float angular_movement[3];
   uint32_t clock_memory;
   uint32_t memory[3];
+  timestamp_t thrust_trigger_time;
   bool state_changed;
 };
 
