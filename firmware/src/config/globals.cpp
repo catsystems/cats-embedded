@@ -216,6 +216,7 @@ volatile bool global_usb_detection = false;
 volatile bool usb_device_initialized = false;
 volatile bool usb_communication_complete = false;
 volatile bool simulation_started = false;
+volatile bool imu_initialized[NUM_IMU] = {false};
 
 volatile recorder_status_e global_recorder_status = REC_OFF;
 

@@ -79,6 +79,8 @@ extern volatile bool global_usb_detection;
 extern volatile bool usb_device_initialized;
 extern volatile bool usb_communication_complete;
 extern volatile bool simulation_started;
+extern volatile bool imu_initialized[NUM_IMU];
+extern volatile bool baro_initialized[NUM_BARO];
 
 /* recorder status is controlled by output functions, do not set manually! */
 extern volatile recorder_status_e global_recorder_status;

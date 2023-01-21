@@ -87,17 +87,27 @@ static void init_imu() {
   /* TODO: Add timeout for sensor init */
   // HalDelay_un
   for (int i = 0; i < NUM_IMU; i++) {
+    int32_t timeout_counter = 0;
 #if IMU_TYPE == ICM20601_TYPE
     while (!icm20601_init(&IMU_DEV[i])) {
       log_error("IMU %d initialization failed", i);
       HAL_Delay(10);
+      if (++timeout_counter < 20) {
+        break;
+      }
     }
 #elif IMU_TYPE == LSM6DSR_TYPE
     while (!lsm6dsr_init(&IMU_DEV[i])) {
       log_error("IMU %d initialization failed", i);
       HAL_Delay(10);
+      if (++timeout_counter > 20) {
+        break;
+      }
     }
 #endif
+    if (timeout_counter < 20) {
+      imu_initialized[i] = true;
+    }
   }
   for (int i = 0; i < NUM_ACCELEROMETER; i++) {
     while (!h3lis100dl_init(&ACCEL)) {
@@ -135,7 +145,7 @@ void init_devices() {
   /* IMU */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
   HAL_Delay(10);
-  // init_imu();
+  init_imu();
   HAL_Delay(10);
   /* BARO */
   init_baro();
