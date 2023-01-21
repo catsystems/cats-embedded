@@ -18,4 +18,8 @@
 
 #pragma once
 
+namespace task {
+
 [[noreturn]] void task_flight_fsm(void *argument);
+
+}

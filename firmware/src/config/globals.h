@@ -63,10 +63,7 @@ extern SERVO SERVO2;
 extern baro_data_t global_baro_sim[NUM_BARO];
 extern imu_data_t global_imu_sim[NUM_BARO];
 
-extern state_estimation_input_t global_estimation_input;
-extern SI_data_t global_SI_data;
-extern flight_fsm_t global_flight_state;
-extern estimation_output_t global_estimation_data;
+extern osEventFlagsId_t fsm_flag_id;
 
 extern bool global_arming_bool;
 

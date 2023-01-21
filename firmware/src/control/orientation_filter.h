@@ -31,4 +31,4 @@ struct orientation_filter_t {
 /* Filter Functions */
 void init_orientation_filter(orientation_filter_t* filter);
 void reset_orientation_filter(orientation_filter_t* filter);
-void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_vel);
+void quaternion_kinematics(orientation_filter_t* filter, const vf32_t angular_vel);

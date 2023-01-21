@@ -22,6 +22,8 @@
 #include "config/globals.h"
 #include "control/flight_phases.h"
 #include "tasks/task_peripherals.h"
+#include "tasks/task_preprocessing.h"
+#include "tasks/task_state_est.h"
 #include "util/enum_str_maps.h"
 #include "util/log.h"
 
@@ -30,23 +32,34 @@
  * @param argument: Not used
  * @retval None
  */
+
+namespace task {
+
 [[noreturn]] void task_flight_fsm(__attribute__((unused)) void *argument) {
   const control_settings_t settings = global_cats_config.config.control_settings;
 
+  fsm_flag_id = osEventFlagsNew(nullptr);
+  osEventFlagsSet(fsm_flag_id, MOVING);
+
   trigger_event(EV_MOVING);
+
+  auto &preprocessing_task = Preprocessing::GetInstance();
+  auto &state_est_task = StateEstimation::GetInstance();
+
+  flight_fsm_t flight_state = {.flight_state = MOVING};
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (1) {
     /* Check Flight Phases */
-    /* Todo: Check for global arming trigger */
-    check_flight_phase(&global_flight_state, &global_SI_data.acc, &global_SI_data.gyro, &global_estimation_data,
-                       global_estimation_input.height_AGL, global_arming_bool, &settings);
+    check_flight_phase(&flight_state, preprocessing_task.GetSIData().acc, preprocessing_task.GetSIData().gyro,
+                       state_est_task.GetEstimationOutput(), preprocessing_task.GetEstimationInput().height_AGL,
+                       global_arming_bool, &settings);
 
-    if (global_flight_state.state_changed) {
-      log_error("State Changed FlightFSM to %s", fsm_map[global_flight_state.flight_state]);
-      log_sim("State Changed FlightFSM to %s", fsm_map[global_flight_state.flight_state]);
-      record(tick_count, FLIGHT_STATE, &global_flight_state.flight_state);
+    if (flight_state.state_changed) {
+      log_info("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
+      log_sim("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
+      record(tick_count, FLIGHT_STATE, &flight_state.flight_state);
     }
 
     tick_count += tick_update;
@@ -55,3 +68,5 @@
 }
 
 /** Private Function Definitions **/
+
+}  // namespace task

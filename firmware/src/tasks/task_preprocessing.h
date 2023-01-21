@@ -26,9 +26,9 @@
 
 namespace task {
 
-class Preprocessing final : public Task<Preprocessing, 512> {
+class Preprocessing final : public Task<Preprocessing, 1024> {
  public:
-  friend class Task<Preprocessing, 512>;
+  friend class Task<Preprocessing, 1024>;
 
   [[noreturn]] void Run() noexcept override;
 
@@ -36,6 +36,9 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   baro_data_t m_baro_data[NUM_BARO]{};
   magneto_data_t m_magneto_data[NUM_MAGNETO]{};
   accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
+
+  [[nodiscard]] state_estimation_input_t GetEstimationInput() const noexcept;
+  [[nodiscard]] SI_data_t GetSIData() const noexcept;
 
  private:
   Preprocessing() = default;
@@ -63,9 +66,5 @@ class Preprocessing final : public Task<Preprocessing, 512> {
 
   /* Gyro Calib tag */
   bool m_gyro_calibrated = false;
-
-  /* local fsm enum */
-  flight_fsm_e m_new_fsm_enum = MOVING;
-  flight_fsm_e m_old_fsm_enum = MOVING;
 };
 }  // namespace task

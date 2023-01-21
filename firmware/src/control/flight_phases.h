@@ -70,5 +70,5 @@
 #define TOUCHDOWN_SAFETY_COUNTER 100
 
 /* Function which implements the FSM */
-void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,
+void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
                         float32_t height_AGL, bool ready_transition_allowed, const control_settings_t *settings);

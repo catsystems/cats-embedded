@@ -151,8 +151,11 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
     for (int i = 0; i < NUM_BARO; i++) {
       global_baro_sim[i].pressure = pressure + rand_bounds(-25, 25);
     }
-
-    if (global_flight_state.flight_state == TOUCHDOWN) {
+    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+      new_enum = INVALID;
+    }
+    if (new_enum == TOUCHDOWN) {
       log_raw("Simulation Successful.");
       log_set_mode(prev_log_mode);
       osThreadExit();

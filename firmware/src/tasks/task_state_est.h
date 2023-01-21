@@ -18,4 +18,32 @@
 
 #pragma once
 
-[[noreturn]] void task_state_est(void *argument);
+#include "task.h"
+
+#include "control/kalman_filter.h"
+#include "control/orientation_filter.h"
+#include "tasks/task_preprocessing.h"
+#include "util/error_handler.h"
+#include "util/log.h"
+#include "util/types.h"
+
+namespace task {
+
+class StateEstimation final : public Task<StateEstimation, 1024> {
+ public:
+  friend class Task<StateEstimation, 1024>;
+
+  [[noreturn]] void Run() noexcept override;
+
+  [[nodiscard]] estimation_output_t GetEstimationOutput() const noexcept;
+
+ private:
+  StateEstimation() = default;
+
+  void GetEstimationInputData();
+
+  /* Initialize State Estimation */
+  kalman_filter_t m_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  orientation_filter_t m_orientation_filter = {};
+};
+}  // namespace task

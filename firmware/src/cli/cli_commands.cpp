@@ -26,6 +26,7 @@
 #include "flash/lfs_custom.h"
 #include "flash/reader.h"
 #include "main.h"
+#include "tasks/task_state_est.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/enum_str_maps.h"
@@ -107,6 +108,8 @@ const clicmd_t cmd_table[] = {
 };
 
 const size_t NUM_CLI_COMMANDS = sizeof cmd_table / sizeof cmd_table[0];
+
+auto &state_est_task = task::StateEstimation::GetInstance();
 
 static const char *const emptyName = "-";
 
@@ -403,10 +406,15 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 
 static void cli_cmd_status(const char *cmd_name, char *args) {
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("State:       %s\n", fsm_map[global_flight_state.flight_state]);
+  auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+  if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+    new_enum = INVALID;
+  }
+  cli_printf("State:       %s\n", fsm_map[new_enum]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
-             (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)state_est_task.GetEstimationOutput().height,
+             (double)state_est_task.GetEstimationOutput().velocity,
+             (double)state_est_task.GetEstimationOutput().acceleration);
 
 #ifdef CATS_DEBUG
   if (!strcmp(args, "--heap")) {
