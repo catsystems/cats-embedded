@@ -64,6 +64,7 @@ static void init_communication();
     if (usb_device_initialized == false) {
       if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
         MX_USB_DEVICE_Init();
+        usb_device_initialized = true;
       }
     }
     // Check battery level
