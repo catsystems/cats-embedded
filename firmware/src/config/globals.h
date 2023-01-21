@@ -76,6 +76,7 @@ extern osMessageQueueId_t rec_cmd_queue;
 extern osMessageQueueId_t event_queue;
 
 extern volatile bool global_usb_detection;
+extern volatile bool usb_device_initialized;
 extern volatile bool usb_communication_complete;
 extern volatile bool simulation_started;
 

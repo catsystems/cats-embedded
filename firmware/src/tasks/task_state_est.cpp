@@ -19,15 +19,12 @@
 #include "tasks/task_state_est.h"
 #include "config/globals.h"
 
-#include <cmath>
-
 namespace task {
 
 void StateEstimation::GetEstimationInputData() {
   /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
    * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
    * due to parachute forces. */
-
   auto &preprocessing_task = Preprocessing::GetInstance();
   state_estimation_input_t input = preprocessing_task.GetEstimationInput();
 

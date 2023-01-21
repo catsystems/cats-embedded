@@ -213,6 +213,7 @@ osMessageQueueId_t rec_cmd_queue;
 osMessageQueueId_t event_queue;
 
 volatile bool global_usb_detection = false;
+volatile bool usb_device_initialized = false;
 volatile bool usb_communication_complete = false;
 volatile bool simulation_started = false;
 
