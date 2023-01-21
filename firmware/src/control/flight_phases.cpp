@@ -206,7 +206,7 @@ static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t st
 
   if (fsm_state->memory[0] > APOGEE_SAFETY_COUNTER) {
     /* If the duration between thrusting and apogee is smaller than defined, go to touchdown */
-    if ((osKernelGetTickCount() - fsm_state->thrust_trigger_time) < MIN_TIME_BETWEEN_THRUSTING_APOGEE) {
+    if ((osKernelGetTickCount() - fsm_state->thrust_trigger_time) < MIN_TICK_COUNTS_BETWEEN_THRUSTING_APOGEE) {
       change_state_to(TOUCHDOWN, EV_TOUCHDOWN, fsm_state);
     } else {
       change_state_to(DROGUE, EV_APOGEE, fsm_state);
