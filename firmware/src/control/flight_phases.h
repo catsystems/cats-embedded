@@ -64,7 +64,7 @@
 
 /* MAIN */
 // m/s, velocity needs to be smaller than this to detect touchdown
-#define VELOCITY_BOUND_TOUCHDOWN 2.0f
+#define VELOCITY_BOUND_TOUCHDOWN 3.0f
 
 // num iterations, for at least 1s it needs to be smaller
 #define TOUCHDOWN_SAFETY_COUNTER 100

@@ -59,11 +59,6 @@ extern SERVO SERVO1;
 extern SERVO SERVO2;
 
 /** State Estimation **/
-/* Index of high G Accel */
-extern baro_data_t global_baro[NUM_BARO];
-extern imu_data_t global_imu[NUM_IMU];
-extern accel_data_t global_accel[NUM_ACCELEROMETER];
-extern magneto_data_t global_magneto[NUM_MAGNETO];
 
 extern baro_data_t global_baro_sim[NUM_BARO];
 extern imu_data_t global_imu_sim[NUM_BARO];

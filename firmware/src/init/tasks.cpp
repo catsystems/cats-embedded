@@ -32,11 +32,6 @@
 #include "tasks/task_telemetry.h"
 
 /* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_sensor_read, 512)
-/* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_preprocessing, 512)
-
-/* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_state_est, 512)
 SET_TASK_PARAMS(task_health_monitor, 256)
 
@@ -48,6 +43,8 @@ SET_TASK_PARAMS(task_recorder, 1024)
 SET_TASK_PARAMS(task_telemetry, 512)
 
 void init_tasks() {
+  using namespace task;
+
   // TODO: Check rec_queue for validity here
   rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
   rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
@@ -55,9 +52,9 @@ void init_tasks() {
 
   osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
 
-  osThreadNew(task_sensor_read, nullptr, &task_sensor_read_attributes);
+  Preprocessing::Start();
 
-  osThreadNew(task_preprocessing, nullptr, &task_preprocessing_attributes);
+  SensorRead::Start();
 
   osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
