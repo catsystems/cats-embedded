@@ -52,7 +52,7 @@ enum state_e {
 static float amplifier_temperature = 0.0F;
 
 void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
-                              estimation_output_t estimation_data) {
+                              estimation_output_t estimation_data) const noexcept {
   /* TODO add state, error, voltage and continuity information */
   if (m_fsm_enum == MOVING) {
     tx_payload->state = 0;
@@ -76,7 +76,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   tx_payload->lon = (int32_t)(gnss->position.lon * 10000);
 }
 
-void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) {
+void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
   if (rx_payload->d1 == 0xAA && rx_payload->d2 == 0xBB && rx_payload->d3 == 0xCC) {
     global_arming_bool = true;
     log_info("ARM");
@@ -210,7 +210,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) {
   }
 }
 
-bool Telemetry::CheckValidOpCode(uint8_t op_code) {
+bool Telemetry::CheckValidOpCode(uint8_t op_code) const noexcept {
   /* TODO loop over all opcodes and check if it exists */
   if (op_code == CMD_GNSS_INFO || op_code == CMD_GNSS_LOC || op_code == CMD_RX || op_code == CMD_INFO ||
       op_code == CMD_GNSS_TIME || op_code == CMD_TEMP_INFO) {
@@ -229,7 +229,7 @@ bool Telemetry::CheckValidOpCode(uint8_t op_code) {
  * @param gnss [out]
  * @return
  */
-bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) {
+bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept {
   if (length < 1) return false;
 
   bool gnss_position_received = false;
@@ -262,7 +262,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   return gnss_position_received;
 }
 
-void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) {
+void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) const noexcept {
   uint8_t out[11];  // 1 OP + 1 LEN + 8 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = (uint8_t)length;
@@ -272,7 +272,7 @@ void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
 }
 
-void Telemetry::SendSettings(uint8_t command, uint8_t value) {
+void Telemetry::SendSettings(uint8_t command, uint8_t value) const noexcept {
   uint8_t out[4];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = command;
   out[1] = 1;
@@ -282,7 +282,7 @@ void Telemetry::SendSettings(uint8_t command, uint8_t value) {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 4, 2);
 }
 
-void Telemetry::SendEnable() {
+void Telemetry::SendEnable() const noexcept {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_ENABLE;
   out[1] = 0;
@@ -291,7 +291,7 @@ void Telemetry::SendEnable() {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void Telemetry::SendDisable() {
+void Telemetry::SendDisable() const noexcept {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_DISBALE;
   out[1] = 0;
@@ -300,13 +300,12 @@ void Telemetry::SendDisable() {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) {
+void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) const noexcept {
   uint8_t out[19];  // 1 OP + 1 LEN + 16 DATA + 1 CRC
   out[0] = CMD_TX;
   out[1] = (uint8_t)length;
   memcpy(&out[2], payload, length);
   out[length + 2] = crc8(out, length + 2);
-
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
 }
 

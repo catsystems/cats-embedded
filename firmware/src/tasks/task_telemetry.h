@@ -46,15 +46,16 @@ class Telemetry final : public Task<Telemetry, 1024> {
     uint8_t d3;   // dummy
   } __attribute__((packed));
 
-  void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload, estimation_output_t estimation_data);
-  void ParseTxMessage(packed_tx_msg_t* rx_payload);
-  bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss);
-  void SendLinkPhrase(uint8_t* phrase, uint32_t length);
-  void SendSettings(uint8_t command, uint8_t value);
-  void SendEnable();
-  void SendDisable();
-  void SendTxPayload(uint8_t* payload, uint32_t length);
-  bool CheckValidOpCode(uint8_t op_code);
+  void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
+                     estimation_output_t estimation_data) const noexcept;
+  void ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept;
+  bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept;
+  void SendLinkPhrase(uint8_t* phrase, uint32_t length) const noexcept;
+  void SendSettings(uint8_t command, uint8_t value) const noexcept;
+  void SendEnable() const noexcept;
+  void SendDisable() const noexcept;
+  void SendTxPayload(uint8_t* payload, uint32_t length) const noexcept;
+  [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
 
   Telemetry() = default;
 };
