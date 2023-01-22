@@ -62,8 +62,6 @@ timestamp_t pressure_periphas_ML_time_array[13] = {0,     20000, 22200, 23700, 2
 float32_t pressure_periphas_ML_array[13] = {84556.0f,  84556.0f,  84038.49f, 83011.15f, 80886.82f, 78025.79f, 75625.68f,
                                             74307.95f, 73517.02f, 73008.88f, 73748.94f, 78513.14f, 84556.00f};
 
-SET_TASK_PARAMS(task_simulator, 512)
-
 /** Private Function Declarations **/
 int32_t linear_interpol(float32_t time, float32_t LB_time, float32_t UB_time, float32_t LB_val, float32_t UB_val);
 int32_t rand_bounds(int32_t lower_b, int32_t upper_b);
@@ -71,15 +69,14 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
 
 /** Exported Function Definitions **/
 
+namespace task {
+
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Simulation Choice
  * @retval None
  */
-[[noreturn]] void task_simulator(void *args) {
-  cats_sim_config_t sim_config = *(cats_sim_config_t *)args;
-  /* Free pointer to sim_config from the simulation_start function */
-  vPortFree(args);
+[[noreturn]] void Simulator::Run() noexcept {
   /* Change when the timestamp is reached */
   int8_t index_acc = 0;
   /* Linear interpolation */
@@ -90,7 +87,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
   log_set_mode(LOG_MODE_SIM);
 
   /* RNG Init with known seed */
-  srand(sim_config.noise_seed);
+  srand(m_sim_config.noise_seed);
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
@@ -99,7 +96,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
   timestamp_t sim_start = osKernelGetTickCount();
   timestamp_t time_since_start = 0;
 
-  init_simulation_data(sim_config.sim_choice);
+  init_simulation_data(m_sim_config.sim_choice);
 
   while (true) {
     time_since_start = osKernelGetTickCount() - sim_start;
@@ -110,7 +107,7 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
     }
 
     /* Compute wanted acceleration */
-    switch (sim_config.sim_axis) {
+    switch (m_sim_config.sim_axis) {
       case 0:
         for (int i = 0; i < NUM_IMU; i++) {
           sim_imu_data[i].acc.x = (int16_t)(1024 * acc_array[index_acc]) + (int16_t)rand_bounds(-10, 10);
@@ -168,6 +165,8 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
   }
 }
 
+}  // namespace task
+
 /** Private Function Definitions **/
 
 void init_simulation_data(cats_sim_choice_e sim_choice) {
@@ -203,44 +202,42 @@ void start_simulation(char *args) {
     return;
   }
 
-  cats_sim_config_t *sim_config;
-  sim_config = (cats_sim_config_t *)pvPortMalloc(sizeof(cats_sim_config_t));
-  sim_config->noise_seed = 1;
-  sim_config->sim_axis = 0;
-  sim_config->sim_choice = SIM_300M;
+  cats_sim_config_t sim_config{.sim_choice = SIM_300M, .noise_seed = 1, .sim_axis = 0};
+
   char *token = strtok(args, " ");
 
   while (token != nullptr) {
     if (strcmp(token, "--hop") == 0) {
-      sim_config->sim_choice = SIM_HOP;
+      sim_config.sim_choice = SIM_HOP;
     }
     if (strcmp(token, "--300m") == 0) {
-      sim_config->sim_choice = SIM_300M;
+      sim_config.sim_choice = SIM_300M;
     }
     if (strcmp(token, "--PML") == 0) {
-      sim_config->sim_choice = SIM_PML;
+      sim_config.sim_choice = SIM_PML;
     }
     if (strcmp(token, "--x") == 0) {
-      sim_config->sim_axis = 0;
+      sim_config.sim_axis = 0;
     }
     if (strcmp(token, "--y") == 0) {
-      sim_config->sim_axis = 1;
+      sim_config.sim_axis = 1;
     }
     if (strcmp(token, "--z") == 0) {
-      sim_config->sim_axis = 2;
+      sim_config.sim_axis = 2;
     }
     if (strcmp(token, "--ns1") == 0) {
-      sim_config->noise_seed = 1;
+      sim_config.noise_seed = 1;
     }
     if (strcmp(token, "--ns10") == 0) {
-      sim_config->noise_seed = 10;
+      sim_config.noise_seed = 10;
     }
     if (strcmp(token, "--ns69") == 0) {
-      sim_config->noise_seed = 69;
+      sim_config.noise_seed = 69;
     }
     token = strtok(nullptr, " ");
   }
   simulation_started = true;
   log_info("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
-  task_simulator_id = osThreadNew(task_simulator, (void *)sim_config, &task_simulator_attributes);
+
+  task_simulator_id = task::Simulator::Start(sim_config);
 }
