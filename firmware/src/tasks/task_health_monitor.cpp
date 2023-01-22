@@ -28,7 +28,6 @@
 #include "util/log.h"
 #include "util/task_util.h"
 
-#include "tasks/task_simulator.h"
 #include "tasks/task_usb_communicator.h"
 
 /** Private Constants **/
@@ -54,7 +53,18 @@ static void init_communication();
 
   uint32_t tick_count = osKernelGetTickCount();
   uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
+
   while (1) {
+    /* Uncomment the code below to enable stack usage monitoring:
+     *
+     * static uint32_t initial_stack_sz = 0xFFFFFFFF;
+     * uint32_t curr_stack_sz = osThreadGetStackSpace(osThreadGetId());
+     * if ((initial_stack_sz == 0xFFFFFFFF) || (curr_stack_sz < initial_stack_sz)) {
+     *  log_raw("[%lu] [Health Monitor] Remaining stack sz: %lu B", osKernelGetTickCount(), curr_stack_sz);
+     *  initial_stack_sz = curr_stack_sz;
+     * }
+     */
+
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
 

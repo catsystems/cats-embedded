@@ -29,9 +29,9 @@
 
 namespace task {
 
-class StateEstimation final : public Task<StateEstimation, 1024> {
+class StateEstimation final : public Task<StateEstimation, 512> {
  public:
-  friend class Task<StateEstimation, 1024>;
+  friend class Task<StateEstimation, 512>;
 
   [[noreturn]] void Run() noexcept override;
 
