@@ -26,9 +26,9 @@
 
 namespace task {
 
-class Preprocessing final : public Task<Preprocessing, 1024> {
+class Preprocessing final : public Task<Preprocessing, 512> {
  public:
-  friend class Task<Preprocessing, 1024>;
+  friend class Task<Preprocessing, 512>;
 
   [[noreturn]] void Run() noexcept override;
 

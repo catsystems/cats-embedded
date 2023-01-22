@@ -22,9 +22,9 @@
 
 namespace task {
 
-class HealthMonitor final : public Task<HealthMonitor, 512> {
+class HealthMonitor final : public Task<HealthMonitor, 256> {
  public:
-  friend class Task<HealthMonitor, 512>;
+  friend class Task<HealthMonitor, 256>;
 
   [[noreturn]] void Run() noexcept override;
 

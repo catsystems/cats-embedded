@@ -58,17 +58,15 @@ class Task {
   std::array<uint32_t, STACK_SZ> m_task_buffer{};
   StaticTask_t m_task_control_block{};
 
-  // clang-format off
   const osThreadAttr_t m_task_attributes = {
       // TODO: This is not a good name
       .name = typeid(T).name(),
       .cb_mem = &m_task_control_block,
       .cb_size = sizeof(m_task_control_block),
       .stack_mem = m_task_buffer.data(),
-      .stack_size = m_task_buffer.size(),
+      .stack_size = m_task_buffer.size() * sizeof(uint32_t),
       .priority = (osPriority_t)osPriorityNormal,
   };
-  // clang-format on
 
   static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
 
