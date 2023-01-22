@@ -34,7 +34,6 @@ class Task {
   /* Protected constructor */
   Task() = default;
 
-  virtual void Run() noexcept = 0;
   flight_fsm_e m_fsm_enum = INVALID;
 
   /* Update FSM enum */
@@ -46,10 +45,10 @@ class Task {
       return false;
     }
 
-    if (new_enum == this->m_fsm_enum) {
+    if (new_enum == m_fsm_enum) {
       return false;
     } else {
-      this->m_fsm_enum = new_enum;
+      m_fsm_enum = new_enum;
       return true;
     }
   }
@@ -65,10 +64,18 @@ class Task {
       .cb_size = sizeof(m_task_control_block),
       .stack_mem = m_task_buffer.data(),
       .stack_size = m_task_buffer.size() * sizeof(uint32_t),
-      .priority = (osPriority_t)osPriorityNormal,
+      .priority = osPriorityNormal,
   };
 
-  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->Run(); }
+  /* Method that implements the behavior of the task. */
+  virtual void Run() noexcept = 0;
+
+  /* This enables declaring the Run() function private in derived classes.
+   * Nobody except the Task class should be able to call Run(). */
+  void RunInvoker() noexcept { Run(); }
+
+  /* This function needs to be defined because osThreadNew() cannot accept a non-static function. */
+  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->RunInvoker(); }
 
  public:
   /* Deleted move constructor & move assignment operator */

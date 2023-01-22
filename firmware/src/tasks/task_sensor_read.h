@@ -27,10 +27,6 @@ namespace task {
 
 class SensorRead final : public Task<SensorRead, 512> {
  public:
-  friend class Task<SensorRead, 512>;
-
-  [[noreturn]] void Run() noexcept override;
-
   enum class BaroReadoutType {
     kReadBaroTemperature = 1,
     kReadBaroPressure = 2,
@@ -42,7 +38,7 @@ class SensorRead final : public Task<SensorRead, 512> {
   [[nodiscard]] accel_data_t GetAccel(uint8_t index) const noexcept;
 
  private:
-  SensorRead() = default;
+  [[noreturn]] void Run() noexcept override;
 
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
@@ -50,4 +46,5 @@ class SensorRead final : public Task<SensorRead, 512> {
   accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
   BaroReadoutType m_current_readout{BaroReadoutType::kReadBaroTemperature};
 };
+
 }  // namespace task

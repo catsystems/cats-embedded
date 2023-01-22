@@ -28,10 +28,6 @@ namespace task {
 
 class Preprocessing final : public Task<Preprocessing, 512> {
  public:
-  friend class Task<Preprocessing, 512>;
-
-  [[noreturn]] void Run() noexcept override;
-
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
   magneto_data_t m_magneto_data[NUM_MAGNETO]{};
@@ -41,7 +37,7 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   [[nodiscard]] SI_data_t GetSIData() const noexcept;
 
  private:
-  Preprocessing() = default;
+  [[noreturn]] void Run() noexcept override;
 
   void AvgToSi() noexcept;
   void MedianFilter() noexcept;
@@ -67,4 +63,5 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   /* Gyro Calib tag */
   bool m_gyro_calibrated = false;
 };
+
 }  // namespace task

@@ -28,9 +28,6 @@ extern const uint32_t EVENT_QUEUE_SIZE;
 namespace task {
 
 class Peripherals final : public Task<Peripherals, 256> {
- public:
-  friend class Task<Peripherals, 256>;
-
   [[noreturn]] void Run() noexcept override;
 };
 

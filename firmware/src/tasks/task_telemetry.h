@@ -23,12 +23,9 @@
 namespace task {
 
 class Telemetry final : public Task<Telemetry, 1024> {
- public:
-  friend class Task<Telemetry, 1024>;
-
+ private:
   [[noreturn]] void Run() noexcept override;
 
- private:
   struct packed_tx_msg_t {
     uint8_t state : 3;
     uint8_t errors : 4;
@@ -56,7 +53,6 @@ class Telemetry final : public Task<Telemetry, 1024> {
   void SendDisable() const noexcept;
   void SendTxPayload(uint8_t* payload, uint32_t length) const noexcept;
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
-
-  Telemetry() = default;
 };
+
 }  // namespace task
