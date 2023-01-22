@@ -34,8 +34,6 @@
 
 /** Private Function Declarations **/
 
-SET_TASK_PARAMS(task_usb_communicator, 512)
-
 namespace task {
 
 static void check_high_current_channels();
@@ -165,7 +163,7 @@ static void check_high_current_channels() {
 }
 
 static void init_communication() {
-  osThreadNew(task_usb_communicator, nullptr, &task_usb_communicator_attributes);
+  UsbCommunicator::Start();
   usb_communication_complete = true;
 }
 
