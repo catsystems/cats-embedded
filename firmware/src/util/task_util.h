@@ -21,20 +21,7 @@
 #include <cstdint>
 
 #include "FreeRTOSConfig.h"
-
 #include "cmsis_os.h"
-
-#define SET_TASK_PARAMS(task, stack_sz)           \
-  uint32_t task##_buffer[stack_sz];               \
-  StaticTask_t task##_control_block;              \
-  const osThreadAttr_t task##_attributes = {      \
-      .name = #task,                              \
-      .cb_mem = &task##_control_block,            \
-      .cb_size = sizeof(task##_control_block),    \
-      .stack_mem = &task##_buffer[0],             \
-      .stack_size = sizeof(task##_buffer),        \
-      .priority = (osPriority_t)osPriorityNormal, \
-  };
 
 extern volatile bool rtos_started;
 
