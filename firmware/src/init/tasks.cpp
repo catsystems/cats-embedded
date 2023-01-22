@@ -32,8 +32,6 @@
 #include "tasks/task_telemetry.h"
 
 /* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_flight_fsm, 512)
-/* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1024)
 
 void init_tasks() {
@@ -50,7 +48,7 @@ void init_tasks() {
 
   SensorRead::Start();
 
-  osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
+  FlightFsm::Start();
 
   Peripherals::Start();
 

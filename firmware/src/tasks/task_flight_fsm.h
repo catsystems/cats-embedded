@@ -18,8 +18,15 @@
 
 #pragma once
 
+#include "task.h"
+
 namespace task {
 
-[[noreturn]] void task_flight_fsm(void *argument);
+class FlightFsm final : public Task<FlightFsm, 512> {
+ public:
+  friend class Task<FlightFsm, 512>;
 
-}
+  [[noreturn]] void Run() noexcept override;
+};
+
+}  // namespace task
