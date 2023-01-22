@@ -26,20 +26,16 @@
 #include "util/log.h"
 #include "util/types.h"
 
-/** Private Constants **/
-
 const uint32_t EVENT_QUEUE_SIZE = 16;
 
-/** Private Function Declarations **/
-
-/** Exported Function Definitions **/
+namespace task {
 
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_peripherals(__attribute__((unused)) void* argument) {
+[[noreturn]] void Peripherals::Run() noexcept {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
@@ -87,10 +83,10 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
   }
 }
 
+}  // namespace task
+
 osStatus_t trigger_event(cats_event_e ev) {
   log_warn("Event %lu added to the queue", ev);
   /* TODO: check if timeout should be 0 here */
   return osMessageQueuePut(event_queue, &ev, 0U, 10U);
 }
-
-/** Private Function Definitions **/
