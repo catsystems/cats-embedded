@@ -46,26 +46,26 @@ void init_lfs() {
     int err = lfs_mount(&lfs, get_lfs_cfg());
     if (err != 0) {
       /* reformat if we can't mount the filesystem, this should only happen on the first boot */
-      log_raw("LFS mounting failed with error %d!", err);
-      log_raw("Trying LFS format");
+      log_error("LFS mounting failed with error %d!", err);
+      log_error("Trying LFS format");
       lfs_format(&lfs, get_lfs_cfg());
       int err2 = lfs_mount(&lfs, get_lfs_cfg());
       if (err2 != 0) {
-        log_raw("LFS mounting failed again with error %d!", err2);
+        log_error("LFS mounting failed again with error %d!", err2);
       }
     }
 
     err = lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
     if (err != 0) {
-      log_raw("LFS initialization failed: could not open 'flight_counter' file, error %d", err);
+      log_error("LFS initialization failed: could not open 'flight_counter' file, error %d", err);
       return;
     }
 
     /* read how many flights we have */
     if (lfs_file_read(&lfs, &fc_file, &flight_counter, sizeof(flight_counter)) > 0) {
-      log_debug("Flights found: %lu", flight_counter);
+      log_info("Flights found: %lu", flight_counter);
     } else {
-      log_debug("Flights found: %lu", flight_counter);
+      log_info("Flights found: %lu", flight_counter);
       lfs_file_rewind(&lfs, &fc_file);
       lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
     }
@@ -78,33 +78,26 @@ void init_lfs() {
 
     strncpy(cwd, "/", sizeof(cwd));
 
-    log_raw("LFS mounted successfully!");
+    log_info("LFS mounted successfully!");
   }
 }
 
 static void init_imu() {
-  /* TODO: this delay until 1000 prob. isn't needed anymore */
-  /* TODO: Add timeout for sensor init */
-  // HalDelay_un
+#if IMU_TYPE == ICM20601_TYPE
+  auto imu_init_fun = icm20601_init;
+#elif IMU_TYPE == LSM6DSR_TYPE
+  auto imu_init_fun = lsm6dsr_init;
+#endif
+
   for (int i = 0; i < NUM_IMU; i++) {
     int32_t timeout_counter = 0;
-#if IMU_TYPE == ICM20601_TYPE
-    while (!icm20601_init(&IMU_DEV[i])) {
-      log_error("IMU %d initialization failed", i);
-      HAL_Delay(10);
-      if (++timeout_counter < 20) {
-        break;
-      }
-    }
-#elif IMU_TYPE == LSM6DSR_TYPE
-    while (!lsm6dsr_init(&IMU_DEV[i])) {
-      log_error("IMU %d initialization failed", i);
+    while (!imu_init_fun(&IMU_DEV[i])) {
       HAL_Delay(10);
       if (++timeout_counter > 20) {
+        log_error("IMU %d initialization failed", i);
         break;
       }
     }
-#endif
     if (timeout_counter < 20) {
       imu_initialized[i] = true;
     }
