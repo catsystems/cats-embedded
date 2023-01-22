@@ -18,4 +18,15 @@
 
 #pragma once
 
-[[noreturn]] void task_usb_communicator(void *argument);
+#include "task.h"
+
+namespace task {
+
+class UsbCommunicator final : public Task<UsbCommunicator, 512> {
+ public:
+  friend class Task<UsbCommunicator, 512>;
+
+  [[noreturn]] void Run() noexcept override;
+};
+
+}  // namespace task
