@@ -92,9 +92,10 @@ class Task {
     return instance;
   }
 
-  static constexpr void Start() noexcept {
-    auto& task = T::GetInstance();
-    osThreadNew(RunWrapper, &task, &task.m_task_attributes);
+  template <typename... Args>
+  static constexpr osThreadId_t Start(Args&&... args) noexcept {
+    auto& task = T::GetInstance(std::forward<Args>(args)...);
+    return osThreadNew(RunWrapper, &task, &task.m_task_attributes);
   }
 };
 
