@@ -33,7 +33,6 @@
 
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_flight_fsm, 512)
-SET_TASK_PARAMS(task_peripherals, 256)
 /* Todo: Check with Trace if can be reduced */
 SET_TASK_PARAMS(task_recorder, 1024)
 
@@ -53,7 +52,7 @@ void init_tasks() {
 
   osThreadNew(task_flight_fsm, nullptr, &task_flight_fsm_attributes);
 
-  osThreadNew(task_peripherals, nullptr, &task_peripherals_attributes);
+  Peripherals::Start();
 
   StateEstimation::Start();
 

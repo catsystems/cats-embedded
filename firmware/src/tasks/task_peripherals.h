@@ -21,8 +21,19 @@
 #include "cmsis_os.h"
 #include "config/globals.h"
 
+#include "task.h"
+
 extern const uint32_t EVENT_QUEUE_SIZE;
 
-[[noreturn]] void task_peripherals(void *argument);
+namespace task {
+
+class Peripherals final : public Task<Peripherals, 256> {
+ public:
+  friend class Task<Peripherals, 256>;
+
+  [[noreturn]] void Run() noexcept override;
+};
+
+}  // namespace task
 
 osStatus_t trigger_event(cats_event_e ev);
