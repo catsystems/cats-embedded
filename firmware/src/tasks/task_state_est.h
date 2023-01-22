@@ -31,14 +31,10 @@ namespace task {
 
 class StateEstimation final : public Task<StateEstimation, 512> {
  public:
-  friend class Task<StateEstimation, 512>;
-
-  [[noreturn]] void Run() noexcept override;
-
   [[nodiscard]] estimation_output_t GetEstimationOutput() const noexcept;
 
  private:
-  StateEstimation() = default;
+  [[noreturn]] void Run() noexcept override;
 
   void GetEstimationInputData();
 
@@ -46,4 +42,5 @@ class StateEstimation final : public Task<StateEstimation, 512> {
   kalman_filter_t m_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
   orientation_filter_t m_orientation_filter = {};
 };
+
 }  // namespace task

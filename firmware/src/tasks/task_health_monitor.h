@@ -23,12 +23,7 @@
 namespace task {
 
 class HealthMonitor final : public Task<HealthMonitor, 256> {
- public:
-  friend class Task<HealthMonitor, 256>;
-
   [[noreturn]] void Run() noexcept override;
-
- private:
-  HealthMonitor() = default;
 };
+
 }  // namespace task

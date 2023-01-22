@@ -23,9 +23,6 @@
 namespace task {
 
 class FlightFsm final : public Task<FlightFsm, 512> {
- public:
-  friend class Task<FlightFsm, 512>;
-
   [[noreturn]] void Run() noexcept override;
 };
 
