@@ -18,4 +18,15 @@
 
 #pragma once
 
-[[noreturn]] void task_recorder(void *argument);
+#include "task.h"
+
+namespace task {
+
+class Recorder final : public Task<Recorder, 1024> {
+ public:
+  friend class Task<Recorder, 1024>;
+
+  [[noreturn]] void Run() noexcept override;
+};
+
+}  // namespace task

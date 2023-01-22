@@ -20,7 +20,6 @@
 
 #include "config/cats_config.h"
 #include "util/log.h"
-#include "util/task_util.h"
 
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_health_monitor.h"
@@ -31,9 +30,6 @@
 #include "tasks/task_state_est.h"
 #include "tasks/task_telemetry.h"
 
-/* Todo: Check with Trace if can be reduced */
-SET_TASK_PARAMS(task_recorder, 1024)
-
 void init_tasks() {
   using namespace task;
 
@@ -42,7 +38,7 @@ void init_tasks() {
   rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
   event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
 
-  osThreadNew(task_recorder, nullptr, &task_recorder_attributes);
+  Recorder::Start();
 
   Preprocessing::Start();
 
