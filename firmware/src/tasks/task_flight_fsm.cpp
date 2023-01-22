@@ -28,15 +28,9 @@
 #include "util/log.h"
 #include "util/task_util.h"
 
-/**
- * @brief Function implementing the task_flight_fsm thread.
- * @param argument: Not used
- * @retval None
- */
-
 namespace task {
 
-[[noreturn]] void task_flight_fsm(__attribute__((unused)) void *argument) {
+[[noreturn]] void FlightFsm::Run() noexcept {
   const control_settings_t settings = global_cats_config.control_settings;
 
   fsm_flag_id = osEventFlagsNew(nullptr);
@@ -67,7 +61,5 @@ namespace task {
     osDelayUntil(tick_count);
   }
 }
-
-/** Private Function Definitions **/
 
 }  // namespace task
