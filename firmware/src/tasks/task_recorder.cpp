@@ -39,7 +39,9 @@ static void create_stats_file();
 
 /** Exported Function Definitions **/
 
-[[noreturn]] void task_recorder(__attribute__((unused)) void *argument) {
+namespace task {
+
+[[noreturn]] void Recorder::Run() noexcept {
   uint8_t rec_buffer[REC_BUFFER_LEN] = {};
 
   uint16_t rec_buffer_idx = 0;
@@ -186,6 +188,8 @@ static void create_stats_file();
   }
   /* TODO: check if there is enough space left on the flash */
 }
+
+}  // namespace task
 
 /** Private Function Definitions **/
 

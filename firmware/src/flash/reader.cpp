@@ -229,7 +229,7 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           }
         } break;
         default:
-          log_raw("Impossible recorder entry type!");
+          log_raw("Impossible recorder entry type: %lu!", rec_type_without_id);
           break;
       }
     }
