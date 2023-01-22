@@ -136,61 +136,61 @@ w25q_status_e w25q_init(void) {
     return W25Q_ERR_INIT;
   }
 
-  log_debug("W25Q ID:0x%lX", device_id);
+  // log_debug("W25Q ID:0x%lX", device_id);
 
   switch (device_id & 0x0000FFFF) {
     case 0x4020:
       w25q.id = W25Q512;
       w25q.block_count = 1024;
-      log_debug("W25Q Chip: W25Q512");
+      // log_debug("W25Q Chip: W25Q512");
       break;
     case 0x4019:
       w25q.id = W25Q256;
       w25q.block_count = 512;
-      log_debug("W25Q Chip: W25Q256");
+      // log_debug("W25Q Chip: W25Q256");
       break;
     case 0x4018:
       w25q.id = W25Q128;
       w25q.block_count = 256;
-      log_debug("W25Q Chip: W25Q128");
+      // log_debug("W25Q Chip: W25Q128");
       break;
     case 0x4017:
       w25q.id = W25Q64;
       w25q.block_count = 128;
-      log_debug("W25Q Chip: W25Q64");
+      // log_debug("W25Q Chip: W25Q64");
       break;
     case 0x4016:
       w25q.id = W25Q32;
       w25q.block_count = 64;
-      log_debug("W25Q Chip: W25Q32");
+      // log_debug("W25Q Chip: W25Q32");
       break;
     case 0x4015:
       w25q.id = W25Q16;
       w25q.block_count = 32;
-      log_debug("W25Q Chip: W25Q16");
+      // log_debug("W25Q Chip: W25Q16");
       break;
     case 0x4014:
       w25q.id = W25Q80;
       w25q.block_count = 16;
-      log_debug("W25Q Chip: W25Q80");
+      // log_debug("W25Q Chip: W25Q80");
       break;
     case 0x4013:
       w25q.id = W25Q40;
       w25q.block_count = 8;
-      log_debug("W25Q Chip: W25Q40");
+      // log_debug("W25Q Chip: W25Q40");
       break;
     case 0x4012:
       w25q.id = W25Q20;
       w25q.block_count = 4;
-      log_debug("W25Q Chip: W25Q20");
+      // log_debug("W25Q Chip: W25Q20");
       break;
     case 0x4011:
       w25q.id = W25Q10;
       w25q.block_count = 2;
-      log_debug("W25Q Chip: W25Q10");
+      // log_debug("W25Q Chip: W25Q10");
       break;
     default:
-      log_debug("W25Q Unknown ID");
+      // log_debug("W25Q Unknown ID");
       return W25Q_ERR_INIT;
   }
   w25q.sector_count = w25q.block_count * 16;
@@ -214,16 +214,16 @@ w25q_status_e w25q_init(void) {
   w25q_read_status_reg(2, &status2);
   w25q_read_status_reg(3, &status3);
 
-  log_debug("Flash statuses: %x %x %x", status1, status2, status3);
+  // log_debug("Flash statuses: %x %x %x", status1, status2, status3);
 
-  log_debug("w25qxx Page Size: %hu B", w25q.page_size);
-  log_debug("w25qxx Page Count: %lu", w25q.page_count);
-  log_debug("w25qxx Sector Size: %lu B", w25q.sector_size);
-  log_debug("w25qxx Sector Count: %lu", w25q.sector_count);
-  log_debug("w25qxx Block Size: %lu B", w25q.block_size);
-  log_debug("w25qxx Block Count: %lu", w25q.block_count);
-  log_debug("w25qxx Capacity: %lu KB", w25q.capacity_in_kilobytes);
-  log_debug("w25qxx Init Done");
+  // log_debug("w25qxx Page Size: %hu B", w25q.page_size);
+  // log_debug("w25qxx Page Count: %lu", w25q.page_count);
+  // log_debug("w25qxx Sector Size: %lu B", w25q.sector_size);
+  // log_debug("w25qxx Sector Count: %lu", w25q.sector_count);
+  // log_debug("w25qxx Block Size: %lu B", w25q.block_size);
+  // log_debug("w25qxx Block Count: %lu", w25q.block_count);
+  // log_debug("w25qxx Capacity: %lu KB", w25q.capacity_in_kilobytes);
+  // log_debug("w25qxx Init Done");
 
   w25q.lock = 0;
   w25q.initialized = true;
