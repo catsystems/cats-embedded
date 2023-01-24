@@ -28,11 +28,6 @@ namespace task {
 
 class Preprocessing final : public Task<Preprocessing, 512> {
  public:
-  imu_data_t m_imu_data[NUM_IMU]{};
-  baro_data_t m_baro_data[NUM_BARO]{};
-  magneto_data_t m_magneto_data[NUM_MAGNETO]{};
-  accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
-
   [[nodiscard]] state_estimation_input_t GetEstimationInput() const noexcept;
   [[nodiscard]] SI_data_t GetSIData() const noexcept;
 
@@ -45,6 +40,11 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   void CheckSensors() noexcept;
   cats_error_e CheckSensorBounds(uint8_t index, const sens_info_t *sens_info) noexcept;
   cats_error_e CheckSensorFreezing(uint8_t index, const sens_info_t *sens_info) noexcept;
+
+  imu_data_t m_imu_data[NUM_IMU]{};
+  baro_data_t m_baro_data[NUM_BARO]{};
+  magneto_data_t m_magneto_data[NUM_MAGNETO]{};
+  accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
 
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};
