@@ -97,13 +97,11 @@ bool cc_load() {
     log_error("Configuration changed or error in config!");
     cc_defaults(true, false);
     ret &= cc_save();
-    if (ret) {
-      /* If the default config was successfully saved, emit a CATS_ERR_NON_USER_CFG error */
-      add_error(CATS_ERR_NON_USER_CFG);
-    }
   }
 
   if (!global_cats_config.is_set_by_user) {
+    /* Emit an error if the config is not set by user every time the system boots up. */
+    add_error(CATS_ERR_NON_USER_CFG);
     log_warn("Configuration not set by user!");
   }
 
