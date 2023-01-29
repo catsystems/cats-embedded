@@ -30,6 +30,34 @@ namespace task {
 
 template <typename T, uint32_t STACK_SZ>
 class Task {
+ public:
+  /* Deleted move constructor & move assignment operator */
+  Task(Task&&) = delete;
+  Task& operator=(Task&&) = delete;
+
+  /* Deleted copy constructor & assignment operator */
+  Task(const Task&) = delete;
+  Task& operator=(const Task&) = delete;
+
+  /* Deleted new & delete operators */
+  static void* operator new(std::size_t size) = delete;
+  static void* operator new[](std::size_t size) = delete;
+  static void operator delete(void* ptr) = delete;
+  static void operator delete[](void* ptr) = delete;
+  
+  template <typename... Args>
+  static T& GetInstance(Args&&... args) noexcept {
+    /* Static local variable */
+    static T instance(std::forward<Args>(args)...);
+    return instance;
+  }
+
+  template <typename... Args>
+  static constexpr osThreadId_t Start(Args&&... args) noexcept {
+    auto& task = T::GetInstance(std::forward<Args>(args)...);
+    return osThreadNew(RunWrapper, &task, &task.m_task_attributes);
+  }
+
  protected:
   /* Protected constructor */
   Task() = default;
@@ -76,34 +104,6 @@ class Task {
 
   /* This function needs to be defined because osThreadNew() cannot accept a non-static function. */
   static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->RunInvoker(); }
-
- public:
-  /* Deleted move constructor & move assignment operator */
-  Task(Task&&) = delete;
-  Task& operator=(Task&&) = delete;
-
-  /* Deleted copy constructor & assignment operator */
-  Task(const Task&) = delete;
-  Task& operator=(const Task&) = delete;
-
-  /* Deleted new & delete operators */
-  static void* operator new(std::size_t size) = delete;
-  static void* operator new[](std::size_t size) = delete;
-  static void operator delete(void* ptr) = delete;
-  static void operator delete[](void* ptr) = delete;
-
-  template <typename... Args>
-  static T& GetInstance(Args&&... args) noexcept {
-    /* Static local variable */
-    static T instance(std::forward<Args>(args)...);
-    return instance;
-  }
-
-  template <typename... Args>
-  static constexpr osThreadId_t Start(Args&&... args) noexcept {
-    auto& task = T::GetInstance(std::forward<Args>(args)...);
-    return osThreadNew(RunWrapper, &task, &task.m_task_attributes);
-  }
 };
 
 }  // namespace task
