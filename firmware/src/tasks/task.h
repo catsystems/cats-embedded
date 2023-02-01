@@ -44,7 +44,7 @@ class Task {
   static void* operator new[](std::size_t size) = delete;
   static void operator delete(void* ptr) = delete;
   static void operator delete[](void* ptr) = delete;
-  
+
   template <typename... Args>
   static T& GetInstance(Args&&... args) noexcept {
     /* Static local variable */
@@ -53,9 +53,10 @@ class Task {
   }
 
   template <typename... Args>
-  static constexpr osThreadId_t Start(Args&&... args) noexcept {
+  static constexpr T& Start(Args&&... args) noexcept {
     auto& task = T::GetInstance(std::forward<Args>(args)...);
-    return osThreadNew(RunWrapper, &task, &task.m_task_attributes);
+    task.SetThreadId(osThreadNew(RunWrapper, &task, &task.m_task_attributes));
+    return task;
   }
 
  protected:
@@ -75,15 +76,18 @@ class Task {
 
     if (new_enum == m_fsm_enum) {
       return false;
-    } else {
-      m_fsm_enum = new_enum;
-      return true;
     }
+
+    m_fsm_enum = new_enum;
+    return true;
   }
+
+  void SetThreadId(const osThreadId_t thread_id) { m_thread_id = thread_id; }
 
  private:
   std::array<uint32_t, STACK_SZ> m_task_buffer{};
   StaticTask_t m_task_control_block{};
+  osThreadId_t m_thread_id{nullptr};
 
   const osThreadAttr_t m_task_attributes = {
       // TODO: This is not a good name

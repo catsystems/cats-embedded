@@ -109,8 +109,6 @@ const clicmd_t cmd_table[] = {
 
 const size_t NUM_CLI_COMMANDS = sizeof cmd_table / sizeof cmd_table[0];
 
-auto &state_est_task = task::StateEstimation::GetInstance();
-
 static const char *const emptyName = "-";
 
 /** Helper function declarations **/
@@ -413,9 +411,9 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
   }
   cli_printf("State:       %s\n", fsm_map[new_enum]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)state_est_task.GetEstimationOutput().height,
-             (double)state_est_task.GetEstimationOutput().velocity,
-             (double)state_est_task.GetEstimationOutput().acceleration);
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)task::global_state_estimation->GetEstimationOutput().height,
+             (double)task::global_state_estimation->GetEstimationOutput().velocity,
+             (double)task::global_state_estimation->GetEstimationOutput().acceleration);
 
 #ifdef CATS_DEBUG
   if (!strcmp(args, "--heap")) {
