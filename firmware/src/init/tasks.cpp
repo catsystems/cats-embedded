@@ -42,8 +42,6 @@ void init_tasks() {
 
   Preprocessing::Start();
 
-  SensorRead::Start();
-
   FlightFsm::Start();
 
   Peripherals::Start();

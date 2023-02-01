@@ -46,7 +46,7 @@ sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
                                    .resolution = 1.0f}};
 #elif IMU_TYPE == LSM6DSR_TYPE
 sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
-                                                      .conversion_to_SI = 9.81f / 2048.0f,
+                                                      .conversion_to_SI = 9.81f / 1024.0f,
                                                       .upper_limit = 16.0f * 9.81f,
                                                       .lower_limit = -16.0f * 9.81f,
                                                       .resolution = 1.0f}};
