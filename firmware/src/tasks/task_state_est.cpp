@@ -22,12 +22,13 @@
 
 namespace task {
 
+StateEstimation* global_state_estimation = nullptr;
+
 void StateEstimation::GetEstimationInputData() {
   /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
    * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
    * due to parachute forces. */
-  auto &preprocessing_task = Preprocessing::GetInstance();
-  state_estimation_input_t input = preprocessing_task.GetEstimationInput();
+  state_estimation_input_t input = m_task_preprocessing.GetEstimationInput();
 
   if (m_fsm_enum < DROGUE) {
     m_filter.measured_acceleration = input.acceleration_z;
@@ -38,7 +39,7 @@ void StateEstimation::GetEstimationInputData() {
   m_filter.measured_AGL = input.height_AGL;
 
   /* Do Orientation Filter */
-  quaternion_kinematics(&m_orientation_filter, preprocessing_task.GetSIData().gyro);
+  quaternion_kinematics(&m_orientation_filter, m_task_preprocessing.GetSIData().gyro);
 }
 
 estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
