@@ -18,6 +18,47 @@
 
 #pragma once
 
+#include "sensors/lsm6dso32.h"
+#include "sensors/ms5607.h"
+
+#include "config/globals.h"
+
 void init_storage();
 
-void init_devices();
+static void init_buzzer() {
+  buzzer_set_freq(&BUZZER, 3200);
+  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
+    buzzer_set_volume(&BUZZER, 0);
+  } else {
+    buzzer_set_volume(&BUZZER, 30);
+  }
+}
+
+template <typename TImu, typename TBaro>
+void init_devices(TImu& imu, TBaro& barometer) {
+  // Initialize the IMU
+  uint32_t timeout_counter = 0U;
+  while (!imu.Init()) {
+    HAL_Delay(10);
+    if (++timeout_counter > 20) {
+      log_error("IMU initialization failed");
+      break;
+    }
+  }
+  if (timeout_counter < 20) {
+    imu_initialized[0] = true;
+  }
+
+  // Initialize the Barometer
+  timeout_counter = 0U;
+  while (!barometer.Init()) {
+    HAL_Delay(10);
+    if (++timeout_counter > 20) {
+      log_error("Barometer initialization failed");
+      break;
+    }
+  }
+
+  /* BUZZER */
+  init_buzzer();
+}

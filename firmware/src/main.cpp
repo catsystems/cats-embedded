@@ -33,6 +33,12 @@
 #include "init/system.h"
 #include "init/tasks.h"
 
+#include "drivers/gpio.h"
+#include "sensors/lsm6dso32.h"
+#include "sensors/ms5607.h"
+
+#include "tasks/task_sensor_read.h"
+
 static void init_logging() {
   log_set_level(LOG_TRACE);
   log_enable();
@@ -58,6 +64,18 @@ int main(void) {
 
   usb_device_initialized = target_init();
 
+  // Build digital io
+  static drivers::OutputPin imu_cs(GPIOB, 0U);
+  static drivers::OutputPin barometer_cs(GPIOB, 1U);
+  static drivers::OutputPin status_led(GPIOC, 14U);
+
+  // Build the SPI driver
+  static drivers::Spi spi1(&hspi1);
+
+  // Build the sensors
+  static sensors::Lsm6dso32 imu(spi1, imu_cs);
+  static sensors::Ms5607 barometer(spi1, barometer_cs);
+
   init_logging();
   HAL_Delay(100);
   log_info("System initialization complete.");
@@ -71,7 +89,7 @@ int main(void) {
   log_info("Config load complete.");
 
   HAL_Delay(100);
-  init_devices();
+  init_devices(imu, barometer);
   log_info("Device initialization complete.");
 
   HAL_Delay(100);
@@ -83,6 +101,7 @@ int main(void) {
   osKernelInitialize();
 
   init_tasks();
+  task::SensorRead::Start(&imu, &barometer);
   log_info("Task initialization complete.");
 
   buzzer_queue_status(CATS_BUZZ_BOOTUP);
