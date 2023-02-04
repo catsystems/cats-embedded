@@ -90,8 +90,6 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
 
-  auto& state_est_task = StateEstimation::GetInstance();
-
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);
   osDelay(100);
@@ -127,7 +125,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
 
-    PackTxMessage(tick_count, &gnss_data, &tx_payload, state_est_task.GetEstimationOutput());
+    PackTxMessage(tick_count, &gnss_data, &tx_payload, m_task_state_estimation.GetEstimationOutput());
     SendTxPayload((uint8_t*)&tx_payload, 16);
 
     if ((tick_count - uart_timeout) > 60000) {

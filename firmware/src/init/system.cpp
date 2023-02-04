@@ -22,15 +22,6 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 
-#include "sensors/icm20601.h"
-#include "sensors/ms5607.h"
-
-#if NUM_MAGNETO > 0
-#include "sensors/mmc5983ma.h"
-#endif
-
-#include "config/globals.h"
-
 static void init_lfs();
 
 void init_storage() {
@@ -80,72 +71,4 @@ void init_lfs() {
 
     log_info("LFS mounted successfully!");
   }
-}
-
-static void init_imu() {
-#if IMU_TYPE == ICM20601_TYPE
-  auto imu_init_fun = icm20601_init;
-#elif IMU_TYPE == LSM6DSR_TYPE
-  auto imu_init_fun = lsm6dsr_init;
-#endif
-
-  for (int i = 0; i < NUM_IMU; i++) {
-    int32_t timeout_counter = 0;
-    while (!imu_init_fun(&IMU_DEV[i])) {
-      HAL_Delay(10);
-      if (++timeout_counter > 20) {
-        log_error("IMU %d initialization failed", i);
-        break;
-      }
-    }
-    if (timeout_counter < 20) {
-      imu_initialized[i] = true;
-    }
-  }
-  for (int i = 0; i < NUM_ACCELEROMETER; i++) {
-    while (!h3lis100dl_init(&ACCEL)) {
-      HAL_Delay(10);
-      log_error("ACCEL initialization failed");
-    }
-  }
-}
-
-static void init_baro() {
-  for (int i = 0; i < NUM_BARO; i++) {
-    ms5607_init(&BARO_DEV[i]);
-    HAL_Delay(10);
-  }
-}
-
-static void init_magneto() {
-#if NUM_MAGNETO > 0
-  spi_init(MAG.spi);
-  mmc5983ma_init(&MAG);
-  // mmc5983_calibration(&MAG);
-#endif
-}
-
-static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 3200);
-  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
-    buzzer_set_volume(&BUZZER, 0);
-  } else {
-    buzzer_set_volume(&BUZZER, 30);
-  }
-}
-
-void init_devices() {
-  /* IMU */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
-  HAL_Delay(10);
-  init_imu();
-  HAL_Delay(10);
-  /* BARO */
-  init_baro();
-  HAL_Delay(10);
-  /* MAGNETO */
-  init_magneto();
-  HAL_Delay(10);
-  /* BUZZER */
-  init_buzzer();
 }

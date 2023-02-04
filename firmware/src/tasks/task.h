@@ -30,53 +30,6 @@ namespace task {
 
 template <typename T, uint32_t STACK_SZ>
 class Task {
- protected:
-  /* Protected constructor */
-  Task() = default;
-
-  flight_fsm_e m_fsm_enum = INVALID;
-
-  /* Update FSM enum */
-  bool GetNewFsmEnum() {
-    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
-
-    /* If this happens, there is an error on the Event Flag.*/
-    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
-      return false;
-    }
-
-    if (new_enum == m_fsm_enum) {
-      return false;
-    } else {
-      m_fsm_enum = new_enum;
-      return true;
-    }
-  }
-
- private:
-  std::array<uint32_t, STACK_SZ> m_task_buffer{};
-  StaticTask_t m_task_control_block{};
-
-  const osThreadAttr_t m_task_attributes = {
-      // TODO: This is not a good name
-      .name = typeid(T).name(),
-      .cb_mem = &m_task_control_block,
-      .cb_size = sizeof(m_task_control_block),
-      .stack_mem = m_task_buffer.data(),
-      .stack_size = m_task_buffer.size() * sizeof(uint32_t),
-      .priority = osPriorityNormal,
-  };
-
-  /* Method that implements the behavior of the task. */
-  virtual void Run() noexcept = 0;
-
-  /* This enables declaring the Run() function private in derived classes.
-   * Nobody except the Task class should be able to call Run(). */
-  void RunInvoker() noexcept { Run(); }
-
-  /* This function needs to be defined because osThreadNew() cannot accept a non-static function. */
-  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->RunInvoker(); }
-
  public:
   /* Deleted move constructor & move assignment operator */
   Task(Task&&) = delete;
@@ -100,10 +53,61 @@ class Task {
   }
 
   template <typename... Args>
-  static constexpr osThreadId_t Start(Args&&... args) noexcept {
+  static constexpr T& Start(Args&&... args) noexcept {
     auto& task = T::GetInstance(std::forward<Args>(args)...);
-    return osThreadNew(RunWrapper, &task, &task.m_task_attributes);
+    task.SetThreadId(osThreadNew(RunWrapper, &task, &task.m_task_attributes));
+    return task;
   }
+
+ protected:
+  /* Protected constructor */
+  Task() = default;
+
+  flight_fsm_e m_fsm_enum = INVALID;
+
+  /* Update FSM enum */
+  bool GetNewFsmEnum() {
+    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+
+    /* If this happens, there is an error on the Event Flag.*/
+    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+      return false;
+    }
+
+    if (new_enum == m_fsm_enum) {
+      return false;
+    }
+
+    m_fsm_enum = new_enum;
+    return true;
+  }
+
+  void SetThreadId(const osThreadId_t thread_id) { m_thread_id = thread_id; }
+
+ private:
+  std::array<uint32_t, STACK_SZ> m_task_buffer{};
+  StaticTask_t m_task_control_block{};
+  osThreadId_t m_thread_id{nullptr};
+
+  const osThreadAttr_t m_task_attributes = {
+      // TODO: This is not a good name
+      .name = typeid(T).name(),
+      .cb_mem = &m_task_control_block,
+      .cb_size = sizeof(m_task_control_block),
+      .stack_mem = m_task_buffer.data(),
+      .stack_size = m_task_buffer.size() * sizeof(uint32_t),
+      .priority = osPriorityNormal,
+  };
+
+  /* Method that implements the behavior of the task. */
+  virtual void Run() noexcept = 0;
+
+  /* This enables declaring the Run() function private in derived classes.
+   * Nobody except the Task class should be able to call Run(). */
+  void RunInvoker() noexcept { Run(); }
+
+  /* This function needs to be defined because osThreadNew() cannot accept a non-static function. */
+  static constexpr void RunWrapper(void* task_ptr) noexcept { static_cast<T*>(task_ptr)->RunInvoker(); }
 };
 
 }  // namespace task

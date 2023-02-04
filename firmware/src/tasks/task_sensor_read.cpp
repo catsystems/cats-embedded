@@ -20,19 +20,9 @@
 #include "cmsis_os.h"
 #include "config/globals.h"
 #include "flash/recorder.h"
-#include "sensors/h3lis100dl.h"
-
-#if IMU_TYPE == LSM6DSR_TYPE
-
-#include "sensors/lsm6dsr.h"
-
-#elif IMU_TYPE == ICM20601_TYPE
-#include "sensors/icm20601.h"
-#endif
 
 #include <cstring>
 
-#include "sensors/mmc5983ma.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
 #include "util/task_util.h"
@@ -72,8 +62,7 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
  */
 [[noreturn]] void SensorRead::Run() noexcept {
   /* Initialize IMU data variables */
-
-  prepare_temp();
+  m_barometer->Prepare(sensor::Ms5607::Request::kTemperature);
   osDelay(5);
 
   uint32_t tick_count = osKernelGetTickCount();
@@ -83,14 +72,14 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
   constexpr uint32_t tick_update = sysGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
   while (true) {
     // Readout the baro register
-    read_baro();
+    m_barometer->Read();
 
     // Prepare new readout for the baro
     if (m_current_readout == SensorRead::BaroReadoutType::kReadBaroPressure) {
-      prepare_pres();
+      m_barometer->Prepare(sensor::Ms5607::Request::kPressure);
       m_current_readout = SensorRead::BaroReadoutType::kReadBaroTemperature;
     } else {
-      prepare_temp();
+      m_barometer->Prepare(sensor::Ms5607::Request::kTemperature);
       m_current_readout = SensorRead::BaroReadoutType::kReadBaroPressure;
       /* For Simulator */
       if (simulation_started) {
@@ -98,7 +87,7 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
           m_baro_data[i].pressure = global_baro_sim[i].pressure;
         }
       } else {
-        get_temp_pres(&(m_baro_data[0].temperature), &(m_baro_data[0].pressure));
+        m_barometer->GetMeasurement(m_baro_data[0].pressure, m_baro_data[0].temperature);
       }
 
       /* Read and Save Barometric Data */
@@ -108,13 +97,11 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
 
       /* Read and Save Magnetometer Data */
       for (int i = 0; i < NUM_MAGNETO; i++) {
-        read_mag(&m_magneto_data[i]);
         record(tick_count, add_id_to_record_type(MAGNETO, i), &(m_magneto_data[i]));
       }
 
       /* Read and Save High-G ACC Data */
       for (int i = 0; i < NUM_ACCELEROMETER; i++) {
-        read_accel(&m_accel_data[i]);
         record(tick_count, add_id_to_record_type(ACCELEROMETER, i), &(m_accel_data[i]));
       }
 
@@ -123,7 +110,8 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
         if (simulation_started) {
           m_imu_data[i].acc = global_imu_sim[i].acc;
         } else {
-          read_imu(m_imu_data[i].gyro, m_imu_data[i].acc, i);
+          m_imu->ReadGyroRaw(reinterpret_cast<int16_t *>(&m_imu_data[i].gyro));
+          m_imu->ReadAccelRaw(reinterpret_cast<int16_t *>(&m_imu_data[i].acc));
         }
         record(tick_count, add_id_to_record_type(IMU, i), &(m_imu_data[i]));
       }
@@ -133,64 +121,5 @@ accel_data_t SensorRead::GetAccel(uint8_t index) const noexcept { return m_accel
     osDelayUntil(tick_count);
   }
 }
+
 }  // namespace task
-
-/** Private Function Definitions **/
-
-static void read_imu(vi16_t &gyroscope, vi16_t &acceleration, int32_t id) {
-  int16_t acc[3] = {};
-  int16_t gyro[3] = {};
-  if (!imu_initialized[id] || (id >= NUM_IMU)) {
-    return;
-  }
-#if IMU_TYPE == ICM20601_TYPE
-  icm20601_read_accel_raw(&IMU_DEV[id], acc);
-  icm20601_read_gyro_raw(&IMU_DEV[id], gyro);
-#elif IMU_TYPE == LSM6DSR_TYPE
-  lsm6dsr_read_accel_raw(&IMU_DEV[id], acc);
-  lsm6dsr_read_gyro_raw(&IMU_DEV[id], gyro);
-#endif
-  memcpy(&acceleration, acc, 3 * sizeof(int16_t));
-  memcpy(&gyroscope, gyro, 3 * sizeof(int16_t));
-}
-
-static void prepare_temp() {
-  for (int32_t i = 0; i < NUM_BARO; ++i) {
-    ms5607_prepare_temp(&BARO_DEV[i]);
-  }
-}
-
-//
-static void prepare_pres() {
-  for (int32_t i = 0; i < NUM_BARO; ++i) {
-    ms5607_prepare_pres(&BARO_DEV[i]);
-  }
-}
-
-static void read_baro() {
-  for (int32_t i = 0; i < NUM_BARO; ++i) {
-    ms5607_read_raw(&BARO_DEV[i]);
-  }
-}
-
-static void get_temp_pres(int32_t *temperature, int32_t *pressure) {
-  for (int32_t i = 0; i < NUM_BARO; ++i) {
-    ms5607_get_temp_pres(&BARO_DEV[i], &temperature[i], &pressure[i]);
-  }
-}
-
-static void read_mag(vf32_t *data) {
-  float tmp[3] = {};
-  mmc5983ma_read_calibrated(&MAG, tmp);
-  data->x = tmp[0];
-  data->y = tmp[1];
-  data->z = tmp[2];
-}
-
-static void read_accel(vi8_t *data) {
-  int8_t tmp[3] = {};
-  h3lis100dl_read_raw(&ACCEL, tmp);
-  data->x = tmp[0];
-  data->y = tmp[1];
-  data->z = tmp[2];
-}

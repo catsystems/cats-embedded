@@ -22,14 +22,7 @@
 #include "drivers/servo.h"
 #include "drivers/spi.h"
 #include "flash/recorder.h"
-#include "sensors/h3lis100dl.h"
-#if IMU_TYPE == ICM20601_TYPE
-#include "sensors/icm20601.h"
-#elif IMU_TYPE == LSM6DSR_TYPE
-#include "sensors/lsm6dsr.h"
-#endif
-#include "sensors/mmc5983ma.h"
-#include "sensors/ms5607.h"
+
 #include "target.h"
 #include "util/types.h"
 
@@ -39,19 +32,6 @@
 #define TELEMETRY_SAMPLING_FREQ 10  // in Hz
 
 /** Device Handles **/
-
-extern SPI_BUS SPI2_FLASH;
-
-#if IMU_TYPE == ICM20601_TYPE
-extern const ICM20601 IMU_DEV[NUM_IMU];
-#elif IMU_TYPE == LSM6DSR_TYPE
-extern LSM6DSR IMU_DEV[NUM_IMU];
-#endif
-extern MS5607 BARO_DEV[NUM_BARO];
-
-extern MMC5983MA MAG;
-
-extern const H3LIS100DL ACCEL;
 
 extern BUZ BUZZER;
 
