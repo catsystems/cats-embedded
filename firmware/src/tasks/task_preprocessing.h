@@ -47,8 +47,6 @@ class Preprocessing final : public Task<Preprocessing, 512> {
 
   imu_data_t m_imu_data[NUM_IMU]{};
   baro_data_t m_baro_data[NUM_BARO]{};
-  magneto_data_t m_magneto_data[NUM_MAGNETO]{};
-  accel_data_t m_accel_data[NUM_ACCELEROMETER]{};
 
   SI_data_t m_si_data = {};
   SI_data_t m_si_data_old = {.acc = {.x = GRAVITY, .y = 0.0F, .z = 0.0F}, .pressure = P_INITIAL};

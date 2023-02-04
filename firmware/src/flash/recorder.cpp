@@ -59,8 +59,6 @@ static inline void collect_flight_info_stats(timestamp_t ts, flight_info_t fligh
 struct skip_counter_t {
   uint8_t imu;
   uint8_t baro;
-  uint8_t magneto;
-  uint8_t accelerometer;
   uint8_t flight_info;
   uint8_t orientation;
   uint8_t filtered_data;
@@ -129,14 +127,6 @@ void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *const
       case BARO:
         if (should_skip(&skip_counter.baro, NUM_BARO)) return;
         e.u.baro = *((baro_data_t *)rec_value);
-        break;
-      case MAGNETO:
-        if (should_skip(&skip_counter.magneto, NUM_MAGNETO)) return;
-        e.u.magneto_info = *((magneto_data_t *)rec_value);
-        break;
-      case ACCELEROMETER:
-        if (should_skip(&skip_counter.accelerometer, NUM_ACCELEROMETER)) return;
-        e.u.accel_data = *((accel_data_t *)rec_value);
         break;
       case FLIGHT_INFO:
         e.u.flight_info = *((flight_info_t *)rec_value);

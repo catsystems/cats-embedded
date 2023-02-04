@@ -26,4 +26,3 @@
 void calibrate_imu(const vf32_t *accel_data, calibration_data_t *);
 bool compute_gyro_calibration(const vf32_t *gyro_data, calibration_data_t *calibration);
 void calibrate_gyro(const calibration_data_t *calibration, vf32_t *gyro_data);
-void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t *calibration_data);

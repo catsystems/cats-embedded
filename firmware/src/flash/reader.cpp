@@ -131,22 +131,6 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
                     rec_elem.u.baro.temperature);
           }
         } break;
-        case MAGNETO: {
-          size_t elem_sz = sizeof(rec_elem.u.magneto_info);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.magneto_info.x,
-                    (double)rec_elem.u.magneto_info.y, (double)rec_elem.u.magneto_info.z);
-          }
-        } break;
-        case ACCELEROMETER: {
-          size_t elem_sz = sizeof(rec_elem.u.accel_data);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|ACC|%d|%d|%d", rec_elem.ts, rec_elem.u.accel_data.x, rec_elem.u.accel_data.y,
-                    rec_elem.u.accel_data.z);
-          }
-        } break;
         case FLIGHT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.flight_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
