@@ -189,13 +189,15 @@ void init_simulation_data(cats_sim_choice_e sim_choice) {
 }
 
 int32_t linear_interpol(float32_t time, float32_t LB_time, float32_t UB_time, float32_t LB_val, float32_t UB_val) {
-  return static_cast<int32_t>(((time - LB_time) / (UB_time - LB_time)) * (UB_val - LB_val) + LB_val);
+  return (int32_t)(((time - LB_time) / (UB_time - LB_time)) * (UB_val - LB_val) + LB_val);
 }
 
 int32_t rand_bounds(int32_t lower_b, int32_t upper_b) { return rand() % (upper_b - lower_b) - lower_b; }
 
 void start_simulation(char *args) {
-  if (simulation_started) {
+  static osThreadId_t task_simulator_id = nullptr;
+
+  if (task_simulator_id != nullptr) {
     log_raw("Simulation already started.");
     return;
   }
@@ -237,5 +239,5 @@ void start_simulation(char *args) {
   simulation_started = true;
   log_info("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
 
-  task::Simulator::Start(sim_config);
+  task_simulator_id = task::Simulator::Start(sim_config);
 }

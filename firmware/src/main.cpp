@@ -31,19 +31,7 @@
 
 #include "init/config.h"
 #include "init/system.h"
-
-#include "drivers/gpio.h"
-#include "sensors/lsm6dso32.h"
-#include "sensors/ms5607.h"
-
-#include "tasks/task_flight_fsm.h"
-#include "tasks/task_health_monitor.h"
-#include "tasks/task_peripherals.h"
-#include "tasks/task_preprocessing.h"
-#include "tasks/task_recorder.h"
-#include "tasks/task_sensor_read.h"
-#include "tasks/task_state_est.h"
-#include "tasks/task_telemetry.h"
+#include "init/tasks.h"
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -70,18 +58,6 @@ int main(void) {
 
   usb_device_initialized = target_init();
 
-  // Build digital io
-  static driver::OutputPin imu_cs(GPIOB, 0U);
-  static driver::OutputPin barometer_cs(GPIOB, 1U);
-  static driver::OutputPin status_led(GPIOC, 14U);
-
-  // Build the SPI driver
-  static driver::Spi spi1(&hspi1);
-
-  // Build the sensors
-  static sensor::Lsm6dso32 imu(spi1, imu_cs);
-  static sensor::Ms5607 barometer(spi1, barometer_cs);
-
   init_logging();
   HAL_Delay(100);
   log_info("System initialization complete.");
@@ -95,7 +71,7 @@ int main(void) {
   log_info("Config load complete.");
 
   HAL_Delay(100);
-  init_devices(imu, barometer);
+  init_devices();
   log_info("Device initialization complete.");
 
   HAL_Delay(100);
@@ -106,27 +82,7 @@ int main(void) {
   /* Init scheduler */
   osKernelInitialize();
 
-  // TODO: Check rec_queue for validity here
-  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
-  rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
-  event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
-
-  task::Recorder::Start();
-
-  static const task::SensorRead& task_sensor_read = task::SensorRead::Start(&imu, &barometer);
-
-  static const task::Preprocessing& task_preprocessing = task::Preprocessing::Start(task_sensor_read);
-
-  static const task::StateEstimation& task_state_estimation = task::StateEstimation::Start(task_preprocessing);
-
-  task::FlightFsm::Start(task_preprocessing, task_state_estimation);
-
-  task::Peripherals::Start();
-
-  task::HealthMonitor::Start();
-
-  task::Telemetry::Start(task_state_estimation);
-
+  init_tasks();
   log_info("Task initialization complete.");
 
   buzzer_queue_status(CATS_BUZZ_BOOTUP);
@@ -151,7 +107,7 @@ int main(void) {
  * @param  htim : TIM handle
  * @retval None
  */
-extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
@@ -169,7 +125,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
  * @param  line: assert_param error line source number
  * @retval None
  */
-void assert_failed(uint8_t* file, uint32_t line) {
+void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
