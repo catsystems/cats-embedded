@@ -27,21 +27,10 @@
 #include "util/log.h"
 #include "util/types.h"
 
-#include "task_preprocessing.h"
-
 namespace task {
-
-class StateEstimation;
-extern StateEstimation* global_state_estimation;
 
 class StateEstimation final : public Task<StateEstimation, 512> {
  public:
-  explicit StateEstimation(const Preprocessing& task_preprocessing)
-      : m_task_preprocessing{task_preprocessing},
-        m_filter{.t_sampl = 1.0F / static_cast<float>(CONTROL_SAMPLING_FREQ)},
-        m_orientation_filter{} {
-    global_state_estimation = this;
-  }
   [[nodiscard]] estimation_output_t GetEstimationOutput() const noexcept;
 
  private:
@@ -49,11 +38,9 @@ class StateEstimation final : public Task<StateEstimation, 512> {
 
   void GetEstimationInputData();
 
-  const Preprocessing& m_task_preprocessing;
-
   /* Initialize State Estimation */
-  kalman_filter_t m_filter;
-  orientation_filter_t m_orientation_filter;
+  kalman_filter_t m_filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
+  orientation_filter_t m_orientation_filter = {};
 };
 
 }  // namespace task

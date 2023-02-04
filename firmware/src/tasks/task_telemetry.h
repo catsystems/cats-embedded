@@ -19,14 +19,10 @@
 #pragma once
 
 #include "task.h"
-#include "task_state_est.h"
 
 namespace task {
 
 class Telemetry final : public Task<Telemetry, 1024> {
- public:
-  explicit Telemetry(const StateEstimation& task_state_estimation) : m_task_state_estimation{task_state_estimation} {}
-
  private:
   [[noreturn]] void Run() noexcept override;
 
@@ -57,8 +53,6 @@ class Telemetry final : public Task<Telemetry, 1024> {
   void SendDisable() const noexcept;
   void SendTxPayload(uint8_t* payload, uint32_t length) const noexcept;
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
-
-  const StateEstimation& m_task_state_estimation;
 };
 
 }  // namespace task

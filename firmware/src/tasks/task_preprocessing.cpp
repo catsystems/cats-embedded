@@ -41,6 +41,7 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
  */
 [[noreturn]] void Preprocessing::Run() noexcept {
   /* Get Sensor Read Task */
+  auto &sensor_read_task = SensorRead::GetInstance();
 
   /* Infinite loop */
   uint32_t tick_count = osKernelGetTickCount();
@@ -50,10 +51,10 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
     bool fsm_updated = GetNewFsmEnum();
 
     /* get new sensor data */
-    m_baro_data[0] = m_task_sensor_read.GetBaro(0);
-    m_imu_data[0] = m_task_sensor_read.GetImu(0);
-    m_magneto_data[0] = m_task_sensor_read.GetMag(0);
-    m_accel_data[0] = m_task_sensor_read.GetAccel(0);
+    m_baro_data[0] = sensor_read_task.GetBaro(0);
+    m_imu_data[0] = sensor_read_task.GetImu(0);
+    m_magneto_data[0] = sensor_read_task.GetMag(0);
+    m_accel_data[0] = sensor_read_task.GetAccel(0);
 
     /* Do the sensor elimination */
     CheckSensors();

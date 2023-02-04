@@ -38,15 +38,18 @@ namespace task {
 
   trigger_event(EV_MOVING);
 
+  auto &preprocessing_task = Preprocessing::GetInstance();
+  auto &state_est_task = StateEstimation::GetInstance();
+
   flight_fsm_t flight_state = {.flight_state = MOVING};
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* Check Flight Phases */
-    check_flight_phase(&flight_state, m_task_preprocessing.GetSIData().acc, m_task_preprocessing.GetSIData().gyro,
-                       m_task_state_estimation.GetEstimationOutput(),
-                       m_task_preprocessing.GetEstimationInput().height_AGL, global_arming_bool, &settings);
+    check_flight_phase(&flight_state, preprocessing_task.GetSIData().acc, preprocessing_task.GetSIData().gyro,
+                       state_est_task.GetEstimationOutput(), preprocessing_task.GetEstimationInput().height_AGL,
+                       global_arming_bool, &settings);
 
     if (flight_state.state_changed) {
       log_info("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);

@@ -18,6 +18,4 @@
 
 #pragma once
 
-void init_storage();
-
-void init_devices();
+void init_tasks();
