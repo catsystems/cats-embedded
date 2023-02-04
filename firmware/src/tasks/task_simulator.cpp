@@ -26,44 +26,7 @@
 #include <cstdlib>
 
 /** Private Constants **/
-/* DataPoints Acceleration Rocket*/
-timestamp_t acc_time_array[10] = {0, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000};
-float32_t acc_array[10] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
-/* DataPoints Pressure Rocket*/
-timestamp_t pressure_time_array[15] = {0,       9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000,
-                                       9000000, 9000000, 9000000, 9000000, 9000000, 9000000, 9000000};
-float32_t pressure_array[15] = {98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f,
-                                98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f, 98000.0f};
-
-/* DataPoints Acceleration Rocket*/
-timestamp_t acc_rocket_time_array[3] = {20000, 21000, 9000000};
-float32_t acc_rocket_array[3] = {1.0f, 10.0f, 0.0f};
-
-/* DataPoints Pressure Rocket*/
-timestamp_t pressure_rocket_time_array[8] = {0, 20000, 23000, 26000, 28000, 48000, 70000, 9000000};
-float32_t pressure_rocket_array[8] = {98000.0f, 98000.0f, 96000.0f, 94600.0f, 94000.0f, 96500.0f, 98000.0f, 98000.0f};
-
-/* DataPoints Acceleration Hop*/
-timestamp_t acc_hop_time_array[3] = {15000, 15500, 9000000};
-float32_t acc_hop_array[3] = {1.0f, 4.0f, 0.0f};
-
-/* DataPoints Pressure */
-timestamp_t pressure_hop_time_array[5] = {0, 15500, 17000, 20000, 9000000};
-float32_t pressure_hop_array[5] = {98000.0f, 98000.0f, 96500.0f, 98000.0f, 98000.0f};
-
-/* DataPoints Acceleration Periphas ML*/
-timestamp_t acc_periphas_ML_time_array[8] = {20000, 21300, 22200, 23000, 24100, 27000, 34000, 9000000};
-float32_t acc_periphas_ML_array[8] = {1.0f, 3.29f, 3.619f, 3.701f, 3.619f, 1.265f, -0.17f, 0.0f};
-
-/* DataPoints Pressure Rocket*/
-timestamp_t pressure_periphas_ML_time_array[13] = {0,     20000, 22200, 23700, 25500, 28000, 30800,
-                                                   33000, 35000, 38400, 42000, 49500, 60000};
-float32_t pressure_periphas_ML_array[13] = {84556.0f,  84556.0f,  84038.49f, 83011.15f, 80886.82f, 78025.79f, 75625.68f,
-                                            74307.95f, 73517.02f, 73008.88f, 73748.94f, 78513.14f, 84556.00f};
-
-/** Private Function Declarations **/
-int32_t linear_interpol(float32_t time, float32_t LB_time, float32_t UB_time, float32_t LB_val, float32_t UB_val);
 int32_t rand_bounds(int32_t lower_b, int32_t upper_b);
 void init_simulation_data(cats_sim_choice_e sim_choice);
 
@@ -71,16 +34,64 @@ void init_simulation_data(cats_sim_choice_e sim_choice);
 
 namespace task {
 
+void Simulator::SetCoefficients() {
+  float32_t pressure_coeff[16] = {-6.09846193e-17, 2.79599150e-14, -5.67967562e-12, 6.78499400e-10,
+                                  -5.32390218e-08, 2.89827980e-06, -1.12597279e-04, 3.15968503e-03,
+                                  -6.40383671e-02, 9.26415883e-01, -9.32380945e+00, 6.24363813e+01,
+                                  -2.60715710e+02, 6.73219986e+02, -1.60135414e+03, 9.81306274e+04};
+
+  float32_t accel_coeff_thrusting[16] = {-7.74384180e+06, 6.08296377e+07,  -2.13568117e+08, 4.41789674e+08,
+                                         -5.97189439e+08, 5.52253223e+08,  -3.54499448e+08, 1.55874816e+08,
+                                         -4.42126329e+07, 6.42928691e+06,  3.24708141e+05,  -3.53925326e+05,
+                                         7.33555220e+04,  -7.72424267e+03, 4.30117076e+02,  1.12707667e+00};
+
+  float32_t accel_coeff_coasting[16] = {-8.45958797e-07, 5.61687651e-05, -1.71045643e-03, 3.16557314e-02,
+                                        -3.97736659e-01, 3.58938089e+00, -2.40047305e+01, 1.20982114e+02,
+                                        -4.62655535e+02, 1.34060682e+03, -2.91533086e+03, 4.66615138e+03,
+                                        -5.31417862e+03, 4.06084709e+03, -1.85964050e+03, 3.83546444e+02};
+
+  memcpy(m_sim_coeff.acceleration_coeff_thrusting, accel_coeff_thrusting,
+         sizeof(m_sim_coeff.acceleration_coeff_thrusting));
+  memcpy(m_sim_coeff.acceleration_coeff_coasting, accel_coeff_coasting,
+         sizeof(m_sim_coeff.acceleration_coeff_coasting));
+  memcpy(m_sim_coeff.pressure_coeff, pressure_coeff, sizeof(m_sim_coeff.pressure_coeff));
+  m_sim_coeff.switch_time = 1.1F;
+}
+
+void Simulator::ComputeSimValues(float32_t time) {
+  m_current_press = m_sim_coeff.pressure_coeff[POLYNOM_SIZE - 1];
+
+  if (time > m_sim_coeff.switch_time) {
+    m_current_acc = m_sim_coeff.acceleration_coeff_coasting[POLYNOM_SIZE - 1];
+  } else {
+    m_current_acc = m_sim_coeff.acceleration_coeff_thrusting[POLYNOM_SIZE - 1];
+  }
+
+  /* First Check if we are in idle time */
+  if (time < 0) {
+    return;
+  }
+
+  float32_t time_pow = 1.0F;
+  for (int32_t i = POLYNOM_SIZE - 2; i >= 0; i--) {
+    time_pow = time_pow * time;
+
+    m_current_press += time_pow * m_sim_coeff.pressure_coeff[i];
+
+    if (time > m_sim_coeff.switch_time) {
+      m_current_acc += time_pow * m_sim_coeff.acceleration_coeff_coasting[i];
+    } else {
+      m_current_acc += time_pow * m_sim_coeff.acceleration_coeff_thrusting[i];
+    }
+  }
+}
+
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Simulation Choice
  * @retval None
  */
 [[noreturn]] void Simulator::Run() noexcept {
-  /* Change when the timestamp is reached */
-  int8_t index_acc = 0;
-  /* Linear interpolation */
-  int8_t index_press = 0;
   imu_data_t sim_imu_data[NUM_IMU] = {};
 
   log_mode_e prev_log_mode = log_get_mode();
@@ -89,28 +100,30 @@ namespace task {
   /* RNG Init with known seed */
   srand(m_sim_config.noise_seed);
 
+  SetCoefficients();
+
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   /* initialise time */
   timestamp_t sim_start = osKernelGetTickCount();
-  timestamp_t time_since_start = 0;
-
-  init_simulation_data(m_sim_config.sim_choice);
+  float32_t time_to_liftoff = 0.0F;  // This is in seconds
 
   while (true) {
-    time_since_start = osKernelGetTickCount() - sim_start;
-
-    /* Check if we need to use new acceleration datapoint */
-    if (time_since_start > acc_time_array[index_acc]) {
-      index_acc++;
+    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+      new_enum = INVALID;
     }
+
+    time_to_liftoff = ((float32_t)(osKernelGetTickCount() - sim_start)) / 1000.0F - m_idle_time;
+    /* Compute new values */
+    ComputeSimValues(time_to_liftoff);
 
     /* Compute wanted acceleration */
     switch (m_sim_config.sim_axis) {
       case 0:
         for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = (int16_t)(1024 * acc_array[index_acc]) + (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.x = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
           sim_imu_data[i].acc.y = (int16_t)rand_bounds(-10, 10);
           sim_imu_data[i].acc.z = (int16_t)rand_bounds(-10, 10);
         }
@@ -118,7 +131,7 @@ namespace task {
       case 1:
         for (int i = 0; i < NUM_IMU; i++) {
           sim_imu_data[i].acc.x = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.y = (int16_t)(1024 * acc_array[index_acc]) + (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.y = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
           sim_imu_data[i].acc.z = (int16_t)rand_bounds(-10, 10);
         }
         break;
@@ -126,7 +139,7 @@ namespace task {
         for (int i = 0; i < NUM_IMU; i++) {
           sim_imu_data[i].acc.x = (int16_t)rand_bounds(-10, 10);
           sim_imu_data[i].acc.y = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.z = (int16_t)(1024 * acc_array[index_acc]) + (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.z = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
         }
         break;
     }
@@ -136,23 +149,11 @@ namespace task {
       memcpy(&global_imu_sim[i].acc, &sim_imu_data[i].acc, sizeof(vi16_t));
     }
 
-    /* Check if we need to use new barometer datapoint */
-    if (time_since_start > pressure_time_array[index_press + 1]) {
-      index_press++;
-    }
-    /* Do linear interpolation for pressure measurement */
-    float32_t pressure = linear_interpol((float32_t)time_since_start, (float32_t)pressure_time_array[index_press],
-                                         (float32_t)pressure_time_array[index_press + 1], pressure_array[index_press],
-                                         pressure_array[index_press + 1]);
-
     /* Write into global pressure sim variable */
     for (int i = 0; i < NUM_BARO; i++) {
-      global_baro_sim[i].pressure = pressure + rand_bounds(-25, 25);
+      global_baro_sim[i].pressure = m_current_press + rand_bounds(-25, 25);
     }
-    auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
-    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
-      new_enum = INVALID;
-    }
+
     if (new_enum == TOUCHDOWN) {
       log_raw("Simulation Successful.");
       log_set_mode(prev_log_mode);
@@ -168,29 +169,6 @@ namespace task {
 }  // namespace task
 
 /** Private Function Definitions **/
-
-void init_simulation_data(cats_sim_choice_e sim_choice) {
-  if (sim_choice == SIM_HOP) {
-    memcpy(&acc_time_array[0], &acc_hop_time_array[0], 3 * sizeof(timestamp_t));
-    memcpy(&acc_array[0], &acc_hop_array[0], 3 * sizeof(float32_t));
-    memcpy(&pressure_time_array[0], &pressure_hop_time_array[0], 4 * sizeof(timestamp_t));
-    memcpy(&pressure_array[0], &pressure_hop_array[0], 4 * sizeof(float32_t));
-  } else if (sim_choice == SIM_300M) {
-    memcpy(&acc_time_array[0], &acc_rocket_time_array[0], 3 * sizeof(timestamp_t));
-    memcpy(&acc_array[0], &acc_rocket_array[0], 3 * sizeof(float32_t));
-    memcpy(&pressure_time_array[0], &pressure_rocket_time_array[0], 8 * sizeof(timestamp_t));
-    memcpy(&pressure_array[0], &pressure_rocket_array[0], 8 * sizeof(float32_t));
-  } else if (sim_choice == SIM_PML) {
-    memcpy(&acc_time_array[0], &acc_periphas_ML_time_array[0], 8 * sizeof(timestamp_t));
-    memcpy(&acc_array[0], &acc_periphas_ML_array[0], 8 * sizeof(float32_t));
-    memcpy(&pressure_time_array[0], &pressure_periphas_ML_time_array[0], 13 * sizeof(timestamp_t));
-    memcpy(&pressure_array[0], &pressure_periphas_ML_array[0], 13 * sizeof(float32_t));
-  }
-}
-
-int32_t linear_interpol(float32_t time, float32_t LB_time, float32_t UB_time, float32_t LB_val, float32_t UB_val) {
-  return static_cast<int32_t>(((time - LB_time) / (UB_time - LB_time)) * (UB_val - LB_val) + LB_val);
-}
 
 int32_t rand_bounds(int32_t lower_b, int32_t upper_b) { return rand() % (upper_b - lower_b) - lower_b; }
 
