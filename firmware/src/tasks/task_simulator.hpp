@@ -32,6 +32,22 @@ class Simulator final : public Task<Simulator, 512> {
  private:
   [[noreturn]] void Run() noexcept override;
 
+  void SetCoefficients();
+  void ComputeSimValues(float32_t time);
+
+#define POLYNOM_SIZE 16
+
+  struct sim_coeff_t {
+    float32_t pressure_coeff[POLYNOM_SIZE] = {};
+    float32_t acceleration_coeff_thrusting[POLYNOM_SIZE] = {};
+    float32_t acceleration_coeff_coasting[POLYNOM_SIZE] = {};
+    float32_t switch_time = 0;
+  };
+
+  float32_t m_idle_time = 20.0F;
+  sim_coeff_t m_sim_coeff = {};
+  float32_t m_current_acc = 0.0F;
+  float32_t m_current_press = 0.0F;
   cats_sim_config_t m_sim_config;
 };
 
