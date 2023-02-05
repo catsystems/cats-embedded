@@ -57,41 +57,27 @@ void dump_recording(uint16_t number) {
 
   lfs_file_t curr_file;
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
-    int file_size = lfs_file_size(&lfs, &curr_file);
-    for (lfs_size_t i = 0; i < file_size; i += READ_BUF_SZ) {
-      lfs_size_t chunk = lfs_min(READ_BUF_SZ, file_size - i);
+    const auto file_size = lfs_file_size(&lfs, &curr_file);
+    if (file_size > 0) {
+      for (lfs_size_t i = 0; i < static_cast<lfs_size_t>(file_size); i += READ_BUF_SZ) {
+        lfs_size_t chunk = lfs_min(READ_BUF_SZ, file_size - i);
 
-      lfs_file_read(&lfs, &curr_file, read_buf, chunk);
+        lfs_file_read(&lfs, &curr_file, read_buf, chunk);
 
-      int write_idx = 0;
-      for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
-        write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
-        //      for (uint32_t j = 0; j < 128; j += 16) {
-        //        write_idx +=
-        //            sprintf(string_buffer1 + write_idx,
-        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
-        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
-        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
-        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
-        //                    read_buf[j + 15]);
+        int write_idx = 0;
+        for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
+          write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
+        }
+        log_rawr("%s", string_buffer1);
+        write_idx = 0;
+        for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
+          write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
+        }
+        log_rawr("%s\n", string_buffer2);
+
+        memset(string_buffer1, 0, STRING_BUF_SZ);
+        memset(string_buffer2, 0, STRING_BUF_SZ);
       }
-      log_rawr("%s", string_buffer1);
-      write_idx = 0;
-      for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
-        write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
-        //      for (uint32_t j = 128; j < 256; j += 16) {
-        //        write_idx +=
-        //            sprintf(string_buffer1 + write_idx,
-        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
-        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
-        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
-        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
-        //                    read_buf[j + 15]);
-      }
-      log_rawr("%s\n", string_buffer2);
-
-      memset(string_buffer1, 0, STRING_BUF_SZ);
-      memset(string_buffer2, 0, STRING_BUF_SZ);
     }
   } else {
     log_error("Flight %d not found!", number);

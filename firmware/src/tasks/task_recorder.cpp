@@ -50,7 +50,6 @@ namespace task {
   log_debug("Recorder Task Started...\n");
 
   uint16_t bytes_remaining = 0;
-  uint32_t max_elem_count = 0;
 
   lfs_file_t current_flight_file;
   char current_flight_filename[MAX_FILENAME_SIZE] = {};
@@ -138,8 +137,8 @@ namespace task {
               break;
             }
           }
-          // log_info("lfw start");
-          int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+          // TODO: Handle failed lfs_file_write
+          lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
           ++sync_counter;
           /* Check for a new command */
           if ((sync_counter % 32) == 0) {
@@ -267,8 +266,10 @@ static void create_stats_file() {
   /* This will work as long as there are no pointers in the global_flight_stats struct */
   err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
 
-  if (err < sizeof(global_flight_stats)) {
+  if (err < 0) {
     log_error("Writing to stats file failed with %d", err);
+  } else if (auto err_u = static_cast<uint32_t>(err); err_u < sizeof(global_flight_stats)) {
+    log_error("Written less bytes to stats file than expected: %lu vs %u", err_u, sizeof(global_flight_stats));
   }
 
   err = lfs_file_close(&lfs, &current_stats_file);

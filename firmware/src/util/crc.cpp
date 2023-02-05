@@ -36,7 +36,7 @@ static const uint8_t crc8_tab[] = {
 
 uint8_t crc8(const uint8_t *buf, uint32_t size) {
   uint8_t crc = 0;
-  for (int i = 0; i < size; i++) crc = crc8_tab[crc ^ *buf++];
+  for (uint32_t i = 0; i < size; i++) crc = crc8_tab[crc ^ *buf++];
 
   return crc;
 }
