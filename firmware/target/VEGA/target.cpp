@@ -45,10 +45,10 @@ sens_info_t gyro_info[NUM_IMU] = {{.sens_type = SensorType::kGyro,
                                    .resolution = 1.0F}};
 
 sens_info_t baro_info[NUM_BARO] = {{.sens_type = SensorType::kBaro,
-                                   .conversion_to_SI = 1.0F,
-                                   .upper_limit = 200000.0F,
-                                   .lower_limit = 10.0F,
-                                   .resolution = 1.0F}};
+                                    .conversion_to_SI = 1.0F,
+                                    .upper_limit = 200000.0F,
+                                    .lower_limit = 10.0F,
+                                    .resolution = 1.0F}};
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
