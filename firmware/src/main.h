@@ -22,8 +22,3 @@
 
 /* Random pattern to tell system to jump to bootloader */
 #define BOOTLOADER_MAGIC_PATTERN 0xAA88BB77
-
-/* Suppress warnings for non-existing define */
-#ifndef USBD_CLASS_BOS_ENABLED
-#define USBD_CLASS_BOS_ENABLED 0
-#endif

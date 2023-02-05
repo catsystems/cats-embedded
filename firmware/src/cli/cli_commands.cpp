@@ -575,7 +575,7 @@ static int32_t get_flight_idx(const char *log_idx_arg) {
   }
 
   char *endptr = nullptr;
-  int32_t flight_idx = strtol(log_idx_arg, &endptr, 10);
+  uint32_t flight_idx = strtoul(log_idx_arg, &endptr, 10);
 
   if (log_idx_arg == endptr) {
     cli_print_linef("\nInvalid argument: %s.", log_idx_arg);
