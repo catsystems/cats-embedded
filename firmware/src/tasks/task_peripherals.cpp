@@ -65,7 +65,7 @@ namespace task {
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_table[action_list[i].action];
         if (curr_fp != nullptr) {
-          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %u", event_map[curr_event],
+          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", event_map[curr_event],
                     action_map[action_list[i].action], action_list[i].action_arg);
           /* call the actuator function */
           curr_fp(action_list[i].action_arg);

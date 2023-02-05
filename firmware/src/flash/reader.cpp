@@ -141,7 +141,7 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
+            log_raw("%lu|BARO%hu|%ld|%ld", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
                     rec_elem.u.baro.temperature);
           }
         } break;
@@ -201,7 +201,7 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             peripheral_act_t action = rec_elem.u.event_info.action;
-            log_raw("%lu|EVENT_INFO|%s|%s|%u", rec_elem.ts, event_map[rec_elem.u.event_info.event],
+            log_raw("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, event_map[rec_elem.u.event_info.event],
                     action_map[rec_elem.u.event_info.action.action], action.action_arg);
           }
         } break;
