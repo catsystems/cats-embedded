@@ -27,22 +27,6 @@
 #include "util/log.h"
 #include "util/task_util.h"
 
-/** Private Function Declarations **/
-
-static void read_imu(vi16_t &gyroscope, vi16_t &acceleration, int32_t id);
-
-static void prepare_temp();
-
-static void prepare_pres();
-
-static void get_temp_pres(int32_t *temperature, int32_t *pressure);
-
-static void read_baro();
-
-static void read_mag(vf32_t *data);
-
-static void read_accel(vi8_t *data);
-
 namespace task {
 
 baro_data_t SensorRead::GetBaro(uint8_t index) const noexcept { return m_baro_data[index]; }

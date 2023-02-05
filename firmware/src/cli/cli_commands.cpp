@@ -200,14 +200,14 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_set(const char *cmd_name, char *args) {
-  const uint32_t len = strlen(args);
+  const uint32_t arg_len = strlen(args);
   char *eqptr = nullptr;
 
-  if (len == 0 || (len == 1 && args[0] == '*')) {
+  if (arg_len == 0 || (arg_len == 1 && args[0] == '*')) {
     cli_print_line("Current settings: ");
 
-    // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-    print_cats_config(cmd_name, &global_cats_config, len);
+    // when arg_len is 1 (when * is passed as argument), it will print min/max values as well, for gui
+    print_cats_config(cmd_name, &global_cats_config, arg_len);
 
   } else if ((eqptr = strstr(args, "=")) != nullptr) {
     // has equals
