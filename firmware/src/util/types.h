@@ -51,17 +51,11 @@ struct vf32_t {
 
 /** SENSOR DATA TYPES **/
 
-/* Accelerometer data */
-using accel_data_t = vi8_t;  // Accelerometer units
-
 /* IMU data */
 struct imu_data_t {
   vi16_t acc;   // IMU unit
   vi16_t gyro;  // IMU unit
 };
-
-/* Magnetometer data */
-using magneto_data_t = vf32_t;  // Magnetometer units
 
 /* Barometer data */
 struct baro_data_t {
@@ -79,7 +73,6 @@ struct state_estimation_input_t {
 struct SI_data_t {
   vf32_t acc;          // m/s^2
   vf32_t gyro;         // dps
-  vf32_t mag;          // mG
   float32_t pressure;  // hPa
 };
 
@@ -87,16 +80,10 @@ struct SI_data_t {
 struct sensor_elimination_t {
   int16_t freeze_counter_imu[NUM_IMU];
   int16_t freeze_counter_baro[NUM_BARO];
-  int16_t freeze_counter_magneto[NUM_MAGNETO];
-  int16_t freeze_counter_accel[NUM_ACCELEROMETER];
   int16_t last_value_imu[NUM_IMU];
   int32_t last_value_baro[NUM_BARO];
-  float32_t last_value_magneto[NUM_MAGNETO];
-  int8_t last_value_accel[NUM_ACCELEROMETER];
   uint8_t faulty_imu[NUM_IMU];
   uint8_t faulty_baro[NUM_BARO];
-  uint8_t faulty_mag[NUM_MAGNETO];
-  uint8_t faulty_acc[NUM_ACCELEROMETER];
 };
 
 struct median_filter_t {
@@ -117,11 +104,6 @@ struct calibration_data_t {
   uint8_t axis;
 };
 
-struct magneto_calibration_data_t {
-  float magneto_beta[3];
-  float magneto_radius;
-};
-
 enum flight_fsm_e : uint32_t { INVALID = 0, MOVING = 1, READY, THRUSTING, COASTING, DROGUE, MAIN, TOUCHDOWN };
 
 /* Todo: Comment out this struct */
@@ -129,7 +111,6 @@ struct flight_fsm_t {
   flight_fsm_e flight_state;
   vf32_t old_acc_data;
   vf32_t old_gyro_data;
-  float old_height;
   float angular_movement[3];
   uint32_t clock_memory;
   uint32_t memory[3];

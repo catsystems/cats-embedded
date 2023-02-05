@@ -630,8 +630,6 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
       while (ptr != nullptr) {
         if (!strcmp(ptr, "IMU")) filter_mask = (rec_entry_type_e)(filter_mask | IMU);
         if (!strcmp(ptr, "BARO")) filter_mask = (rec_entry_type_e)(filter_mask | BARO);
-        if (!strcmp(ptr, "MAGNETO")) filter_mask = (rec_entry_type_e)(filter_mask | MAGNETO);
-        if (!strcmp(ptr, "ACCELEROMETER")) filter_mask = (rec_entry_type_e)(filter_mask | ACCELEROMETER);
         if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_INFO);
         if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ORIENTATION_INFO);
         if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FILTERED_DATA_INFO);

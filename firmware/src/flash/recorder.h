@@ -49,17 +49,15 @@
   // Periodic recorder types, their recording speed is affected by global_cats_config.rec_speed_idx
   IMU                = 1 << 4,   // 0x20
   BARO               = 1 << 5,   // 0x40
-  MAGNETO            = 1 << 6,   // 0x80
-  ACCELEROMETER      = 1 << 7,   // 0x100
-  FLIGHT_INFO        = 1 << 8,   // 0x200
-  ORIENTATION_INFO   = 1 << 9,   // 0x400
-  FILTERED_DATA_INFO = 1 << 10,  // 0x800
+  FLIGHT_INFO        = 1 << 6,   // 0x80
+  ORIENTATION_INFO   = 1 << 7,   // 0x100
+  FILTERED_DATA_INFO = 1 << 8,   // 0x200
 // Sporadic recorder types, they will always be logged
-  FLIGHT_STATE       = 1 << 11,  // 0x1000
-  EVENT_INFO         = 1 << 12,  // 0x2000
-  ERROR_INFO         = 1 << 13,  // 0x4000
-  GNSS_INFO          = 1 << 14,  // 0x8000
-  VOLTAGE_INFO       = 1 << 15,  // 0x10000
+  FLIGHT_STATE       = 1 << 9,   // 0x400
+  EVENT_INFO         = 1 << 10,  // 0x800
+  ERROR_INFO         = 1 << 11,  // 0x1000
+  GNSS_INFO          = 1 << 12,  // 0x2000
+  VOLTAGE_INFO       = 1 << 13,  // 0x4000
 };
 // clang-format on
 
@@ -96,8 +94,6 @@ using voltage_info_t = uint16_t;
 union rec_elem_u {
   imu_data_t imu;
   baro_data_t baro;
-  magneto_data_t magneto_info;
-  accel_data_t accel_data;
   flight_info_t flight_info;
   orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;

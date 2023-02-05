@@ -102,45 +102,30 @@ extern UART_HandleTypeDef huart2;
 #define TIMUsb_IRQHandler    TIM5_IRQHandler
 
 /* Sensor config */
-#define NUM_IMU           1
-#define NUM_MAGNETO       0
-#define NUM_ACCELEROMETER 0
-#define NUM_BARO          1
-
-#define ICM20601_TYPE 11
-#define LSM6DSR_TYPE  22
-
-#define IMU_TYPE LSM6DSR_TYPE
+#define NUM_IMU  1
+#define NUM_BARO 1
 
 #define NUM_PYRO         2
 #define NUM_LOW_LEVEL_IO 1
 
-enum sens_type_e : uint32_t {
-  SENS_TYPE_INVALID = 0,
-  IMU_ID_ACC,
-  IMU_ID_GYRO,
-  BARO_ID,
-  MAG_ID,
-  ACC_ID,
+enum class SensorType : uint32_t {
+  kInvalid = 0,
+  kAcc,
+  kGyro,
+  kBaro,
 };
 
 struct sens_info_t {
-  sens_type_e sens_type;
+  SensorType sens_type;
   float32_t conversion_to_SI;
   float32_t upper_limit;
   float32_t lower_limit;
   float32_t resolution;
 };
 
-extern sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER];
+extern sens_info_t acc_info[NUM_IMU];
 extern sens_info_t gyro_info[NUM_IMU];
-extern sens_info_t mag_info[NUM_MAGNETO];
 extern sens_info_t baro_info[NUM_BARO];
-
-#define IMU_SPI_HANDLE   hspi1
-#define ACCEL_SPI_HANDLE hspi1
-#define MAG_SPI_HANDLE   hspi1
-#define BARO_SPI_HANDLE  hspi1
 
 #define USE_PCHANNEL_SAFETY_LOCK
 
