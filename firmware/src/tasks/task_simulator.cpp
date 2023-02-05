@@ -56,6 +56,7 @@ void Simulator::SetCoefficients() {
          sizeof(m_sim_coeff.acceleration_coeff_coasting));
   memcpy(m_sim_coeff.pressure_coeff, pressure_coeff, sizeof(m_sim_coeff.pressure_coeff));
   m_sim_coeff.switch_time = 1.1F;
+  m_sim_coeff.end_time = 50.0F;
 }
 
 void Simulator::ComputeSimValues(float32_t time) {
@@ -70,6 +71,11 @@ void Simulator::ComputeSimValues(float32_t time) {
   /* First Check if we are in idle time */
   if (time < 0) {
     return;
+  }
+
+  /* Check if we are at the end of the simulation; if so, keep the linear acceleration and pressure the same */
+  if (time > m_sim_coeff.end_time) {
+    time = m_sim_coeff.end_time;
   }
 
   float32_t time_pow = 1.0F;
