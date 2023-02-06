@@ -12,8 +12,8 @@
 * High speed logging
 
 ## Configuration Tool
-Currently the configuration tool is still under development.
-
+Currently, the configuration tool is still under development. An initial version can be downloaded [here](https://github.com/catsystems/cats-configurator/releases).
+ 
 ## Contribution
 Contributions are welcome and encouraged. You can contribute in many ways:
 
@@ -30,12 +30,7 @@ The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betafligh
 
 ## Pushing to Remote Repository
 In order to ensure consistency and easier diff review between commits,
-*clang-format* should be used to format all modified C/C++ files. 
-
-The entire codebase is already formatted with *clang-format v13.
+*clang-format* is used to format all modified C/C++ files.
 
 To download `clang-format` visit this [page](https://releases.llvm.org/download.html).
-
-To automatically format the modified code before committing, you should
-copy the pre-commit hook from `./hooks` to `./.git/hooks`.
 
