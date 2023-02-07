@@ -21,7 +21,9 @@
 #include "comm/stream.h"
 #include "config/cats_config.h"
 #include "config/globals.h"
+#include "drivers/adc.h"
 #include "tasks/task_state_est.h"
+#include "util/battery.h"
 #include "util/crc.h"
 #include "util/gnss.h"
 #include "util/log.h"
@@ -50,11 +52,9 @@ enum state_e {
 #define INDEX_LEN      1
 #define TELE_MAX_POWER 30
 
-static float amplifier_temperature = 0.0F;
-
 void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                               estimation_output_t estimation_data) const noexcept {
-  /* TODO add state, error, voltage and continuity information */
+  static_assert(sizeof(packed_tx_msg_t) == 15);
   if (m_fsm_enum == MOVING) {
     tx_payload->state = 0;
   } else if (m_fsm_enum == READY) {
@@ -70,11 +70,39 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   } else if (m_fsm_enum == TOUCHDOWN) {
     tx_payload->state = 6;
   }
+
   tx_payload->timestamp = ts / 100;
-  tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
-  tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
+
+  if (get_error_by_tag(CATS_ERR_NON_USER_CFG)) {
+    tx_payload->errors |= 0b00'00'01U;
+  }
+
+  if (get_error_by_tag(CATS_ERR_LOG_FULL)) {
+    tx_payload->errors |= 0b00'00'10U;
+  }
+
+  if (get_error_by_tag(CATS_ERR_FILTER_ACC) || get_error_by_tag(CATS_ERR_FILTER_HEIGHT)) {
+    tx_payload->errors |= 0b00'01'00U;
+  }
+
+  if (get_error_by_tag(CATS_ERR_TELEMETRY_HOT)) {
+    tx_payload->errors |= 0b00'10'00U;
+  }
+
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
+
+  tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
+  tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
+
+  tx_payload->voltage = battery_voltage_byte();
+
+  if (adc_get(ADC_PYRO1) > 500) {
+    tx_payload->pyro_continuity |= 0b01U;
+  }
+  if (adc_get(ADC_PYRO2) > 500) {
+    tx_payload->pyro_continuity |= 0b10U;
+  }
 }
 
 void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
@@ -108,8 +136,6 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
   gnss_data_t gnss_data = {};
   bool gnss_position_received = false;
 
-  packed_tx_msg_t tx_payload = {};
-
   uint32_t uart_timeout = osKernelGetTickCount();
 
   uint32_t tick_count = osKernelGetTickCount();
@@ -117,7 +143,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
   while (true) {
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
-
+    packed_tx_msg_t tx_payload = {};
     PackTxMessage(tick_count, &gnss_data, &tx_payload, m_task_state_estimation.GetEstimationOutput());
     SendTxPayload((uint8_t*)&tx_payload, 16);
 
@@ -227,7 +253,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   bool gnss_position_received = false;
 
   if (op_code == CMD_RX) {
-    packed_tx_msg_t rx_payload;
+    packed_tx_msg_t rx_payload{};
     memcpy(&rx_payload, buffer, length);
     ParseTxMessage(&rx_payload);
     // log_info("RX received");
@@ -246,7 +272,11 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
     gnss->time = (gnss_time_t){.hour = buffer[2], .min = buffer[1], .sec = buffer[0]};
     log_info("[GNSS time]: %02hu:%02hu:%02hu UTC", gnss->time.hour, gnss->time.min, gnss->time.sec);
   } else if (op_code == CMD_TEMP_INFO) {
-    memcpy(&amplifier_temperature, buffer, 4);
+    memcpy(const_cast<float32_t*>(&m_amplifier_temperature), buffer, 4);
+    if (m_amplifier_temperature > k_amplifier_hot_limit) {
+      add_error(CATS_ERR_TELEMETRY_HOT);
+    }
+    //    log_raw("Got temp %f", static_cast<double>(m_amplifier_temperature));
   } else {
     log_error("Unknown Op Code");
   }
@@ -285,7 +315,7 @@ void Telemetry::SendEnable() const noexcept {
 
 void Telemetry::SendDisable() const noexcept {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
-  out[0] = CMD_DISBALE;
+  out[0] = CMD_DISABLE;
   out[1] = 0;
   out[2] = crc8(out, 2);
 

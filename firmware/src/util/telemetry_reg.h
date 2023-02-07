@@ -37,7 +37,7 @@ enum transmission_mode_e {
 #define CMD_LINK_PHRASE 0x15
 
 #define CMD_ENABLE  0x20
-#define CMD_DISBALE 0x21
+#define CMD_DISABLE 0x21
 
 #define CMD_TX   0x30
 #define CMD_RX   0x31

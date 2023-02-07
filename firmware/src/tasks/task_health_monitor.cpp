@@ -35,8 +35,6 @@
 
 namespace task {
 
-static void check_high_current_channels();
-
 static void init_communication();
 
 /** Exported Function Definitions **/
@@ -44,7 +42,6 @@ static void init_communication();
 [[noreturn]] void HealthMonitor::Run() noexcept {
   // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
-  uint32_t pyro_check_timer = 0;
   uint32_t voltage_logging_timer = 0;
   battery_level_e old_level = BATTERY_OK;
 
@@ -100,12 +97,25 @@ static void init_communication();
 
     old_level = battery_level();
 
-    // Periodically check pyros channels as long as we are on the ground
-    if ((m_fsm_enum < THRUSTING) && (pyro_check_timer >= 200)) {
-      check_high_current_channels();
-      pyro_check_timer = 0;
-    } else {
-      ++pyro_check_timer;
+    /* Check Pyro settings */
+    if ((m_check_pyro_1 || m_check_pyro_2) && (m_fsm_enum < THRUSTING)) {
+      bool error_encountered = false;
+      if (m_check_pyro_1) {
+        if (adc_get(ADC_PYRO1) < 500) {
+          add_error(CATS_ERR_NO_PYRO);
+          error_encountered = true;
+        }
+      }
+      if (m_check_pyro_2) {
+        if (adc_get(ADC_PYRO2) < 500) {
+          add_error(CATS_ERR_NO_PYRO);
+          error_encountered = true;
+        }
+      }
+
+      if (!error_encountered) {
+        clear_error(CATS_ERR_NO_PYRO);
+      }
     }
 
     // Beep out ready buzzer
@@ -129,9 +139,7 @@ static void init_communication();
   }
 }
 
-/** Private Function Definitions **/
-static void check_high_current_channels() {
-  bool error_encountered = false;
+void HealthMonitor::DeterminePyroCheck() {
   // Loop over all events
   for (int ev_idx = 0; ev_idx < NUM_EVENTS; ev_idx++) {
     uint16_t nr_actions = cc_get_num_actions((cats_event_e)ev_idx);
@@ -139,20 +147,14 @@ static void check_high_current_channels() {
     if (nr_actions > 0) {
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
-        config_action_t action;
+        config_action_t action{};
         if (cc_get_action((cats_event_e)ev_idx, act_idx, &action) == true) {
           switch (action.action_idx) {
             case ACT_HIGH_CURRENT_ONE:
-              if (adc_get(ADC_PYRO1) < 500) {
-                add_error(CATS_ERR_NO_PYRO);
-                error_encountered = true;
-              }
+              m_check_pyro_1 = true;
               break;
             case ACT_HIGH_CURRENT_TWO:
-              if (adc_get(ADC_PYRO2) < 500) {
-                add_error(CATS_ERR_NO_PYRO);
-                error_encountered = true;
-              }
+              m_check_pyro_2 = true;
               break;
             default:
               break;
@@ -161,7 +163,6 @@ static void check_high_current_channels() {
       }
     }
   }
-  if (error_encountered == false) clear_error(CATS_ERR_NO_PYRO);
 }
 
 static void init_communication() {
