@@ -23,7 +23,7 @@
 
 /** USB STREAM GROUP **/
 #define USB_OUT_BUF_SIZE 512
-#define USB_IN_BUF_SIZE  256
+#define USB_IN_BUF_SIZE  1024
 
 #define USB_TIMEOUT_MSEC 10
 
