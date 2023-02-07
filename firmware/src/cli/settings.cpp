@@ -115,8 +115,8 @@ const cli_value_t value_table[] = {
      offsetof(cats_config_t, action_array[EV_CUSTOM_2])},
 
     // Servo position
-    {"servo1_init_pos", VAR_INT16, {.minmax_unsigned = {0, 180}}, offsetof(cats_config_t, initial_servo_position[0])},
-    {"servo2_init_pos", VAR_INT16, {.minmax_unsigned = {0, 180}}, offsetof(cats_config_t, initial_servo_position[1])},
+    {"servo1_init_pos", VAR_INT16, {.minmax_unsigned = {0, 1000}}, offsetof(cats_config_t, initial_servo_position[0])},
+    {"servo2_init_pos", VAR_INT16, {.minmax_unsigned = {0, 1000}}, offsetof(cats_config_t, initial_servo_position[1])},
 
     {"tele_link_phrase",
      VAR_UINT8 | MODE_STRING,
