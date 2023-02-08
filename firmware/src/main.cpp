@@ -25,7 +25,6 @@
 
 #include "config/globals.h"
 #include "util/battery.h"
-#include "util/buzzer_handler.h"
 #include "util/log.h"
 #include "util/task_util.h"
 
@@ -33,10 +32,11 @@
 #include "init/system.h"
 
 #include "drivers/gpio.h"
+#include "drivers/pwm.h"
 #include "sensors/lsm6dso32.h"
 #include "sensors/ms5607.h"
-#include "drivers/pwm.h"
 
+#include "tasks/task_buzzer.h"
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_health_monitor.h"
 #include "tasks/task_peripherals.h"
@@ -46,8 +46,8 @@
 #include "tasks/task_state_est.h"
 #include "tasks/task_telemetry.h"
 
-extern drivers::Servo* global_servo1;
-extern drivers::Servo* global_servo2;
+extern driver::Servo* global_servo1;
+extern driver::Servo* global_servo2;
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -83,17 +83,17 @@ int main(void) {
   static driver::Spi spi1(&hspi1);
 
   // Build the PWM channels
-  static drivers::Pwm buzzerPwm(BUZZER_TIMER_HANDLE, BUZZER_TIMER_CHANNEL);
+  static driver::Pwm pwm_buzzer(BUZZER_TIMER_HANDLE, BUZZER_TIMER_CHANNEL);
 
-  static drivers::Pwm servo1Pwm(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_1);
-  static drivers::Pwm servo2Pwm(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_2);
+  static driver::Pwm pwm_servo1(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_1);
+  static driver::Pwm pwm_servo2(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_2);
 
   // Build the servos
-  static drivers::Servo servo1(servo1Pwm, 50U);
-  static drivers::Servo servo2(servo2Pwm, 50U);
+  static driver::Servo servo1(pwm_servo1, 50U);
+  static driver::Servo servo2(pwm_servo2, 50U);
 
   // Build the buzzer
-  static drivers::Buzzer buzzer(buzzerPwm);
+  static driver::Buzzer buzzer(pwm_buzzer);
 
   // Build the sensors
   static sensor::Lsm6dso32 imu(spi1, imu_cs);
@@ -117,6 +117,9 @@ int main(void) {
   servo1.SetPosition(global_cats_config.initial_servo_position[0]);
   servo2.SetPosition(global_cats_config.initial_servo_position[1]);
 
+  // Set the buzzer to the volume set in the config
+  buzzer.SetVolume(100U);
+
   // Start the pwm channels
   servo1.Start();
   servo2.Start();
@@ -138,6 +141,8 @@ int main(void) {
   rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
   event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
 
+  static const task::Buzzer& task_buzzer = task::Buzzer::Start(buzzer);
+
   task::Recorder::Start();
 
   static const task::SensorRead& task_sensor_read = task::SensorRead::Start(&imu, &barometer);
@@ -150,13 +155,12 @@ int main(void) {
 
   task::Peripherals::Start();
 
-  task::HealthMonitor::Start();
+  task::HealthMonitor::Start(task_buzzer);
 
   task::Telemetry::Start(task_state_estimation);
 
   log_info("Task initialization complete.");
 
-  buzzer_queue_status(CATS_BUZZ_BOOTUP);
   log_disable();
 
   rtos_started = true;

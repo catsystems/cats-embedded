@@ -25,15 +25,6 @@
 
 void init_storage();
 
-static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 3200);
-  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
-    buzzer_set_volume(&BUZZER, 0);
-  } else {
-    buzzer_set_volume(&BUZZER, 30);
-  }
-}
-
 template <typename TImu, typename TBaro>
 void init_devices(TImu& imu, TBaro& barometer) {
   // Initialize the IMU
@@ -58,7 +49,4 @@ void init_devices(TImu& imu, TBaro& barometer) {
       break;
     }
   }
-
-  /* BUZZER */
-  init_buzzer();
 }
