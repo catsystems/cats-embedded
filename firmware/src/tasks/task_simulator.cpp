@@ -27,8 +27,7 @@
 
 /** Private Constants **/
 
-int32_t rand_bounds(int32_t lower_b, int32_t upper_b);
-void init_simulation_data(cats_sim_choice_e sim_choice);
+float32_t rand_bounds(int32_t lower_b, int32_t upper_b);
 
 /** Exported Function Definitions **/
 
@@ -129,25 +128,43 @@ void Simulator::ComputeSimValues(float32_t time) {
     switch (m_sim_config.sim_axis) {
       case 0:
         for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.y = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.z = (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.x =
+              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
+          sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
         break;
       case 1:
         for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.y = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.z = (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          sim_imu_data[i].acc.y =
+              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
+          sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
         break;
       case 2:
         for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.y = (int16_t)rand_bounds(-10, 10);
-          sim_imu_data[i].acc.z = (int16_t)(m_current_acc * 1024.0F) + (int16_t)rand_bounds(-10, 10);
+          sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          sim_imu_data[i].acc.z =
+              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
         }
         break;
+    }
+
+    /* When the Simulation starts, add gyro action to go back to moving */
+    if (m_reset_time > ((float32_t)(osKernelGetTickCount() - sim_start)) / 1000.0F) {
+      for (int i = 0; i < NUM_IMU; i++) {
+        sim_imu_data[i].gyro.x = 600;
+        sim_imu_data[i].gyro.y = 600;
+        sim_imu_data[i].gyro.z = 600;
+      }
+    } else {
+      for (int i = 0; i < NUM_IMU; i++) {
+        sim_imu_data[i].gyro.x = 0;
+        sim_imu_data[i].gyro.y = 0;
+        sim_imu_data[i].gyro.z = 0;
+      }
     }
 
     /* Write into global imu sim variable */
@@ -157,7 +174,7 @@ void Simulator::ComputeSimValues(float32_t time) {
 
     /* Write into global pressure sim variable */
     for (int i = 0; i < NUM_BARO; i++) {
-      global_baro_sim[i].pressure = m_current_press + rand_bounds(-25, 25);
+      global_baro_sim[i].pressure = m_current_press + rand_bounds(-m_press_noise, m_press_noise);
     }
 
     if (new_enum == TOUCHDOWN) {
@@ -176,7 +193,10 @@ void Simulator::ComputeSimValues(float32_t time) {
 
 /** Private Function Definitions **/
 
-int32_t rand_bounds(int32_t lower_b, int32_t upper_b) { return rand() % (upper_b - lower_b) - lower_b; }
+float32_t rand_bounds(int32_t lower_b, int32_t upper_b) {
+  float32_t var = (static_cast<float32_t>(rand() % 1000)) / 1000;
+  return var * (upper_b - lower_b) - lower_b;
+}
 
 void start_simulation(char *args) {
   if (simulation_started) {
@@ -184,20 +204,11 @@ void start_simulation(char *args) {
     return;
   }
 
-  cats_sim_config_t sim_config{.sim_choice = SIM_300M, .noise_seed = 1, .sim_axis = 0};
+  cats_sim_config_t sim_config{.noise_seed = 1, .sim_axis = 0};
 
   char *token = strtok(args, " ");
 
   while (token != nullptr) {
-    if (strcmp(token, "--hop") == 0) {
-      sim_config.sim_choice = SIM_HOP;
-    }
-    if (strcmp(token, "--300m") == 0) {
-      sim_config.sim_choice = SIM_300M;
-    }
-    if (strcmp(token, "--PML") == 0) {
-      sim_config.sim_choice = SIM_PML;
-    }
     if (strcmp(token, "--x") == 0) {
       sim_config.sim_axis = 0;
     }
@@ -210,16 +221,16 @@ void start_simulation(char *args) {
     if (strcmp(token, "--ns1") == 0) {
       sim_config.noise_seed = 1;
     }
-    if (strcmp(token, "--ns10") == 0) {
-      sim_config.noise_seed = 10;
+    if (strcmp(token, "--ns2") == 0) {
+      sim_config.noise_seed = 2;
     }
-    if (strcmp(token, "--ns69") == 0) {
-      sim_config.noise_seed = 69;
+    if (strcmp(token, "--ns3") == 0) {
+      sim_config.noise_seed = 3;
     }
     token = strtok(nullptr, " ");
   }
   simulation_started = true;
-  log_info("Starting simulation, enable log (Ctrl + L) to see simulation outputs...");
+  log_info("Starting Simulation");
 
   task::Simulator::Start(sim_config);
 }

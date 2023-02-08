@@ -45,11 +45,17 @@ class Simulator final : public Task<Simulator, 512> {
     float32_t end_time = 0.0F;
   };
 
-  float32_t m_idle_time = 20.0F;
-  sim_coeff_t m_sim_coeff = {};
-  float32_t m_current_acc = 0.0F;
-  float32_t m_current_press = 0.0F;
+  const float32_t m_idle_time = 20.0F;  // [s]
+  const float32_t m_reset_time = 3.0F;  // [s]
+  const int32_t m_acc_noise = 0.05F;    // [g]
+  const float32_t m_acc_factor = 1024.0F;
+  const int32_t m_press_noise = 50.0F;  // [Pa]
+
+  float32_t m_current_acc = 0.0F;    // [g]
+  float32_t m_current_press = 0.0F;  // [Pa]
+
   cats_sim_config_t m_sim_config;
+  sim_coeff_t m_sim_coeff = {};
 };
 
 }  // namespace task
