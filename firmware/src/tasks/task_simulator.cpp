@@ -27,7 +27,7 @@
 
 /** Private Constants **/
 
-float32_t rand_bounds(int32_t lower_b, int32_t upper_b);
+float32_t rand_bounds(float32_t lower_b, float32_t upper_b);
 
 /** Exported Function Definitions **/
 
@@ -55,7 +55,7 @@ void Simulator::SetCoefficients() {
          sizeof(m_sim_coeff.acceleration_coeff_coasting));
   memcpy(m_sim_coeff.pressure_coeff, pressure_coeff, sizeof(m_sim_coeff.pressure_coeff));
   m_sim_coeff.switch_time = 1.1F;
-  m_sim_coeff.end_time = 50.0F;
+  m_sim_coeff.end_time = 45.0F;
 }
 
 void Simulator::ComputeSimValues(float32_t time) {
@@ -129,7 +129,7 @@ void Simulator::ComputeSimValues(float32_t time) {
       case 0:
         for (int i = 0; i < NUM_IMU; i++) {
           sim_imu_data[i].acc.x =
-              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
+              static_cast<int16_t>((m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
           sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
@@ -138,7 +138,7 @@ void Simulator::ComputeSimValues(float32_t time) {
         for (int i = 0; i < NUM_IMU; i++) {
           sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           sim_imu_data[i].acc.y =
-              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
+              static_cast<int16_t>((m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
           sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
         break;
@@ -147,7 +147,7 @@ void Simulator::ComputeSimValues(float32_t time) {
           sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           sim_imu_data[i].acc.z =
-              static_cast<int16_t>(m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise) * m_acc_factor);
+              static_cast<int16_t>((m_current_acc + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
         }
         break;
     }
@@ -193,7 +193,7 @@ void Simulator::ComputeSimValues(float32_t time) {
 
 /** Private Function Definitions **/
 
-float32_t rand_bounds(int32_t lower_b, int32_t upper_b) {
+float32_t rand_bounds(float32_t lower_b, float32_t upper_b) {
   float32_t var = (static_cast<float32_t>(rand() % 1000)) / 1000;
   return var * (upper_b - lower_b) - lower_b;
 }
