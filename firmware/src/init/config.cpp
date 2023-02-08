@@ -38,7 +38,6 @@ void load_and_set_config() {
   HAL_Delay(100);
   create_event_map();
   init_timers();
-
 }
 
 static void create_event_map() {

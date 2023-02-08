@@ -24,7 +24,6 @@
 #include "usb_device.h"
 #include "util/actions.h"
 #include "util/battery.h"
-#include "util/buzzer_handler.h"
 #include "util/log.h"
 #include "util/task_util.h"
 
@@ -48,6 +47,8 @@ static void init_communication();
   uint32_t pyro_check_timer = 0;
   uint32_t voltage_logging_timer = 0;
   battery_level_e old_level = BATTERY_OK;
+
+  m_task_buzzer.Beep(Buzzer::BeepCode::kBootup);
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
@@ -109,18 +110,19 @@ static void init_communication();
 
     // Beep out ready buzzer
     if ((m_fsm_enum == READY) && (ready_timer >= 500)) {
-      buzzer_queue_status(CATS_BUZZ_READY);
+      m_task_buzzer.Beep(Buzzer::BeepCode::kReady);
       ready_timer = 0;
     } else if (m_fsm_enum == READY) {
       ++ready_timer;
     }
 
     // Beep out transitions from moving to ready and back
-    if (m_fsm_enum == READY && fsm_updated) buzzer_queue_status(CATS_BUZZ_CHANGED_READY);
-    if (m_fsm_enum == MOVING && fsm_updated) buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
-
-    // Update the buzzer
-    buzzer_handler_update();
+    if (m_fsm_enum == READY && fsm_updated) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedReady);
+    }
+    if (m_fsm_enum == MOVING && fsm_updated && tick_count > 100U) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedMoving);
+    }
 
     tick_count += tick_update;
     osDelayUntil(tick_count);

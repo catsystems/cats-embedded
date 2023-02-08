@@ -33,8 +33,6 @@
 
 /** Device Handles **/
 
-extern BUZ BUZZER;
-
 /** State Estimation **/
 
 extern baro_data_t global_baro_sim[NUM_BARO];

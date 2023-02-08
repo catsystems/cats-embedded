@@ -19,11 +19,18 @@
 #pragma once
 
 #include "task.h"
+#include "task_buzzer.h"
 
 namespace task {
 
 class HealthMonitor final : public Task<HealthMonitor, 256> {
+ public:
+  explicit HealthMonitor(const Buzzer& task_buzzer) : m_task_buzzer(task_buzzer) {}
+
+ private:
   [[noreturn]] void Run() noexcept override;
+
+  const Buzzer& m_task_buzzer;
 };
 
 }  // namespace task
