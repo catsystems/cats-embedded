@@ -35,6 +35,7 @@
 #include "drivers/gpio.h"
 #include "sensors/lsm6dso32.h"
 #include "sensors/ms5607.h"
+#include "drivers/pwm.h"
 
 #include "tasks/task_flight_fsm.h"
 #include "tasks/task_health_monitor.h"
@@ -44,6 +45,9 @@
 #include "tasks/task_sensor_read.h"
 #include "tasks/task_state_est.h"
 #include "tasks/task_telemetry.h"
+
+extern drivers::Servo* global_servo1;
+extern drivers::Servo* global_servo2;
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -78,12 +82,27 @@ int main(void) {
   // Build the SPI driver
   static driver::Spi spi1(&hspi1);
 
+  // Build the PWM channels
+  static drivers::Pwm buzzerPwm(BUZZER_TIMER_HANDLE, BUZZER_TIMER_CHANNEL);
+
+  static drivers::Pwm servo1Pwm(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_1);
+  static drivers::Pwm servo2Pwm(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_2);
+
+  // Build the servos
+  static drivers::Servo servo1(servo1Pwm, 50U);
+  static drivers::Servo servo2(servo2Pwm, 50U);
+
+  // Build the buzzer
+  static drivers::Buzzer buzzer(buzzerPwm);
+
   // Build the sensors
   static sensor::Lsm6dso32 imu(spi1, imu_cs);
   static sensor::Ms5607 barometer(spi1, barometer_cs);
 
+  global_servo1 = &servo1;
+  global_servo2 = &servo2;
+
   init_logging();
-  HAL_Delay(100);
   log_info("System initialization complete.");
 
   HAL_Delay(100);
@@ -93,6 +112,14 @@ int main(void) {
   HAL_Delay(100);
   load_and_set_config();
   log_info("Config load complete.");
+
+  // After loading the config we can set the servos to the initial position
+  servo1.SetPosition(global_cats_config.initial_servo_position[0]);
+  servo2.SetPosition(global_cats_config.initial_servo_position[1]);
+
+  // Start the pwm channels
+  servo1.Start();
+  servo2.Start();
 
   HAL_Delay(100);
   init_devices(imu, barometer);

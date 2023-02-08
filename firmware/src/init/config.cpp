@@ -39,12 +39,6 @@ void load_and_set_config() {
   create_event_map();
   init_timers();
 
-  HAL_Delay(100);
-  servo_set_position(&SERVO1, global_cats_config.initial_servo_position[0]);
-  servo_set_position(&SERVO2, global_cats_config.initial_servo_position[1]);
-
-  servo_start(&SERVO1);
-  servo_start(&SERVO2);
 }
 
 static void create_event_map() {
