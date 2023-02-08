@@ -24,6 +24,9 @@
 #include "flash/lfs_custom.h"
 #include "target.h"
 
+extern driver::Servo* global_servo1;
+extern driver::Servo* global_servo2;
+
 bool no_action_function(__attribute__((unused)) int16_t bummer);
 
 bool os_delay(int16_t ticks);
@@ -72,7 +75,7 @@ bool no_action_function(__attribute__((unused)) int16_t bummer) {
  * delays. */
 bool os_delay(int16_t ticks) {
   if (ticks > 0) {
-    osDelay((uint32_t)ticks);
+    osDelay(static_cast<uint32_t>(ticks));
     return true;
   }
   return false;
@@ -164,7 +167,7 @@ bool low_level_channel_two(int16_t state) {
 // Same as servo 1 but digital output
 bool low_level_channel_three(int16_t state) {
   if (state == 0 || state == 1) {
-    servo_set_onoff(&SERVO1, state);
+    // servo_set_onoff(&SERVO1, state);
     return true;
   }
   return false;
@@ -173,7 +176,7 @@ bool low_level_channel_three(int16_t state) {
 // Same as servo 2 but digital output
 bool low_level_channel_four(int16_t state) {
   if (state == 0 || state == 1) {
-    servo_set_onoff(&SERVO2, (bool)state);
+    // servo_set_onoff(&SERVO2, (bool)state);
     return true;
   }
   return false;
@@ -181,37 +184,31 @@ bool low_level_channel_four(int16_t state) {
 
 // Servo Outputs
 
-bool servo_channel_one(int16_t angle) {
-  if (angle >= 0 && angle <= 180) {
-    servo_set_position(&SERVO1, angle);
+bool servo_channel_one(int16_t position) {
+  if (global_servo1 == nullptr) {
+    return false;
+  }
+  if (position >= 0 && position <= 1000) {
+    global_servo1->SetPosition(position);
     return true;
   }
   return false;
 }
 
-bool servo_channel_two(int16_t angle) {
-  if (angle >= 0 && angle <= 180) {
-    servo_set_position(&SERVO2, angle);
+bool servo_channel_two(int16_t position) {
+  if (global_servo2 == nullptr) {
+    return false;
+  }
+  if (position >= 0 && position <= 1000) {
+    global_servo2->SetPosition(position);
     return true;
   }
   return false;
 }
 
-bool servo_channel_three(int16_t angle) {
-  if (angle >= 0 && angle <= 180) {
-    // servo_set_position(&SERVO1, angle);
-    return true;
-  }
-  return false;
-}
+bool servo_channel_three(int16_t position) { return false; }
 
-bool servo_channel_four(int16_t angle) {
-  if (angle >= 0 && angle <= 180) {
-    // servo_set_position(&SERVO1, angle);
-    return true;
-  }
-  return false;
-}
+bool servo_channel_four(int16_t position) { return false; }
 
 /* TODO check if mutex should be used here */
 bool set_recorder_state(int16_t state) {

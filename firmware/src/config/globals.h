@@ -35,9 +35,6 @@
 
 extern BUZ BUZZER;
 
-extern SERVO SERVO1;
-extern SERVO SERVO2;
-
 /** State Estimation **/
 
 extern baro_data_t global_baro_sim[NUM_BARO];

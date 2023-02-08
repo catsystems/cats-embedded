@@ -26,16 +26,9 @@
 
 /** Device Handles **/
 
-BUZ BUZZER = {.timer = &BUZZER_TIMER_HANDLE,
-              .channel = BUZZER_TIMER_CHANNEL,
-              .arr = 4000,
-              .started = 0,
-              .start = 0,
-              .volume = 100};
-
-SERVO SERVO1 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_1, .pulse = 15000, .started = 0};
-
-SERVO SERVO2 = {.timer = &SERVO_TIMER_HANDLE, .channel = SERVO_TIMER_CHANNEL_2, .pulse = 15000, .started = 0};
+// We need these for now, but will eventually get rid of them by replacing the actions with a class
+driver::Servo* global_servo1 = nullptr;
+driver::Servo* global_servo2 = nullptr;
 
 /** State Estimation **/
 
