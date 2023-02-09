@@ -130,7 +130,7 @@ int main(void) {
 
   HAL_Delay(100);
   adc_init();
-  battery_monitor_init();
+  battery_monitor_init(global_cats_config.battery_type);
   log_info("Battery monitor initialization complete.");
 
   /* Init scheduler */
