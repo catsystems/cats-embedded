@@ -77,9 +77,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
 }
 
-void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
-  log_info("Data Received.");
-}
+void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
 
 [[noreturn]] void Telemetry::Run() noexcept {
   /* Give the telemetry hardware some time to initialize */
