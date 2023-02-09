@@ -77,6 +77,10 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->errors |= 0b00'10'00U;
   }
 
+  if (get_error_by_tag(CATS_ERR_NO_PYRO)) {
+    tx_payload->errors |= 0b01'00'00U;
+  }
+
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
 
