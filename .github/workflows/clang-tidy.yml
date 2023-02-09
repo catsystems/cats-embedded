@@ -39,9 +39,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: file
+        tidy-checks: ''
         lines-changed-only: true
         repo-root: ./firmware
-        version: 12
+        version: 15
         ignore: lib|build
         database: build/compile_commands.json
      
