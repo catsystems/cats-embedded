@@ -23,7 +23,7 @@
 // clang-format off
  enum cats_error_e: uint32_t {
   CATS_ERR_OK =             0,
-  CATS_ERR_NO_CONFIG =      1 << 0,   // 0x01
+  CATS_ERR_NON_USER_CFG =   1 << 0,   // 0x01
   CATS_ERR_NO_PYRO =        1 << 1,   // 0x02
   CATS_ERR_LOG_FULL =       1 << 2,   // 0x04
   CATS_ERR_BAT_LOW =        1 << 3,   // 0x08
@@ -39,7 +39,7 @@
   CATS_ERR_FILTER_ACC =     1 << 13,   // 0x2000
   CATS_ERR_FILTER_HEIGHT =  1 << 14,   // 0x4000
   CATS_ERR_HARD_FAULT =     1 << 15,   // 0x8000
-  CATS_ERR_NON_USER_CFG =   1 << 16,   // 0x10000
+  CATS_ERR_TELEMETRY_HOT =  1 << 16,   // 0x10000
 };
 // clang-format on
 

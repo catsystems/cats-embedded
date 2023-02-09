@@ -32,24 +32,22 @@ class Telemetry final : public Task<Telemetry, 1024> {
 
   struct packed_tx_msg_t {
     uint8_t state : 3;
-    uint8_t errors : 4;
     uint16_t timestamp : 15;
+    uint8_t errors : 6;
     int32_t lat : 22;
     int32_t lon : 22;
     int32_t altitude : 17;
     int16_t velocity : 10;
     uint16_t voltage : 8;
-    uint16_t continuity : 3;
+    uint16_t pyro_continuity : 2;
     // fill up to 16 bytes
     uint8_t : 0;  // sent
     uint8_t d1;   // dummy
-    uint8_t d2;   // dummy
-    uint8_t d3;   // dummy
   } __attribute__((packed));
 
   void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                      estimation_output_t estimation_data) const noexcept;
-  void ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept;
+  void ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept;
   bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept;
   void SendLinkPhrase(uint8_t* phrase, uint32_t length) const noexcept;
   void SendSettings(uint8_t command, uint8_t value) const noexcept;
@@ -59,6 +57,10 @@ class Telemetry final : public Task<Telemetry, 1024> {
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
 
   const StateEstimation& m_task_state_estimation;
+
+  float32_t m_amplifier_temperature{0.0F};
+
+  static constexpr float32_t k_amplifier_hot_limit{60.F};
 };
 
 }  // namespace task

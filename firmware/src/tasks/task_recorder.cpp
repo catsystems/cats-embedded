@@ -137,8 +137,14 @@ namespace task {
               break;
             }
           }
-          // TODO: Handle failed lfs_file_write
-          lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+
+          const int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+
+          /* Writing less than REC_BUFFER_LEN bytes indicates that there is not enough space left on the flash chip. */
+          if ((sz > 0) && (static_cast<uint32_t>(sz) < static_cast<lfs_size_t>(REC_BUFFER_LEN))) {
+            add_error(CATS_ERR_LOG_FULL);
+          }
+
           ++sync_counter;
           /* Check for a new command */
           if ((sync_counter % 32) == 0) {

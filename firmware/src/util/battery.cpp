@@ -68,6 +68,15 @@ float32_t battery_voltage() {
 /* Returns battery voltage as uint16, used for recording */
 uint16_t battery_voltage_short() { return static_cast<uint16_t>(round(battery_voltage() * 1000)); }
 
+/* Returns battery voltage as uint8, used for telemetry */
+uint8_t battery_voltage_byte() {
+  const float32_t voltage_f = round(battery_voltage() * 10);
+  if (voltage_f >= 255.0F) {
+    return 255U;
+  }
+  return static_cast<uint8_t>(voltage_f);
+}
+
 float32_t battery_cell_voltage() { return battery_voltage() / static_cast<float32_t>(cell_count); }
 
 battery_level_e battery_level() {
