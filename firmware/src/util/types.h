@@ -216,6 +216,8 @@ struct cats_timer_t {
   uint32_t timer_duration_ticks;
 };
 
+enum battery_type_e { LI_ION = 0, LI_PO, ALKALINE };
+
 /** CONVERSION FUNCTIONS **/
 
 inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) { return (src_high << 8 | src_low); }
