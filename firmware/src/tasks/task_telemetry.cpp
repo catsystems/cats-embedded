@@ -55,20 +55,8 @@ enum state_e {
 void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                               estimation_output_t estimation_data) const noexcept {
   static_assert(sizeof(packed_tx_msg_t) == 15);
-  if (m_fsm_enum == MOVING) {
-    tx_payload->state = 0;
-  } else if (m_fsm_enum == READY) {
-    tx_payload->state = 1;
-  } else if (m_fsm_enum == THRUSTING) {
-    tx_payload->state = 2;
-  } else if (m_fsm_enum == COASTING) {
-    tx_payload->state = 3;
-  } else if (m_fsm_enum == DROGUE) {
-    tx_payload->state = 4;
-  } else if (m_fsm_enum == MAIN) {
-    tx_payload->state = 5;
-  } else if (m_fsm_enum == TOUCHDOWN) {
-    tx_payload->state = 6;
+  if (m_fsm_enum > INVALID) {
+    tx_payload->state = m_fsm_enum - 1;
   }
 
   tx_payload->timestamp = ts / 100;
@@ -105,7 +93,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   }
 }
 
-void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
+void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
 
 [[noreturn]] void Telemetry::Run() noexcept {
   /* Give the telemetry hardware some time to initialize */
@@ -145,7 +133,7 @@ void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
     bool fsm_updated = GetNewFsmEnum();
     packed_tx_msg_t tx_payload = {};
     PackTxMessage(tick_count, &gnss_data, &tx_payload, m_task_state_estimation.GetEstimationOutput());
-    SendTxPayload((uint8_t*)&tx_payload, 16);
+    SendTxPayload((uint8_t*)&tx_payload, sizeof(packed_tx_msg_t));
 
     if ((tick_count - uart_timeout) > 60000) {
       uart_timeout = tick_count;
@@ -255,7 +243,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   if (op_code == CMD_RX) {
     packed_tx_msg_t rx_payload{};
     memcpy(&rx_payload, buffer, length);
-    ParseTxMessage(&rx_payload);
+    ParseRxMessage(&rx_payload);
     // log_info("RX received");
   } else if (op_code == CMD_INFO) {
     // log_info("Link Info received");
@@ -323,7 +311,7 @@ void Telemetry::SendDisable() const noexcept {
 }
 
 void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) const noexcept {
-  uint8_t out[19];  // 1 OP + 1 LEN + 16 DATA + 1 CRC
+  uint8_t out[18];  // 1 OP + 1 LEN + 15 DATA + 1 CRC
   out[0] = CMD_TX;
   out[1] = (uint8_t)length;
   memcpy(&out[2], payload, length);
