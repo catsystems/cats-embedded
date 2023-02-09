@@ -70,7 +70,9 @@ static const uint32_t crc32_tab[] = {
 
 uint8_t crc8(const uint8_t *buf, uint32_t size) {
   uint8_t crc = 0;
-  for (uint32_t i = 0; i < size; i++) crc = crc8_tab[crc ^ *buf++];
+  for (uint32_t i = 0; i < size; i++) {
+    crc = crc8_tab[crc ^ *buf++];
+  }
 
   return crc;
 }

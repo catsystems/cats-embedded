@@ -99,14 +99,13 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 }
 
 void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
-
   /* Check if Correct Header */
-  if(rx_payload->header != 0x72){
+  if (rx_payload->header != 0x72) {
     return;
   }
 
   /* Check if the linkphrase matches */
-  if(rx_payload->passcode != m_uplink_phrase_crc){
+  if (rx_payload->passcode != m_uplink_phrase_crc) {
     return;
   }
 
@@ -128,11 +127,10 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
   osDelay(100);
 
   /* if we are in the testing mode, set the receiver to bidirectional mode */
-  if(testing_enabled){
+  if (testing_enabled) {
     SendSettings(CMD_MODE, BIDIRECTIONAL);
     m_uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.up_link_phrase, 8);
-  }
-  else{
+  } else {
     SendSettings(CMD_MODE, UNIDIRECTIONAL);
   }
   osDelay(100);

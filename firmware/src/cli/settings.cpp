@@ -142,7 +142,8 @@ const cli_value_t value_table[] = {
     {"testing_enabled",
      VAR_UINT8 | MODE_LOOKUP,
      {.lookup = {TABLE_POWER}},
-     offsetof(cats_config_t, enable_testing_mode)},};
+     offsetof(cats_config_t, enable_testing_mode)},
+};
 
 const uint16_t value_table_entry_count = ARRAYLEN(value_table);
 
