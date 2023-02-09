@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <array>
 #include "cmsis_os.h"
 #include "config/globals.h"
 

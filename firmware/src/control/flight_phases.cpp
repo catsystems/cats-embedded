@@ -20,8 +20,7 @@
 #include "config/cats_config.h"
 #include "tasks/task_peripherals.h"
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data,
-                               bool ready_transition_allowed);
+static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data);
 
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_t height_AGL,
                               const control_settings_t *settings);
@@ -39,14 +38,14 @@ static void clear_fsm_memory(flight_fsm_t *fsm_state);
 static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigger, flight_fsm_t *fsm_state);
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
-                        float32_t height_AGL, bool ready_transition_allowed, const control_settings_t *settings) {
+                        float32_t height_AGL, const control_settings_t *settings) {
   /* Save old FSM State */
   flight_fsm_t old_fsm_state = *fsm_state;
 
   /* Check FSM State */
   switch (fsm_state->flight_state) {
     case MOVING:
-      check_moving_phase(fsm_state, acc_data, gyro_data, ready_transition_allowed);
+      check_moving_phase(fsm_state, acc_data, gyro_data);
       break;
     case READY:
       check_ready_phase(fsm_state, acc_data, height_AGL, settings);
@@ -76,8 +75,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_da
   }
 }
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data,
-                               bool ready_transition_allowed) {
+static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data) {
   /* Check if the IMU moved between two timesteps */
   /* Add an error bound as the IMU is noisy which is accepted */
   if ((fabsf(fsm_state->old_acc_data.x - acc_data.x) < ALLOWED_ACC_ERROR) &&
@@ -96,7 +94,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t 
   fsm_state->old_gyro_data = gyro_data;
 
   /* Check if we reached the threshold */
-  if ((fsm_state->memory[0] > TIME_THRESHOLD_MOV_TO_READY) && ready_transition_allowed) {
+  if ((fsm_state->memory[0] > TIME_THRESHOLD_MOV_TO_READY)) {
     change_state_to(READY, EV_READY, fsm_state);
   }
 }

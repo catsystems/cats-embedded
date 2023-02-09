@@ -40,8 +40,6 @@ extern imu_data_t global_imu_sim[NUM_BARO];
 
 extern osEventFlagsId_t fsm_flag_id;
 
-extern bool global_arming_bool;
-
 /** Timers **/
 extern cats_timer_t ev_timers[NUM_TIMERS];
 

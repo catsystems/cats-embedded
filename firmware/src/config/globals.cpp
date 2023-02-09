@@ -37,8 +37,6 @@ imu_data_t global_imu_sim[NUM_BARO] = {};
 
 osEventFlagsId_t fsm_flag_id;
 
-bool global_arming_bool = true;
-
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};
 

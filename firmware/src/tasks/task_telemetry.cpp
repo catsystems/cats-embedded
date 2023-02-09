@@ -71,18 +71,17 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->state = 6;
   }
   tx_payload->timestamp = ts / 100;
-  tx_payload->altitude = (int32_t)estimation_data.height;
-  tx_payload->velocity = (int16_t)estimation_data.velocity;
-  tx_payload->lat = (int32_t)(gnss->position.lat * 10000);
-  tx_payload->lon = (int32_t)(gnss->position.lon * 10000);
+  tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
+  tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
+  tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
+  tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
 }
 
 void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
   if (rx_payload->d1 == 0xAA && rx_payload->d2 == 0xBB && rx_payload->d3 == 0xCC) {
-    global_arming_bool = true;
     log_info("ARM");
   } else {
-    global_arming_bool = false;
+    log_info("DISARM");
   }
 }
 
