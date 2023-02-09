@@ -32,7 +32,7 @@ class Simulator final : public Task<Simulator, 512> {
  private:
   [[noreturn]] void Run() noexcept override;
 
-  void SetCoefficients();
+  void SetCoefficients(int32_t sim_decision);
   void ComputeSimValues(float32_t time);
 
 #define POLYNOM_SIZE 16
