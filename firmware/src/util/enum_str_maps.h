@@ -22,7 +22,7 @@
 
 extern const char *const fsm_map[8];
 extern const char *const event_map[9];
-extern const char *const action_map[17];
+extern const char *const action_map[8];
 extern const char *const on_off_map[2];
 
 extern char *recorder_speed_map[NUM_REC_SPEEDS];
