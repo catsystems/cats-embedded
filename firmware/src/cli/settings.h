@@ -23,7 +23,7 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
-enum lookup_table_index_e { TABLE_EVENTS = 0, TABLE_ACTIONS, TABLE_POWER, TABLE_SPEEDS };
+enum lookup_table_index_e { TABLE_EVENTS = 0, TABLE_ACTIONS, TABLE_POWER, TABLE_SPEEDS, TABLE_BATTERY };
 
 struct lookup_table_entry_t {
   const char *const *values;

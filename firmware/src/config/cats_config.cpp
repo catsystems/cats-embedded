@@ -56,6 +56,7 @@ const cats_config_t DEFAULT_CONFIG = {
             .main_altitude = 200,
         },
     .buzzer_volume = 100U,
+    .battery_type = LI_ION,
     .rec_speed_idx = 0,
     /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
     .is_set_by_user = true};
