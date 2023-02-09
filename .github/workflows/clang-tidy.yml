@@ -39,20 +39,20 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: file
-        tidy-checks: ''
+     #   tidy-checks: ''
         lines-changed-only: true
         repo-root: ./firmware
         version: 15
         ignore: lib|build
         database: build/compile_commands.json
      
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        # Artifact name
-        name: build-artifacts
-        path: ./firmware/build/**
-        if-no-files-found: error
-        retention-days: 90
+    # - name: Upload Artifacts
+    #  uses: actions/upload-artifact@v3
+    #  with:
+    #    # Artifact name
+    #    name: build-artifacts
+    #    path: ./firmware/build/**
+    #    if-no-files-found: error
+    #    retention-days: 90
         
 
