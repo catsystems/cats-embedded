@@ -127,8 +127,6 @@ extern sens_info_t acc_info[NUM_IMU];
 extern sens_info_t gyro_info[NUM_IMU];
 extern sens_info_t baro_info[NUM_BARO];
 
-#define USE_PCHANNEL_SAFETY_LOCK
-
 #ifdef __cplusplus
 extern "C" {
 #endif

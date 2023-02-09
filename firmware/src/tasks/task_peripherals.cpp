@@ -60,7 +60,6 @@ namespace task {
           }
         }
 
-#ifdef USE_PCHANNEL_SAFETY_LOCK
         /* Arm the pyro channels when going into ready */
         if (curr_event >= EV_READY) {
           HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
@@ -69,7 +68,7 @@ namespace task {
         else if (curr_event == EV_MOVING) {
           HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
         }
-#endif
+
         peripheral_act_t *action_list = event_action_map[curr_event].action_list;
         uint8_t num_actions = event_action_map[curr_event].num_actions;
         for (uint32_t i = 0; i < num_actions; ++i) {
