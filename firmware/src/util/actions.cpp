@@ -33,30 +33,15 @@ bool os_delay(int16_t ticks);
 
 bool high_current_channel_one(int16_t state);
 bool high_current_channel_two(int16_t state);
-bool high_current_channel_three(int16_t state);
-bool high_current_channel_four(int16_t state);  // reserved for later use
-bool high_current_channel_five(int16_t state);  // reserved for later use
-bool high_current_channel_six(int16_t state);   // reserved for later use
 
 bool low_level_channel_one(int16_t state);
-bool low_level_channel_two(int16_t state);
-bool low_level_channel_three(int16_t state);  // reserved for later use
-bool low_level_channel_four(int16_t state);   // reserved for later use
 
 bool servo_channel_one(int16_t angle);
 bool servo_channel_two(int16_t angle);
-bool servo_channel_three(int16_t angle);  // reserved for later use
-bool servo_channel_four(int16_t angle);   // reserved for later use
 
-const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {no_action_function,         os_delay,
-                                                              high_current_channel_one,   high_current_channel_two,
-                                                              high_current_channel_three, high_current_channel_four,
-                                                              high_current_channel_five,  high_current_channel_six,
-                                                              low_level_channel_one,      low_level_channel_two,
-                                                              low_level_channel_three,    low_level_channel_four,
-                                                              servo_channel_one,          servo_channel_two,
-                                                              servo_channel_three,        servo_channel_four,
-                                                              set_recorder_state};
+const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {
+    no_action_function,    os_delay,          high_current_channel_one, high_current_channel_two,
+    low_level_channel_one, servo_channel_one, servo_channel_two,        set_recorder_state};
 
 bool no_action_function(__attribute__((unused)) int16_t bummer) {
   // Sucks to be here...
@@ -102,46 +87,6 @@ bool high_current_channel_two(int16_t state) {
   return false;
 }
 
-bool high_current_channel_three(int16_t state) {
-#if NUM_PYRO > 2
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO3_GPIO_Port, PYRO3_Pin, (GPIO_PinState)state);
-    return true;
-  }
-#endif
-  return false;
-}
-
-bool high_current_channel_four(int16_t state) {
-#if NUM_PYRO > 3
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_4_GPIO_Port, PYRO_4_Pin, (GPIO_PinState)state);
-    return true;
-  }
-#endif
-  return false;
-}
-
-bool high_current_channel_five(int16_t state) {
-#if NUM_PYRO > 4
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_5_GPIO_Port, PYRO_5_Pin, (GPIO_PinState)state);
-    return true;
-  }
-#endif
-  return false;
-}
-
-bool high_current_channel_six(int16_t state) {
-#if NUM_PYRO > 5
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO_6_GPIO_Port, PYRO_6_Pin, (GPIO_PinState)state);
-    return true;
-  }
-#endif
-  return false;
-}
-
 // Low level (3.3V) outputs
 
 bool low_level_channel_one(int16_t state) {
@@ -151,34 +96,6 @@ bool low_level_channel_one(int16_t state) {
     return true;
   }
 #endif
-  return false;
-}
-
-bool low_level_channel_two(int16_t state) {
-#if NUM_LOW_LEVEL_IO > 1
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(IO2_GPIO_Port, IO2_Pin, (GPIO_PinState)state);
-    return true;
-  }
-#endif
-  return false;
-}
-
-// Same as servo 1 but digital output
-bool low_level_channel_three(int16_t state) {
-  if (state == 0 || state == 1) {
-    // servo_set_onoff(&SERVO1, state);
-    return true;
-  }
-  return false;
-}
-
-// Same as servo 2 but digital output
-bool low_level_channel_four(int16_t state) {
-  if (state == 0 || state == 1) {
-    // servo_set_onoff(&SERVO2, (bool)state);
-    return true;
-  }
   return false;
 }
 
@@ -205,10 +122,6 @@ bool servo_channel_two(int16_t position) {
   }
   return false;
 }
-
-bool servo_channel_three(int16_t position) { return false; }
-
-bool servo_channel_four(int16_t position) { return false; }
 
 /* TODO check if mutex should be used here */
 bool set_recorder_state(int16_t state) {
