@@ -42,6 +42,7 @@ class Simulator final : public Task<Simulator, 512> {
     double acceleration_coeff_thrusting[POLYNOM_SIZE] = {};
     double acceleration_coeff_coasting[POLYNOM_SIZE] = {};
     float32_t switch_time = 0.0F;
+    float32_t acc_end_time = 0.0F;
     float32_t end_time = 0.0F;
   };
 
