@@ -23,7 +23,7 @@
 #include "util/types.h"
 
 /* The system will reload the default config when the number changes */
-#define CONFIG_VERSION 206U
+#define CONFIG_VERSION 207U
 
 /* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10
@@ -43,6 +43,7 @@ struct cats_config_t {
 
   config_telemetry_t telemetry_settings;
   control_settings_t control_settings;
+  uint8_t buzzer_volume;
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
   bool is_set_by_user;
 };

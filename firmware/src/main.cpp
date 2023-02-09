@@ -118,7 +118,7 @@ int main(void) {
   servo2.SetPosition(global_cats_config.initial_servo_position[1]);
 
   // Set the buzzer to the volume set in the config
-  buzzer.SetVolume(100U);
+  buzzer.SetVolume(static_cast<uint16_t>(global_cats_config.buzzer_volume));
 
   // Start the pwm channels
   servo1.Start();

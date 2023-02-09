@@ -32,7 +32,6 @@ void Buzzer::Beep(BeepCode code) const {
     // Wait for event
     auto id = osEventFlagsWait(m_buzzer_event_id, 0xFFU, osFlagsWaitAny, osWaitForever);
     osEventFlagsClear(m_buzzer_event_id, id);
-    // m_buzzer.SetVolume(global_cats_config.buzzer_volume);
     uint32_t duration = 0;
     for (int i = 0; i < s_status_code_length[id]; i++) {
       char pitch = s_status_codes[id][i];

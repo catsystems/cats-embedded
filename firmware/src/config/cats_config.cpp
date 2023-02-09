@@ -55,6 +55,7 @@ const cats_config_t DEFAULT_CONFIG = {
             .liftoff_detection_agl = 50,
             .main_altitude = 200,
         },
+    .buzzer_volume = 100U,
     .rec_speed_idx = 0,
     /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
     .is_set_by_user = true};
