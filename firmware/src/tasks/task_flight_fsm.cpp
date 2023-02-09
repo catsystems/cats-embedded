@@ -46,7 +46,7 @@ namespace task {
     /* Check Flight Phases */
     check_flight_phase(&flight_state, m_task_preprocessing.GetSIData().acc, m_task_preprocessing.GetSIData().gyro,
                        m_task_state_estimation.GetEstimationOutput(),
-                       m_task_preprocessing.GetEstimationInput().height_AGL, global_arming_bool, &settings);
+                       m_task_preprocessing.GetEstimationInput().height_AGL, &settings);
 
     if (flight_state.state_changed) {
       log_info("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);

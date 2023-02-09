@@ -26,25 +26,16 @@
 
 // m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING ->
 // READY
-#define ALLOWED_ACC_ERROR 0.6f
+#define ALLOWED_ACC_ERROR 0.6F
 
 // dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING ->
 // READY
-#define ALLOWED_GYRO_ERROR 10.0f
+#define ALLOWED_GYRO_ERROR 10.0F
 
 /* READY */
-// num iterations, all 10 seconds (2 * TIME_THRESHOLD_READY_TO_MOV / SAMPLING_FREQUENCY), the integration is reset
-#define TIME_THRESHOLD_READY_TO_MOV 500
 
 // num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
 #define LIFTOFF_SAFETY_COUNTER 10
-
-// dps, if the GYRO measurement is smaller than 0.3 dps it is not considered as movement for the transition READY ->
-// MOVING
-#define GYRO_SENSITIVITY 0.3f
-
-// degrees, if the integrated gyro is bigger than 120°, we go back to moving.
-#define ANGLE_MOVE_MAX 120.0f
 
 // num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 1 second, detect
 // liftoff
@@ -66,11 +57,11 @@
 
 /* MAIN */
 // m/s, velocity needs to be smaller than this to detect touchdown
-#define VELOCITY_BOUND_TOUCHDOWN 3.0f
+#define VELOCITY_BOUND_TOUCHDOWN 3.0F
 
 // num iterations, for at least 1s it needs to be smaller
 #define TOUCHDOWN_SAFETY_COUNTER 100
 
 /* Function which implements the FSM */
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
-                        float32_t height_AGL, bool ready_transition_allowed, const control_settings_t *settings);
+                        float32_t height_AGL, const control_settings_t *settings);

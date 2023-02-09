@@ -37,8 +37,6 @@ imu_data_t global_imu_sim[NUM_BARO] = {};
 
 osEventFlagsId_t fsm_flag_id;
 
-bool global_arming_bool = true;
-
 /** Timers **/
 cats_timer_t ev_timers[NUM_TIMERS] = {};
 
@@ -57,4 +55,4 @@ volatile recorder_status_e global_recorder_status = REC_OFF;
 
 event_action_map_elem_t* event_action_map = nullptr;
 
-const char* code_version = "2.3.0";
+const char* code_version = "2.3.1";

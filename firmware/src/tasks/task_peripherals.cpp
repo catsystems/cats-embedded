@@ -39,6 +39,21 @@ namespace task {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
+      /* Check if the event was already triggered. If it was, ignore */
+      if ((m_event_tracking & (1U << static_cast<uint32_t>(curr_event))) == 1) {
+        continue;
+      }
+
+      /* Set the event to done, only custom events can be repeated */
+      if ((curr_event != EV_CUSTOM_1) && (curr_event != EV_CUSTOM_2)) {
+        m_event_tracking |= 1U << curr_event;
+      }
+
+      /* If Touchdown is triggered, prevent further actions from being triggered */
+      if (curr_event == EV_TOUCHDOWN) {
+        m_event_tracking = 0xFFFFFFFF;
+      }
+
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
         if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {
@@ -48,7 +63,6 @@ namespace task {
         }
       }
 
-#ifdef USE_PCHANNEL_SAFETY_LOCK
       /* Arm the pyro channels when going into ready */
       if (curr_event >= EV_READY) {
         HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
@@ -57,7 +71,7 @@ namespace task {
       else if (curr_event == EV_MOVING) {
         HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
       }
-#endif
+
       peripheral_act_t* action_list = event_action_map[curr_event].action_list;
       uint8_t num_actions = event_action_map[curr_event].num_actions;
       for (uint32_t i = 0; i < num_actions; ++i) {

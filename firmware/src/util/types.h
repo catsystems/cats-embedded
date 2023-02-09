@@ -111,7 +111,6 @@ struct flight_fsm_t {
   flight_fsm_e flight_state;
   vf32_t old_acc_data;
   vf32_t old_gyro_data;
-  float angular_movement[3];
   uint32_t clock_memory;
   uint32_t memory[3];
   timestamp_t thrust_trigger_time;
