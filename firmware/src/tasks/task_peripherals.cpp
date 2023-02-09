@@ -39,45 +39,59 @@ namespace task {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
-      /* Start Timer if the Config says so */
-      for (uint32_t i = 0; i < NUM_TIMERS; i++) {
-        if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {
-          if (osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
-            log_warn("Starting TIMER %lu with event %lu failed.", i, curr_event);
+      /* Check if the event was already triggered. If it was, ignore */
+      if ((m_event_tracking & (1U << curr_event)) == 0) {
+        /* Set the event to done */
+        /* Only Custom events can be repeated */
+        if ((curr_event != EV_CUSTOM_1) && (curr_event != EV_CUSTOM_2)) {
+          m_event_tracking |= 1U << curr_event;
+        }
+
+        /* If Touchdown is triggered, set the array to full */
+        if (curr_event == EV_TOUCHDOWN) {
+          m_event_tracking = 0xFFFFFFFF;
+        }
+
+        /* Start Timer if the Config says so */
+        for (uint32_t i = 0; i < NUM_TIMERS; i++) {
+          if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {
+            if (osTimerStart(ev_timers[i].timer_id, ev_timers[i].timer_duration_ticks) != osOK) {
+              log_warn("Starting TIMER %lu with event %lu failed.", i, curr_event);
+            }
           }
         }
-      }
 
 #ifdef USE_PCHANNEL_SAFETY_LOCK
-      /* Arm the pyro channels when going into ready */
-      if (curr_event >= EV_READY) {
-        HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
-      }
-      /* Disarm the pyro channels when going into moving */
-      else if (curr_event == EV_MOVING) {
-        HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
-      }
+        /* Arm the pyro channels when going into ready */
+        if (curr_event >= EV_READY) {
+          HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
+        }
+        /* Disarm the pyro channels when going into moving */
+        else if (curr_event == EV_MOVING) {
+          HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
+        }
 #endif
-      peripheral_act_t* action_list = event_action_map[curr_event].action_list;
-      uint8_t num_actions = event_action_map[curr_event].num_actions;
-      for (uint32_t i = 0; i < num_actions; ++i) {
-        timestamp_t curr_ts = osKernelGetTickCount();
-        /* get the actuator function */
-        peripheral_act_fp curr_fp = action_table[action_list[i].action];
-        if (curr_fp != nullptr) {
-          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", event_map[curr_event],
-                    action_map[action_list[i].action], action_list[i].action_arg);
-          /* call the actuator function */
-          curr_fp(action_list[i].action_arg);
-          event_info_t event_info = {.event = curr_event, .action = action_list[i]};
+        peripheral_act_t *action_list = event_action_map[curr_event].action_list;
+        uint8_t num_actions = event_action_map[curr_event].num_actions;
+        for (uint32_t i = 0; i < num_actions; ++i) {
+          timestamp_t curr_ts = osKernelGetTickCount();
+          /* get the actuator function */
+          peripheral_act_fp curr_fp = action_table[action_list[i].action];
+          if (curr_fp != nullptr) {
+            log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", event_map[curr_event],
+                      action_map[action_list[i].action], action_list[i].action_arg);
+            /* call the actuator function */
+            curr_fp(action_list[i].action_arg);
+            event_info_t event_info = {.event = curr_event, .action = action_list[i]};
+            record(curr_ts, EVENT_INFO, &event_info);
+          }
+        }
+        if (num_actions == 0) {
+          log_error("EXECUTING EVENT: %s, ACTION: %s", event_map[curr_event], action_map[action_list[0].action]);
+          timestamp_t curr_ts = osKernelGetTickCount();
+          event_info_t event_info = {.event = curr_event, .action = {ACT_NO_OP}};
           record(curr_ts, EVENT_INFO, &event_info);
         }
-      }
-      if (num_actions == 0) {
-        log_error("EXECUTING EVENT: %s, ACTION: %s", event_map[curr_event], action_map[action_list[0].action]);
-        timestamp_t curr_ts = osKernelGetTickCount();
-        event_info_t event_info = {.event = curr_event, .action = {ACT_NO_OP}};
-        record(curr_ts, EVENT_INFO, &event_info);
       }
     }
   }

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <array>
 #include "cmsis_os.h"
 #include "config/globals.h"
 
@@ -29,6 +30,9 @@ namespace task {
 
 class Peripherals final : public Task<Peripherals, 256> {
   [[noreturn]] void Run() noexcept override;
+
+ private:
+  uint32_t m_event_tracking = 0U;
 };
 
 }  // namespace task
