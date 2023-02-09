@@ -239,11 +239,21 @@ void start_simulation(char *args) {
     return;
   }
 
-  cats_sim_config_t sim_config{.noise_seed = 1, .sim_axis = 0};
+  cats_sim_config_t sim_config{.noise_seed = 1, .sim_axis = 0, .simulation_option = 0};
 
   char *token = strtok(args, " ");
 
   while (token != nullptr) {
+    if (strcmp(token, "--toyger") == 0) {
+      sim_config.simulation_option = 0;
+    }
+    if (strcmp(token, "--piccard") == 0) {
+      sim_config.simulation_option = 1;
+    }
+    if (strcmp(token, "--z") == 0) {
+      sim_config.sim_axis = 2;
+    }
+
     if (strcmp(token, "--x") == 0) {
       sim_config.sim_axis = 0;
     }
