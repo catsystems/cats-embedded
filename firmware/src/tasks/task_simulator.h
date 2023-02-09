@@ -48,7 +48,7 @@ class Simulator final : public Task<Simulator, 512> {
 
   const float32_t m_idle_time = 20.0F;  // [s]
   const float32_t m_reset_time = 3.0F;  // [s]
-  const float32_t m_acc_noise = 0.02F;  // [g]
+  const float32_t m_acc_noise = 0.0F;  // [g]
   const float32_t m_acc_factor = 1024.0F;
   const float32_t m_press_noise = 50.0F;  // [Pa]
 
