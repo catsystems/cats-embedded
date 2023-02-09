@@ -27,6 +27,9 @@
 #include "util/enum_str_maps.h"
 #include "util/log.h"
 #include "util/task_util.h"
+#include "stdint.h"
+
+#include <stdint.h>
 
 namespace task {
 
