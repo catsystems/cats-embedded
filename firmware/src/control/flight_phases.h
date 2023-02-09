@@ -26,11 +26,11 @@
 
 // m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING ->
 // READY
-#define ALLOWED_ACC_ERROR 0.6f
+#define ALLOWED_ACC_ERROR 0.6F
 
 // dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING ->
 // READY
-#define ALLOWED_GYRO_ERROR 10.0f
+#define ALLOWED_GYRO_ERROR 10.0F
 
 /* READY */
 
@@ -57,7 +57,7 @@
 
 /* MAIN */
 // m/s, velocity needs to be smaller than this to detect touchdown
-#define VELOCITY_BOUND_TOUCHDOWN 3.0f
+#define VELOCITY_BOUND_TOUCHDOWN 3.0F
 
 // num iterations, for at least 1s it needs to be smaller
 #define TOUCHDOWN_SAFETY_COUNTER 100

@@ -78,11 +78,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 }
 
 void Telemetry::ParseTxMessage(packed_tx_msg_t* rx_payload) const noexcept {
-  if (rx_payload->d1 == 0xAA && rx_payload->d2 == 0xBB && rx_payload->d3 == 0xCC) {
-    log_info("ARM");
-  } else {
-    log_info("DISARM");
-  }
+  log_info("Data Received.");
 }
 
 [[noreturn]] void Telemetry::Run() noexcept {

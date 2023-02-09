@@ -40,13 +40,15 @@ namespace task {
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
       /* Check if the event was already triggered. If it was, ignore */
-      if ((m_event_tracking & (1U << curr_event)) == 0) {
+      if (m_event_tracking & (1U << curr_event)) {
+        continue;
+      } else {
         /* Set the event to done, only custom events can be repeated */
         if ((curr_event != EV_CUSTOM_1) && (curr_event != EV_CUSTOM_2)) {
           m_event_tracking |= 1U << curr_event;
         }
 
-        /* If Touchdown is triggered, set the array to full */
+        /* If Touchdown is triggered, prevent further actions from being triggered */
         if (curr_event == EV_TOUCHDOWN) {
           m_event_tracking = 0xFFFFFFFF;
         }
