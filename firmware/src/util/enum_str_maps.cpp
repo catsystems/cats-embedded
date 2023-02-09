@@ -29,9 +29,8 @@ const char* const event_map[9] = {
     "MOVING", "READY", "LIFTOFF", "MAX_V", "APOGEE", "MAIN_DEPLOYMENT", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
 };
 
-const char* const action_map[17] = {
-    "NONE",   "DELAY",   "HC_ONE",  "HC_TWO",    "HC_THREE",  "HC_FOUR",     "HC_FIVE",    "HC_SIX",   "LL_ONE",
-    "LL_TWO", "LL_TREE", "LL_FOUR", "SERVO_ONE", "SERVO_TWO", "SERVO_THREE", "SERVO_FOUR", "RECORDER",
+const char* const action_map[8] = {
+    "NONE", "DELAY", "HC_ONE", "HC_TWO", "LL_ONE", "SERVO_ONE", "SERVO_TWO", "RECORDER",
 };
 
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
