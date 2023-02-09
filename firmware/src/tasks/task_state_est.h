@@ -25,7 +25,7 @@
 #include "tasks/task_preprocessing.h"
 #include "util/error_handler.h"
 #include "util/log.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 #include "task_preprocessing.h"
 

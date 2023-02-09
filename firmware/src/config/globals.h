@@ -24,7 +24,7 @@
 #include "flash/recorder.h"
 
 #include "target.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 /** Sampling Frequencies **/
 #define CONTROL_SAMPLING_FREQ 100  // in Hz

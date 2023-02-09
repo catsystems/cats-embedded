@@ -19,7 +19,7 @@
 #pragma once
 
 #include "arm_math.h"
-#include "types.h"
+#include "types.hpp"
 
 enum battery_level_e { BATTERY_CRIT = 1, BATTERY_LOW, BATTERY_OK };
 

@@ -24,7 +24,7 @@
 #include "util/actions.h"
 #include "util/enum_str_maps.h"
 #include "util/log.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 const uint32_t EVENT_QUEUE_SIZE = 16;
 

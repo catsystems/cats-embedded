@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "util/types.h"
+#include "util/types.hpp"
 
 #define GYRO_NUM_SAME_VALUE   200
 #define GYRO_ALLOWED_ERROR_SI 3.0f

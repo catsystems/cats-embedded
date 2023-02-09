@@ -46,14 +46,14 @@ jobs:
       working-directory: ./firmware
       run: cmake --build build
 
-    - name: Upload Build
+    - name: Upload Compile Commands
       uses: actions/upload-artifact@v3
       with:
         # Artifact name
-        name: build-artifacts
-        path: ./firmware/build/**
+        name: compile-commands
+        path: ./firmware/build/compile_commands.json
         if-no-files-found: error
-        retention-days: 30
+        retention-days: 1
 
   clang-tidy:
     name: Clang-Tidy Check
@@ -63,17 +63,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Download Build
+    - name: Download Compile Commands
       uses: actions/download-artifact@v3
       with:
-        name: build-artifacts
-        path: ./firmware/build
+        name: compile-commands
+        path: ./firmware/build/
 
     - name: clang-tidy review
       uses: ZedThree/clang-tidy-review@v0.10.1
       id: review
       with:
-        clang_tidy_version: 12
+        clang_tidy_version: 14
         build_dir: firmware/build
         config_file: firmware/.clang-tidy
         exclude: firmware/lib

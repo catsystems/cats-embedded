@@ -18,7 +18,7 @@
 
 #pragma once
 #include "arm_math.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 struct orientation_filter_t {
   float32_t gyro_data[4];

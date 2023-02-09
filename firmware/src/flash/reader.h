@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 #include "recorder.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 void dump_recording(uint16_t number);
 void parse_recording(uint16_t number, rec_entry_type_e filter_mask);

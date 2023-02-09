@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "util/types.h"
+#include "util/types.hpp"
 
 /* MOVING */
 // num iterations, imu action needs to be 0 for at least 10 seconds

@@ -20,7 +20,7 @@
 
 #include <cstdint>
 #include "target.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 /* The system will reload the default config when the number changes */
 #define CONFIG_VERSION 208U

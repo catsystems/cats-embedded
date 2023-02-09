@@ -20,7 +20,7 @@
 
 #include "util/error_handler.h"
 #include "util/log.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 /* The barometric data from the sensor does not agree to the KF assumptions that it has zero offset.
  * Hence, the noise matrices are changed over time. At liftoff, the offset is large and close to apogee

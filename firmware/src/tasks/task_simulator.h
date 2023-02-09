@@ -19,7 +19,7 @@
 #pragma once
 
 #include "task.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 void start_simulation(char *args);
 

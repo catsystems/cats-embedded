@@ -23,7 +23,7 @@
 #include "sensors/lsm6dso32.h"
 #include "sensors/ms5607.h"
 #include "util/log.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 namespace task {
 

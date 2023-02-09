@@ -21,7 +21,7 @@
 #include "config/cats_config.h"
 #include "util/error_handler.h"
 #include "util/gnss.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 #include "arm_math.h"
 #include "cmsis_os.h"

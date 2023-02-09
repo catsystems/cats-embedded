@@ -22,7 +22,7 @@
 #include <typeinfo>
 #include <utility>
 #include "config/globals.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 #include "cmsis_os.h"
 
