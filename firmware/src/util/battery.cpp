@@ -26,11 +26,6 @@
 
 #define BATTERY_VOLTAGE_HYSTERESIS 0.2f
 
-enum battery_type_e { LI_ION = 0, LI_PO, ALKALINE };
-
-// TODO The battery type needs to be defined in the config
-const battery_type_e battery_type = LI_PO;
-
 static uint32_t cell_count = 1;
 
 /* Supported batteries and their voltages
@@ -41,15 +36,24 @@ static uint32_t cell_count = 1;
  * Alkaline (9V)  7.0   7.5   9.5
  * --------------------------------
  */
-const float32_t voltage_lookup[3][3] = {{3.2f, 3.4f, 4.3f}, {3.4f, 3.6f, 4.3f}, {7.0f, 7.5f, 9.5f}};
+// clang-format off
+const float32_t voltage_lookup[3][3] = {{3.2F, 3.4F, 4.3F},
+                                        {3.4F, 3.6F, 4.3F},
+                                        {7.0F, 7.5F, 9.5F}};
+// clang-format on
 enum battery_level_index_e { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK };
 
+static battery_type_e battery_type;
+
 /* Automatically check how many cells are connected */
-void battery_monitor_init() {
-  if (battery_type == ALKALINE) return;
+void battery_monitor_init(battery_type_e type) {
+  battery_type = type;
+  if (battery_type == ALKALINE) {
+    return;
+  }
   uint32_t i = 1;
   float32_t voltage = battery_voltage();
-  while (((float32_t)i * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
+  while ((static_cast<float32_t>(i) * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
     i++;
   }
   cell_count = i;

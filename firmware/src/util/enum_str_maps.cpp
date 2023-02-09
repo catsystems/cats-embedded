@@ -33,6 +33,9 @@ const char* const action_map[8] = {
     "NONE", "DELAY", "HC_ONE", "HC_TWO", "LL_ONE", "SERVO_ONE", "SERVO_TWO", "RECORDER",
 };
 
+const char* const battery_map[3] = {"LI-ION", "LI-PO", "ALKALINE"};
+
+// Filled later depending on tick frequency
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
 
 const char* const on_off_map[2] = {
