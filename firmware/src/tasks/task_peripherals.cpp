@@ -40,7 +40,7 @@ namespace task {
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
       /* Check if the event was already triggered. If it was, ignore */
-      if ((m_event_tracking & (1U << curr_event)) == 1) {
+      if ((m_event_tracking & (1U << static_cast<uint32_t>(curr_event))) == 1) {
         continue;
       }
 
@@ -72,7 +72,7 @@ namespace task {
         HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
       }
 
-      peripheral_act_t *action_list = event_action_map[curr_event].action_list;
+      peripheral_act_t* action_list = event_action_map[curr_event].action_list;
       uint8_t num_actions = event_action_map[curr_event].num_actions;
       for (uint32_t i = 0; i < num_actions; ++i) {
         timestamp_t curr_ts = osKernelGetTickCount();
