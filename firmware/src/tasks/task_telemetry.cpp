@@ -56,7 +56,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
                               estimation_output_t estimation_data) const noexcept {
   static_assert(sizeof(packed_tx_msg_t) == 15);
   if (m_fsm_enum > INVALID) {
-    tx_payload->state = m_fsm_enum - 1;
+    tx_payload->state = m_fsm_enum;
   }
 
   tx_payload->timestamp = ts / 100;
