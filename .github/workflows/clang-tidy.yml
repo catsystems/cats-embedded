@@ -39,6 +39,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: file
+        lines-changed-only: true
         repo-root: ./firmware
         version: 12
         ignore: lib|build
