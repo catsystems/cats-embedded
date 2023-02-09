@@ -9,4 +9,3 @@
 #include "TinyGPSPlus/TinyGPSPlus.h"
 
 void gpsSetup();
-bool gpsRun();

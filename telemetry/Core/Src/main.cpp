@@ -18,16 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "SX1280Driver/SX1280Driver.h"
-#include "SerialComm/Parser.h"
-#include "Transmission/Transmission.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "FHSS/crc.h"
-#include "SerialComm/serial.h"
+#include "SX1280Driver/SX1280Driver.h"
+#include "SerialComm/Parser.h"
+#include "SerialComm/Serial.h"
+#include "Transmission/Transmission.h"
 #include "common.h"
 #include "gps.h"
+#include "util/thermistor.h"
 #include <cstring>
 /* USER CODE END Includes */
 
@@ -47,6 +48,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 SPI_HandleTypeDef hspi1;
 
@@ -54,6 +56,8 @@ TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 
@@ -66,18 +70,17 @@ static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 extern TinyGPSPlus gps;
 Parser p;
 
-uint32_t lr2;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int rx = 0;
-uint8_t buffer[10] = {0};
+
 /* USER CODE END 0 */
 
 /**
@@ -108,6 +111,7 @@ int main(void) {
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_SPI1_Init();
   MX_USART1_UART_Init();
@@ -115,20 +119,26 @@ int main(void) {
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  /* Wait for the GNSS module to initialize*/
   HAL_Delay(4000);
-  start_serial();
+  /* Set the GNSS module to 115200 baud and put in airbourne mode*/
   gpsSetup();
 
+  /* Initalize the communication to Host */
+  Serial<64> serial2(&huart2);
+  /* Initalize the communication to GNSS Module */
+  Serial<256> serial1(&huart1);
+  /* Initalize Thermistor */
+  Thermistor<3434> thermistor(&hadc1);
+
+  /* Initalize the radio module */
   while (Link.begin(&htim2) == false) {
     HAL_Delay(10);
   }
 
   uint8_t oldGpsValue = 20;
   uint8_t oldSecond = 0;
-  // uint8_t buffer[] = "test123";
-  // Link.setLinkPhrase(buffer, 7);
-  // Link.setDirection(TX);
-  // Link.enableTransmission();
+  uint32_t lastTemperatureUpdate = HAL_GetTick();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -139,25 +149,17 @@ int main(void) {
     /* USER CODE BEGIN 3 */
     uint8_t uartOutBuffer[20];
 
-    gpsRun();
-    /* Transmit GPS info */
-
-    if (!Uart1Buffer.isEmpty()) {
-      uint8_t data;
-      Uart1Buffer.pop(&data);
-      gps.encode(data);
+    /* Check if we received data from the GNSS module */
+    if (serial1.available()) {
+      gps.encode(serial1.read());
     }
 
-    if (!Uart2Buffer.isEmpty()) {
-      uint8_t data;
-      Uart2Buffer.pop(&data);
-      p.process(data);
+    /* Check if we received data from the host */
+    if (serial2.available()) {
+      p.process(serial2.read());
     }
 
-    if (HAL_GetTick() > (lr2 + 500)) {
-      start_serial();
-    }
-
+    /* Transmit Link Information*/
     if (Link.infoAvailable()) {
       linkInfo_t info;
       Link.readInfo(&info);
@@ -173,6 +175,7 @@ int main(void) {
       HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
     }
 
+    /* Transmit RX data */
     if (Link.available()) {
       uint8_t rx_data[16];
       Link.readBytes(rx_data, 16);
@@ -186,6 +189,7 @@ int main(void) {
       HAL_UART_Transmit(&huart2, uartOutBuffer, 19, 2);
     }
 
+    /* Transmit GPS Location */
     if (gps.location.isValid() && gps.location.isUpdated()) {
       float lat = gps.location.lat();
       float lng = gps.location.lng();
@@ -204,6 +208,7 @@ int main(void) {
       }
     }
 
+    /* Transmit GPS Satellite Information */
     if (gps.satellites.isValid() && gps.satellites.isUpdated()) {
 
       if (oldGpsValue != gps.satellites.value()) {
@@ -218,6 +223,7 @@ int main(void) {
       }
     }
 
+    /* Transmit GPS Time */
     if (gps.time.isUpdated() && gps.time.isValid()) {
       if (gps.time.second() != oldSecond) {
         oldSecond = gps.time.second();
@@ -226,35 +232,25 @@ int main(void) {
         uartOutBuffer[2] = gps.time.second();
         uartOutBuffer[3] = gps.time.minute();
         uartOutBuffer[4] = gps.time.hour();
-
         uint8_t crc = crc8(uartOutBuffer, 5);
         uartOutBuffer[5] = crc;
         HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
       }
     }
 
-    /*
-        uint8_t command = CMD_GNSS_INFO;
-        HAL_UART_Transmit(&huart2, &command, 1, 2);
-        uint8_t length = 1;
-        HAL_UART_Transmit(&huart2, &length, 1, 2);
-        uint8_t sats = gps.satellites.value();
-        HAL_UART_Transmit(&huart2, &sats, 1, 2);
+    /* Transmit Thermistor temperature two seconds */
+    if ((HAL_GetTick() - lastTemperatureUpdate) >= 2000) {
+      lastTemperatureUpdate = HAL_GetTick();
 
-        command = CMD_GNSS_LOC;
-        HAL_UART_Transmit(&huart2, &command, 1, 2);
-        length = 4;
-        HAL_UART_Transmit(&huart2, &length, 1, 2);
-        uint32_t loc = gps.satellites.value();
-        HAL_UART_Transmit(&huart2, (uint8_t *)&loc, 4, 2);
-    */
-    //}
-
-    // HAL_Delay(100);
-
-    // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+      float temperature = thermistor.getTemperature();
+      uartOutBuffer[0] = CMD_TEMP_INFO;
+      uartOutBuffer[1] = 4;
+      memcpy(&uartOutBuffer[2], &temperature, 4);
+      uint8_t crc = crc8(uartOutBuffer, 6);
+      uartOutBuffer[6] = crc;
+      HAL_UART_Transmit(&huart2, uartOutBuffer, 7, 2);
+    }
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -325,16 +321,19 @@ static void MX_ADC1_Init(void) {
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.LowPowerAutoPowerOff = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_1CYCLE_5;
-  hadc1.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_1CYCLE_5;
-  hadc1.Init.OversamplingMode = DISABLE;
+  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_160CYCLES_5;
+  hadc1.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_160CYCLES_5;
+  hadc1.Init.OversamplingMode = ENABLE;
+  hadc1.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_256;
+  hadc1.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_4;
+  hadc1.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
   hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
     Error_Handler();
@@ -374,7 +373,7 @@ static void MX_SPI1_Init(void) {
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -515,6 +514,26 @@ static void MX_USART2_UART_Init(void) {
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+}
+
+/**
+ * Enable DMA controller clock
+ */
+static void MX_DMA_Init(void) {
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel2_3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+  /* DMA1_Ch4_7_DMAMUX1_OVR_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Ch4_7_DMAMUX1_OVR_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Ch4_7_DMAMUX1_OVR_IRQn);
 }
 
 /**

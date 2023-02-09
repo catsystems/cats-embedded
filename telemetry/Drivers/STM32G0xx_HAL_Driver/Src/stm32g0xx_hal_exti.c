@@ -113,9 +113,8 @@
 /** @defgroup EXTI_Private_Constants EXTI Private Constants
  * @{
  */
-#define EXTI_MODE_OFFSET                                                       \
-  0x04u /* 0x10: offset between CPU IMR/EMR registers                          \
-         */
+#define EXTI_MODE_OFFSET 0x04u /* 0x10: offset between CPU IMR/EMR registers   \
+                                */
 #define EXTI_CONFIG_OFFSET                                                     \
   0x08u /* 0x20: offset between CPU Rising/Falling configuration registers */
 /**
