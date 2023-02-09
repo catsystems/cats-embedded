@@ -35,12 +35,12 @@ class Simulator final : public Task<Simulator, 512> {
   void SetCoefficients(int32_t sim_decision);
   void ComputeSimValues(float32_t time);
 
-#define POLYNOM_SIZE 16
+ static constexpr uint8_t POLYNOM_SIZE{16};
 
   struct sim_coeff_t {
-    double pressure_coeff[POLYNOM_SIZE] = {};
-    double acceleration_coeff_thrusting[POLYNOM_SIZE] = {};
-    double acceleration_coeff_coasting[POLYNOM_SIZE] = {};
+    float64_t pressure_coeff[POLYNOM_SIZE] = {};
+    float64_t acceleration_coeff_thrusting[POLYNOM_SIZE] = {};
+    float64_t acceleration_coeff_coasting[POLYNOM_SIZE] = {};
     float32_t switch_time = 0.0F;
     float32_t acc_end_time = 0.0F;
     float32_t end_time = 0.0F;
@@ -52,8 +52,8 @@ class Simulator final : public Task<Simulator, 512> {
   const float32_t m_acc_factor = 1024.0F;
   const float32_t m_press_noise = 50.0F;  // [Pa]
 
-  double m_current_acc = 0.0;    // [g]
-  double m_current_press = 0.0;  // [Pa]
+  float64_t m_current_acc = 0.0;    // [g]
+  float64_t m_current_press = 0.0;  // [Pa]
 
   cats_sim_config_t m_sim_config;
   sim_coeff_t m_sim_coeff = {};
