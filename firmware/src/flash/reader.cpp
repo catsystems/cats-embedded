@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,41 +57,27 @@ void dump_recording(uint16_t number) {
 
   lfs_file_t curr_file;
   if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
-    int file_size = lfs_file_size(&lfs, &curr_file);
-    for (lfs_size_t i = 0; i < file_size; i += READ_BUF_SZ) {
-      lfs_size_t chunk = lfs_min(READ_BUF_SZ, file_size - i);
+    const auto file_size = lfs_file_size(&lfs, &curr_file);
+    if (file_size > 0) {
+      for (lfs_size_t i = 0; i < static_cast<lfs_size_t>(file_size); i += READ_BUF_SZ) {
+        lfs_size_t chunk = lfs_min(READ_BUF_SZ, file_size - i);
 
-      lfs_file_read(&lfs, &curr_file, read_buf, chunk);
+        lfs_file_read(&lfs, &curr_file, read_buf, chunk);
 
-      int write_idx = 0;
-      for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
-        write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
-        //      for (uint32_t j = 0; j < 128; j += 16) {
-        //        write_idx +=
-        //            sprintf(string_buffer1 + write_idx,
-        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
-        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
-        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
-        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
-        //                    read_buf[j + 15]);
+        int write_idx = 0;
+        for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
+          write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
+        }
+        log_rawr("%s", string_buffer1);
+        write_idx = 0;
+        for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
+          write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
+        }
+        log_rawr("%s\n", string_buffer2);
+
+        memset(string_buffer1, 0, STRING_BUF_SZ);
+        memset(string_buffer2, 0, STRING_BUF_SZ);
       }
-      log_rawr("%s", string_buffer1);
-      write_idx = 0;
-      for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
-        write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
-        //      for (uint32_t j = 128; j < 256; j += 16) {
-        //        write_idx +=
-        //            sprintf(string_buffer1 + write_idx,
-        //                    "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ",
-        //                    read_buf[j], read_buf[j + 1], read_buf[j + 2], read_buf[j + 3], read_buf[j + 4],
-        //                    read_buf[j + 5], read_buf[j + 6], read_buf[j + 7], read_buf[j + 8], read_buf[j + 9],
-        //                    read_buf[j + 10], read_buf[j + 11], read_buf[j + 12], read_buf[j + 13], read_buf[j + 14],
-        //                    read_buf[j + 15]);
-      }
-      log_rawr("%s\n", string_buffer2);
-
-      memset(string_buffer1, 0, STRING_BUF_SZ);
-      memset(string_buffer2, 0, STRING_BUF_SZ);
     }
   } else {
     log_error("Flight %d not found!", number);
@@ -141,24 +127,8 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|BARO%hu|%lu|%lu", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
+            log_raw("%lu|BARO%hu|%ld|%ld", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
                     rec_elem.u.baro.temperature);
-          }
-        } break;
-        case MAGNETO: {
-          size_t elem_sz = sizeof(rec_elem.u.magneto_info);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|MAGNETO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.magneto_info.x,
-                    (double)rec_elem.u.magneto_info.y, (double)rec_elem.u.magneto_info.z);
-          }
-        } break;
-        case ACCELEROMETER: {
-          size_t elem_sz = sizeof(rec_elem.u.accel_data);
-          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
-          if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|ACC|%d|%d|%d", rec_elem.ts, rec_elem.u.accel_data.x, rec_elem.u.accel_data.y,
-                    rec_elem.u.accel_data.z);
           }
         } break;
         case FLIGHT_INFO: {
@@ -201,7 +171,7 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             peripheral_act_t action = rec_elem.u.event_info.action;
-            log_raw("%lu|EVENT_INFO|%s|%s|%u", rec_elem.ts, event_map[rec_elem.u.event_info.event],
+            log_raw("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, event_map[rec_elem.u.event_info.event],
                     action_map[rec_elem.u.event_info.action.action], action.action_arg);
           }
         } break;
@@ -220,8 +190,16 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
                     (double)rec_elem.u.gnss_info.lon, rec_elem.u.gnss_info.sats);
           }
         } break;
+        case VOLTAGE_INFO: {
+          size_t elem_sz = sizeof(rec_elem.u.voltage_info);
+          lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
+          if ((rec_type_without_id & filter_mask) > 0) {
+            /* Convert mV to V by dividing with 1000. */
+            log_raw("%lu|VOLTAGE_INFO|%.3f", rec_elem.ts, static_cast<double>(rec_elem.u.voltage_info) / 1000);
+          }
+        } break;
         default:
-          log_raw("Impossible recorder entry type!");
+          log_raw("Impossible recorder entry type: %lu!", rec_type_without_id);
           break;
       }
     }
@@ -280,11 +258,11 @@ void parse_stats(uint16_t number) {
               local_flight_stats->liftoff_time.min, local_flight_stats->liftoff_time.sec);
       log_raw("========================");
       log_raw("  Config");
-      if (local_flight_stats->config.config.config_version == CONFIG_VERSION) {
+      if (local_flight_stats->config.config_version == CONFIG_VERSION) {
         print_cats_config("cli", &(local_flight_stats->config), false);
       } else {
         log_raw("    Config versions do not match, cannot print -- stats file: %lu, current: %u",
-                local_flight_stats->config.config.config_version, CONFIG_VERSION);
+                local_flight_stats->config.config_version, CONFIG_VERSION);
       }
 
     } else {

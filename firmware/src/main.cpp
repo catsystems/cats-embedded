@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,15 +23,31 @@
 
 #include "drivers/adc.h"
 
+#include "config/globals.h"
 #include "util/battery.h"
-#include "util/buzzer_handler.h"
 #include "util/log.h"
 #include "util/task_util.h"
-#include "util/types.h"
 
 #include "init/config.h"
 #include "init/system.h"
-#include "init/tasks.h"
+
+#include "drivers/gpio.h"
+#include "drivers/pwm.h"
+#include "sensors/lsm6dso32.h"
+#include "sensors/ms5607.h"
+
+#include "tasks/task_buzzer.h"
+#include "tasks/task_flight_fsm.h"
+#include "tasks/task_health_monitor.h"
+#include "tasks/task_peripherals.h"
+#include "tasks/task_preprocessing.h"
+#include "tasks/task_recorder.h"
+#include "tasks/task_sensor_read.h"
+#include "tasks/task_state_est.h"
+#include "tasks/task_telemetry.h"
+
+extern driver::Servo* global_servo1;
+extern driver::Servo* global_servo2;
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -56,10 +72,37 @@ int main(void) {
     BootLoaderJump();                                  // Does not return!
   }
 
-  target_init();
+  usb_device_initialized = target_init();
+
+  // Build digital io
+  static driver::OutputPin imu_cs(GPIOB, 0U);
+  static driver::OutputPin barometer_cs(GPIOB, 1U);
+  static driver::OutputPin status_led(GPIOC, 14U);
+
+  // Build the SPI driver
+  static driver::Spi spi1(&hspi1);
+
+  // Build the PWM channels
+  static driver::Pwm pwm_buzzer(BUZZER_TIMER_HANDLE, BUZZER_TIMER_CHANNEL);
+
+  static driver::Pwm pwm_servo1(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_1);
+  static driver::Pwm pwm_servo2(SERVO_TIMER_HANDLE, SERVO_TIMER_CHANNEL_2);
+
+  // Build the servos
+  static driver::Servo servo1(pwm_servo1, 50U);
+  static driver::Servo servo2(pwm_servo2, 50U);
+
+  // Build the buzzer
+  static driver::Buzzer buzzer(pwm_buzzer);
+
+  // Build the sensors
+  static sensor::Lsm6dso32 imu(spi1, imu_cs);
+  static sensor::Ms5607 barometer(spi1, barometer_cs);
+
+  global_servo1 = &servo1;
+  global_servo2 = &servo2;
 
   init_logging();
-  HAL_Delay(100);
   log_info("System initialization complete.");
 
   HAL_Delay(100);
@@ -70,8 +113,19 @@ int main(void) {
   load_and_set_config();
   log_info("Config load complete.");
 
+  // After loading the config we can set the servos to the initial position
+  servo1.SetPosition(global_cats_config.initial_servo_position[0]);
+  servo2.SetPosition(global_cats_config.initial_servo_position[1]);
+
+  // Set the buzzer to the volume set in the config
+  buzzer.SetVolume(100U);
+
+  // Start the pwm channels
+  servo1.Start();
+  servo2.Start();
+
   HAL_Delay(100);
-  init_devices();
+  init_devices(imu, barometer);
   log_info("Device initialization complete.");
 
   HAL_Delay(100);
@@ -82,10 +136,31 @@ int main(void) {
   /* Init scheduler */
   osKernelInitialize();
 
-  init_tasks();
+  // TODO: Check rec_queue for validity here
+  rec_queue = osMessageQueueNew(REC_QUEUE_SIZE, sizeof(rec_elem_t), nullptr);
+  rec_cmd_queue = osMessageQueueNew(REC_CMD_QUEUE_SIZE, sizeof(rec_cmd_type_e), nullptr);
+  event_queue = osMessageQueueNew(EVENT_QUEUE_SIZE, sizeof(cats_event_e), nullptr);
+
+  static const task::Buzzer& task_buzzer = task::Buzzer::Start(buzzer);
+
+  task::Recorder::Start();
+
+  static const task::SensorRead& task_sensor_read = task::SensorRead::Start(&imu, &barometer);
+
+  static const task::Preprocessing& task_preprocessing = task::Preprocessing::Start(task_sensor_read);
+
+  static const task::StateEstimation& task_state_estimation = task::StateEstimation::Start(task_preprocessing);
+
+  task::FlightFsm::Start(task_preprocessing, task_state_estimation);
+
+  task::Peripherals::Start();
+
+  task::HealthMonitor::Start(task_buzzer);
+
+  task::Telemetry::Start(task_state_estimation);
+
   log_info("Task initialization complete.");
 
-  buzzer_queue_status(CATS_BUZZ_BOOTUP);
   log_disable();
 
   rtos_started = true;
@@ -107,7 +182,7 @@ int main(void) {
  * @param  htim : TIM handle
  * @retval None
  */
-extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
@@ -125,7 +200,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
  * @param  line: assert_param error line source number
  * @retval None
  */
-void assert_failed(uint8_t *file, uint32_t line) {
+void assert_failed(uint8_t* file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

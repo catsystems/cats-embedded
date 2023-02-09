@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,26 +18,47 @@
 
 #pragma once
 
+#include "cmsis_os.h"
+#include "drivers/pwm.h"
 #include "target.h"
 
-/** Exported Types **/
+namespace driver {
 
-struct BUZ {
-  // Hardware Configuration
-  TIM_HandleTypeDef *timer;
-  uint32_t channel;
-  uint16_t arr;
-  uint8_t started;
-  uint8_t start;
-  uint16_t volume;
-  uint32_t end_time;
+class Buzzer {
+ public:
+  /** Constructor
+   *
+   * @param pwm_channel reference to the pwm channel @injected
+   */
+  explicit Buzzer(Pwm &pwm_channel) : m_pwm_channel(pwm_channel) {}
+
+  /** Set the buzzer volume
+   *
+   * @param volume 0 - 100 %
+   */
+  void SetVolume(uint16_t volume);
+
+  /** Set the buzzer frequency
+   *
+   * @param frequency 200 - 10'000 Hz
+   */
+  void SetFrequency(uint32_t frequency) { m_pwm_channel.SetFrequency(frequency); }
+
+  /** Start beeping
+   *
+   * @note the Beep returns after the beep duration, freertos delay function is used to not block the rest of the system
+   *
+   * @param duration beep for specified duration
+   */
+  void Beep(uint32_t duration);
+
+  /** Stop beeping
+   */
+  void Stop() { m_pwm_channel.Stop(); }
+
+ private:
+  /// Reference to the pwm channel
+  Pwm &m_pwm_channel;
 };
 
-/** Exported Functions **/
-
-void buzzer_set_volume(BUZ *dev, uint16_t volume);
-void buzzer_beep(BUZ *dev, uint32_t duration);
-void buzzer_set_freq(BUZ *dev, uint32_t frequency);
-void buzzer_start(BUZ *dev);
-void buzzer_stop(BUZ *dev);
-uint8_t buzzer_update(BUZ *dev);
+}  // namespace driver

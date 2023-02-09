@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 
 #include "util/task_util.h"
+
 #include "target.h"
 
 volatile bool rtos_started = false;

@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,20 +18,13 @@
 
 #pragma once
 
-#include "cmsis_os.h"
+#include <cstdint>
 
-#define SET_TASK_PARAMS(task, stack_sz)           \
-  uint32_t task##_buffer[stack_sz];               \
-  StaticTask_t task##_control_block;              \
-  const osThreadAttr_t task##_attributes = {      \
-      .name = #task,                              \
-      .cb_mem = &task##_control_block,            \
-      .cb_size = sizeof(task##_control_block),    \
-      .stack_mem = &task##_buffer[0],             \
-      .stack_size = sizeof(task##_buffer),        \
-      .priority = (osPriority_t)osPriorityNormal, \
-  };
+#include "FreeRTOSConfig.h"
+#include "cmsis_os.h"
 
 extern volatile bool rtos_started;
 
 void sysDelay(uint32_t delay);
+
+constexpr uint32_t sysGetTickFreq() { return configTICK_RATE_HZ; }

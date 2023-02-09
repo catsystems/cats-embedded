@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,82 +18,79 @@
 
 #include "tasks/task_state_est.h"
 #include "config/globals.h"
-#include "control/kalman_filter.h"
-#include "control/orientation_filter.h"
+#include "util/task_util.h"
 
-#include <cmath>
+namespace task {
 
-/** Private Constants **/
+StateEstimation* global_state_estimation = nullptr;
 
-/** Private Function Declarations **/
+void StateEstimation::GetEstimationInputData() {
+  /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
+   * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
+   * due to parachute forces. */
+  state_estimation_input_t input = m_task_preprocessing.GetEstimationInput();
 
-/** Exported Function Definitions **/
+  if (m_fsm_enum < DROGUE) {
+    m_filter.measured_acceleration = input.acceleration_z;
+  } else {
+    m_filter.measured_acceleration = 0;
+  }
+
+  m_filter.measured_AGL = input.height_AGL;
+
+  /* Do Orientation Filter */
+  quaternion_kinematics(&m_orientation_filter, m_task_preprocessing.GetSIData().gyro);
+}
+
+estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
+  estimation_output_t output = {};
+  output.height = m_filter.x_bar_data[0];
+  output.velocity = m_filter.x_bar_data[1];
+  output.acceleration = m_filter.measured_acceleration + m_filter.x_bar_data[2];
+  return output;
+}
 
 /**
- * @brief Function implementing the task_state_est thread.
+ * @brief Function implementing the task_preprocessing thread.
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_state_est(__attribute__((unused)) void *argument) {
-  /* End Initialization */
+[[noreturn]] void StateEstimation::Run() noexcept {
   osDelay(1000);
 
-  /* Initialize State Estimation */
-  kalman_filter_t filter = {.t_sampl = 1.0f / (float)(CONTROL_SAMPLING_FREQ)};
-
-  init_filter_struct(&filter);
-  initialize_matrices(&filter);
-
-  /* local fsm enum */
-  flight_fsm_e new_fsm_enum = MOVING;
-  flight_fsm_e old_fsm_enum = MOVING;
+  /* Initialize Kalman Filter */
+  init_filter_struct(&m_filter);
+  initialize_matrices(&m_filter);
 
   /* initialize Orientation State Estimation */
-  orientation_filter_t orientation_filter = {};
-  init_orientation_filter(&orientation_filter);
-  reset_orientation_filter(&orientation_filter);
+  init_orientation_filter(&m_orientation_filter);
+  reset_orientation_filter(&m_orientation_filter);
 
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  while (true) {
     /* update fsm enum */
-    new_fsm_enum = global_flight_state.flight_state;
+    bool fsm_updated = GetNewFsmEnum();
 
     /* Reset IMU when we go from moving to READY */
-    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == READY)) {
-      reset_kalman(&filter);
-      reset_orientation_filter(&orientation_filter);
+    if ((m_fsm_enum == READY) && fsm_updated) {
+      reset_kalman(&m_filter);
+      reset_orientation_filter(&m_orientation_filter);
     }
 
     /* Soft reset kalman filter when we go from Ready to thrusting */
     /* Reset Orientation Estimate when going to thrusting */
-    if ((new_fsm_enum == THRUSTING) && (new_fsm_enum != old_fsm_enum)) {
-      soft_reset_kalman(&filter);
-      reset_orientation_filter(&orientation_filter);
+    if ((m_fsm_enum == THRUSTING) && fsm_updated) {
+      soft_reset_kalman(&m_filter);
+      reset_orientation_filter(&m_orientation_filter);
     }
 
     /* Write measurement data into the filter struct */
-    /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
-     * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
-     * due to parachute forces. */
-    if (new_fsm_enum < DROGUE) {
-      filter.measured_acceleration = global_estimation_input.acceleration_z;
-    } else {
-      filter.measured_acceleration = 0;
-    }
-
-    filter.measured_AGL = global_estimation_input.height_AGL;
+    GetEstimationInputData();
 
     /* Do a Kalman Step */
-    kalman_step(&filter, global_flight_state.flight_state);
+    kalman_step(&m_filter, m_fsm_enum);
 
-    /* write the Data into the global variable */
-    global_estimation_data.height = filter.x_bar_data[0];
-    global_estimation_data.velocity = filter.x_bar_data[1];
-    global_estimation_data.acceleration = filter.measured_acceleration + filter.x_bar_data[2];
-
-    /* Do Orientation Filter */
-    quaternion_kinematics(&orientation_filter, &global_SI_data.gyro);
     orientation_info_t orientation_info;
     /*
     log_raw("[%lu] KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", tick_count, (int32_t)(orientation_filter.estimate_data[0] *
@@ -101,40 +98,37 @@
               (int32_t)(orientation_filter.estimate_data[3] * 1000));
     */
     for (uint8_t i = 0; i < 4; i++) {
-      orientation_info.estimated_orientation[i] = (int16_t)(orientation_filter.estimate_data[i] * 10000.0f);
+      orientation_info.estimated_orientation[i] = (int16_t)(m_orientation_filter.estimate_data[i] * 10000.0f);
     }
 
     record(tick_count, ORIENTATION_INFO, &orientation_info);
 
     /* record filtered data */
     filtered_data_info_t filtered_data_info = {
-        .filtered_altitude_AGL = filter.measured_AGL,
-        .filtered_acceleration = filter.measured_acceleration,
+        .filtered_altitude_AGL = m_filter.measured_AGL,
+        .filtered_acceleration = m_filter.measured_acceleration,
     };
 
     record(tick_count, FILTERED_DATA_INFO, &filtered_data_info);
 
     /* Log KF outputs */
-    flight_info_t flight_info = {.height = filter.x_bar_data[0],
-                                 .velocity = filter.x_bar_data[1],
-                                 .acceleration = filter.measured_acceleration + filter.x_bar_data[2]};
-    if (global_flight_state.flight_state >= DROGUE) {
-      flight_info.acceleration = filter.x_bar_data[2];
+    flight_info_t flight_info = {.height = m_filter.x_bar_data[0],
+                                 .velocity = m_filter.x_bar_data[1],
+                                 .acceleration = m_filter.measured_acceleration + m_filter.x_bar_data[2]};
+    if (m_fsm_enum >= DROGUE) {
+      flight_info.acceleration = m_filter.x_bar_data[2];
     }
     record(tick_count, FLIGHT_INFO, &flight_info);
 
     // log_info("H: %ld; V: %ld; A: %ld; O: %ld", (int32_t)((float)filter.x_bar.pData[0] * 1000),
     //          (int32_t)((float)filter.x_bar.pData[1] * 1000), (int32_t)(filtered_data_info.filtered_acceleration *
     //          1000), (int32_t)((float)filter.x_bar.pData[2] * 1000));
-    log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, static_cast<double>(filter.x_bar.pData[0]),
-            static_cast<double>(filter.x_bar.pData[1]), static_cast<double>(filter.x_bar_data[2]));
-
-    /* reset old fsm enum */
-    old_fsm_enum = new_fsm_enum;
+    log_sim("[%lu]: height: %f, velocity: %f, offset: %f", tick_count, static_cast<double>(m_filter.x_bar.pData[0]),
+            static_cast<double>(m_filter.x_bar.pData[1]), static_cast<double>(m_filter.x_bar_data[2]));
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
-/** Private Function Definitions **/
+}  // namespace task

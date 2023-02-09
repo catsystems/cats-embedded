@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,14 +61,16 @@
 /* DROGUE */
 // num iterations, height needs to be smaller than user-defined for at least 0.3 s for the transition DROGUE -> MAIN
 #define MAIN_SAFETY_COUNTER 30
+// tick counts [ms]
+#define MIN_TICK_COUNTS_BETWEEN_THRUSTING_APOGEE 1500
 
 /* MAIN */
 // m/s, velocity needs to be smaller than this to detect touchdown
-#define VELOCITY_BOUND_TOUCHDOWN 2.0f
+#define VELOCITY_BOUND_TOUCHDOWN 3.0f
 
 // num iterations, for at least 1s it needs to be smaller
 #define TOUCHDOWN_SAFETY_COUNTER 100
 
 /* Function which implements the FSM */
-void check_flight_phase(flight_fsm_t *fsm_state, vf32_t *acc_data, vf32_t *gyro_data, estimation_output_t *state_data,
+void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
                         float32_t height_AGL, bool ready_transition_allowed, const control_settings_t *settings);

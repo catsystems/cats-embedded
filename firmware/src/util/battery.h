@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,13 @@
 
 #pragma once
 
+#include "arm_math.h"
+
 enum battery_level_e { BATTERY_CRIT = 1, BATTERY_LOW, BATTERY_OK };
 
 void battery_monitor_init();
-float battery_voltage();
+
+float32_t battery_voltage();
+uint16_t battery_voltage_short();
+
 battery_level_e battery_level();

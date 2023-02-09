@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,38 +100,4 @@ void calibrate_gyro(const calibration_data_t *calibration, vf32_t *gyro_data) {
   gyro_data->x = gyro_data->x - calibration->gyro_calib.x;
   gyro_data->y = gyro_data->y - calibration->gyro_calib.y;
   gyro_data->z = gyro_data->z - calibration->gyro_calib.z;
-}
-
-void calibrate_magneto(magneto_data_t *magneto_data, magneto_calibration_data_t *calibration_data) {
-  float test_radii[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
-  float test_bias[10] = {2.0f, 2.1f, 2.2f, 2.3f, 2.4f, 2.5f, 2.6f, 2.7f, 2.8f, 2.9f};
-  int32_t smallest_indices[4] = {};
-  float smallest_value = 10000;
-  float value;
-  for (int radius_i = 0; radius_i < 10; radius_i++) {
-    for (int bias_x_i = 0; bias_x_i < 10; bias_x_i++) {
-      for (int bias_y_i = 0; bias_y_i < 10; bias_y_i++) {
-        for (int bias_z_i = 0; bias_z_i < 10; bias_z_i++) {
-          value = test_radii[radius_i] * test_radii[radius_i] - magneto_data->x * magneto_data->x -
-                  magneto_data->y * magneto_data->y - magneto_data->z * magneto_data->z;
-          value += -2.0f * magneto_data->x * test_bias[bias_x_i] - 2.0f * magneto_data->y * test_bias[bias_y_i] -
-                   2.0f * magneto_data->z * test_bias[bias_z_i];
-          value += -test_bias[bias_x_i] * test_bias[bias_x_i] - test_bias[bias_y_i] * test_bias[bias_y_i] -
-                   test_bias[bias_z_i] * test_bias[bias_z_i];
-          if (value < smallest_value) {
-            smallest_value = value;
-            smallest_indices[0] = radius_i;
-            smallest_indices[1] = bias_x_i;
-            smallest_indices[2] = bias_y_i;
-            smallest_indices[3] = bias_z_i;
-          }
-        }
-      }
-    }
-  }
-
-  calibration_data->magneto_radius = test_radii[smallest_indices[0]];
-  calibration_data->magneto_beta[0] = test_radii[smallest_indices[1]];
-  calibration_data->magneto_beta[1] = test_radii[smallest_indices[2]];
-  calibration_data->magneto_beta[2] = test_radii[smallest_indices[3]];
 }

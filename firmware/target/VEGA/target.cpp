@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,37 +33,22 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-#if IMU_TYPE == ICM20601_TYPE
-sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
-                                                      .conversion_to_SI = 9.81f / 1024.0f,
-                                                      .upper_limit = 32.0f * 9.81f,
-                                                      .lower_limit = -32.0f * 9.81f,
-                                                      .resolution = 1.0f}};
-sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
-                                   .conversion_to_SI = 1.0f / 16.4f,
-                                   .upper_limit = 2000.0f,
-                                   .lower_limit = -2000.0f,
-                                   .resolution = 1.0f}};
-#elif IMU_TYPE == LSM6DSR_TYPE
-sens_info_t acc_info[NUM_IMU + NUM_ACCELEROMETER] = {{.sens_type = IMU_ID_ACC,
-                                                      .conversion_to_SI = 9.81f / 2048.0f,
-                                                      .upper_limit = 16.0f * 9.81f,
-                                                      .lower_limit = -16.0f * 9.81f,
-                                                      .resolution = 1.0f}};
-sens_info_t gyro_info[NUM_IMU] = {{.sens_type = IMU_ID_GYRO,
-                                   .conversion_to_SI = 0.07f,
-                                   .upper_limit = 2000.0f,
-                                   .lower_limit = -2000.0f,
-                                   .resolution = 1.0f}};
-#endif
+sens_info_t acc_info[NUM_IMU] = {{.sens_type = SensorType::kAcc,
+                                  .conversion_to_SI = 9.81F / 1024.0F,
+                                  .upper_limit = 16.0F * 9.81F,
+                                  .lower_limit = -16.0F * 9.81F,
+                                  .resolution = 1.0F}};
+sens_info_t gyro_info[NUM_IMU] = {{.sens_type = SensorType::kGyro,
+                                   .conversion_to_SI = 0.07F,
+                                   .upper_limit = 2000.0F,
+                                   .lower_limit = -2000.0F,
+                                   .resolution = 1.0F}};
 
-sens_info_t mag_info[NUM_MAGNETO] = {};
-
-sens_info_t baro_info[NUM_BARO] = {{.sens_type = BARO_ID,
-                                    .conversion_to_SI = 1.0f,
-                                    .upper_limit = 200000.0f,
-                                    .lower_limit = 10.0f,
-                                    .resolution = 1.0f}};
+sens_info_t baro_info[NUM_BARO] = {{.sens_type = SensorType::kBaro,
+                                    .conversion_to_SI = 1.0F,
+                                    .upper_limit = 200000.0F,
+                                    .lower_limit = 10.0F,
+                                    .resolution = 1.0F}};
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
@@ -159,7 +144,7 @@ static void MX_ADC1_Init(void) {
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 3;
   hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
     Error_Handler();
   }
@@ -167,7 +152,7 @@ static void MX_ADC1_Init(void) {
    */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
   }
@@ -406,39 +391,6 @@ static void MX_USART2_UART_Init(void) {
 }
 
 /**
- * @brief USB_OTG_FS Initialization Function
- * @param None
- * @retval None
- */
-
-static void MX_USB_OTG_FS_PCD_Init(void) {
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
-
-  /* USER CODE END USB_OTG_FS_Init 0 */
-
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
-
-  /* USER CODE END USB_OTG_FS_Init 1 */
-
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK) {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
-
-  /* USER CODE END USB_OTG_FS_Init 2 */
-}
-
-/**
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
@@ -508,7 +460,7 @@ void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1) {
+  while (true) {
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -526,7 +478,7 @@ void target_pre_init() {
   RTC_Init();
 }
 
-void target_init() {
+bool target_init() {
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
@@ -538,5 +490,7 @@ void target_init() {
   MX_USART2_UART_Init();
   if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
     MX_USB_DEVICE_Init();
+    return true;
   }
+  return false;
 }

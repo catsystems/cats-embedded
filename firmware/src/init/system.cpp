@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,15 +22,6 @@
 #include "drivers/w25q.h"
 #include "flash/lfs_custom.h"
 
-#include "sensors/icm20601.h"
-#include "sensors/ms5607.h"
-
-#if NUM_MAGNETO > 0
-#include "sensors/mmc5983ma.h"
-#endif
-
-#include "config/globals.h"
-
 static void init_lfs();
 
 void init_storage() {
@@ -46,26 +37,26 @@ void init_lfs() {
     int err = lfs_mount(&lfs, get_lfs_cfg());
     if (err != 0) {
       /* reformat if we can't mount the filesystem, this should only happen on the first boot */
-      log_raw("LFS mounting failed with error %d!", err);
-      log_raw("Trying LFS format");
+      log_error("LFS mounting failed with error %d!", err);
+      log_error("Trying LFS format");
       lfs_format(&lfs, get_lfs_cfg());
       int err2 = lfs_mount(&lfs, get_lfs_cfg());
       if (err2 != 0) {
-        log_raw("LFS mounting failed again with error %d!", err2);
+        log_error("LFS mounting failed again with error %d!", err2);
       }
     }
 
     err = lfs_file_open(&lfs, &fc_file, "flight_counter", LFS_O_RDWR | LFS_O_CREAT);
     if (err != 0) {
-      log_raw("LFS initialization failed: could not open 'flight_counter' file, error %d", err);
+      log_error("LFS initialization failed: could not open 'flight_counter' file, error %d", err);
       return;
     }
 
     /* read how many flights we have */
     if (lfs_file_read(&lfs, &fc_file, &flight_counter, sizeof(flight_counter)) > 0) {
-      log_debug("Flights found: %lu", flight_counter);
+      log_info("Flights found: %lu", flight_counter);
     } else {
-      log_debug("Flights found: %lu", flight_counter);
+      log_info("Flights found: %lu", flight_counter);
       lfs_file_rewind(&lfs, &fc_file);
       lfs_file_write(&lfs, &fc_file, &flight_counter, sizeof(flight_counter));
     }
@@ -78,71 +69,6 @@ void init_lfs() {
 
     strncpy(cwd, "/", sizeof(cwd));
 
-    log_raw("LFS mounted successfully!");
+    log_info("LFS mounted successfully!");
   }
-}
-
-static void init_imu() {
-  /* TODO: this delay until 1000 prob. isn't needed anymore */
-  /* TODO: Add timeout for sensor init */
-  // HalDelay_un
-  for (int i = 0; i < NUM_IMU; i++) {
-#if IMU_TYPE == ICM20601_TYPE
-    while (!icm20601_init(&IMU_DEV[i])) {
-      log_error("IMU %d initialization failed", i);
-      HAL_Delay(10);
-    }
-#elif IMU_TYPE == LSM6DSR_TYPE
-    while (!lsm6dsr_init(&IMU_DEV[i])) {
-      log_error("IMU %d initialization failed", i);
-      HAL_Delay(10);
-    }
-#endif
-  }
-  for (int i = 0; i < NUM_ACCELEROMETER; i++) {
-    while (!h3lis100dl_init(&ACCEL)) {
-      HAL_Delay(10);
-      log_error("ACCEL initialization failed");
-    }
-  }
-}
-
-static void init_baro() {
-  for (int i = 0; i < NUM_BARO; i++) {
-    ms5607_init(&BARO_DEV[i]);
-    HAL_Delay(10);
-  }
-}
-
-static void init_magneto() {
-#if NUM_MAGNETO > 0
-  spi_init(MAG.spi);
-  mmc5983ma_init(&MAG);
-  // mmc5983_calibration(&MAG);
-#endif
-}
-
-static void init_buzzer() {
-  buzzer_set_freq(&BUZZER, 3200);
-  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
-    buzzer_set_volume(&BUZZER, 0);
-  } else {
-    buzzer_set_volume(&BUZZER, 30);
-  }
-}
-
-void init_devices() {
-  /* IMU */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
-  HAL_Delay(10);
-  init_imu();
-  HAL_Delay(10);
-  /* BARO */
-  init_baro();
-  HAL_Delay(10);
-  /* MAGNETO */
-  init_magneto();
-  HAL_Delay(10);
-  /* BUZZER */
-  init_buzzer();
 }

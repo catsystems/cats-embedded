@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ int lfs_ls(const char *path) {
     static const char *prefixes[] = {"", "K", "M", "G"};
     if (info.type == LFS_TYPE_REG) {
       for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--) {
-        if (info.size >= (1 << 10 * i) - 1) {
+        if (info.size >= (1U << 10 * i) - 1) {
           cli_printf("%*lu%sB ", 4 - (i != 0), info.size >> 10 * i, prefixes[i]);
           break;
         }

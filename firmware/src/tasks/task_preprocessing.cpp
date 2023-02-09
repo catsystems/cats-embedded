@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,171 +16,123 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_preprocessing.h"
+#include "target.h"
+
 #include "config/globals.h"
 #include "control/calibration.h"
 #include "control/data_processing.h"
-#include "control/sensor_elimination.h"
-#include "target.h"
-#include "util/log.h"
+#include "tasks/task_preprocessing.h"
 
-/** Private Constants **/
+#include "util/task_util.h"
 
-/** Private Function Declarations **/
-static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sensor_elimination_t *elimination_data);
+#define MAX_NUM_SAME_VALUE 7
 
-static void median_filter(median_filter_t *filter_data, state_estimation_input_t *state_data);
+namespace task {
 
-static void transform_data(const SI_data_t *SI_data, const calibration_data_t *calibration, float32_t height_0,
-                           state_estimation_input_t *state_data);
-/** Exported Function Definitions **/
+state_estimation_input_t Preprocessing::GetEstimationInput() const noexcept { return m_state_est_input; }
+
+SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
 
 /**
  * @brief Function implementing the task_preprocessing thread.
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_preprocessing(void *argument) {
-  /* Create data structs */
-  static SI_data_t SI_data = {};
-  static SI_data_t SI_data_old = {};
-  SI_data_old.acc.x = GRAVITY;
-  SI_data_old.acc.y = 0.0f;
-  SI_data_old.acc.z = 0.0f;
-  SI_data_old.pressure = P_INITIAL;
-
-#ifdef USE_MEDIAN_FILTER
-  median_filter_t filter_data = {};
-#endif
-
-  sensor_elimination_t sensor_elimination = {};
-
-  /* Calibration Data including the gyro calibration as the first three values and then the angle and axis are for
-   * the linear acceleration calibration */
-  calibration_data_t calibration = {.gyro_calib = {.x = 0, .y = 0, .z = 0}, .angle = 1, .axis = 2};
-  state_estimation_input_t state_est_input = {.acceleration_z = 0.0f, .height_AGL = 0.0f};
-  float32_t height_0 = 0.0f;
-
-  /* Gyro Calib tag */
-  bool gyro_calibrated = false;
-
-  /* local fsm enum */
-  flight_fsm_e new_fsm_enum = MOVING;
-  flight_fsm_e old_fsm_enum = MOVING;
-
+[[noreturn]] void Preprocessing::Run() noexcept {
   /* Infinite loop */
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
+  while (true) {
     /* update fsm enum */
-    new_fsm_enum = global_flight_state.flight_state;
+    bool fsm_updated = GetNewFsmEnum();
+
+    /* get new sensor data */
+    m_baro_data[0] = m_task_sensor_read.GetBaro(0);
+    m_imu_data[0] = m_task_sensor_read.GetImu(0);
 
     /* Do the sensor elimination */
-    check_sensors(&sensor_elimination);
+    CheckSensors();
 
     /* average and construct SI Data */
-    avg_and_to_SI(&SI_data, &SI_data_old, &sensor_elimination);
+    AvgToSi();
 
     /* Compute gravity when changing to READY */
-    if ((new_fsm_enum != old_fsm_enum) && (new_fsm_enum == READY)) {
-      calibrate_imu(&SI_data.acc, &calibration);
-      global_flight_stats.calibration_data.angle = calibration.angle;
-      global_flight_stats.calibration_data.axis = calibration.axis;
+    if (fsm_updated && (m_fsm_enum == READY)) {
+      calibrate_imu(&m_si_data.acc, &m_calibration);
+      global_flight_stats.calibration_data.angle = m_calibration.angle;
+      global_flight_stats.calibration_data.axis = m_calibration.axis;
     }
 
     /* calibrate gyro once at startup */
-    if (!gyro_calibrated) {
-      gyro_calibrated = compute_gyro_calibration(&SI_data.gyro, &calibration);
+    if (!m_gyro_calibrated) {
+      m_gyro_calibrated = compute_gyro_calibration(&m_si_data.gyro, &m_calibration);
     } else {
-      calibrate_gyro(&calibration, &SI_data.gyro);
-      global_flight_stats.calibration_data.gyro_calib = calibration.gyro_calib;
+      calibrate_gyro(&m_calibration, &m_si_data.gyro);
+      global_flight_stats.calibration_data.gyro_calib = m_calibration.gyro_calib;
     }
 
     /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
-    if (new_fsm_enum == MOVING) {
-      height_0 = approx_moving_average(calculate_height(SI_data.pressure), true);
-      global_flight_stats.height_0 = height_0;
+    if (m_fsm_enum == MOVING) {
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), true);
+      global_flight_stats.height_0 = m_height_0;
     }
     /* Compute current height constantly before liftoff. If the state is ready, the filter is much slower. */
-    if (new_fsm_enum == READY) {
-      height_0 = approx_moving_average(calculate_height(SI_data.pressure), false);
-      global_flight_stats.height_0 = height_0;
+    if (m_fsm_enum == READY) {
+      m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), false);
+      global_flight_stats.height_0 = m_height_0;
     }
 
     /* Get Sensor Readings already transformed in the right coordinate Frame */
-    transform_data(&SI_data, &calibration, height_0, &state_est_input);
+    TransformData();
 
 #ifdef USE_MEDIAN_FILTER
     /* Filter the data */
-    median_filter(&filter_data, &state_est_input);
+    MedianFilter();
 #endif
 
-    /* reset old fsm enum */
-    old_fsm_enum = new_fsm_enum;
-
-    memcpy(&SI_data_old, &SI_data, sizeof(SI_data));
-
-    /* write input data into global struct */
-    global_estimation_input = state_est_input;
-
-    /* Global SI data is only used in the fsm task */
-    global_SI_data = SI_data;
+    memcpy(&m_si_data_old, &m_si_data, sizeof(m_si_data));
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
 }
 
-static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sensor_elimination_t *elimination_data) {
+void Preprocessing::AvgToSi() noexcept {
   float32_t counter = 0;
 #if NUM_IMU > 0
   /* Reset SI data */
-  SI_data->acc.x = 0;
-  SI_data->acc.y = 0;
-  SI_data->acc.z = 0;
-  SI_data->gyro.x = 0;
-  SI_data->gyro.y = 0;
-  SI_data->gyro.z = 0;
+  m_si_data.acc.x = 0;
+  m_si_data.acc.y = 0;
+  m_si_data.acc.z = 0;
+  m_si_data.gyro.x = 0;
+  m_si_data.gyro.y = 0;
+  m_si_data.gyro.z = 0;
 
   /* Sum up all non-eliminated IMUs and transform to SI */
   for (int i = 0; i < NUM_IMU; i++) {
-    if (elimination_data->faulty_imu[i] == 0) {
+    if (m_sensor_elimination.faulty_imu[i] == 0) {
       counter++;
-      SI_data->acc.x += (float32_t)global_imu[i].acc.x * acc_info[i].conversion_to_SI;
-      SI_data->acc.y += (float32_t)global_imu[i].acc.y * acc_info[i].conversion_to_SI;
-      SI_data->acc.z += (float32_t)global_imu[i].acc.z * acc_info[i].conversion_to_SI;
-      SI_data->gyro.x += (float32_t)global_imu[i].gyro.x * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.y += (float32_t)global_imu[i].gyro.y * gyro_info[i].conversion_to_SI;
-      SI_data->gyro.z += (float32_t)global_imu[i].gyro.z * gyro_info[i].conversion_to_SI;
+      m_si_data.acc.x += (float32_t)m_imu_data[i].acc.x * acc_info[i].conversion_to_SI;
+      m_si_data.acc.y += (float32_t)m_imu_data[i].acc.y * acc_info[i].conversion_to_SI;
+      m_si_data.acc.z += (float32_t)m_imu_data[i].acc.z * acc_info[i].conversion_to_SI;
+      m_si_data.gyro.x += (float32_t)m_imu_data[i].gyro.x * gyro_info[i].conversion_to_SI;
+      m_si_data.gyro.y += (float32_t)m_imu_data[i].gyro.y * gyro_info[i].conversion_to_SI;
+      m_si_data.gyro.z += (float32_t)m_imu_data[i].gyro.z * gyro_info[i].conversion_to_SI;
     }
   }
-
-#if NUM_ACCELEROMETER > 0
-  /* If all IMUs have been eliminated use high G accel */
-  if (counter == 0) {
-    for (int i = 0; i < NUM_ACCELEROMETER; i++) {
-      if (elimination_data->faulty_acc[i] == 0) {
-        counter++;
-        SI_data->acc.x += (float32_t)global_acc[i].x * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.y += (float32_t)global_acc[i].y * acc_info[NUM_IMU + i].conversion_to_SI;
-        SI_data->acc.z += (float32_t)global_acc[i].z * acc_info[NUM_IMU + i].conversion_to_SI;
-      }
-    }
-  }
-#endif
 
   /* average for SI data */
   if (counter > 0) {
-    SI_data->acc.x /= counter;
-    SI_data->acc.y /= counter;
-    SI_data->acc.z /= counter;
-    SI_data->gyro.x /= counter;
-    SI_data->gyro.y /= counter;
-    SI_data->gyro.z /= counter;
+    m_si_data.acc.x /= counter;
+    m_si_data.acc.y /= counter;
+    m_si_data.acc.z /= counter;
+    m_si_data.gyro.x /= counter;
+    m_si_data.gyro.y /= counter;
+    m_si_data.gyro.z /= counter;
     clear_error(CATS_ERR_FILTER_ACC);
   } else {
-    SI_data->acc = SI_data_old->acc;
-    SI_data->gyro = SI_data_old->gyro;
+    m_si_data.acc = m_si_data_old.acc;
+    m_si_data.gyro = m_si_data_old.gyro;
     add_error(CATS_ERR_FILTER_ACC);
   }
 
@@ -188,79 +140,145 @@ static void avg_and_to_SI(SI_data_t *SI_data, SI_data_t *SI_data_old, const sens
 
 #if NUM_BARO > 0
   counter = 0;
-  SI_data->pressure = 0;
+  m_si_data.pressure = 0;
   for (int i = 0; i < NUM_BARO; i++) {
-    if (elimination_data->faulty_baro[i] == 0) {
+    if (m_sensor_elimination.faulty_baro[i] == 0) {
       counter++;
-      SI_data->pressure += (float32_t)global_baro[i].pressure * baro_info[i].conversion_to_SI;
+      m_si_data.pressure += (float32_t)m_baro_data[i].pressure * baro_info[i].conversion_to_SI;
     }
   }
   if (counter > 0) {
-    SI_data->pressure /= counter;
+    m_si_data.pressure /= counter;
     clear_error(CATS_ERR_FILTER_HEIGHT);
   } else {
-    SI_data->pressure = SI_data_old->pressure;
+    m_si_data.pressure = m_si_data_old.pressure;
     add_error(CATS_ERR_FILTER_HEIGHT);
   }
 #endif
-
-#if NUM_MAGNETO > 0
-  counter = 0;
-  SI_data->mag.x = 0;
-  SI_data->mag.y = 0;
-  SI_data->mag.z = 0;
-  for (int i = 0; i < NUM_MAGNETO; i++) {
-    if (elimination_data->faulty_mag[i] == 0) {
-      counter++;
-      SI_data->mag.x += (float32_t)global_magneto[i].x * mag_info[i].conversion_to_SI;
-      SI_data->mag.y += (float32_t)global_magneto[i].y * mag_info[i].conversion_to_SI;
-      SI_data->mag.z += (float32_t)global_magneto[i].z * mag_info[i].conversion_to_SI;
-    }
-  }
-  if (counter > 0) {
-    SI_data->mag.x /= counter;
-    SI_data->mag.y /= counter;
-    SI_data->mag.z /= counter;
-  } else {
-    /* Todo: Add error */
-    SI_data->mag = SI_data_old->mag;
-  }
-#endif
 }
 
-static void median_filter(median_filter_t *filter_data, state_estimation_input_t *state_data) {
+void Preprocessing::MedianFilter() noexcept {
   /* Insert into array */
-  filter_data->acc[filter_data->counter] = state_data->acceleration_z;
-  filter_data->height_AGL[filter_data->counter] = state_data->height_AGL;
+  m_filter_data.acc[m_filter_data.counter] = m_state_est_input.acceleration_z;
+  m_filter_data.height_AGL[m_filter_data.counter] = m_state_est_input.height_AGL;
 
   /* Update Counter */
-  filter_data->counter++;
-  filter_data->counter = filter_data->counter % MEDIAN_FILTER_SIZE;
+  m_filter_data.counter++;
+  m_filter_data.counter = m_filter_data.counter % MEDIAN_FILTER_SIZE;
 
   /* Filter data */
-  state_data->acceleration_z = median(filter_data->acc);
-  state_data->height_AGL = median(filter_data->height_AGL);
+  m_state_est_input.acceleration_z = median(m_filter_data.acc);
+  m_state_est_input.height_AGL = median(m_filter_data.height_AGL);
 }
 
-static void transform_data(const SI_data_t *SI_data, const calibration_data_t *calibration, float32_t height_0,
-                           state_estimation_input_t *state_data) {
+void Preprocessing::TransformData() noexcept {
   /* Get Data from the Sensors */
   /* Use calibration step to get the correct acceleration */
-  switch (calibration->axis) {
+  switch (this->m_calibration.axis) {
     case 0:
       /* Choose X Axis */
-      state_data->acceleration_z = SI_data->acc.x / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.x / m_calibration.angle - GRAVITY;
       break;
     case 1:
       /* Choose Y Axis */
-      state_data->acceleration_z = SI_data->acc.y / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.y / m_calibration.angle - GRAVITY;
       break;
     case 2:
       /* Choose Z Axis */
-      state_data->acceleration_z = SI_data->acc.z / calibration->angle - GRAVITY;
+      m_state_est_input.acceleration_z = m_si_data.acc.z / m_calibration.angle - GRAVITY;
       break;
     default:
       break;
   }
-  state_data->height_AGL = calculate_height(SI_data->pressure) - height_0;
+  this->m_state_est_input.height_AGL = calculate_height(m_si_data.pressure) - m_height_0;
 }
+
+void Preprocessing::CheckSensors() noexcept {
+  cats_error_e status = CATS_ERR_OK;
+
+  /* IMU */
+  for (uint8_t i = 0; i < NUM_IMU; i++) {
+    status = (cats_error_e)(CheckSensorBounds(i, &acc_info[i]) | CheckSensorFreezing(i, &acc_info[i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_imu[i] = 0;
+      clear_error((cats_error_e)(CATS_ERR_IMU_0 << i));
+    } else {
+      add_error(status);
+    }
+  }
+
+  /* Barometer */
+  for (uint8_t i = 0; i < NUM_BARO; i++) {
+    status = (cats_error_e)(CheckSensorBounds(i, &baro_info[i]) | CheckSensorFreezing(i, &baro_info[i]));
+    /* Check if accel is not faulty anymore */
+    if (status == CATS_ERR_OK) {
+      m_sensor_elimination.faulty_baro[i] = 0;
+      clear_error((cats_error_e)(CATS_ERR_BARO_0 << i));
+    } else {
+      add_error(status);
+    }
+  }
+}
+
+cats_error_e Preprocessing::CheckSensorBounds(uint8_t index, const sens_info_t *sens_info) noexcept {
+  cats_error_e status = CATS_ERR_OK;
+
+  switch (sens_info->sens_type) {
+    case SensorType::kBaro:
+      if ((((float32_t)m_baro_data[index].pressure * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)m_baro_data[index].pressure * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+        m_sensor_elimination.faulty_baro[index] = 1;
+        status = (cats_error_e)(CATS_ERR_BARO_0 << index);
+      }
+      break;
+    case SensorType::kAcc:
+      if ((((float32_t)m_imu_data[index].acc.x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          (((float32_t)m_imu_data[index].acc.x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+        m_sensor_elimination.faulty_imu[index] = 1;
+        status = (cats_error_e)(CATS_ERR_IMU_0 << index);
+      }
+      break;
+    default:
+      break;
+  }
+
+  return status;
+}
+
+cats_error_e Preprocessing::CheckSensorFreezing(uint8_t index, const sens_info_t *sens_info) noexcept {
+  cats_error_e status = CATS_ERR_OK;
+
+  switch (sens_info->sens_type) {
+    case SensorType::kBaro:
+      if (m_baro_data[index].pressure == m_sensor_elimination.last_value_baro[index]) {
+        m_sensor_elimination.freeze_counter_baro[index]++;
+        if (m_sensor_elimination.freeze_counter_baro[index] > MAX_NUM_SAME_VALUE) {
+          m_sensor_elimination.faulty_baro[index] = 1;
+          status = (cats_error_e)(CATS_ERR_BARO_0 << index);
+        }
+      } else {
+        m_sensor_elimination.last_value_baro[index] = m_baro_data[index].pressure;
+        m_sensor_elimination.freeze_counter_baro[index] = 0;
+      }
+      break;
+    case SensorType::kAcc:
+      if (m_imu_data[index].acc.x == m_sensor_elimination.last_value_imu[index]) {
+        m_sensor_elimination.freeze_counter_imu[index]++;
+        if (m_sensor_elimination.freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
+          m_sensor_elimination.faulty_imu[index] = 1;
+          status = (cats_error_e)(CATS_ERR_IMU_0 << index);
+        }
+      } else {
+        m_sensor_elimination.last_value_imu[index] = m_imu_data[index].acc.x;
+        m_sensor_elimination.freeze_counter_imu[index] = 0;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return status;
+}
+
+}  // namespace task

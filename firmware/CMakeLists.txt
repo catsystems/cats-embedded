@@ -51,7 +51,12 @@ link_directories(lib/CMSIS/DSP/lib)
 
 add_compile_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_compile_options(-ffunction-sections -fdata-sections -fno-common -fmessage-length=0 -fdiagnostics-color=always -fstack-usage
-        -Wall -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -Wformat=2 -Wformat-truncation=2 -Wformat-overflow -Werror=format)
+        -Wall -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -Wformat=2 -Wformat-truncation=2 -Wformat-overflow -Wformat-signedness -Werror)
+
+# Disable volatile warnings of type "compound assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]"
+# This is heavily used by STM libraries and creates too much noise when compiling
+# Eventually this flag should be set only for library files
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-volatile")
 
 # uncomment to mitigate c++17 absolute addresses warnings
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-register")

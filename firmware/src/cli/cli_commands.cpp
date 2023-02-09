@@ -26,6 +26,7 @@
 #include "flash/lfs_custom.h"
 #include "flash/reader.h"
 #include "main.h"
+#include "tasks/task_state_est.h"
 #include "util/actions.h"
 #include "util/battery.h"
 #include "util/enum_str_maps.h"
@@ -199,19 +200,19 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_set(const char *cmd_name, char *args) {
-  const uint32_t len = strlen(args);
+  const uint32_t arg_len = strlen(args);
   char *eqptr = nullptr;
 
-  if (len == 0 || (len == 1 && args[0] == '*')) {
+  if (arg_len == 0 || (arg_len == 1 && args[0] == '*')) {
     cli_print_line("Current settings: ");
 
-    // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-    print_cats_config(cmd_name, &global_cats_config, len);
+    // when arg_len is 1 (when * is passed as argument), it will print min/max values as well, for gui
+    print_cats_config(cmd_name, &global_cats_config, arg_len);
 
   } else if ((eqptr = strstr(args, "=")) != nullptr) {
     // has equals
 
-    uint8_t variable_name_length = get_word_length(args, eqptr);
+    const uint8_t variable_name_length = get_word_length(args, eqptr);
 
     // skip the '=' and any ' ' characters
     eqptr++;
@@ -229,7 +230,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     switch (val->type & VALUE_MODE_MASK) {
       case MODE_DIRECT: {
         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-          uint32_t value = strtoul(eqptr, nullptr, 10);
+          const uint32_t value = strtoul(eqptr, nullptr, 10);
 
           if (value <= val->config.u32_max) {
             cli_set_var(val, value);
@@ -365,6 +366,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       if (val->cb != nullptr) {
         val->cb(val);
       }
+      global_cats_config.is_set_by_user = true;
     } else {
       cli_print_error_linef(cmd_name, "INVALID VALUE");
       cli_print_var_range(val);
@@ -388,7 +390,7 @@ static void cli_cmd_defaults(const char *cmd_name, char *args) {
   if (!strcmp(args, "--no-outputs")) {
     use_default_outputs = false;
   }
-  cc_defaults(use_default_outputs);
+  cc_defaults(use_default_outputs, true);
   cli_print_linef("Reset to default values%s", use_default_outputs ? "" : " [no outputs]");
 }
 
@@ -403,10 +405,15 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 
 static void cli_cmd_status(const char *cmd_name, char *args) {
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
-  cli_printf("State:       %s\n", fsm_map[global_flight_state.flight_state]);
+  auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
+  if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+    new_enum = INVALID;
+  }
+  cli_printf("State:       %s\n", fsm_map[new_enum]);
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)global_estimation_data.height,
-             (double)global_estimation_data.velocity, (double)global_estimation_data.acceleration);
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)task::global_state_estimation->GetEstimationOutput().height,
+             (double)task::global_state_estimation->GetEstimationOutput().velocity,
+             (double)task::global_state_estimation->GetEstimationOutput().acceleration);
 
 #ifdef CATS_DEBUG
   if (!strcmp(args, "--heap")) {
@@ -427,7 +434,7 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
 
 static void cli_cmd_version(const char *cmd_name, char *args) {
   /* TODO: Store the board name somewhere else. */
-  cli_printf("Board: %s\n", "CATS v2");
+  cli_printf("Board: %s\n", "CATS Vega");
   cli_printf("CPU ID: 0x%lx, Revision: 0x%lx\n", HAL_GetDEVID(), HAL_GetREVID());
   cli_printf("Code version: %s\n", code_version);
 }
@@ -568,7 +575,7 @@ static int32_t get_flight_idx(const char *log_idx_arg) {
   }
 
   char *endptr = nullptr;
-  int32_t flight_idx = strtol(log_idx_arg, &endptr, 10);
+  uint32_t flight_idx = strtoul(log_idx_arg, &endptr, 10);
 
   if (log_idx_arg == endptr) {
     cli_print_linef("\nInvalid argument: %s.", log_idx_arg);
@@ -623,8 +630,6 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
       while (ptr != nullptr) {
         if (!strcmp(ptr, "IMU")) filter_mask = (rec_entry_type_e)(filter_mask | IMU);
         if (!strcmp(ptr, "BARO")) filter_mask = (rec_entry_type_e)(filter_mask | BARO);
-        if (!strcmp(ptr, "MAGNETO")) filter_mask = (rec_entry_type_e)(filter_mask | MAGNETO);
-        if (!strcmp(ptr, "ACCELEROMETER")) filter_mask = (rec_entry_type_e)(filter_mask | ACCELEROMETER);
         if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_INFO);
         if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ORIENTATION_INFO);
         if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FILTERED_DATA_INFO);
@@ -632,6 +637,7 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
         if (!strcmp(ptr, "EVENT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | EVENT_INFO);
         if (!strcmp(ptr, "ERROR_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ERROR_INFO);
         if (!strcmp(ptr, "GNSS_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | GNSS_INFO);
+        if (!strcmp(ptr, "VOLTAGE_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | VOLTAGE_INFO);
         ptr = strtok(nullptr, " ");
       }
     } else {
@@ -834,9 +840,9 @@ static void cli_cmd_start_simulation(const char *cmd_name, char *args) { start_s
 static void print_control_config() {
   cli_print_line("\n * CONTROL SETTINGS *\n");
 
-  cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.config.control_settings.liftoff_acc_threshold);
-  cli_printf("  Liftoff Detection AGL:  %u m\n", global_cats_config.config.control_settings.liftoff_detection_agl);
-  cli_printf("  Main Altitude:          %u m\n", global_cats_config.config.control_settings.main_altitude);
+  cli_printf("  Liftoff Acc. Threshold: %u m/s^2\n", global_cats_config.control_settings.liftoff_acc_threshold);
+  cli_printf("  Liftoff Detection AGL:  %u m\n", global_cats_config.control_settings.liftoff_detection_agl);
+  cli_printf("  Main Altitude:          %u m\n", global_cats_config.control_settings.main_altitude);
 }
 
 static void print_action_config() {
@@ -863,11 +869,11 @@ static void print_timer_config() {
 
   cli_printf("\n\n * TIMER CONFIGURATION *\n");
   for (int i = 0; i < NUM_TIMERS; i++) {
-    if (global_cats_config.config.timers[i].duration > 0) {
+    if (global_cats_config.timers[i].duration > 0) {
       cli_printf("\nTIMER %d\n", i + 1);
-      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.config.timers[i].start_event]);
-      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.config.timers[i].trigger_event]);
-      cli_printf("  Duration: %lu ms\n", global_cats_config.config.timers[i].duration);
+      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.timers[i].start_event]);
+      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.timers[i].trigger_event]);
+      cli_printf("  Duration: %lu ms\n", global_cats_config.timers[i].duration);
     }
   }
 }

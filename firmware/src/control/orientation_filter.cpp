@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,11 +34,11 @@ void reset_orientation_filter(orientation_filter_t* filter) {
   filter->estimate_data[3] = 0.0f;
 }
 
-void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_vel) {
+void quaternion_kinematics(orientation_filter_t* filter, const vf32_t angular_vel) {
   filter->gyro_data[0] = 0.0f;
-  filter->gyro_data[1] = angular_vel->x / 180.0f * PI;  // Convert to rad/s
-  filter->gyro_data[2] = angular_vel->y / 180.0f * PI;  // Convert to rad/s
-  filter->gyro_data[3] = angular_vel->z / 180.0f * PI;  // Convert to rad/s
+  filter->gyro_data[1] = angular_vel.x / 180.0f * PI;  // Convert to rad/s
+  filter->gyro_data[2] = angular_vel.y / 180.0f * PI;  // Convert to rad/s
+  filter->gyro_data[3] = angular_vel.z / 180.0f * PI;  // Convert to rad/s
 
   /* x_hat = x_bar + 1/2*Ts(quat_mult(velocity, x_bar)) */
   float32_t holder_data[4] = {};

@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,4 +18,42 @@
 
 #pragma once
 
-[[noreturn]] void task_state_est(void *argument);
+#include "task.h"
+
+#include "control/kalman_filter.h"
+#include "control/orientation_filter.h"
+#include "tasks/task_preprocessing.h"
+#include "util/error_handler.h"
+#include "util/log.h"
+#include "util/types.h"
+
+#include "task_preprocessing.h"
+
+namespace task {
+
+class StateEstimation;
+extern StateEstimation* global_state_estimation;
+
+class StateEstimation final : public Task<StateEstimation, 512> {
+ public:
+  explicit StateEstimation(const Preprocessing& task_preprocessing)
+      : m_task_preprocessing{task_preprocessing},
+        m_filter{.t_sampl = 1.0F / static_cast<float>(CONTROL_SAMPLING_FREQ)},
+        m_orientation_filter{} {
+    global_state_estimation = this;
+  }
+  [[nodiscard]] estimation_output_t GetEstimationOutput() const noexcept;
+
+ private:
+  [[noreturn]] void Run() noexcept override;
+
+  void GetEstimationInputData();
+
+  const Preprocessing& m_task_preprocessing;
+
+  /* Initialize State Estimation */
+  kalman_filter_t m_filter;
+  orientation_filter_t m_orientation_filter;
+};
+
+}  // namespace task

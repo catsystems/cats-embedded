@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,13 @@
 
 #pragma once
 
+#include "config/cats_config.h"
 #include "util/error_handler.h"
 #include "util/gnss.h"
 #include "util/types.h"
 
+#include "arm_math.h"
 #include "cmsis_os.h"
-#include "config/cats_config.h"
 
 /** Exported Defines **/
 
@@ -45,28 +46,27 @@
 
 // clang-format off
  enum rec_entry_type_e: uint32_t {
-  // Periodic recorder types, their recording speed is affected by global_cats_config.config.rec_speed_idx
+  // Periodic recorder types, their recording speed is affected by global_cats_config.rec_speed_idx
   IMU                = 1 << 4,   // 0x20
   BARO               = 1 << 5,   // 0x40
-  MAGNETO            = 1 << 6,   // 0x80
-  ACCELEROMETER      = 1 << 7,   // 0x100
-  FLIGHT_INFO        = 1 << 8,   // 0x200
-  ORIENTATION_INFO   = 1 << 9,   // 0x400
-  FILTERED_DATA_INFO = 1 << 10,  // 0x800
+  FLIGHT_INFO        = 1 << 6,   // 0x80
+  ORIENTATION_INFO   = 1 << 7,   // 0x100
+  FILTERED_DATA_INFO = 1 << 8,   // 0x200
 // Sporadic recorder types, they will always be logged
-  FLIGHT_STATE       = 1 << 11,  // 0x1000
-  EVENT_INFO         = 1 << 12,  // 0x2000
-  ERROR_INFO         = 1 << 13,  // 0x4000
-  GNSS_INFO          = 1 << 14,  // 0x8000
+  FLIGHT_STATE       = 1 << 9,   // 0x400
+  EVENT_INFO         = 1 << 10,  // 0x800
+  ERROR_INFO         = 1 << 11,  // 0x1000
+  GNSS_INFO          = 1 << 12,  // 0x2000
+  VOLTAGE_INFO       = 1 << 13,  // 0x4000
 };
 // clang-format on
 
 enum rec_cmd_type_e { REC_CMD_INVALID = 0, REC_CMD_FILL_Q = 1, REC_CMD_FILL_Q_STOP, REC_CMD_WRITE, REC_CMD_WRITE_STOP };
 
 struct flight_info_t {
-  float height;
-  float velocity;
-  float acceleration; /* Acceleration with removed offset from inside the KF */
+  float32_t height;
+  float32_t velocity;
+  float32_t acceleration; /* Acceleration with removed offset from inside the KF */
 };
 
 struct orientation_info_t {
@@ -74,9 +74,9 @@ struct orientation_info_t {
 };
 
 struct filtered_data_info_t {
-  float filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
-  float filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the right coordinate
-                                  frame. */
+  float32_t filtered_altitude_AGL; /* Averaged median-filtered values from Baro data. */
+  float32_t filtered_acceleration; /* Averaged median-filtered values from acceleration converted into the correct
+                                  coordinate frame. */
 };
 
 struct event_info_t {
@@ -88,11 +88,12 @@ struct error_info_t {
   cats_error_e error;
 };
 
+/* Voltage in mV */
+using voltage_info_t = uint16_t;
+
 union rec_elem_u {
   imu_data_t imu;
   baro_data_t baro;
-  magneto_data_t magneto_info;
-  accel_data_t accel_data;
   flight_info_t flight_info;
   orientation_info_t orientation_info;
   filtered_data_info_t filtered_data_info;
@@ -100,6 +101,7 @@ union rec_elem_u {
   event_info_t event_info;
   error_info_t error_info;
   gnss_position_t gnss_info;
+  voltage_info_t voltage_info;
 };
 
 struct rec_elem_t {
@@ -111,20 +113,20 @@ struct rec_elem_t {
 /* Flight Statistics */
 
 struct flight_stats_t {
-  cats_config_u config;
+  cats_config_t config;
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_height;
 
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_velocity;
 
   struct {
     timestamp_t ts;
-    float val;
+    float32_t val;
   } max_acceleration;
 
   calibration_data_t calibration_data;

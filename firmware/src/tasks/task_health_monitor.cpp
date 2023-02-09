@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,39 +21,61 @@
 #include "config/cats_config.h"
 #include "config/globals.h"
 #include "drivers/adc.h"
+#include "usb_device.h"
 #include "util/actions.h"
 #include "util/battery.h"
-#include "util/buzzer_handler.h"
+#include "util/log.h"
 #include "util/task_util.h"
 
-#include "tasks/task_simulator.h"
 #include "tasks/task_usb_communicator.h"
 
 /** Private Constants **/
 
 /** Private Function Declarations **/
+
+namespace task {
+
 static void check_high_current_channels();
 
 static void init_communication();
 
-SET_TASK_PARAMS(task_usb_communicator, 512)
-
 /** Exported Function Definitions **/
 
-[[noreturn]] void task_health_monitor(__attribute__((unused)) void *argument) {
+[[noreturn]] void HealthMonitor::Run() noexcept {
   // an increase of 1 on the timer means 10 ms
   uint32_t ready_timer = 0;
   uint32_t pyro_check_timer = 0;
-  flight_fsm_e old_fsm_state = MOVING;
+  uint32_t voltage_logging_timer = 0;
   battery_level_e old_level = BATTERY_OK;
 
+  m_task_buzzer.Beep(Buzzer::BeepCode::kBootup);
+
   uint32_t tick_count = osKernelGetTickCount();
-  uint32_t tick_update = osKernelGetTickFreq() / CONTROL_SAMPLING_FREQ;
-  while (1) {
+  constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
+
+  while (true) {
+    /* Uncomment the code below to enable stack usage monitoring:
+     *
+     * static uint32_t initial_stack_sz = 0xFFFFFFFF;
+     * uint32_t curr_stack_sz = osThreadGetStackSpace(osThreadGetId());
+     * if ((initial_stack_sz == 0xFFFFFFFF) || (curr_stack_sz < initial_stack_sz)) {
+     *  log_raw("[%lu] [Health Monitor] Remaining stack sz: %lu B", osKernelGetTickCount(), curr_stack_sz);
+     *  initial_stack_sz = curr_stack_sz;
+     * }
+     */
+
+    /* Get new FSM enum */
+    bool fsm_updated = GetNewFsmEnum();
+
     if (global_usb_detection == true && usb_communication_complete == false) {
       init_communication();
     }
-
+    if (usb_device_initialized == false) {
+      if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
+        MX_USB_DEVICE_Init();
+        usb_device_initialized = true;
+      }
+    }
     // Check battery level
     battery_level_e level = battery_level();
     bool level_changed = (old_level != level);
@@ -69,34 +91,38 @@ SET_TASK_PARAMS(task_usb_communicator, 512)
       clear_error(CATS_ERR_BAT_CRITICAL);
     }
 
+    /* Record voltage information with 1Hz. */
+    if (++voltage_logging_timer >= 100) {
+      voltage_logging_timer = 0;
+      uint16_t voltage = battery_voltage_short();
+      record(osKernelGetTickCount(), VOLTAGE_INFO, &voltage);
+    }
+
     old_level = battery_level();
 
     // Periodically check pyros channels as long as we are on the ground
-    if ((global_flight_state.flight_state < THRUSTING) && (pyro_check_timer >= 200)) {
+    if ((m_fsm_enum < THRUSTING) && (pyro_check_timer >= 200)) {
       check_high_current_channels();
       pyro_check_timer = 0;
     } else {
-      pyro_check_timer++;
+      ++pyro_check_timer;
     }
 
     // Beep out ready buzzer
-    if ((global_flight_state.flight_state == READY) && (ready_timer >= 500)) {
-      buzzer_queue_status(CATS_BUZZ_READY);
+    if ((m_fsm_enum == READY) && (ready_timer >= 500)) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kReady);
       ready_timer = 0;
-    } else if (global_flight_state.flight_state == READY) {
-      ready_timer++;
+    } else if (m_fsm_enum == READY) {
+      ++ready_timer;
     }
 
     // Beep out transitions from moving to ready and back
-    if (global_flight_state.flight_state == READY && (global_flight_state.flight_state != old_fsm_state))
-      buzzer_queue_status(CATS_BUZZ_CHANGED_READY);
-    if (global_flight_state.flight_state == MOVING && (global_flight_state.flight_state != old_fsm_state))
-      buzzer_queue_status(CATS_BUZZ_CHANGED_MOVING);
-
-    // Update the buzzer
-    buzzer_handler_update();
-
-    old_fsm_state = global_flight_state.flight_state;
+    if (m_fsm_enum == READY && fsm_updated) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedReady);
+    }
+    if (m_fsm_enum == MOVING && fsm_updated && tick_count > 100U) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedMoving);
+    }
 
     tick_count += tick_update;
     osDelayUntil(tick_count);
@@ -128,12 +154,6 @@ static void check_high_current_channels() {
                 error_encountered = true;
               }
               break;
-            case ACT_HIGH_CURRENT_THREE:
-              if (adc_get(ADC_PYRO3) < 500) {
-                add_error(CATS_ERR_NO_PYRO);
-                error_encountered = true;
-              }
-              break;
             default:
               break;
           }
@@ -145,6 +165,8 @@ static void check_high_current_channels() {
 }
 
 static void init_communication() {
-  osThreadNew(task_usb_communicator, nullptr, &task_usb_communicator_attributes);
+  UsbCommunicator::Start();
   usb_communication_complete = true;
 }
+
+}  // namespace task

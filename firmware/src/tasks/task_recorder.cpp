@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,9 @@ static void create_stats_file();
 
 /** Exported Function Definitions **/
 
-[[noreturn]] void task_recorder(__attribute__((unused)) void *argument) {
+namespace task {
+
+[[noreturn]] void Recorder::Run() noexcept {
   uint8_t rec_buffer[REC_BUFFER_LEN] = {};
 
   uint16_t rec_buffer_idx = 0;
@@ -48,12 +50,11 @@ static void create_stats_file();
   log_debug("Recorder Task Started...\n");
 
   uint16_t bytes_remaining = 0;
-  uint32_t max_elem_count = 0;
 
   lfs_file_t current_flight_file;
   char current_flight_filename[MAX_FILENAME_SIZE] = {};
 
-  while (1) {
+  while (true) {
     rec_cmd_type_e curr_rec_cmd = REC_CMD_INVALID;
     if (osMessageQueueGet(rec_cmd_queue, &curr_rec_cmd, nullptr, osWaitForever) != osOK) {
       log_error("Something wrong with the command recorder queue");
@@ -68,7 +69,7 @@ static void create_stats_file();
         rec_elem_t dummy_log_elem;
         uint32_t cmd_check_counter = 0;
         log_info("Started filling pre recording queue");
-        while (1) {
+        while (true) {
           uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
           if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT) {
             /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
@@ -115,7 +116,7 @@ static void create_stats_file();
         rec_elem_t curr_log_elem;
         uint32_t sync_counter = 0;
         log_info("Started writing to flash");
-        while (1) {
+        while (true) {
           /* TODO: check if this should be < or <= */
           while (rec_buffer_idx < REC_BUFFER_LEN) {
             // uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
@@ -129,15 +130,15 @@ static void create_stats_file();
               write_value(&curr_log_elem, rec_buffer, &rec_buffer_idx, &curr_log_elem_size);
             } else {
               if (global_recorder_status < REC_FILL_QUEUE) {
-                log_raw("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
+                log_warn("global_recorder_status < REC_FILL_QUEUE, breaking out of the queue loop.");
               } else {
                 log_error("Something wrong with the recording queue!");
               }
               break;
             }
           }
-          // log_info("lfw start");
-          int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+          // TODO: Handle failed lfs_file_write
+          lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
           ++sync_counter;
           /* Check for a new command */
           if ((sync_counter % 32) == 0) {
@@ -187,6 +188,8 @@ static void create_stats_file();
   /* TODO: check if there is enough space left on the flash */
 }
 
+}  // namespace task
+
 /** Private Function Definitions **/
 
 static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
@@ -197,12 +200,6 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
       break;
     case BARO:
       rec_elem_size += sizeof(rec_elem->u.baro);
-      break;
-    case MAGNETO:
-      rec_elem_size += sizeof(rec_elem->u.magneto_info);
-      break;
-    case ACCELEROMETER:
-      rec_elem_size += sizeof(rec_elem->u.accel_data);
       break;
     case FLIGHT_INFO:
       rec_elem_size += sizeof(rec_elem->u.flight_info);
@@ -224,6 +221,9 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
       break;
     case GNSS_INFO:
       rec_elem_size += sizeof(rec_elem->u.gnss_info);
+      break;
+    case VOLTAGE_INFO:
+      rec_elem_size += sizeof(rec_elem->u.voltage_info);
       break;
     default:
       log_fatal("Impossible recorder entry type!");
@@ -260,8 +260,10 @@ static void create_stats_file() {
   /* This will work as long as there are no pointers in the global_flight_stats struct */
   err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
 
-  if (err < sizeof(global_flight_stats)) {
+  if (err < 0) {
     log_error("Writing to stats file failed with %d", err);
+  } else if (auto err_u = static_cast<uint32_t>(err); err_u < sizeof(global_flight_stats)) {
+    log_error("Written less bytes to stats file than expected: %lu vs %u", err_u, sizeof(global_flight_stats));
   }
 
   err = lfs_file_close(&lfs, &current_stats_file);

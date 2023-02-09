@@ -40,7 +40,7 @@ char *skip_space(char *buffer);
 uint16_t cli_get_setting_index(char *name, uint8_t length);
 void get_min_max(const cli_value_t *var, int *min, int *max);
 
-void cli_print_var(const char *cmdName, const cats_config_u *cfg, const cli_value_t *var, bool full);
+void cli_print_var(const char *cmdName, const cats_config_t *cfg, const cli_value_t *var, bool full);
 void cli_print_var_range(const cli_value_t *var);
 
 const char *next_arg(const char *current_arg);

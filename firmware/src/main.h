@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,3 @@
 
 /* Random pattern to tell system to jump to bootloader */
 #define BOOTLOADER_MAGIC_PATTERN 0xAA88BB77
-
-/* Suppress warnings for non-existing define */
-#ifndef USBD_CLASS_BOS_ENABLED
-#define USBD_CLASS_BOS_ENABLED 0
-#endif

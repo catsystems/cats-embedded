@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,17 +23,16 @@
 #include "util/types.h"
 
 /* The system will reload the default config when the number changes */
-/* Config version 2 / Minor 4 */
-#define CONFIG_VERSION 204
+/* Config version 2 / Minor 5 */
+#define CONFIG_VERSION 205U
 
-/* Number supported recording speeds */
+/* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10
 
 struct cats_config_t {
   /* Needs to be in first position */
   uint32_t config_version;
 
-  control_settings_t control_settings;
   /* A bit mask that specifies which readings to log to the flash */
   uint32_t rec_mask;
 
@@ -42,21 +41,18 @@ struct cats_config_t {
   // Event action map
   int16_t action_array[NUM_EVENTS][16];  // 8 (16/2) actions for each event
   int16_t initial_servo_position[2];
-  uint8_t rec_speed_idx;  // == inverse recording rate - 1
 
   config_telemetry_t telemetry_settings;
+  control_settings_t control_settings;
+  uint8_t rec_speed_idx;  // == inverse recording rate - 1
+  bool is_set_by_user;
 };
 
-union cats_config_u {
-  cats_config_t config;
-  uint32_t config_array[sizeof(cats_config_t) / sizeof(uint32_t)];
-};
-
-extern cats_config_u global_cats_config;
+extern cats_config_t global_cats_config;
 
 /** cats config initialization **/
 void cc_init();
-void cc_defaults(bool use_default_outputs);
+void cc_defaults(bool use_default_outputs, bool set_by_user);
 
 /** persistence functions - return true on success **/
 bool cc_load();

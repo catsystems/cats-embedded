@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,35 @@
 
 #pragma once
 
+#include "sensors/lsm6dso32.h"
+#include "sensors/ms5607.h"
+
+#include "config/globals.h"
+
 void init_storage();
 
-void init_devices();
+template <typename TImu, typename TBaro>
+void init_devices(TImu& imu, TBaro& barometer) {
+  // Initialize the IMU
+  uint32_t timeout_counter = 0U;
+  while (!imu.Init()) {
+    HAL_Delay(10);
+    if (++timeout_counter > 20) {
+      log_error("IMU initialization failed");
+      break;
+    }
+  }
+  if (timeout_counter < 20) {
+    imu_initialized[0] = true;
+  }
+
+  // Initialize the Barometer
+  timeout_counter = 0U;
+  while (!barometer.Init()) {
+    HAL_Delay(10);
+    if (++timeout_counter > 20) {
+      log_error("Barometer initialization failed");
+      break;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "target.h"
 
-enum adc_channels_e { ADC_PYRO1 = 0, ADC_PYRO2, ADC_PYRO3, ADC_BATTERY };
+enum adc_channels_e { ADC_BATTERY = 0, ADC_PYRO1, ADC_PYRO2 };
 
 void adc_init();
 uint32_t adc_get(adc_channels_e channel);

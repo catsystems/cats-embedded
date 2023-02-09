@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2022 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,4 +31,4 @@ struct orientation_filter_t {
 /* Filter Functions */
 void init_orientation_filter(orientation_filter_t* filter);
 void reset_orientation_filter(orientation_filter_t* filter);
-void quaternion_kinematics(orientation_filter_t* filter, const vf32_t* angular_vel);
+void quaternion_kinematics(orientation_filter_t* filter, const vf32_t angular_vel);

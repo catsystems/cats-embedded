@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,4 +18,19 @@
 
 #pragma once
 
-[[noreturn]] void task_health_monitor(void *argument);
+#include "task.h"
+#include "task_buzzer.h"
+
+namespace task {
+
+class HealthMonitor final : public Task<HealthMonitor, 256> {
+ public:
+  explicit HealthMonitor(const Buzzer& task_buzzer) : m_task_buzzer(task_buzzer) {}
+
+ private:
+  [[noreturn]] void Run() noexcept override;
+
+  const Buzzer& m_task_buzzer;
+};
+
+}  // namespace task

@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,15 @@
 #include "config/globals.h"
 #include "util/log.h"
 
-[[noreturn]] void task_usb_communicator(__attribute__((unused)) void *argument) {
+namespace task {
+
+[[noreturn]] void UsbCommunicator::Run() noexcept {
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");
 
   // usb_fifo_reset();
   cli_enter();
-  while (1) {
+  while (true) {
     if (stream_length(USB_SG.in) > 0) {
       cli_process();
     }
@@ -37,3 +39,5 @@
     osDelay(10);
   }
 }
+
+}  // namespace task

@@ -59,7 +59,7 @@ extern uint32_t SystemCoreClock;
 #define configTICK_RATE_HZ                      ((TickType_t)1000)
 #define configMAX_PRIORITIES                    (56)  // TODO: check if this can be reduced
 #define configMINIMAL_STACK_SIZE                ((uint16_t)128)
-#define configMAX_TASK_NAME_LEN                 (24)
+#define configMAX_TASK_NAME_LEN                 (32)
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1  // added
 #define configUSE_MUTEXES                       1

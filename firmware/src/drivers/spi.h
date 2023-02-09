@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,27 +18,23 @@
 
 #pragma once
 
-#include "cmsis_os.h"
 #include "target.h"
 
-enum cs_type_e {
-  LOW_ACTIVE = GPIO_PIN_RESET,
-  HIGH_ACTIVE = GPIO_PIN_SET,
+namespace driver {
+
+class Spi {
+ public:
+  explicit Spi(SPI_HandleTypeDef* spi_handle, uint32_t timeout = 5U) : m_spi_handle(spi_handle), m_timeout(timeout) {}
+
+  void Transfer(uint8_t* data, const size_t length) { HAL_SPI_Transmit(m_spi_handle, data, length, m_timeout); }
+
+  void Receive(uint8_t* data, const size_t length) { HAL_SPI_Receive(m_spi_handle, data, length, m_timeout); }
+
+ private:
+  /// Pointer to the SPI handle
+  SPI_HandleTypeDef* const m_spi_handle;
+  /// SPI transfer timeout
+  const uint32_t m_timeout;
 };
 
-struct SPI_BUS {
-  GPIO_TypeDef* const cs_port;
-  uint16_t cs_pin;
-  cs_type_e cs_type;
-  SPI_HandleTypeDef* const spi_handle;
-  uint8_t initialized;
-  bool busy;
-};
-
-uint8_t spi_transmit_receive(SPI_BUS* bus, uint8_t* tx_buf, uint16_t tx_size, uint8_t* rx_buf, uint16_t rx_size);
-uint8_t spi_transmit(SPI_BUS* bus, uint8_t* tx_buf, uint16_t tx_size);
-uint8_t spi_receive(SPI_BUS* bus, uint8_t* rx_buf, uint16_t rx_size);
-void spi_init(SPI_BUS* bus);
-
-#define MAX_INSTANCES 10
-#define SPI_TIMEOUT   5
+}  // namespace driver

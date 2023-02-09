@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,20 +26,16 @@
 #include "util/log.h"
 #include "util/types.h"
 
-/** Private Constants **/
-
 const uint32_t EVENT_QUEUE_SIZE = 16;
 
-/** Private Function Declarations **/
-
-/** Exported Function Definitions **/
+namespace task {
 
 /**
  * @brief Function implementing the task_state_est thread.
  * @param argument: Not used
  * @retval None
  */
-[[noreturn]] void task_peripherals(__attribute__((unused)) void* argument) {
+[[noreturn]] void Peripherals::Run() noexcept {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
@@ -69,7 +65,7 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_table[action_list[i].action];
         if (curr_fp != nullptr) {
-          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %u", event_map[curr_event],
+          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", event_map[curr_event],
                     action_map[action_list[i].action], action_list[i].action_arg);
           /* call the actuator function */
           curr_fp(action_list[i].action_arg);
@@ -87,10 +83,10 @@ const uint32_t EVENT_QUEUE_SIZE = 16;
   }
 }
 
+}  // namespace task
+
 osStatus_t trigger_event(cats_event_e ev) {
   log_warn("Event %lu added to the queue", ev);
   /* TODO: check if timeout should be 0 here */
   return osMessageQueuePut(event_queue, &ev, 0U, 10U);
 }
-
-/** Private Function Definitions **/

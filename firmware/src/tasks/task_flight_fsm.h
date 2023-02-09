@@ -1,6 +1,6 @@
 /*
  * CATS Flight Software
- * Copyright (C) 2021 Control and Telemetry Systems
+ * Copyright (C) 2023 Control and Telemetry Systems
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,4 +18,21 @@
 
 #pragma once
 
-[[noreturn]] void task_flight_fsm(void *argument);
+#include "task.h"
+#include "task_preprocessing.h"
+#include "task_state_est.h"
+
+namespace task {
+
+class FlightFsm final : public Task<FlightFsm, 512> {
+ public:
+  explicit FlightFsm(const Preprocessing& task_preprocessing, const StateEstimation& task_state_estimation)
+      : m_task_preprocessing{task_preprocessing}, m_task_state_estimation{task_state_estimation} {}
+
+ private:
+  const Preprocessing& m_task_preprocessing;
+  const StateEstimation& m_task_state_estimation;
+  [[noreturn]] void Run() noexcept override;
+};
+
+}  // namespace task
