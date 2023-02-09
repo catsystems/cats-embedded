@@ -32,18 +32,30 @@ class Telemetry final : public Task<Telemetry, 1024> {
 
   struct packed_tx_msg_t {
     uint8_t state : 3;
-    uint16_t timestamp : 15;
     uint8_t errors : 6;
+    uint16_t timestamp : 15;
     int32_t lat : 22;
     int32_t lon : 22;
     int32_t altitude : 17;
     int16_t velocity : 10;
     uint16_t voltage : 8;
     uint16_t pyro_continuity : 2;
+    uint8_t testing_on : 1;
     // fill up to 16 bytes
     uint8_t : 0;  // sent
     uint8_t d1;   // dummy
   } __attribute__((packed));
+
+  struct packed_rx_msg_t {
+    uint8_t header;
+    uint32_t passcode;
+    uint8_t event;
+    uint32_t dummy1;
+    uint32_t dummy2;
+    uint8_t dummy3;
+  } __attribute__((packed));
+
+  uint32_t m_uplink_phrase_crc = 0;
 
   void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                      estimation_output_t estimation_data) const noexcept;

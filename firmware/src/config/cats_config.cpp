@@ -46,6 +46,7 @@ const cats_config_t DEFAULT_CONFIG = {
     .telemetry_settings =
         {
             .link_phrase = {},
+            .up_link_phrase = {},
             .power_level = 20,
             .adaptive_power = OFF,
         },
@@ -59,7 +60,8 @@ const cats_config_t DEFAULT_CONFIG = {
     .battery_type = LI_ION,
     .rec_speed_idx = 0,
     /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
-    .is_set_by_user = true};
+    .is_set_by_user = true,
+    .enable_testing_mode = false};
 
 cats_config_t global_cats_config = {};
 

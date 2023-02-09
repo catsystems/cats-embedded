@@ -59,6 +59,11 @@ class Task {
     return task;
   }
 
+  template <typename... Args>
+  static constexpr T& CreateButNotStart(Args&&... args) noexcept {
+    return T::GetInstance(std::forward<Args>(args)...);
+  }
+
  protected:
   /* Protected constructor */
   Task() = default;

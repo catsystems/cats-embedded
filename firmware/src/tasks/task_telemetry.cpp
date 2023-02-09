@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tasks/task_peripherals.hpp"
 #include "tasks/task_telemetry.hpp"
 #include "comm/fifo.hpp"
 #include "comm/stream.hpp"
@@ -82,6 +83,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
+  tx_payload->testing_on = static_cast<uint8_t>(global_cats_config.enable_testing_mode);
 
   tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
   tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
@@ -96,22 +98,49 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   }
 }
 
-void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
+void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
+
+  /* Check if Correct Header */
+  if(rx_payload->header != 0x72){
+    return;
+  }
+
+  /* Check if the linkphrase matches */
+  if(rx_payload->passcode != m_uplink_phrase_crc){
+    return;
+  }
+
+  /* Add event to eventqueue */
+  trigger_event(static_cast<cats_event_e>(rx_payload->event));
+}
 
 [[noreturn]] void Telemetry::Run() noexcept {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
+
+  /* Check if we are in testing mode */
+  bool testing_enabled = global_cats_config.enable_testing_mode;
 
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);
   osDelay(100);
   SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
   osDelay(100);
-  SendSettings(CMD_MODE, BIDIRECTIONAL);
+
+  /* if we are in the testing mode, set the receiver to bidirectional mode */
+  if(testing_enabled){
+    SendSettings(CMD_MODE, BIDIRECTIONAL);
+    m_uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.up_link_phrase, 8);
+  }
+  else{
+    SendSettings(CMD_MODE, UNIDIRECTIONAL);
+  }
   osDelay(100);
+
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
-    SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
+    uint32_t link_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, 8);
+    SendLinkPhrase(link_phrase_crc, 4);
     osDelay(100);
     SendEnable();
   }
@@ -244,7 +273,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   bool gnss_position_received = false;
 
   if (op_code == CMD_RX) {
-    packed_tx_msg_t rx_payload{};
+    packed_rx_msg_t rx_payload;
     memcpy(&rx_payload, buffer, length);
     ParseRxMessage(&rx_payload);
     // log_info("RX received");

@@ -47,6 +47,9 @@ struct cats_config_t {
   battery_type_e battery_type;
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
   bool is_set_by_user;
+
+  /* Testing Mode */
+  bool enable_testing_mode;
 };
 
 extern cats_config_t global_cats_config;

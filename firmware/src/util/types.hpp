@@ -169,6 +169,7 @@ enum adaptive_power_e { OFF, ON };
 
 typedef struct {
   uint8_t link_phrase[8];
+  uint8_t up_link_phrase[8];
   uint8_t power_level;
   adaptive_power_e adaptive_power;
 } config_telemetry_t;

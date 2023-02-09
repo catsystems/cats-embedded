@@ -117,11 +117,14 @@ const cli_value_t value_table[] = {
     {"servo1_init_pos", VAR_INT16, {.minmax_unsigned = {0, 1000}}, offsetof(cats_config_t, initial_servo_position[0])},
     {"servo2_init_pos", VAR_INT16, {.minmax_unsigned = {0, 1000}}, offsetof(cats_config_t, initial_servo_position[1])},
 
-    // Telemetry Settings
-    {"tele_link_phrase",
+    {"tele_downlink_phrase",
      VAR_UINT8 | MODE_STRING,
      {.string = {4, 8}},
      offsetof(cats_config_t, telemetry_settings.link_phrase)},
+    {"tele_uplink_phrase",
+     VAR_UINT8 | MODE_STRING,
+     {.string = {4, 8}},
+     offsetof(cats_config_t, telemetry_settings.up_link_phrase)},
     {"tele_power_level",
      VAR_UINT8,
      {.minmax_unsigned = {16, 30}},
@@ -135,7 +138,11 @@ const cli_value_t value_table[] = {
     {"battery_type", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_BATTERY}}, offsetof(cats_config_t, battery_type)},
 
     {"rec_elements", VAR_UINT32, {.u32_max = UINT32_MAX}, offsetof(cats_config_t, rec_mask)},
-    {"rec_speed", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_SPEEDS}}, offsetof(cats_config_t, rec_speed_idx)}};
+    {"rec_speed", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_SPEEDS}}, offsetof(cats_config_t, rec_speed_idx)},
+    {"testing_enabled",
+     VAR_UINT8 | MODE_LOOKUP,
+     {.lookup = {TABLE_POWER}},
+     offsetof(cats_config_t, enable_testing_mode)},};
 
 const uint16_t value_table_entry_count = ARRAYLEN(value_table);
 
