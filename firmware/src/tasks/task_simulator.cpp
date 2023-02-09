@@ -57,6 +57,7 @@ void Simulator::SetCoefficients(int32_t sim_decision) {
            sizeof(m_sim_coeff.acceleration_coeff_coasting));
     memcpy(m_sim_coeff.pressure_coeff, pressure_coeff, sizeof(m_sim_coeff.pressure_coeff));
     m_sim_coeff.switch_time = 1.1F;
+    m_sim_coeff.acc_end_time = 6.5F;
     m_sim_coeff.end_time = 45.0F;
   }
   /* Piccard */
@@ -117,6 +118,12 @@ void Simulator::ComputeSimValues(float32_t time) {
       m_current_acc += time_pow * m_sim_coeff.acceleration_coeff_thrusting[i];
     }
   }
+
+  /* Remove acc when we get close to Apogee */
+  if(time > m_sim_coeff.acc_end_time){
+    m_current_acc = 0.0;
+  }
+
 }
 
 /**
