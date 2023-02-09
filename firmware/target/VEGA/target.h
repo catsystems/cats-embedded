@@ -96,7 +96,7 @@ extern UART_HandleTypeDef huart2;
 
 /* USB config */
 #define TIMUsb               TIM5
-#define CDC_POLLING_INTERVAL 2  // ms
+#define CDC_POLLING_INTERVAL 10  // ms
 #define TIMUsb_CLK_ENABLE    __HAL_RCC_TIM5_CLK_ENABLE
 #define TIMUsb_IRQn          TIM5_IRQn
 #define TIMUsb_IRQHandler    TIM5_IRQHandler
@@ -133,6 +133,7 @@ extern "C" {
 void SystemClock_Config(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+void MX_USB_OTG_FS_PCD_Init(void);
 
 void Error_Handler(void);
 void target_pre_init();

@@ -26,7 +26,7 @@
 
 #include "cli/cli_commands.hpp"
 #include "comm/stream_group.hpp"
-#include "flash/lfs_custom.hpp"
+#include "flash/lfs_custom.h"
 #include "util/log.h"
 
 #define CLI_IN_BUFFER_SIZE  128

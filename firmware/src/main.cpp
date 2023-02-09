@@ -16,10 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.hpp"
+#include "main.h"
 #include "cmsis_os.h"
 #include "target.h"
-#include "usbd_cdc_if.h"
 
 #include "drivers/adc.hpp"
 
@@ -48,6 +47,9 @@
 
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;
+
+#include "tusb.h"
+#include "usb/cdc/cdc_if.hpp"
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -105,11 +107,11 @@ int main(void) {
   init_logging();
   log_info("System initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   init_storage();
   log_info("LFS initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   load_and_set_config();
   log_info("Config load complete.");
 
@@ -132,7 +134,7 @@ int main(void) {
   init_devices(imu, barometer);
   log_info("Device initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   adc_init();
   battery_monitor_init(global_cats_config.battery_type);
   log_info("Battery monitor initialization complete.");
@@ -199,7 +201,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   }
 
   if (htim->Instance == TIMUsb) {
-    CDC_Transmit_Elapsed();
+    cdc_transmit_elapsed();
   }
 }
 

@@ -21,13 +21,17 @@
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/adc.hpp"
-#include "usb_device.h"
 #include "util/actions.hpp"
 #include "util/battery.hpp"
 #include "util/log.h"
 #include "util/task_util.hpp"
 
-#include "tasks/task_usb_communicator.hpp"
+#include "tasks/task_cdc.hpp"
+#include "tasks/task_cli.hpp"
+#include "tasks/task_simulator.hpp"
+#include "tasks/task_usb_device.hpp"
+
+#include "target.h"
 
 /** Private Constants **/
 
@@ -35,8 +39,9 @@
 
 namespace task {
 
-static void init_communication();
+static void init_usb();
 
+static bool cli_task_started = false;
 /** Exported Function Definitions **/
 
 [[noreturn]] void HealthMonitor::Run() noexcept {
@@ -64,12 +69,17 @@ static void init_communication();
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
 
-    if (global_usb_detection == true && usb_communication_complete == false) {
-      init_communication();
+    if (global_usb_detection == true && cli_task_started == false) {
+      cli_task_started = true;
+      Cli::Start();
     }
+
+    if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin) && usb_communication_complete == false) {
+      init_usb();
+    }
+
     if (usb_device_initialized == false) {
       if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
-        MX_USB_DEVICE_Init();
         usb_device_initialized = true;
       }
     }
@@ -162,8 +172,11 @@ void HealthMonitor::DeterminePyroCheck() {
   }
 }
 
-static void init_communication() {
-  UsbCommunicator::Start();
+static void init_usb() {
+  MX_USB_OTG_FS_PCD_Init();
+  UsbDevice::Start();
+  Cdc::Start();
+
   usb_communication_complete = true;
 }
 

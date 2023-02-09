@@ -22,6 +22,19 @@
 
 #include "cmsis_os.h"
 
+/** TRACING SECTION **/
+#if (configUSE_TRACE_FACILITY == 1)
+#define trace_print(ch, str)       vTracePrint(ch, str)
+#define trace_printf(ch, str, ...) vTracePrintF(ch, str, __VA_ARGS__)
+#else
+#define trace_print(ch, str) \
+  do {                       \
+  } while (0)
+#define trace_printf(ch, str, ...) \
+  do {                             \
+  } while (0)
+#endif
+
 /** LOGGING SECTION **/
 
 enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };

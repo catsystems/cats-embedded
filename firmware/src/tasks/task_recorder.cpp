@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 #include "config/globals.hpp"
-#include "flash/lfs_custom.hpp"
+#include "flash/lfs_custom.h"
 #include "flash/recorder.hpp"
 #include "tasks/task_recorder.hpp"
 #include "util/log.h"
@@ -233,7 +233,7 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
       rec_elem_size += sizeof(rec_elem->u.voltage_info);
       break;
     default:
-      log_fatal("Impossible recorder entry type!");
+      log_raw("Impossible recorder entry type!");
       break;
   }
   return rec_elem_size;

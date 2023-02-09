@@ -57,7 +57,7 @@ extern "C" {
 
 #ifndef LFS_DEBUG
 #ifndef LFS_NO_DEBUG
-#define LFS_DEBUG_(fmt, ...) log_raw("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_DEBUG_(fmt, ...) //log_raw("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_DEBUG(...)       LFS_DEBUG_(__VA_ARGS__, "")
 #else
 #define LFS_DEBUG(...)
@@ -66,7 +66,7 @@ extern "C" {
 
 #ifndef LFS_WARN
 #ifndef LFS_NO_WARN
-#define LFS_WARN_(fmt, ...) log_raw("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_WARN_(fmt, ...) //log_raw("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_WARN(...)       LFS_WARN_(__VA_ARGS__, "")
 #else
 #define LFS_WARN(...)
@@ -75,7 +75,7 @@ extern "C" {
 
 #ifndef LFS_ERROR
 #ifndef LFS_NO_ERROR
-#define LFS_ERROR_(fmt, ...) log_raw("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_ERROR_(fmt, ...) //log_raw("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_ERROR(...)       LFS_ERROR_(__VA_ARGS__, "")
 #else
 #define LFS_ERROR(...)
@@ -204,8 +204,8 @@ uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size);
 static inline void *lfs_malloc(size_t size) {
 #ifndef LFS_NO_MALLOC
   // TODO: define LFS_NO_MALLOC and statically allocate buffer for each file
-  return pvPortMalloc(size);
-  //return malloc(size);
+  //return pvPortMalloc(size);
+  return malloc(size);
 #else
   (void)size;
   return NULL;
@@ -215,8 +215,8 @@ static inline void *lfs_malloc(size_t size) {
 // Deallocate memory, only used if buffers are not provided to littlefs
 static inline void lfs_free(void *p) {
 #ifndef LFS_NO_MALLOC
-  vPortFree(p);
-  //free(p);
+  //vPortFree(p);
+  free(p);
 #else
   (void)p;
 #endif
