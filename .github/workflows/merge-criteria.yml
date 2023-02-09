@@ -73,7 +73,7 @@ jobs:
       uses: ZedThree/clang-tidy-review@v0.10.1
       id: review
       with:
-        clang_tidy_version: 15
+        clang_tidy_version: 12
         build_dir: firmware/build
         config_file: firmware/.clang-tidy
         exclude: firmware/lib
