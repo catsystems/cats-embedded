@@ -902,10 +902,10 @@ HAL_UART_UnRegisterCallback(UART_HandleTypeDef *huart,
       break;
 
     case HAL_UART_TX_FIFO_EMPTY_CB_ID:
-      huart->TxFifoEmptyCallback =
-          HAL_UARTEx_TxFifoEmptyCallback; /* Legacy weak
-                                             TxFifoEmptyCallback
-                                           */
+      huart
+          ->TxFifoEmptyCallback = HAL_UARTEx_TxFifoEmptyCallback; /* Legacy weak
+                                                                     TxFifoEmptyCallback
+                                                                   */
       break;
 
     case HAL_UART_MSPINIT_CB_ID:

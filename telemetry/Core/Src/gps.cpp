@@ -43,13 +43,5 @@ void gpsSetup() {
   HAL_UART_Transmit(&huart1, command, 14, 100);
 
   /* Start receiving data from the module */
-  HAL_UART_Receive_IT(&huart1, (uint8_t *)&c1, 1);
-}
-
-bool gpsRun() {
-  if (HAL_GetTick() > (lr1 + 100)) {
-    HAL_UART_Receive_IT(&huart1, (uint8_t *)&c1, 1);
-  }
-
-  return gps.location.isValid();
+  // HAL_UART_Receive_IT(&huart1, (uint8_t *)&c1, 1);
 }
