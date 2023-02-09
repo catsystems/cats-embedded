@@ -16,14 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_sensor_read.h"
+#include "tasks/task_sensor_read.hpp"
 #include "cmsis_os.h"
-#include "config/globals.h"
-#include "flash/recorder.h"
+#include "config/globals.hpp"
+#include "flash/recorder.hpp"
 
-#include "sensors/ms5607.h"
+#include "sensors/ms5607.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 /** Private Function Declarations **/
 

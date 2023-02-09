@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 #include "target.h"
 

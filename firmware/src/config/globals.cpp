@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "config/globals.h"
+#include "config/globals.hpp"
 
-#include "comm/fifo.h"
-#include "drivers/spi.h"
+#include "comm/fifo.hpp"
+#include "drivers/spi.hpp"
 #include "target.h"
 
 /** Protocol Handles **/

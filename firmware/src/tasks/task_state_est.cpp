@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_state_est.h"
-#include "config/globals.h"
-#include "util/task_util.h"
+#include "tasks/task_state_est.hpp"
+#include "config/globals.hpp"
+#include "util/task_util.hpp"
 
 namespace task {
 

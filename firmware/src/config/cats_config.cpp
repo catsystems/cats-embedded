@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "config/cats_config.h"
-#include "flash/lfs_custom.h"
+#include "config/cats_config.hpp"
+#include "flash/lfs_custom.hpp"
 #include "lfs.h"
-#include "util/actions.h"
-#include "util/enum_str_maps.h"
-#include "util/error_handler.h"
+#include "util/actions.hpp"
+#include "util/enum_str_maps.hpp"
+#include "util/error_handler.hpp"
 
 const cats_config_t DEFAULT_CONFIG = {
     .config_version = CONFIG_VERSION,

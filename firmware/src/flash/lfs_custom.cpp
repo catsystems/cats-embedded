@@ -18,8 +18,8 @@
 
 #include <optional>
 
-#include "cli/cli.h"
-#include "drivers/w25q.h"
+#include "cli/cli.hpp"
+#include "drivers/w25q.hpp"
 #include "lfs.h"
 
 static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);

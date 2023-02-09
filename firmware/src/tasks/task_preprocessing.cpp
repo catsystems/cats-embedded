@@ -18,12 +18,12 @@
 
 #include "target.h"
 
-#include "config/globals.h"
-#include "control/calibration.h"
-#include "control/data_processing.h"
-#include "tasks/task_preprocessing.h"
+#include "config/globals.hpp"
+#include "control/calibration.hpp"
+#include "control/data_processing.hpp"
+#include "tasks/task_preprocessing.hpp"
 
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 #define MAX_NUM_SAME_VALUE 7
 

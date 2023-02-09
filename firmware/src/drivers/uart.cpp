@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "uart.h"
+#include "uart.hpp"
 #include "target.h"
 
 static uint16_t instance_count = 0;

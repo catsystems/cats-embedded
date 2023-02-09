@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_buzzer.h"
-#include "config/cats_config.h"
+#include "tasks/task_buzzer.hpp"
+#include "config/cats_config.hpp"
 
 namespace task {
 

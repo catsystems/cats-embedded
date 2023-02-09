@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/adc.h"
+#include "drivers/adc.hpp"
 #include "target.h"
 
 static uint32_t adc_value[ADC_NUM_CHANNELS];

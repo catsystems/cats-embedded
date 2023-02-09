@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "drivers/w25q.h"
+#include "drivers/w25q.hpp"
 #include "target.h"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 w25q_t w25q = {.id = W25QINVALID};
 

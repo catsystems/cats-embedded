@@ -22,9 +22,9 @@
 #include "usbd_cdc_if.h"
 
 #include "FreeRTOSConfig.h"
-#include "comm/fifo.h"
-#include "comm/stream_group.h"
-#include "config/globals.h"
+#include "comm/fifo.hpp"
+#include "comm/stream_group.hpp"
+#include "config/globals.hpp"
 #include "target.h"
 
 // Timer for periodic transmission

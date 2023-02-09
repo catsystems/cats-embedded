@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/battery.h"
-#include "drivers/adc.h"
+#include "util/battery.hpp"
+#include "drivers/adc.hpp"
 
 #include <cmath>
 

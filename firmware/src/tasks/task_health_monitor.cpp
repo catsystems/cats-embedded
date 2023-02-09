@@ -16,18 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_health_monitor.h"
+#include "tasks/task_health_monitor.hpp"
 #include "cmsis_os.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "drivers/adc.h"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "drivers/adc.hpp"
 #include "usb_device.h"
-#include "util/actions.h"
-#include "util/battery.h"
+#include "util/actions.hpp"
+#include "util/battery.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
-#include "tasks/task_usb_communicator.h"
+#include "tasks/task_usb_communicator.hpp"
 
 /** Private Constants **/
 

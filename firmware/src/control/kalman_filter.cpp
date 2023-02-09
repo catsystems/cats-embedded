@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "control/kalman_filter.h"
+#include "control/kalman_filter.hpp"
 #include <arm_neon.h>
 #include <cmath>
 #include <cstring>
 #include "cmsis_os.h"
-#include "util/error_handler.h"
+#include "util/error_handler.hpp"
 
 void init_filter_struct(kalman_filter_t *const filter) {
   arm_mat_init_f32(&filter->Ad, 3, 3, filter->Ad_data);

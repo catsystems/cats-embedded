@@ -18,9 +18,9 @@
 
 #include <cstdarg>
 
-#include "comm/stream_group.h"
+#include "comm/stream_group.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 #ifdef CATS_DEBUG
 #include "cmsis_os.h"

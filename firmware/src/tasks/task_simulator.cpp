@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_simulator.h"
-#include "cli/cli.h"
-#include "config/globals.h"
+#include "tasks/task_simulator.hpp"
+#include "cli/cli.hpp"
+#include "config/globals.hpp"
 #include "target.h"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 #include <cstdlib>
 

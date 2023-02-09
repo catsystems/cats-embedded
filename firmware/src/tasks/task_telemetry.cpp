@@ -16,19 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_telemetry.h"
-#include "comm/fifo.h"
-#include "comm/stream.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "drivers/adc.h"
-#include "tasks/task_state_est.h"
-#include "util/battery.h"
-#include "util/crc.h"
-#include "util/gnss.h"
+#include "tasks/task_telemetry.hpp"
+#include "comm/fifo.hpp"
+#include "comm/stream.hpp"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "drivers/adc.hpp"
+#include "tasks/task_state_est.hpp"
+#include "util/battery.hpp"
+#include "util/crc.hpp"
+#include "util/gnss.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
-#include "util/telemetry_reg.h"
+#include "util/task_util.hpp"
+#include "util/telemetry_reg.hpp"
 
 namespace task {
 

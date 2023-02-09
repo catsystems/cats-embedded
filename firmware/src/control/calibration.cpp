@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "control/calibration.h"
+#include "control/calibration.hpp"
 #include "util/log.h"
 
 void calibrate_imu(const vf32_t *accel_data, calibration_data_t *calibration) {

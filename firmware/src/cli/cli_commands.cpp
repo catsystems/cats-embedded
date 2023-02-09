@@ -17,25 +17,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/cli_commands.h"
+#include "cli/cli_commands.hpp"
 
-#include "cli/cli.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "drivers/w25q.h"
-#include "flash/lfs_custom.h"
-#include "flash/reader.h"
-#include "main.h"
-#include "tasks/task_state_est.h"
-#include "util/actions.h"
-#include "util/battery.h"
-#include "util/enum_str_maps.h"
+#include "cli/cli.hpp"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "drivers/w25q.hpp"
+#include "flash/lfs_custom.hpp"
+#include "flash/reader.hpp"
+#include "main.hpp"
+#include "tasks/task_state_est.hpp"
+#include "util/actions.hpp"
+#include "util/battery.hpp"
+#include "util/enum_str_maps.hpp"
 #include "util/log.h"
 
 #include <cstdlib>
 #include <cstring>
 #ifdef CATS_DEBUG
-#include "tasks/task_simulator.h"
+#include "tasks/task_simulator.hpp"
 #endif
 
 /** CLI command function declarations **/
