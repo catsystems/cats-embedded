@@ -49,7 +49,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
                      estimation_output_t estimation_data) const noexcept;
   void ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept;
   bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept;
-  void SendLinkPhrase(uint8_t* phrase, uint32_t length) const noexcept;
+  void SendLinkPhrase(uint32_t phrase_crc, uint32_t length) const noexcept;
   void SendSettings(uint8_t command, uint8_t value) const noexcept;
   void SendEnable() const noexcept;
   void SendDisable() const noexcept;
@@ -57,7 +57,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
 
   const StateEstimation& m_task_state_estimation;
-
+  
   float32_t m_amplifier_temperature{0.0F};
 
   static constexpr float32_t k_amplifier_hot_limit{60.F};
