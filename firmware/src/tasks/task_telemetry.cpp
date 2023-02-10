@@ -111,8 +111,7 @@ void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
   osDelay(100);
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
-    uint32_t uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, 8);
-    SendLinkPhrase(uplink_phrase_crc, 4);
+    SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
     osDelay(100);
     SendEnable();
   }
@@ -276,14 +275,15 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   return gnss_position_received;
 }
 
-void Telemetry::SendLinkPhrase(uint32_t phrase_crc, uint32_t length) noexcept {
+void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept {
+  uint32_t uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, length);
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
-  out[1] = static_cast<uint8_t>(length);
-  memcpy(&out[2], &phrase_crc, length);
-  out[length + 2] = crc8(out, length + 2);
+  out[1] = static_cast<uint8_t>(4);
+  memcpy(&out[2], &uplink_phrase_crc, 4);
+  out[6] = crc8(out, 6);
 
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 7, 2);
 }
 
 void Telemetry::SendSettings(uint8_t command, uint8_t value) const noexcept {
