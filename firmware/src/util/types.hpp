@@ -202,9 +202,9 @@ enum cats_event_e : uint32_t {
 enum cats_sim_choice_e { SIM_INVALID = 0, SIM_HOP, SIM_300M, SIM_PML };
 
 struct cats_sim_config_t {
-  cats_sim_choice_e sim_choice;
   uint32_t noise_seed;
   int32_t sim_axis;
+  int32_t simulation_option;
 };
 
 enum recorder_status_e { REC_OFF = 0, REC_FILL_QUEUE, REC_WRITE_TO_FLASH };
