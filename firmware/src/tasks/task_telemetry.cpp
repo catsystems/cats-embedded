@@ -276,7 +276,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   return gnss_position_received;
 }
 
-void Telemetry::SendLinkPhrase(uint32_t phrase_crc, uint32_t length) const noexcept {
+static void Telemetry::SendLinkPhrase(uint32_t phrase_crc, uint32_t length) noexcept {
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = static_cast<uint8_t>(length);
