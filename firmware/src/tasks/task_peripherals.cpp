@@ -91,7 +91,6 @@ osStatus_t trigger_event(cats_event_e ev) {
 
   /* Check if the event was already triggered. If it was, ignore */
   if (static_cast<bool>(event_tracking & (1U << static_cast<uint32_t>(ev)))) {
-    log_warn("Event %lu Discarded, already triggered.", ev);
     return osOK;
   }
 

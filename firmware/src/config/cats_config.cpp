@@ -46,7 +46,7 @@ const cats_config_t DEFAULT_CONFIG = {
     .telemetry_settings =
         {
             .link_phrase = {},
-            .up_link_phrase = {},
+            .test_phrase = {},
             .power_level = 20,
             .adaptive_power = OFF,
         },

@@ -145,7 +145,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   /* if we are in the testing mode, set the receiver to bidirectional mode */
   if (testing_enabled) {
     SendSettings(CMD_MODE, BIDIRECTIONAL);
-    m_uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.up_link_phrase, 8);
+    m_uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.test_phrase, 8);
   } else {
     SendSettings(CMD_MODE, UNIDIRECTIONAL);
   }
@@ -177,7 +177,13 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
     packed_tx_msg_t tx_payload = {};
-    PackTxMessage(tick_count, &gnss_data, &tx_payload, m_task_state_estimation.GetEstimationOutput());
+    estimation_output_t estimation_output = {};
+    if(m_task_state_estimation != nullptr){
+      estimation_output = m_task_state_estimation->GetEstimationOutput();
+    }
+
+    PackTxMessage(tick_count, &gnss_data, &tx_payload, estimation_output);
+
     SendTxPayload((uint8_t*)&tx_payload, sizeof(packed_tx_msg_t));
 
     if ((tick_count - uart_timeout) > 60000) {
@@ -286,7 +292,7 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   bool gnss_position_received = false;
 
   if (op_code == CMD_RX) {
-    packed_rx_msg_t rx_payload;
+    packed_rx_msg_t rx_payload{};
     memcpy(&rx_payload, buffer, length);
     ParseRxMessage(&rx_payload);
     // log_info("RX received");

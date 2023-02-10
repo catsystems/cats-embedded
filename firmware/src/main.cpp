@@ -143,6 +143,12 @@ int main(void) {
 
   static const task::Buzzer& task_buzzer = task::Buzzer::Start(buzzer);
 
+  task::Peripherals::Start();
+
+  task::HealthMonitor::Start(task_buzzer);
+
+  static const task::StateEstimation* task_state_estimation_ptr = nullptr;
+
   if (!global_cats_config.enable_testing_mode) {
     task::Recorder::Start();
 
@@ -154,29 +160,10 @@ int main(void) {
 
     task::FlightFsm::Start(task_preprocessing, task_state_estimation);
 
-    task::Peripherals::Start();
-
-    task::HealthMonitor::Start(task_buzzer);
-
-    task::Telemetry::Start(task_state_estimation);
-  } else {
-    task::Recorder::CreateButNotStart();
-
-    static const task::SensorRead& task_sensor_read = task::SensorRead::CreateButNotStart(&imu, &barometer);
-
-    static const task::Preprocessing& task_preprocessing = task::Preprocessing::CreateButNotStart(task_sensor_read);
-
-    static const task::StateEstimation& task_state_estimation =
-        task::StateEstimation::CreateButNotStart(task_preprocessing);
-
-    task::FlightFsm::CreateButNotStart(task_preprocessing, task_state_estimation);
-
-    task::Peripherals::Start();
-
-    task::HealthMonitor::Start(task_buzzer);
-
-    task::Telemetry::Start(task_state_estimation);
+    task_state_estimation_ptr = &task_state_estimation;
   }
+
+  task::Telemetry::Start(task_state_estimation_ptr);
 
   log_info("Task initialization complete.");
 
