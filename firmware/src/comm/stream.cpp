@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "comm/stream.h"
+#include "comm/stream.hpp"
 
-#include "comm/fifo.h"
+#include "comm/fifo.hpp"
 
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 void stream_init(stream_t *stream, fifo_t *fifo, uint32_t timeout_msec) {
   stream->fifo = fifo;

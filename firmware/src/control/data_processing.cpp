@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "control/data_processing.h"
+#include "control/data_processing.hpp"
 #include <cstring>
-#include "config/control_config.h"
+#include "config/control_config.hpp"
 
 /* a temporary variable "tmp" must be defined beforehand to use these macros */
 #define SWAP(a, b, tmp) \

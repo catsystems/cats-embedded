@@ -16,17 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_flight_fsm.h"
+#include "tasks/task_flight_fsm.hpp"
 #include "cmsis_os.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "control/flight_phases.h"
-#include "tasks/task_peripherals.h"
-#include "tasks/task_preprocessing.h"
-#include "tasks/task_state_est.h"
-#include "util/enum_str_maps.h"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "control/flight_phases.hpp"
+#include "tasks/task_peripherals.hpp"
+#include "tasks/task_preprocessing.hpp"
+#include "tasks/task_state_est.hpp"
+#include "util/enum_str_maps.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
 namespace task {
 

@@ -17,9 +17,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/settings.h"
-#include "cli/cli.h"
-#include "util/enum_str_maps.h"
+#include "cli/settings.hpp"
+#include "cli/cli.hpp"
+#include "util/enum_str_maps.hpp"
 
 #include <cstddef>
 

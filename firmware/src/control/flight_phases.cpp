@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "control/flight_phases.h"
-#include "config/cats_config.h"
-#include "tasks/task_peripherals.h"
+#include "control/flight_phases.hpp"
+#include "config/cats_config.hpp"
+#include "tasks/task_peripherals.hpp"
 
 static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data);
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_t height_AGL,

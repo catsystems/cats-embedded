@@ -16,15 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_peripherals.h"
+#include "tasks/task_peripherals.hpp"
 #include "cmsis_os.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "flash/recorder.h"
-#include "util/actions.h"
-#include "util/enum_str_maps.h"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "flash/recorder.hpp"
+#include "util/actions.hpp"
+#include "util/enum_str_maps.hpp"
 #include "util/log.h"
-#include "util/types.h"
+#include "util/types.hpp"
 
 const uint32_t EVENT_QUEUE_SIZE = 16;
 

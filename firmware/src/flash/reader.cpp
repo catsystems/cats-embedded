@@ -16,16 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "reader.h"
+#include "reader.hpp"
 
 #include <cstddef>
 #include <cstdio>
 
-#include "cli/settings.h"
-#include "config/globals.h"
-#include "flash/lfs_custom.h"
-#include "recorder.h"
-#include "util/enum_str_maps.h"
+#include "cli/settings.hpp"
+#include "config/globals.hpp"
+#include "flash/lfs_custom.hpp"
+#include "recorder.hpp"
+#include "util/enum_str_maps.hpp"
 #include "util/log.h"
 
 #define STRING_BUF_SZ 400

@@ -17,16 +17,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/cli.h"
+#include "cli/cli.hpp"
 
 #include <cctype>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
-#include "cli/cli_commands.h"
-#include "comm/stream_group.h"
-#include "flash/lfs_custom.h"
+#include "cli/cli_commands.hpp"
+#include "comm/stream_group.hpp"
+#include "flash/lfs_custom.hpp"
 #include "util/log.h"
 
 #define CLI_IN_BUFFER_SIZE  128

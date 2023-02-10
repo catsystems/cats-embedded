@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/error_handler.h"
-#include "flash/recorder.h"
+#include "util/error_handler.hpp"
+#include "flash/recorder.hpp"
 #include "util/log.h"
 
 static uint32_t errors = 0;

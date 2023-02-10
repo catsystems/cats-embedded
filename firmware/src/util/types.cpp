@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "util/types.h"
+#include "util/types.hpp"
 
 /* as suggested by
  * https://stackoverflow.com/questions/23699719/inline-vs-static-inline-in-header-file

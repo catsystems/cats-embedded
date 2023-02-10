@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "control/orientation_filter.h"
-#include "config/globals.h"
-#include "util/math_util.h"
+#include "control/orientation_filter.hpp"
+#include "config/globals.hpp"
+#include "util/math_util.hpp"
 
 /* Orientation Filter */
 void init_orientation_filter(orientation_filter_t* filter) {

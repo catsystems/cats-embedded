@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "math_util.h"
+#include "math_util.hpp"
 
 /* skews the quaternion */
 void quaternion_skew(const float* input, float* output) {

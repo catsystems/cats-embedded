@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_usb_communicator.h"
+#include "tasks/task_usb_communicator.hpp"
 
-#include "cli/cli.h"
-#include "comm/stream_group.h"
-#include "config/globals.h"
+#include "cli/cli.hpp"
+#include "comm/stream_group.hpp"
+#include "config/globals.hpp"
 #include "util/log.h"
 
 namespace task {

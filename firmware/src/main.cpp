@@ -16,35 +16,35 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
+#include "main.hpp"
 #include "cmsis_os.h"
 #include "target.h"
 #include "usbd_cdc_if.h"
 
-#include "drivers/adc.h"
+#include "drivers/adc.hpp"
 
-#include "config/globals.h"
-#include "util/battery.h"
+#include "config/globals.hpp"
+#include "util/battery.hpp"
 #include "util/log.h"
-#include "util/task_util.h"
+#include "util/task_util.hpp"
 
-#include "init/config.h"
-#include "init/system.h"
+#include "init/config.hpp"
+#include "init/system.hpp"
 
-#include "drivers/gpio.h"
-#include "drivers/pwm.h"
-#include "sensors/lsm6dso32.h"
-#include "sensors/ms5607.h"
+#include "drivers/gpio.hpp"
+#include "drivers/pwm.hpp"
+#include "sensors/lsm6dso32.hpp"
+#include "sensors/ms5607.hpp"
 
-#include "tasks/task_buzzer.h"
-#include "tasks/task_flight_fsm.h"
-#include "tasks/task_health_monitor.h"
-#include "tasks/task_peripherals.h"
-#include "tasks/task_preprocessing.h"
-#include "tasks/task_recorder.h"
-#include "tasks/task_sensor_read.h"
-#include "tasks/task_state_est.h"
-#include "tasks/task_telemetry.h"
+#include "tasks/task_buzzer.hpp"
+#include "tasks/task_flight_fsm.hpp"
+#include "tasks/task_health_monitor.hpp"
+#include "tasks/task_peripherals.hpp"
+#include "tasks/task_preprocessing.hpp"
+#include "tasks/task_recorder.hpp"
+#include "tasks/task_sensor_read.hpp"
+#include "tasks/task_state_est.hpp"
+#include "tasks/task_telemetry.hpp"
 
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;

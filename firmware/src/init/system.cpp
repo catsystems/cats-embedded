@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "system.h"
+#include "system.hpp"
 #include "lfs.h"
 
-#include "drivers/w25q.h"
-#include "flash/lfs_custom.h"
+#include "drivers/w25q.hpp"
+#include "flash/lfs_custom.hpp"
 
 static void init_lfs();
 

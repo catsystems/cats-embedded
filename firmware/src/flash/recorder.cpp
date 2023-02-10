@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "recorder.h"
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "util/gnss.h"
+#include "recorder.hpp"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "util/gnss.hpp"
 #include "util/log.h"
 
 #include <cmath>

@@ -16,15 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "config.hpp"
 
-#include "config/cats_config.h"
-#include "config/globals.h"
-#include "drivers/servo.h"
-#include "util/actions.h"
+#include "config/cats_config.hpp"
+#include "config/globals.hpp"
+#include "drivers/servo.hpp"
+#include "util/actions.hpp"
 #include "util/log.h"
 
-#include "tasks/task_peripherals.h"
+#include "tasks/task_peripherals.hpp"
 
 static void create_event_map();
 static void init_timers();

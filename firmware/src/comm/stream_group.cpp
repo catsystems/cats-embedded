@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "comm/stream_group.h"
+#include "comm/stream_group.hpp"
 
-#include "comm/fifo.h"
-#include "comm/stream.h"
+#include "comm/fifo.hpp"
+#include "comm/stream.hpp"
 
 /** USB STREAM GROUP **/
 #define USB_OUT_BUF_SIZE 512
