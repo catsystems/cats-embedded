@@ -94,7 +94,7 @@ jobs:
         thread-comments: true
         tidy-checks: ''
        # repo-root: ./firmware
-        version: 15
+        version: 14
         ignore: firmware/lib|firmware/build
         database: ./firmware/build/compile_commands.json
        
