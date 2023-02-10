@@ -86,10 +86,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: ''
-       # lines-changed-only: false
+       # lines-changed-only: true
        # file-annotations: true
         file-annotations: false
-        lines-changed-only: true
+        lines-changed-only: false
         files-changed-only: false
         thread-comments: true
         repo-root: ./firmware
