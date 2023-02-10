@@ -19,14 +19,17 @@
 #pragma once
 
 #include "task.hpp"
+#include "task_buzzer.hpp"
 #include "task_state_est.hpp"
 
 namespace task {
 
 class Telemetry final : public Task<Telemetry, 1024> {
  public:
-  explicit Telemetry(const StateEstimation* task_state_estimation)
-      : m_testing_enabled{global_cats_config.enable_testing_mode}, m_task_state_estimation{task_state_estimation} {}
+  explicit Telemetry(const StateEstimation* task_state_estimation, const Buzzer& task_buzzer)
+      : m_testing_enabled{global_cats_config.enable_testing_mode},
+        m_task_state_estimation{task_state_estimation},
+        m_task_buzzer{task_buzzer} {}
 
  private:
   [[noreturn]] void Run() noexcept override;
@@ -85,6 +88,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
   static void RequestVersionNum() noexcept;
 
   const StateEstimation* m_task_state_estimation = nullptr;
+  const Buzzer& m_task_buzzer;
 
   float32_t m_amplifier_temperature{0.0F};
 

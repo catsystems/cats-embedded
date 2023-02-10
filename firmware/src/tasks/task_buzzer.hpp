@@ -30,8 +30,9 @@ class Buzzer final : public Task<Buzzer, 256> {
     kNone = 0,
     kBootup,
     kReady,
-    kChangedCalibrating,
     kChangedReady,
+    kTesting,
+    kTestingArmed,
   };
 
   /** Constructor
@@ -53,8 +54,7 @@ class Buzzer final : public Task<Buzzer, 256> {
   enum class Duration {
     kShortBeep = 100U,
     kLongBeep = 250U,
-    kShortPause = 200U,
-    kLongPause = 1000U,
+    kPause = 200U,
   };
 
   /// Lookup table for the notes
@@ -70,16 +70,17 @@ class Buzzer final : public Task<Buzzer, 256> {
   };
 
   /// Lookup table with the beep codes
-  static constexpr char s_status_codes[5][5] = {
+  static constexpr char s_status_codes[6][5] = {
       " ",
       "caef",  // bootup
       "aa",    // ready
-      "Eca",   // ready -> calibrating
-      "ace",   // calibrating -> ready
+      "ace",   // moving -> ready
+      "G",     // Testing - Not Armed
+      "a",     // Testing - Armed
   };
 
   /// Lookup table with the length of the beep codes
-  static constexpr uint8_t s_status_code_length[5] = {0U, 4U, 2U, 3U, 3U};
+  static constexpr uint8_t s_status_code_length[6] = {0U, 4U, 2U, 3U, 1U, 1U};
 
   /// Reference to the buzzer
   driver::Buzzer& m_buzzer;

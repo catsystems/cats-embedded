@@ -201,6 +201,14 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
       estimation_output = m_task_state_estimation->GetEstimationOutput();
     }
 
+    if (m_testing_enabled) {
+      if (!m_testing_armed) {
+        m_task_buzzer.Beep(Buzzer::BeepCode::kTesting);
+      } else {
+        m_task_buzzer.Beep(Buzzer::BeepCode::kTestingArmed);
+      }
+    }
+
     PackTxMessage(tick_count, &gnss_data, &tx_payload, estimation_output);
 
     SendTxPayload((uint8_t*)&tx_payload, sizeof(packed_tx_msg_t));
