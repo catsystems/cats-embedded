@@ -90,7 +90,7 @@ jobs:
        # file-annotations: true
         file-annotations: false
         lines-changed-only: false
-        files-changed-only: false
+        files-changed-only: true
         thread-comments: true
         tidy-checks: ''
        # repo-root: ./firmware
