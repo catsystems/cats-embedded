@@ -92,10 +92,10 @@ jobs:
         lines-changed-only: false
         files-changed-only: false
         thread-comments: true
-        repo-root: ./firmware
+       # repo-root: ./firmware
         version: 15
-        ignore: lib|build
-        database: build/compile_commands.json
+        ignore: firmware/lib|firmware/build
+        database: ./firmware/build/compile_commands.json
        
 
     - if: steps.linter.outputs.checks-failed > 0
