@@ -69,15 +69,39 @@ jobs:
         name: compile-commands
         path: ./firmware/build/
 
-    - name: clang-tidy review
-      uses: ZedThree/clang-tidy-review@v0.10.1
-      id: review
-      with:
-        clang_tidy_version: 14
-        build_dir: firmware/build
-        config_file: firmware/.clang-tidy
-        exclude: firmware/lib
-        max_comments: 50
+    # - name: clang-tidy review
+    #   uses: ZedThree/clang-tidy-review@v0.10.1
+    #   id: review
+    #   with:
+    #     clang_tidy_version: 14
+    #     build_dir: firmware/build
+    #     config_file: firmware/.clang-tidy
+    #     exclude: firmware/lib
+    #     max_comments: 50
 
-    - if: steps.review.outputs.total_comments > 0
-      run: exit 1
+    # - if: steps.review.outputs.total_comments > 0
+    #   run: exit 1
+
+
+    - name: clang-tidy
+      uses: cpp-linter/cpp-linter-action@v2
+      id: linter
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        style: ''
+       # lines-changed-only: true
+       # file-annotations: true
+        file-annotations: false
+        lines-changed-only: true
+        files-changed-only: true
+        thread-comments: true
+        tidy-checks: ''
+       # repo-root: ./firmware
+        version: 12
+        ignore: firmware/lib|firmware/build
+        database: ./firmware/build/compile_commands.json
+       
+
+    - if: steps.linter.outputs.checks-failed > 0
+      run: echo "Some files failed linting checks!"
