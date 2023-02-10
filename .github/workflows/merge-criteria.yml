@@ -69,15 +69,32 @@ jobs:
         name: compile-commands
         path: ./firmware/build/
 
-    - name: clang-tidy review
-      uses: ZedThree/clang-tidy-review@v0.10.1
-      id: review
-      with:
-        clang_tidy_version: 14
-        build_dir: firmware/build
-        config_file: firmware/.clang-tidy
-        exclude: firmware/lib
-        max_comments: 50
+    # - name: clang-tidy review
+    #   uses: ZedThree/clang-tidy-review@v0.10.1
+    #   id: review
+    #   with:
+    #     clang_tidy_version: 14
+    #     build_dir: firmware/build
+    #     config_file: firmware/.clang-tidy
+    #     exclude: firmware/lib
+    #     max_comments: 50
 
-    - if: steps.review.outputs.total_comments > 0
+    - name: clang-tidy
+      uses: cpp-linter/cpp-linter-action@v2
+      id: linter
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        style: ''
+        lines-changed-only: true
+        repo-root: ./firmware
+        version: 15
+        ignore: lib|build
+        database: build/compile_commands.json
+        file-annotations: true
+
+    - if: steps.linter.outputs.checks-failed > 0
       run: exit 1
+
+    # - if: steps.review.outputs.total_comments > 0
+    #   run: exit 1

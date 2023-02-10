@@ -24,6 +24,8 @@
 #include "flash/lfs_custom.hpp"
 #include "target.h"
 
+#include "stdio.h"
+
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;
 
