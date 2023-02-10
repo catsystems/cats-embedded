@@ -160,7 +160,7 @@ void Simulator::ComputeSimValues(float32_t time) {
     /* Compute wanted acceleration */
     switch (m_sim_config.sim_axis) {
       case 0:
-        for (auto & data : sim_imu_data) {
+        for (auto &data : sim_imu_data) {
           data.acc.x = static_cast<int16_t>(
               (static_cast<float32_t>(m_current_acc) + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
           data.acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
@@ -168,7 +168,7 @@ void Simulator::ComputeSimValues(float32_t time) {
         }
         break;
       case 1:
-        for (auto & data : sim_imu_data) {
+        for (auto &data : sim_imu_data) {
           data.acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           data.acc.y = static_cast<int16_t>(
               (static_cast<float32_t>(m_current_acc) + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
@@ -176,7 +176,7 @@ void Simulator::ComputeSimValues(float32_t time) {
         }
         break;
       case 2:
-        for (auto & data : sim_imu_data) {
+        for (auto &data : sim_imu_data) {
           data.acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           data.acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
           data.acc.z = static_cast<int16_t>(
