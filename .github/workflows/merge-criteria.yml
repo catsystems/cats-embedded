@@ -86,12 +86,17 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         style: ''
+       # lines-changed-only: false
+       # file-annotations: true
+        file-annotations: false
         lines-changed-only: true
+        files-changed-only: false
+        thread-comments: true
         repo-root: ./firmware
         version: 15
         ignore: lib|build
         database: build/compile_commands.json
-        file-annotations: true
+       
 
     - if: steps.linter.outputs.checks-failed > 0
       run: exit 1
