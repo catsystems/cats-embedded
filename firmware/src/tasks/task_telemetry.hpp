@@ -32,8 +32,8 @@ class Telemetry final : public Task<Telemetry, 1024> {
 
   struct packed_tx_msg_t {
     uint8_t state : 3;
-    uint8_t errors : 6;
     uint16_t timestamp : 15;
+    uint8_t errors : 6;
     int32_t lat : 22;
     int32_t lon : 22;
     int32_t altitude : 17;

@@ -110,7 +110,10 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
   }
 
   /* Add event to eventqueue */
-  trigger_event(static_cast<cats_event_e>(rx_payload->event));
+  if(rx_payload->event <= EV_CUSTOM_2 && rx_payload->event >= EV_MOVING){
+    trigger_event(static_cast<cats_event_e>(rx_payload->event));
+  }
+
 }
 
 [[noreturn]] void Telemetry::Run() noexcept {
