@@ -279,7 +279,7 @@ void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept {
   uint32_t uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, length);
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
-  out[1] = static_cast<uint8_t>(4);
+  out[1] = 4;
   memcpy(&out[2], &uplink_phrase_crc, 4);
   out[6] = crc8(out, 6);
 
