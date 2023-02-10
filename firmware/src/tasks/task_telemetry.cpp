@@ -83,7 +83,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
-  tx_payload->testing_on = static_cast<uint8_t>(global_cats_config.enable_testing_mode);
+  tx_payload->testing_on = static_cast<uint8_t>(m_testing_enabled);
 
   tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
   tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);

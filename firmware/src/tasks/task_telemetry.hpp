@@ -25,7 +25,7 @@ namespace task {
 
 class Telemetry final : public Task<Telemetry, 1024> {
  public:
-  explicit Telemetry(const StateEstimation& task_state_estimation) : m_task_state_estimation{task_state_estimation} {}
+  explicit Telemetry(const StateEstimation& task_state_estimation) : m_testing_enabled{global_cats_config.enable_testing_mode}, m_task_state_estimation{task_state_estimation} {}
 
  private:
   [[noreturn]] void Run() noexcept override;
@@ -56,6 +56,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
   } __attribute__((packed));
 
   uint32_t m_uplink_phrase_crc = 0;
+  bool m_testing_enabled;
 
   void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                      estimation_output_t estimation_data) const noexcept;
