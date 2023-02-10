@@ -22,7 +22,6 @@
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/adc.hpp"
-#include "tasks/task_state_est.hpp"
 #include "util/battery.hpp"
 #include "util/crc.hpp"
 #include "util/gnss.hpp"
@@ -276,14 +275,15 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   return gnss_position_received;
 }
 
-void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) const noexcept {
-  uint8_t out[11];  // 1 OP + 1 LEN + 8 DATA + 1 CRC
+void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept {
+  uint32_t uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, length);
+  uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
-  out[1] = (uint8_t)length;
-  memcpy(&out[2], phrase, length);
-  out[length + 2] = crc8(out, length + 2);
+  out[1] = 4;
+  memcpy(&out[2], &uplink_phrase_crc, 4);
+  out[6] = crc8(out, 6);
 
-  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, length + 3, 2);
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 7, 2);
 }
 
 void Telemetry::SendSettings(uint8_t command, uint8_t value) const noexcept {
