@@ -26,6 +26,7 @@
 #include "tusb.h"
 #include "usb/msc/emfat.h"
 #include "usb/msc/emfat_file.h"
+#include "util/log.h"
 
 extern emfat_t emfat;
 
@@ -104,6 +105,8 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buff
 
   int num_sectors = (int)bufsize / 512;
 
+  log_raw("tud_msc_read10: %hu, %lu, %lu, %p, %lu", lun, lba, offset, buffer, bufsize);
+
   emfat_read(&emfat, buffer, lba, num_sectors);
 
   return (int32_t)bufsize;
@@ -111,8 +114,8 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buff
 
 bool tud_msc_is_writable_cb(uint8_t lun) {
   (void)lun;
-  // Read only!
-  return false;
+  // Allow writing
+  return true;
 }
 
 // Callback invoked when received WRITE10 command.
@@ -120,7 +123,27 @@ bool tud_msc_is_writable_cb(uint8_t lun) {
 int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
   (void)lun;
 
-  return 0;
+  log_raw("tud_msc_write10: %hu, %lu, %lu, %p, %lu", lun, lba, offset, buffer, bufsize);
+
+  int num_sectors = (int)bufsize / 512;
+
+  emfat_write(&emfat, buffer, lba, num_sectors);
+
+//
+//  lfs_file_t new_file;
+//  lfs_file_open(&lfs, &new_file, "flights/flight_00666.txt", LFS_O_RDWR | LFS_O_CREAT);
+//  lfs_file_write(&lfs, &new_file, &buffer, bufsize);
+//  lfs_file_close(&lfs, &new_file);
+
+  return (int32_t)bufsize;
+}
+
+void tud_msc_read10_complete_cb(uint8_t lun){
+  log_raw("Write complete %hu", lun);
+}
+
+void tud_msc_write10_complete_cb(uint8_t lun) {
+  log_raw("Write complete %hu", lun);
 }
 
 // Callback invoked when received an SCSI command not in built-in list below

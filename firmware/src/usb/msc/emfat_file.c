@@ -38,6 +38,7 @@
   { CMA_TIME, CMA_TIME, CMA_TIME }
 
 static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
+  log_raw("hello from read: %p, %d, %lu, %ld, %s", dest, size, offset, entry->number, entry->name);
   // flashfsReadAbs(offset, dest, size);
   char filename[32] = {};
   static lfs_file_t curr_file;
@@ -62,6 +63,10 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
   //  log_raw("num: %ld off: %ld", entry->number, offset);
 }
 
+static void bblog_write_proc(const uint8_t *data, int size, uint32_t offset, struct emfat_entry_s *entry) {
+  log_raw("hello from write: %p, %d, %lu, %ld, %s", data, size, offset, entry->number, entry->name);
+}
+
 static const emfat_entry_t entriesPredefined[] = {
     // name   dir   attr  lvl offset  size             max_size        user                time  read write
     {"", true, 0, 0, 0, 0, 0, 0, CMA, NULL, NULL, 0},
@@ -76,7 +81,7 @@ static const emfat_entry_t entriesPredefined[] = {
      0,
      CMA,
      bblog_read_proc,
-     NULL,
+     bblog_write_proc,
      {0}},
     {"PADDING.TXT", 0, ATTR_HIDDEN, 1, 0, 0, 0, 0, CMA, NULL, NULL, {0}},
 };
@@ -103,6 +108,8 @@ static void emfat_set_entry_cma(emfat_entry_t *entry) {
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char *name) {
   static char logNames[EMFAT_MAX_LOG_ENTRY][8 + 1 + 3 + 1];
 
+//  log_raw("emfat_add_log: %d, %lu, %s", number, size, name);
+
   snprintf(logNames[number], 12, "fl%03d.cfl", number);
   entry->name = logNames[number];
   entry->level = 1;
@@ -110,6 +117,7 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char 
   entry->curr_size = size;
   entry->max_size = entry->curr_size;
   entry->readcb = bblog_read_proc;
+  entry->writecb = NULL;
   // Set file modification/access times to be the same as the creation time
   entry->cma_time[1] = entry->cma_time[0];
   entry->cma_time[2] = entry->cma_time[0];
@@ -120,6 +128,7 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount) {
   //  if (lfs_cnt_called) {
   //    return 0;
   //  }
+//  log_raw("hello from find_log: %ld, %s", entry->number, entry->name);
   int logCount = 0;
 
   logCount = lfs_cnt("/flights/", LFS_TYPE_REG);
@@ -160,6 +169,7 @@ void emfat_init_files(void) {
   emfat_entry_t *entry;
   memset(entries, 0, sizeof(entries));
 
+
   // create the predefined entries
   for (size_t i = 0; i < PREDEFINED_ENTRY_COUNT; i++) {
     entries[i] = entriesPredefined[i];
@@ -181,11 +191,14 @@ void emfat_init_files(void) {
     entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
     entry = &entries[entryIndex];
     // used space is doubled because of the individual files plus the single complete file
-    entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsUsedSpace * 2);
-    entry->max_size = entry->curr_size;
+    entry->curr_size = (flashfsUsedSpace * 2);
+    entry->max_size = (FILESYSTEM_SIZE_MB * 1024 * 1024);
     // This entry has timestamps corresponding to when the filesystem is mounted
     emfat_set_entry_cma(entry);
   }
+
+
+//    log_raw("hello from init_files: %ld, %s", entries[entryIndex].number, entries[entryIndex].name);
 
   emfat_init(&emfat, "CATS", entries);
 }
