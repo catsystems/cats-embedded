@@ -81,6 +81,7 @@ void Simulator::SetCoefficients(int32_t sim_decision) {
            sizeof(m_sim_coeff.acceleration_coeff_coasting));
     memcpy(m_sim_coeff.pressure_coeff, pressure_coeff, sizeof(m_sim_coeff.pressure_coeff));
     m_sim_coeff.switch_time = 4.2F;
+    m_sim_coeff.acc_end_time = 30.0F;
     m_sim_coeff.end_time = 44.2F;
   }
 }
@@ -137,7 +138,7 @@ void Simulator::ComputeSimValues(float32_t time) {
   /* RNG Init with known seed */
   srand(m_sim_config.noise_seed);
 
-  SetCoefficients(0);
+  SetCoefficients(m_sim_config.simulation_option);
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
