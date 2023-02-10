@@ -39,20 +39,6 @@ namespace task {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
-      /* Check if the event was already triggered. If it was, ignore */
-      if ((m_event_tracking & (1U << static_cast<uint32_t>(curr_event))) == 1) {
-        continue;
-      }
-
-      /* Set the event to done, only custom events can be repeated */
-      if ((curr_event != EV_CUSTOM_1) && (curr_event != EV_CUSTOM_2)) {
-        m_event_tracking |= 1U << curr_event;
-      }
-
-      /* If Touchdown is triggered, prevent further actions from being triggered */
-      if (curr_event == EV_TOUCHDOWN) {
-        m_event_tracking = 0xFFFFFFFF;
-      }
 
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
@@ -100,7 +86,26 @@ namespace task {
 }  // namespace task
 
 osStatus_t trigger_event(cats_event_e ev) {
-  log_warn("Event %lu added to the queue", ev);
+  /* Used to track if an event was already fired. The n'th bit is the n'th event */
+  static uint32_t event_tracking = 0U;
+
+  /* Check if the event was already triggered. If it was, ignore */
+  if (static_cast<bool>(event_tracking & (1U << static_cast<uint32_t>(ev)))) {
+    log_warn("Event %lu Discarded, already triggered.", ev);
+    return osOK;
+  }
+
+  /* Set the event to done, only custom events can be repeated */
+  if ((ev != EV_CUSTOM_1) && (ev != EV_CUSTOM_2)) {
+    event_tracking |= 1U << ev;
+  }
+
+  /* If Touchdown is triggered, prevent further actions from being triggered */
+  if (ev == EV_TOUCHDOWN) {
+    event_tracking = 0xFFFFFFFF;
+  }
+
+  log_warn("Event %lu Queued", ev);
   /* TODO: check if timeout should be 0 here */
   return osMessageQueuePut(event_queue, &ev, 0U, 10U);
 }

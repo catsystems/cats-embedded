@@ -59,6 +59,10 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->state = m_fsm_enum;
   }
 
+  if(m_testing_enabled){
+    tx_payload->state = static_cast<uint8_t>(m_enable_testing_telemetry);
+  }
+
   tx_payload->timestamp = ts / 100;
 
   if (get_error_by_tag(CATS_ERR_NON_USER_CFG)) {
@@ -98,9 +102,9 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   }
 }
 
-void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
+void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   /* Check if Correct Header */
-  if (rx_payload->header != 0x72) {
+  if (rx_payload->header != RX_PACKET_HEADER) {
     return;
   }
 
@@ -109,8 +113,17 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
     return;
   }
 
+  if(rx_payload->enable_testing_telemetry == 1){
+    HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
+    m_enable_testing_telemetry = true;
+  }
+  else{
+    HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
+    m_enable_testing_telemetry = false;
+  }
+
   /* Add event to eventqueue */
-  if(rx_payload->event <= EV_CUSTOM_2 && rx_payload->event >= EV_MOVING){
+  if(rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING && static_cast<bool>(m_enable_testing_telemetry)){
     trigger_event(static_cast<cats_event_e>(rx_payload->event));
   }
 
@@ -140,8 +153,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept {
 
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
-    uint32_t link_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, 8);
-    SendLinkPhrase(link_phrase_crc, 4);
+    SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
     osDelay(100);
     SendEnable();
   }
@@ -268,7 +280,7 @@ bool Telemetry::CheckValidOpCode(uint8_t op_code) const noexcept {
  * @param gnss [out]
  * @return
  */
-bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept {
+bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) noexcept {
   if (length < 1) return false;
 
   bool gnss_position_received = false;

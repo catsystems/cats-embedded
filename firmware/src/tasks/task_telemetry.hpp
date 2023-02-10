@@ -50,18 +50,20 @@ class Telemetry final : public Task<Telemetry, 1024> {
     uint8_t header;
     uint32_t passcode;
     uint8_t event;
+    uint8_t enable_testing_telemetry;
     uint32_t dummy1;
     uint32_t dummy2;
-    uint8_t dummy3;
   } __attribute__((packed));
 
   uint32_t m_uplink_phrase_crc = 0;
   bool m_testing_enabled;
+  bool m_enable_testing_telemetry = false;
+  static constexpr uint32_t RX_PACKET_HEADER{0x72};
 
   void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                      estimation_output_t estimation_data) const noexcept;
-  void ParseRxMessage(packed_rx_msg_t* rx_payload) const noexcept;
-  bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept;
+  void ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept;
+  bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) noexcept;
   static void SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept;
   void SendSettings(uint8_t command, uint8_t value) const noexcept;
   void SendEnable() const noexcept;
