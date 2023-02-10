@@ -159,44 +159,29 @@ void Simulator::ComputeSimValues(float32_t time) {
     /* Compute wanted acceleration */
     switch (m_sim_config.sim_axis) {
       case 0:
-        for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = static_cast<int16_t>(
+        for (auto & data : sim_imu_data) {
+          data.acc.x = static_cast<int16_t>(
               (static_cast<float32_t>(m_current_acc) + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
-          sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
-          sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
         break;
       case 1:
-        for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
-          sim_imu_data[i].acc.y = static_cast<int16_t>(
+        for (auto & data : sim_imu_data) {
+          data.acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.y = static_cast<int16_t>(
               (static_cast<float32_t>(m_current_acc) + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
-          sim_imu_data[i].acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.z = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
         }
         break;
       case 2:
-        for (int i = 0; i < NUM_IMU; i++) {
-          sim_imu_data[i].acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
-          sim_imu_data[i].acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
-          sim_imu_data[i].acc.z = static_cast<int16_t>(
+        for (auto & data : sim_imu_data) {
+          data.acc.x = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.y = static_cast<int16_t>(rand_bounds(-m_acc_noise, m_acc_noise));
+          data.acc.z = static_cast<int16_t>(
               (static_cast<float32_t>(m_current_acc) + rand_bounds(-m_acc_noise, m_acc_noise)) * m_acc_factor);
         }
         break;
-    }
-
-    /* When the Simulation starts, add gyro action to go back to moving */
-    if (m_reset_time > (static_cast<float32_t>(osKernelGetTickCount() - sim_start)) / 1000.0F) {
-      for (int i = 0; i < NUM_IMU; i++) {
-        sim_imu_data[i].gyro.x = 600;
-        sim_imu_data[i].gyro.y = 600;
-        sim_imu_data[i].gyro.z = 600;
-      }
-    } else {
-      for (int i = 0; i < NUM_IMU; i++) {
-        sim_imu_data[i].gyro.x = 0;
-        sim_imu_data[i].gyro.y = 0;
-        sim_imu_data[i].gyro.z = 0;
-      }
     }
 
     /* Write into global imu sim variable */
