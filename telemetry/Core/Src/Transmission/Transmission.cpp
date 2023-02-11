@@ -125,7 +125,8 @@ void Transmission::enableTransmission() {
   Settings.transmissionEnabled = true;
 
   linkCRC = Settings.linkPhraseCrC;
-  linkXOR = linkCRC & 0xFF;
+  linkXOR[0] = (linkCRC >> 8) & 0xFF;
+  linkXOR[1] = linkCRC & 0xFF;
 
   FHSSrandomiseFHSSsequence(linkCRC);
 
@@ -185,10 +186,13 @@ void Transmission::disableTransmission() {
 void Transmission::processRFPacket() {
   LQCalc.inc();
 
-  uint8_t crc =
-      (uint8_t)crc32((const uint8_t *)Radio.RXdataBuffer, payloadLength - 1);
+  uint16_t crc =
+      (uint16_t)crc32((const uint8_t *)Radio.RXdataBuffer, payloadLength - 2);
 
-  if ((linkXOR ^ crc) == Radio.RXdataBuffer[payloadLength - 1]) {
+  bool is_connected = (linkXOR[0] ^ (uint8_t)(crc >> 8)) == Radio.RXdataBuffer[payloadLength - 2];
+  is_connected &= (linkXOR[1] ^ (uint8_t)crc) == Radio.RXdataBuffer[payloadLength - 1];
+
+  if (is_connected) {
     if (connectionState == tentative)
       connectionState = connected;
     else if (connectionState == disconnected)
@@ -289,8 +293,9 @@ void Transmission::txTransmit() {
   }
 
   /* Calculate CRC and store in last position */
-  uint8_t crc = (uint8_t)crc32((const uint8_t *)txData, payloadLength - 1);
-  Radio.TXdataBuffer[payloadLength - 1] = linkXOR ^ crc;
+  uint16_t crc = (uint16_t)crc32((const uint8_t *)txData, payloadLength - 2);
+  Radio.TXdataBuffer[payloadLength - 2] = linkXOR[0] ^ (uint8_t)(crc >> 8);
+  Radio.TXdataBuffer[payloadLength - 1] = linkXOR[1] ^ (uint8_t)crc;
 
   /* Transmit message */
   if (!busyTransmitting)
