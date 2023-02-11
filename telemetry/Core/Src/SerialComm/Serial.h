@@ -6,7 +6,7 @@ void start_serial();
 
 template <uint32_t N> class Serial {
 public:
-  Serial(UART_HandleTypeDef *handle) : tail(0U), uart(handle) {
+  Serial(UART_HandleTypeDef *handle) : tail(0U), uart(handle), buffer{}{
     HAL_UART_Receive_DMA(uart, buffer, N);
   }
 
@@ -20,7 +20,8 @@ public:
 
   uint8_t read() {
     uint8_t tmp = buffer[tail];
-    tail = (++tail) % N;
+    ++tail;
+    tail = tail % N;
     return tmp;
   }
 
