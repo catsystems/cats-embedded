@@ -28,7 +28,7 @@ public:
   transmission_mode_e transmissionMode = UNIDIRECTIONAL;
   int8_t paGain = 34;     // dB, default +34dB SKY65383-11
   int8_t powerLevel = 20; // dBm, default +20dBm = 100mW
-  uint8_t linkPhrase[8];
+  uint32_t linkPhraseCrC = 0;
   bool transmissionEnabled = false;
 
   /* Predefined transmission modes */

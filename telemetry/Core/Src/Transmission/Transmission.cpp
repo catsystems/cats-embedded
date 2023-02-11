@@ -47,11 +47,10 @@ bool Transmission::begin(TIM_HandleTypeDef *t) {
   return radioInitialized;
 }
 
-void Transmission::setLinkPhrase(const uint8_t *linkPhrase, uint32_t length) {
-  // Reset the linkPhrase
-  memset(Settings.linkPhrase, 0, 8);
-  // Copy new linkPhrase
-  memcpy(Settings.linkPhrase, linkPhrase, length);
+void Transmission::setLinkPhraseCrc(const uint32_t PhraseCrC) {
+
+  // Set new linkPhrase
+  Settings.linkPhraseCrC = PhraseCrC;
 
   /* If the transmission was already enabled, restart it */
   if (Settings.transmissionEnabled) {
@@ -125,7 +124,7 @@ void Transmission::enableTransmission() {
 
   Settings.transmissionEnabled = true;
 
-  linkCRC = crc32(Settings.linkPhrase, 8);
+  linkCRC = Settings.linkPhraseCrC;
   linkXOR = linkCRC & 0xFF;
 
   FHSSrandomiseFHSSsequence(linkCRC);

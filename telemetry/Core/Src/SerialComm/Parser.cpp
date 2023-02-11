@@ -97,11 +97,15 @@ void Parser::cmdModeIndex(uint8_t *args, uint32_t length) {
 }
 
 void Parser::cmdLinkPhrase(uint8_t *args, uint32_t length) {
-  if (length != 8)
+  if (length != 4)
     return;
 
   if (args[0] != 0) {
-    Link.setLinkPhrase(args, length);
+	uint32_t phrasecrc = args[0] << 24;
+	phrasecrc += args[1] << 16;
+	phrasecrc += args[2] << 8;
+	phrasecrc += args[3];
+    Link.setLinkPhraseCrc(phrasecrc);
   }
 }
 

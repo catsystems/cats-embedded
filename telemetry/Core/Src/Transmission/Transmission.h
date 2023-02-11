@@ -38,7 +38,7 @@ public:
   void setMode(transmission_mode_e transmissionMode);
   void setPAGain(int8_t gain);
   void setPowerLevel(int8_t gain);
-  void setLinkPhrase(const uint8_t *linkPhrase, uint32_t length);
+  void setLinkPhraseCrc(const uint32_t PhraseCrc);
 
   /* Functions to read and write transmission data */
   bool available();
