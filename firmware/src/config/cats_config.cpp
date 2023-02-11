@@ -59,9 +59,9 @@ const cats_config_t DEFAULT_CONFIG = {
     .buzzer_volume = 100U,
     .battery_type = LI_ION,
     .rec_speed_idx = 0,
+    .enable_testing_mode = false,
     /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
-    .is_set_by_user = true,
-    .enable_testing_mode = false};
+    .is_set_by_user = true};
 
 cats_config_t global_cats_config = {};
 

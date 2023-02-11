@@ -139,10 +139,7 @@ const cli_value_t value_table[] = {
 
     {"rec_elements", VAR_UINT32, {.u32_max = UINT32_MAX}, offsetof(cats_config_t, rec_mask)},
     {"rec_speed", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_SPEEDS}}, offsetof(cats_config_t, rec_speed_idx)},
-    {"enable_test_mode",
-     VAR_UINT8 | MODE_LOOKUP,
-     {.lookup = {TABLE_POWER}},
-     offsetof(cats_config_t, enable_testing_mode)},
+    {"test_mode", VAR_UINT8 | MODE_LOOKUP, {.lookup = {TABLE_POWER}}, offsetof(cats_config_t, enable_testing_mode)},
 };
 
 const uint16_t value_table_entry_count = ARRAYLEN(value_table);
