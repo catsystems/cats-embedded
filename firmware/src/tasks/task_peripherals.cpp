@@ -39,7 +39,6 @@ namespace task {
   cats_event_e curr_event;
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
-
       /* Start Timer if the Config says so */
       for (uint32_t i = 0; i < NUM_TIMERS; i++) {
         if ((ev_timers[i].timer_id != nullptr) && (curr_event == ev_timers[i].timer_init_event)) {

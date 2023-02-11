@@ -25,7 +25,8 @@ namespace task {
 
 class Telemetry final : public Task<Telemetry, 1024> {
  public:
-  explicit Telemetry(const StateEstimation* task_state_estimation) : m_testing_enabled{global_cats_config.enable_testing_mode}, m_task_state_estimation{task_state_estimation} {}
+  explicit Telemetry(const StateEstimation* task_state_estimation)
+      : m_testing_enabled{global_cats_config.enable_testing_mode}, m_task_state_estimation{task_state_estimation} {}
 
  private:
   [[noreturn]] void Run() noexcept override;

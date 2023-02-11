@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tasks/task_peripherals.hpp"
 #include "tasks/task_telemetry.hpp"
 #include "comm/fifo.hpp"
 #include "comm/stream.hpp"
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/adc.hpp"
+#include "tasks/task_peripherals.hpp"
 #include "util/battery.hpp"
 #include "util/crc.hpp"
 #include "util/gnss.hpp"
@@ -59,7 +59,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->state = m_fsm_enum;
   }
 
-  if(m_testing_enabled){
+  if (m_testing_enabled) {
     tx_payload->state = static_cast<uint8_t>(m_enable_testing_telemetry);
   }
 
@@ -113,20 +113,19 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     return;
   }
 
-  if(rx_payload->enable_testing_telemetry == 1){
+  if (rx_payload->enable_testing_telemetry == 1) {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
     m_enable_testing_telemetry = true;
-  }
-  else{
+  } else {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
     m_enable_testing_telemetry = false;
   }
 
   /* Add event to eventqueue */
-  if(rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING && static_cast<bool>(m_enable_testing_telemetry)){
+  if (rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING &&
+      static_cast<bool>(m_enable_testing_telemetry)) {
     trigger_event(static_cast<cats_event_e>(rx_payload->event));
   }
-
 }
 
 [[noreturn]] void Telemetry::Run() noexcept {
@@ -178,7 +177,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     bool fsm_updated = GetNewFsmEnum();
     packed_tx_msg_t tx_payload = {};
     estimation_output_t estimation_output = {};
-    if(m_task_state_estimation != nullptr){
+    if (m_task_state_estimation != nullptr) {
       estimation_output = m_task_state_estimation->GetEstimationOutput();
     }
 
