@@ -78,7 +78,7 @@ private:
 
   connectionState_e connectionState = disconnected;
   volatile bool busyTransmitting;
-  uint8_t linkXOR;
+  uint8_t linkXOR[2];
   uint32_t linkCRC;
 
   volatile bool dataAvailable = false;
