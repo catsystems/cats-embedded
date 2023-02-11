@@ -60,7 +60,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   }
 
   if (m_testing_enabled) {
-    tx_payload->state = static_cast<uint8_t>(m_enable_testing_telemetry);
+    tx_payload->state = static_cast<uint8_t>(m_testing_armed);
   }
 
   tx_payload->timestamp = ts / 100;
@@ -87,7 +87,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
-  tx_payload->testing_on = static_cast<uint8_t>(m_testing_enabled);
+  tx_payload->testing_on = static_cast<bool>(m_testing_enabled);
 
   tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
   tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
@@ -109,21 +109,21 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   }
 
   /* Check if the linkphrase matches */
-  if (rx_payload->passcode != m_uplink_phrase_crc) {
+  if (rx_payload->passcode != m_test_phrase_crc) {
     return;
   }
 
+  /* If the testing is armed, arm pyros */
   if (rx_payload->enable_testing_telemetry == 1) {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
-    m_enable_testing_telemetry = true;
+    m_testing_armed = true;
   } else {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
-    m_enable_testing_telemetry = false;
+    m_testing_armed = false;
   }
 
   /* Add event to eventqueue */
-  if (rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING &&
-      static_cast<bool>(m_enable_testing_telemetry)) {
+  if (rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING && static_cast<bool>(m_testing_armed)) {
     trigger_event(static_cast<cats_event_e>(rx_payload->event));
   }
 }
@@ -144,7 +144,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   /* if we are in the testing mode, set the receiver to bidirectional mode */
   if (testing_enabled) {
     SendSettings(CMD_MODE, BIDIRECTIONAL);
-    m_uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.test_phrase, 8);
+    m_test_phrase_crc = crc32(global_cats_config.telemetry_settings.test_phrase, 8);
   } else {
     SendSettings(CMD_MODE, UNIDIRECTIONAL);
   }

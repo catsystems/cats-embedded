@@ -149,6 +149,7 @@ int main(void) {
 
   static const task::StateEstimation* task_state_estimation_ptr = nullptr;
 
+  /* If we are in testing mode, we do not want to start the estimation tasks */
   if (!global_cats_config.enable_testing_mode) {
     task::Recorder::Start();
 
