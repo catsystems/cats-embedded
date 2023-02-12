@@ -135,7 +135,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
 
   /* Add event to eventqueue if its a valid event, if the flight computer is armed and if the last triggered event was
    * cleared by the groundstation */
-  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_MOVING) && m_testing_armed && m_event_reset) {
+  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_CALIBRATE) && m_testing_armed && m_event_reset) {
     trigger_event(static_cast<cats_event_e>(rx_payload->event), false);
     /* Event thrown, set boolean to false and wait until groundstation clears the event again before triggering new
      * events */

@@ -20,16 +20,16 @@
 
 #include "util/types.hpp"
 
-/* MOVING */
+/* CALIBRATING */
 // num iterations, imu action needs to be 0 for at least 10 seconds
-#define TIME_THRESHOLD_MOV_TO_READY 1000
+#define TIME_THRESHOLD_CALIB_TO_READY 1000
 
-// m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition MOVING ->
-// READY
+// m/s^2, if the IMU measurement is smaller than 0.6 m/s^2 it is not considered as movement for the transition
+// CALIBRATING -> READY
 #define ALLOWED_ACC_ERROR 0.6F
 
-// dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition MOVING ->
-// READY
+// dps, if the GYRO measurement is smaller than 10 dps it is not considered as movement for the transition CALIBRATING
+// -> READY
 #define ALLOWED_GYRO_ERROR 10.0F
 
 /* READY */

@@ -70,7 +70,7 @@ class Task {
     auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
 
     /* If this happens, there is an error on the Event Flag.*/
-    if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+    if (new_enum > TOUCHDOWN || new_enum < CALIBRATING) {
       return false;
     }
 

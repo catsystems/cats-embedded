@@ -71,8 +71,8 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
       global_flight_stats.calibration_data.gyro_calib = m_calibration.gyro_calib;
     }
 
-    /* Compute current height constantly before liftoff. If the state is moving, the filter is much faster. */
-    if (m_fsm_enum == MOVING) {
+    /* Compute current height constantly before liftoff. If the state is calibrating, the filter is much faster. */
+    if (m_fsm_enum == CALIBRATING) {
       m_height_0 = approx_moving_average(calculate_height(m_si_data.pressure), true);
       global_flight_stats.height_0 = m_height_0;
     }

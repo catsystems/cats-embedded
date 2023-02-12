@@ -52,8 +52,8 @@ namespace task {
       if (curr_event >= EV_READY) {
         HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
       }
-      /* Disarm the pyro channels when going into moving */
-      else if (curr_event == EV_MOVING) {
+      /* Disarm the pyro channels when going into calibrating */
+      else if (curr_event == EV_CALIBRATE) {
         HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
       }
 

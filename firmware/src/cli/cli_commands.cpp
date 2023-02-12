@@ -406,7 +406,7 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
 static void cli_cmd_status(const char *cmd_name, char *args) {
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
   auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
-  if (new_enum > TOUCHDOWN || new_enum < MOVING) {
+  if (new_enum > TOUCHDOWN || new_enum < CALIBRATING) {
     new_enum = INVALID;
   }
   cli_printf("State:       %s\n", fsm_map[new_enum]);

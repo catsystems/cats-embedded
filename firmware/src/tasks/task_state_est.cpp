@@ -72,7 +72,7 @@ estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
     /* update fsm enum */
     bool fsm_updated = GetNewFsmEnum();
 
-    /* Reset IMU when we go from moving to READY */
+    /* Reset IMU when we go from CALIBRATING to READY */
     if ((m_fsm_enum == READY) && fsm_updated) {
       reset_kalman(&m_filter);
       reset_orientation_filter(&m_orientation_filter);

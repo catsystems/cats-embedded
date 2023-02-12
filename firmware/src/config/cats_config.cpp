@@ -29,7 +29,7 @@ const cats_config_t DEFAULT_CONFIG = {
     .rec_mask = UINT32_MAX,
     .timers = {},
     .action_array =
-        {// EV_MOVING
+        {// EV_CALIBRATE
          {},
          // EV_READY
          {ACT_SET_RECORDER_STATE, REC_FILL_QUEUE},

@@ -126,12 +126,12 @@ static void init_communication();
       ++ready_timer;
     }
 
-    // Beep out transitions from moving to ready and back
+    // Beep out transitions from calibrating to ready and back
     if (m_fsm_enum == READY && fsm_updated) {
       m_task_buzzer.Beep(Buzzer::BeepCode::kChangedReady);
     }
-    if (m_fsm_enum == MOVING && fsm_updated && tick_count > 100U) {
-      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedMoving);
+    if (m_fsm_enum == CALIBRATING && fsm_updated && tick_count > 100U) {
+      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedCalibrating);
     }
 
     tick_count += tick_update;

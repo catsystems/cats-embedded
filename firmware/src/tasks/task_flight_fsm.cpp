@@ -32,11 +32,11 @@ namespace task {
   const control_settings_t settings = global_cats_config.control_settings;
 
   fsm_flag_id = osEventFlagsNew(nullptr);
-  osEventFlagsSet(fsm_flag_id, MOVING);
+  osEventFlagsSet(fsm_flag_id, CALIBRATING);
 
-  trigger_event(EV_MOVING);
+  trigger_event(EV_CALIBRATE);
 
-  flight_fsm_t flight_state = {.flight_state = MOVING};
+  flight_fsm_t flight_state = {.flight_state = CALIBRATING};
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
