@@ -59,6 +59,9 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->state = m_fsm_enum;
   }
 
+  /* If we are in testing mode, most of the tx_payload is not used.
+   * Hence, use the state to inform the groundstation by setting the state
+   * if the flight computer was armed or not through telemetry */
   if (m_testing_enabled) {
     tx_payload->state = static_cast<uint8_t>(m_testing_armed);
   }
@@ -87,7 +90,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
-  tx_payload->testing_on = static_cast<bool>(m_testing_enabled);
+  tx_payload->testing_on = m_testing_enabled;
 
   tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
   tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
@@ -114,7 +117,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   }
 
   /* If the testing is armed, arm pyros */
-  if (rx_payload->enable_testing_telemetry == 1) {
+  if (rx_payload->enable_testing_telemetry) {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
     m_testing_armed = true;
   } else {
@@ -123,7 +126,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   }
 
   /* Add event to eventqueue */
-  if (rx_payload->event <= EV_CUSTOM_2 && rx_payload->event > EV_MOVING && static_cast<bool>(m_testing_armed)) {
+  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_MOVING) && m_testing_armed) {
     trigger_event(static_cast<cats_event_e>(rx_payload->event));
   }
 }

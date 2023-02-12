@@ -48,11 +48,14 @@ class Telemetry final : public Task<Telemetry, 1024> {
   } __attribute__((packed));
 
   struct packed_rx_msg_t {
-    uint8_t header;    /* Header used to check if the packet is used for arming */
-    uint32_t passcode; /* Testing passcode, only if this matches with the configured passcode is the packet accepted. */
-    uint8_t event;     /* Event which needs to be triggered */
-    uint8_t enable_testing_telemetry; /* If this bit is set to one, the flight computer arms itself for testing; only
-                                         then can events be triggered */
+    /* Header used to check if the packet is used for arming */
+    uint8_t header;
+    /* Testing passcode, only if this matches with the configured passcode is the packet accepted. */
+    uint32_t passcode;
+    /* Event which needs to be triggered */
+    uint8_t event;
+    /* If this bit is set to one, the flight computer arms itself for testing; only then can events be triggered */
+    bool enable_testing_telemetry;
     uint32_t dummy1;
     uint32_t dummy2;
   } __attribute__((packed));
