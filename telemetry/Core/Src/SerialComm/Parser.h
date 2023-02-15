@@ -17,6 +17,7 @@
  */
 
 #include <cstdint>
+#include "telemetry_reg.h"
 
 typedef void cmd_fn(uint8_t *args, uint32_t length);
 
@@ -64,6 +65,8 @@ public:
   static void cmdGNSSTime(uint8_t *args, uint32_t length);
   static void cmdGNSSInfo(uint8_t *args, uint32_t length);
 
+  static void cmdVersionNum(uint8_t *args, uint32_t length);
+
 private:
   int32_t getOpCodeIndex(uint8_t opCode);
 
@@ -87,20 +90,20 @@ private:
   state_e state = STATE_OP;
 
   enum {
-    CMD_NUMBER = 14,
+    CMD_NUMBER = 15,
   };
 
   const cmd_t cmd_table[CMD_NUMBER] = {
-      CMD_DEF(0x10, cmdDirection),  CMD_DEF(0x11, cmdPAGain),
-      CMD_DEF(0x12, cmdPowerLevel), CMD_DEF(0x13, cmdMode),
-      CMD_DEF(0x14, cmdModeIndex),  CMD_DEF(0x15, cmdLinkPhrase),
+    CMD_DEF(CMD_DIRECTION, cmdDirection),    CMD_DEF(CMD_PA_GAIN, cmdPAGain),
+	CMD_DEF(CMD_POWER_LEVEL, cmdPowerLevel), CMD_DEF(CMD_MODE, cmdMode),
+	CMD_DEF(CMD_MODE_INDEX, cmdModeIndex),   CMD_DEF(CMD_LINK_PHRASE, cmdLinkPhrase),
 
-      CMD_DEF(0x20, cmdEnable),     CMD_DEF(0x21, cmdDisable),
+	CMD_DEF(CMD_ENABLE, cmdEnable),          CMD_DEF(CMD_DISBALE, cmdDisable),
 
-      CMD_DEF(0x30, cmdTX),         CMD_DEF(0x31, cmdRX),
-      CMD_DEF(0x32, cmdInfo),
+	CMD_DEF(CMD_TX, cmdTX),                  CMD_DEF(CMD_RX, cmdRX),
+	CMD_DEF(CMD_INFO, cmdInfo),
 
-      CMD_DEF(0x40, cmdGNSSLoc),    CMD_DEF(0x41, cmdGNSSTime),
-      CMD_DEF(0x42, cmdGNSSInfo),
+	CMD_DEF(CMD_GNSS_LOC, cmdGNSSLoc),       CMD_DEF(CMD_GNSS_TIME, cmdGNSSTime),
+	CMD_DEF(CMD_GNSS_INFO, cmdGNSSInfo),     CMD_DEF(CMD_VERSION_INFO, cmdVersionNum),
   };
 };

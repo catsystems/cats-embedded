@@ -119,6 +119,11 @@ int main(void) {
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  /* Set code version */
+  const char* telemetry_code_version = "1.0.0";
+  uint8_t code_version_size = strlen(telemetry_code_version);
+  const uint8_t* code_version = reinterpret_cast<const uint8_t*>(telemetry_code_version);
+
   /* Wait for the GNSS module to initialize*/
   HAL_Delay(4000);
   /* Set the GNSS module to 115200 baud and put in airbourne mode*/
@@ -139,6 +144,7 @@ int main(void) {
   uint8_t oldGpsValue = 20;
   uint8_t oldSecond = 0;
   uint32_t lastTemperatureUpdate = HAL_GetTick();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -250,6 +256,20 @@ int main(void) {
       uartOutBuffer[6] = crc;
       HAL_UART_Transmit(&huart2, uartOutBuffer, 7, 2);
     }
+
+    if(send_version_num){
+      /* Send Version number to Host */
+      uartOutBuffer[0] = CMD_VERSION_INFO;
+      uartOutBuffer[1] = code_version_size;
+      memcpy(&uartOutBuffer[2], code_version, code_version_size);
+      uint8_t crc = crc8(uartOutBuffer, code_version_size + 2);
+      uartOutBuffer[code_version_size + 2] = crc;
+
+      HAL_UART_Transmit(&huart2, uartOutBuffer, code_version_size + 3, 2);
+      send_version_num = false;
+    }
+
+
   }
 }
 
