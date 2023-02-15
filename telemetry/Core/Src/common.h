@@ -4,3 +4,5 @@
 #include "Transmission/Transmission.h"
 
 extern Transmission Link;
+
+extern bool send_version_num;

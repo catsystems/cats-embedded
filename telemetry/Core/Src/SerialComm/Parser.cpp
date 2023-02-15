@@ -125,6 +125,10 @@ void Parser::cmdTX(uint8_t *args, uint32_t length) {
   Link.writeBytes(args, length);
 }
 
+void Parser::cmdVersionNum(uint8_t *args, uint32_t length) {
+  send_version_num = true;
+}
+
 void Parser::cmdRX(uint8_t *args, uint32_t length) {
   // UNUSED
 }

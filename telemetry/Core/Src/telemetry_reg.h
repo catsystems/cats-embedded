@@ -51,3 +51,5 @@ typedef struct modulation_settings_s {
 #define CMD_GNSS_INFO 0x42
 
 #define CMD_TEMP_INFO 0x50
+
+#define CMD_VERSION_INFO 0x60
