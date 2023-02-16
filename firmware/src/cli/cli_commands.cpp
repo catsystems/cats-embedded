@@ -434,9 +434,10 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
 
 static void cli_cmd_version(const char *cmd_name, char *args) {
   /* TODO: Store the board name somewhere else. */
-  cli_printf("Board: %s\n", "CATS Vega");
+  cli_printf("Board: %s\n", board_name);
   cli_printf("CPU ID: 0x%lx, Revision: 0x%lx\n", HAL_GetDEVID(), HAL_GetREVID());
   cli_printf("Code version: %s\n", code_version);
+  cli_printf("Telemetry Code version: %s\n", telemetry_code_version);
 }
 
 static void cli_cmd_log_enable(const char *cmd_name, char *args) { log_enable(); }
