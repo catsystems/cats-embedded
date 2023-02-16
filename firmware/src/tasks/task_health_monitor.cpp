@@ -130,9 +130,6 @@ static void init_communication();
     if (m_fsm_enum == READY && fsm_updated) {
       m_task_buzzer.Beep(Buzzer::BeepCode::kChangedReady);
     }
-    if (m_fsm_enum == CALIBRATING && fsm_updated && tick_count > 100U) {
-      m_task_buzzer.Beep(Buzzer::BeepCode::kChangedCalibrating);
-    }
 
     tick_count += tick_update;
     osDelayUntil(tick_count);

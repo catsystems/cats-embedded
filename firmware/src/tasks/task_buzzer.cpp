@@ -43,11 +43,11 @@ void Buzzer::Beep(BeepCode code) const {
         duration = static_cast<uint32_t>(Duration::kShortBeep);
       }
       m_buzzer.Beep(duration);
-      osDelay(static_cast<uint32_t>(Duration::kShortPause));
+      osDelay(static_cast<uint32_t>(Duration::kPause));
     }
 
-    // Wait at least 1s before buzzing again
-    osDelay(static_cast<uint32_t>(Duration::kLongPause));
+    // Wait at least kPause ms before buzzing again
+    osDelay(static_cast<uint32_t>(Duration::kPause));
   }
 }
 

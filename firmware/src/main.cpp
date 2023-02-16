@@ -117,8 +117,12 @@ int main(void) {
   servo1.SetPosition(global_cats_config.initial_servo_position[0]);
   servo2.SetPosition(global_cats_config.initial_servo_position[1]);
 
-  // Set the buzzer to the volume set in the config
-  buzzer.SetVolume(static_cast<uint16_t>(global_cats_config.buzzer_volume));
+  // Set the buzzer to max volume in testing mode otherwise to user config
+  if (global_cats_config.enable_testing_mode) {
+    buzzer.SetVolume(100U);
+  } else {
+    buzzer.SetVolume(static_cast<uint16_t>(global_cats_config.buzzer_volume));
+  }
 
   // Start the pwm channels
   servo1.Start();
@@ -164,7 +168,7 @@ int main(void) {
     task_state_estimation_ptr = &task_state_estimation;
   }
 
-  task::Telemetry::Start(task_state_estimation_ptr);
+  task::Telemetry::Start(task_state_estimation_ptr, task_buzzer);
 
   log_info("Task initialization complete.");
 
