@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_desc.h"
+#include "config/globals.hpp"
 #include "usbd_conf.h"
 #include "usbd_core.h"
 
@@ -67,7 +68,7 @@
 #define USBD_LANGID_STRING           1033
 #define USBD_MANUFACTURER_STRING     "Control and Telemetry Systems"
 #define USBD_PID_FS                  22336
-#define USBD_PRODUCT_STRING_FS       "CATS Vega"
+#define USBD_PRODUCT_STRING_FS       board_name
 #define USBD_CONFIGURATION_STRING_FS "CDC Config"
 #define USBD_INTERFACE_STRING_FS     "CDC Interface"
 

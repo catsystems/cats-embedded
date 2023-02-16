@@ -60,3 +60,5 @@ extern volatile recorder_status_e global_recorder_status;
 extern event_action_map_elem_t* event_action_map;
 
 extern const char* code_version;
+extern char telemetry_code_version[20];
+extern const char* board_name;

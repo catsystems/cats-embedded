@@ -77,11 +77,12 @@ class Telemetry final : public Task<Telemetry, 1024> {
   void ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept;
   bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) noexcept;
   static void SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept;
-  void SendSettings(uint8_t command, uint8_t value) const noexcept;
-  void SendEnable() const noexcept;
-  void SendDisable() const noexcept;
-  void SendTxPayload(uint8_t* payload, uint32_t length) const noexcept;
+  static void SendSettings(uint8_t command, uint8_t value) noexcept;
+  static void SendEnable() noexcept;
+  static void SendDisable() noexcept;
+  static void SendTxPayload(uint8_t* payload, uint32_t length) noexcept;
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
+  static void RequestVersionNum() noexcept;
 
   const StateEstimation* m_task_state_estimation = nullptr;
 

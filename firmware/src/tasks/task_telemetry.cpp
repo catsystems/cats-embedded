@@ -243,8 +243,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
           }
           break;
         case STATE_CRC: {
-          uint8_t crc;
-          crc = crc8(uart_buffer, uart_index + 2);
+          uint8_t crc = crc8(uart_buffer, uart_index + 2);
           if (crc == ch) {
             gnss_position_received = Parse(uart_buffer[INDEX_OP], &uart_buffer[2], uart_buffer[INDEX_LEN], &gnss_data);
           }
@@ -281,6 +280,8 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
       }
     }
 
+    RequestVersionNum();
+
     /* Disable the pyro channels if we are in testing mode and the timeout is achieved */
     if ((osKernelGetTickCount() - m_testing_timeout) > 2000 && testing_enabled) {
       HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
@@ -295,7 +296,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
 bool Telemetry::CheckValidOpCode(uint8_t op_code) const noexcept {
   /* TODO loop over all opcodes and check if it exists */
   if (op_code == CMD_GNSS_INFO || op_code == CMD_GNSS_LOC || op_code == CMD_RX || op_code == CMD_INFO ||
-      op_code == CMD_GNSS_TIME || op_code == CMD_TEMP_INFO) {
+      op_code == CMD_GNSS_TIME || op_code == CMD_TEMP_INFO || op_code == CMD_VERSION_INFO) {
     return true;
   } else {
     return false;
@@ -340,7 +341,11 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
     if (m_amplifier_temperature > k_amplifier_hot_limit) {
       add_error(CATS_ERR_TELEMETRY_HOT);
     }
-    //    log_raw("Got temp %f", static_cast<double>(m_amplifier_temperature));
+  } else if (op_code == CMD_VERSION_INFO) {
+    for (uint32_t i = 0; i < length; i++) {
+      telemetry_code_version[i] = static_cast<char>(buffer[i]);
+    }
+
   } else {
     log_error("Unknown Op Code");
   }
@@ -359,7 +364,7 @@ void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 7, 2);
 }
 
-void Telemetry::SendSettings(uint8_t command, uint8_t value) const noexcept {
+void Telemetry::SendSettings(uint8_t command, uint8_t value) noexcept {
   uint8_t out[4];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = command;
   out[1] = 1;
@@ -369,8 +374,21 @@ void Telemetry::SendSettings(uint8_t command, uint8_t value) const noexcept {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 4, 2);
 }
 
-void Telemetry::SendEnable() const noexcept {
-  uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
+void Telemetry::RequestVersionNum() noexcept {
+  /* Return if the code version was fetched */
+  if (strlen(telemetry_code_version) > 0) {
+    return;
+  }
+  uint8_t out[3];  // 1 OP + 1 LEN + 1 CRC
+  out[0] = CMD_VERSION_INFO;
+  out[1] = 0;
+  out[2] = crc8(out, 2);
+
+  HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
+}
+
+void Telemetry::SendEnable() noexcept {
+  uint8_t out[3];  // 1 OP + 1 LEN + 1 CRC
   out[0] = CMD_ENABLE;
   out[1] = 0;
   out[2] = crc8(out, 2);
@@ -378,8 +396,8 @@ void Telemetry::SendEnable() const noexcept {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void Telemetry::SendDisable() const noexcept {
-  uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
+void Telemetry::SendDisable() noexcept {
+  uint8_t out[3];  // 1 OP + 1 LEN + 1 CRC
   out[0] = CMD_DISABLE;
   out[1] = 0;
   out[2] = crc8(out, 2);
@@ -387,7 +405,7 @@ void Telemetry::SendDisable() const noexcept {
   HAL_UART_Transmit(&TELEMETRY_UART_HANDLE, out, 3, 2);
 }
 
-void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) const noexcept {
+void Telemetry::SendTxPayload(uint8_t* payload, uint32_t length) noexcept {
   uint8_t out[18];  // 1 OP + 1 LEN + 15 DATA + 1 CRC
   out[0] = CMD_TX;
   out[1] = (uint8_t)length;
