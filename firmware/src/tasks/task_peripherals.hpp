@@ -33,4 +33,4 @@ class Peripherals final : public Task<Peripherals, 256> {
 
 }  // namespace task
 
-osStatus_t trigger_event(cats_event_e ev);
+osStatus_t trigger_event(cats_event_e ev, bool event_unique = true);

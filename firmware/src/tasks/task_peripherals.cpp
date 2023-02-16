@@ -84,7 +84,7 @@ namespace task {
 
 }  // namespace task
 
-osStatus_t trigger_event(cats_event_e ev) {
+osStatus_t trigger_event(cats_event_e ev, bool event_unique) {
   /* Used to track if an event was already fired. The n'th bit is the n'th event */
   static uint32_t event_tracking = 0U;
 

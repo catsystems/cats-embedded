@@ -17,6 +17,7 @@
  */
 
 #include "config/cats_config.hpp"
+#include <cstring>
 #include "flash/lfs_custom.hpp"
 #include "lfs.h"
 #include "util/actions.hpp"
@@ -101,6 +102,23 @@ bool cc_load() {
     log_error("Configuration changed or error in config!");
     cc_defaults(true, false);
     ret &= cc_save();
+  }
+
+  /* Check if valid link parameters are set for testing mode to be enabled */
+  /* If no test phrase is set, dont allow testing mode */
+  if (global_cats_config.telemetry_settings.test_phrase[0] == 0) {
+    log_error("Testing Password is not valid. Testing mode disabled.");
+    global_cats_config.enable_testing_mode = false;
+  }
+  /* If link phrase and test phrase are the same, dont allow test mode */
+  for (uint32_t i = 0; i < 8; i++) {
+    if (global_cats_config.telemetry_settings.test_phrase[i] != global_cats_config.telemetry_settings.link_phrase[i]) {
+      break;
+    }
+    if (i == 7) {
+      log_error("Testing Password and Link Password are equal. Testing mode disabled.");
+      global_cats_config.enable_testing_mode = false;
+    }
   }
 
   if (!global_cats_config.is_set_by_user) {
