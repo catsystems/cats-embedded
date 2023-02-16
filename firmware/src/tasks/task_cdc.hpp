@@ -22,7 +22,7 @@
 
 namespace task {
 
-class Cdc final : public Task<Cdc, 512> {
+class Cdc final : public Task<Cdc, 256> {
  [[noreturn]] void Run() noexcept override;
 };
 

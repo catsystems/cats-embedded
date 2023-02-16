@@ -29,6 +29,7 @@
 #include "lfs.h"
 
 #include "flash/lfs_custom.h"
+#include "util/log.h"
 
 #define FILESYSTEM_SIZE_MB 32
 #define HDR_BUF_SIZE       32
@@ -38,8 +39,6 @@
   { CMA_TIME, CMA_TIME, CMA_TIME }
 
 static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
-  log_raw("hello from read: %p, %d, %lu, %ld, %s", dest, size, offset, entry->number, entry->name);
-  // flashfsReadAbs(offset, dest, size);
   char filename[32] = {};
   static lfs_file_t curr_file;
   static int32_t number = -1;
@@ -60,33 +59,36 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
   }
   lfs_file_seek(&lfs, &curr_file, (int32_t)offset, LFS_SEEK_SET);
   lfs_file_read(&lfs, &curr_file, dest, size);
-  //  log_raw("num: %ld off: %ld", entry->number, offset);
 }
 
-static void bblog_write_proc(const uint8_t *data, int size, uint32_t offset, struct emfat_entry_s *entry) {
-  log_raw("hello from write: %p, %d, %lu, %ld, %s", data, size, offset, entry->number, entry->name);
+static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
+  int len = 0;
+  if (offset > entry->curr_size) {
+    return;
+  }
+
+  if (offset + size > entry->curr_size) {
+    len = entry->curr_size - offset;
+  } else {
+    len = size;
+  }
+
+  memcpy(dest, &((char *)entry->user_data)[offset], len);
 }
+
+static const char readme_file[] =
+    "Welcome to CATS!\r\nTo get started please visit our website: https://catsystems.io\r\n\r\nTo erase log files "
+    "please use the CATS Configurator. You can find the latest version on our Github: "
+    "https://github.com/catsystems/cats-configurator/releases";
+#define README_SIZE (sizeof(readme_file) - 1)
 
 static const emfat_entry_t entriesPredefined[] = {
     // name   dir   attr  lvl offset  size             max_size        user                time  read write
     {"", true, 0, 0, 0, 0, 0, 0, CMA, NULL, NULL, 0},
-    {"TST"
-     "_ALL.BBL",
-     0,
-     0,
-     1,
-     0,
-     0,
-     0,
-     0,
-     CMA,
-     bblog_read_proc,
-     bblog_write_proc,
-     {0}},
-    {"PADDING.TXT", 0, ATTR_HIDDEN, 1, 0, 0, 0, 0, CMA, NULL, NULL, {0}},
-};
+    {"readme.txt", false, 0, 1, 0, 0, README_SIZE, 1024 * 1024, (long)readme_file, CMA, memory_read_proc, NULL, 0},
+    {"LOGS", false, 0, 1, 0, 0, 0, 0, CMA, bblog_read_proc, NULL, 0}};
 
-#define PREDEFINED_ENTRY_COUNT (1)
+#define PREDEFINED_ENTRY_COUNT (2)
 #define APPENDED_ENTRY_COUNT   2
 
 #define EMFAT_MAX_LOG_ENTRY 100
@@ -108,9 +110,7 @@ static void emfat_set_entry_cma(emfat_entry_t *entry) {
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char *name) {
   static char logNames[EMFAT_MAX_LOG_ENTRY][8 + 1 + 3 + 1];
 
-//  log_raw("emfat_add_log: %d, %lu, %s", number, size, name);
-
-  snprintf(logNames[number], 12, "fl%03d.cfl", number);
+  snprintf(logNames[number], 12, "fl%03d.cfl", (uint8_t)number);
   entry->name = logNames[number];
   entry->level = 1;
   entry->number = number;
@@ -124,11 +124,7 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char 
 }
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount) {
-  //  static bool lfs_cnt_called = false;
-  //  if (lfs_cnt_called) {
-  //    return 0;
-  //  }
-//  log_raw("hello from find_log: %ld, %s", entry->number, entry->name);
+
   int logCount = 0;
 
   logCount = lfs_cnt("/flights/", LFS_TYPE_REG);
@@ -146,10 +142,6 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount) {
   for (int i = 0; i < logCount + 2; i++) {
     lfs_dir_read(&lfs, &dir, &info);
 
-    if (err) {
-      return 0;
-    }
-
     if (i > 1) {
       // Set the default timestamp
       entry->cma_time[0] = cmaTime;
@@ -164,11 +156,13 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount) {
 }
 
 void emfat_init_files(void) {
-  uint32_t flashfsUsedSpace = 0;
-  int entryIndex = PREDEFINED_ENTRY_COUNT;
-  emfat_entry_t *entry;
-  memset(entries, 0, sizeof(entries));
+  static bool initialized = false;
 
+  if (initialized) {
+    return;
+  }
+
+  memset(entries, 0, sizeof(entries));
 
   // create the predefined entries
   for (size_t i = 0; i < PREDEFINED_ENTRY_COUNT; i++) {
@@ -177,28 +171,9 @@ void emfat_init_files(void) {
     emfat_set_entry_cma(&entries[i]);
   }
 
-  uint32_t curr_sz_blocks = lfs_fs_size(&lfs);
-  uint32_t block_size_kb = get_lfs_cfg()->block_size;
-  flashfsUsedSpace = curr_sz_blocks * block_size_kb;
-
   // Detect and create entries for each individual log
-  const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY);
+  emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY);
 
-  entryIndex += logCount;
-
-  // Padding file to fill out the filesystem size to FILESYSTEM_SIZE_MB
-  if (flashfsUsedSpace * 2 < FILESYSTEM_SIZE_MB * 1024 * 1024) {
-    entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
-    entry = &entries[entryIndex];
-    // used space is doubled because of the individual files plus the single complete file
-    entry->curr_size = (flashfsUsedSpace * 2);
-    entry->max_size = (FILESYSTEM_SIZE_MB * 1024 * 1024);
-    // This entry has timestamps corresponding to when the filesystem is mounted
-    emfat_set_entry_cma(entry);
-  }
-
-
-//    log_raw("hello from init_files: %ld, %s", entries[entryIndex].number, entries[entryIndex].name);
-
+  initialized = true;
   emfat_init(&emfat, "CATS", entries);
 }

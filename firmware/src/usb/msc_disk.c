@@ -26,7 +26,6 @@
 #include "tusb.h"
 #include "usb/msc/emfat.h"
 #include "usb/msc/emfat_file.h"
-#include "util/log.h"
 
 extern emfat_t emfat;
 
@@ -36,15 +35,6 @@ extern emfat_t emfat;
 
 // whether host does safe-eject
 static bool ejected = false;
-
-// Some MCU doesn't have enough 8KB SRAM to store the whole disk
-// We will use Flash as read-only disk with board that has
-// CFG_EXAMPLE_MSC_READONLY defined
-
-#define README_CONTENTS \
-  "This is tinyusb's MassStorage Class demo.\r\n\r\n\
-If you find any bugs or get any questions, feel free to file an\r\n\
-issue at github.com/hathach/tinyusb"
 
 // Invoked when received SCSI_CMD_INQUIRY
 // Application fill vendor id, product id and revision with string up to 8, 16, 4 characters respectively
@@ -64,7 +54,6 @@ void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16
 // return true allowing host to read/write this LUN e.g SD card inserted
 bool tud_msc_test_unit_ready_cb(uint8_t lun) {
   (void)lun;
-
   emfat_init_files();
 
   return true;
@@ -105,8 +94,6 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buff
 
   int num_sectors = (int)bufsize / 512;
 
-  log_raw("tud_msc_read10: %hu, %lu, %lu, %p, %lu", lun, lba, offset, buffer, bufsize);
-
   emfat_read(&emfat, buffer, lba, num_sectors);
 
   return (int32_t)bufsize;
@@ -114,8 +101,8 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buff
 
 bool tud_msc_is_writable_cb(uint8_t lun) {
   (void)lun;
-  // Allow writing
-  return true;
+  // Do not allow writing
+  return false;
 }
 
 // Callback invoked when received WRITE10 command.
@@ -123,27 +110,13 @@ bool tud_msc_is_writable_cb(uint8_t lun) {
 int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
   (void)lun;
 
-  log_raw("tud_msc_write10: %hu, %lu, %lu, %p, %lu", lun, lba, offset, buffer, bufsize);
-
-  int num_sectors = (int)bufsize / 512;
-
-  emfat_write(&emfat, buffer, lba, num_sectors);
-
-//
-//  lfs_file_t new_file;
-//  lfs_file_open(&lfs, &new_file, "flights/flight_00666.txt", LFS_O_RDWR | LFS_O_CREAT);
-//  lfs_file_write(&lfs, &new_file, &buffer, bufsize);
-//  lfs_file_close(&lfs, &new_file);
-
   return (int32_t)bufsize;
 }
 
-void tud_msc_read10_complete_cb(uint8_t lun){
-  log_raw("Write complete %hu", lun);
+void tud_msc_read10_complete_cb(uint8_t lun) {
 }
 
 void tud_msc_write10_complete_cb(uint8_t lun) {
-  log_raw("Write complete %hu", lun);
 }
 
 // Callback invoked when received an SCSI command not in built-in list below
