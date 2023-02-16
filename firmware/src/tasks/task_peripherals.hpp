@@ -29,12 +29,8 @@ namespace task {
 
 class Peripherals final : public Task<Peripherals, 256> {
   [[noreturn]] void Run() noexcept override;
-
- private:
-  /* Used to track if an event was already fired. The n'th bit is the n'th event */
-  uint32_t m_event_tracking = 0U;
 };
 
 }  // namespace task
 
-osStatus_t trigger_event(cats_event_e ev);
+osStatus_t trigger_event(cats_event_e ev, bool event_unique = true);

@@ -22,8 +22,6 @@
 #include "config/globals.hpp"
 #include "control/flight_phases.hpp"
 #include "tasks/task_peripherals.hpp"
-#include "tasks/task_preprocessing.hpp"
-#include "tasks/task_state_est.hpp"
 #include "util/enum_str_maps.hpp"
 #include "util/log.h"
 #include "util/task_util.hpp"

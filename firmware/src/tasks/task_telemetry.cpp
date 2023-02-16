@@ -22,6 +22,7 @@
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/adc.hpp"
+#include "tasks/task_peripherals.hpp"
 #include "util/battery.hpp"
 #include "util/crc.hpp"
 #include "util/gnss.hpp"
@@ -58,6 +59,13 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
     tx_payload->state = m_fsm_enum;
   }
 
+  /* If we are in testing mode, most of the tx_payload is not used.
+   * Hence, use the state to inform the groundstation by setting the state
+   * if the flight computer was armed or not through telemetry */
+  if (m_testing_enabled) {
+    tx_payload->state = static_cast<uint8_t>(m_testing_armed);
+  }
+
   tx_payload->timestamp = ts / 100;
 
   if (get_error_by_tag(CATS_ERR_NON_USER_CFG)) {
@@ -82,6 +90,7 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
 
   tx_payload->lat = static_cast<int32_t>(gnss->position.lat * 10000);
   tx_payload->lon = static_cast<int32_t>(gnss->position.lon * 10000);
+  tx_payload->testing_on = m_testing_enabled;
 
   tx_payload->altitude = static_cast<int32_t>(estimation_data.height);
   tx_payload->velocity = static_cast<int16_t>(estimation_data.velocity);
@@ -96,19 +105,71 @@ void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* t
   }
 }
 
-void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log_info("Data Received."); }
+void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
+  /* Check if Correct Header */
+  if (rx_payload->header != RX_PACKET_HEADER) {
+    return;
+  }
+
+  /* Check if the linkphrase matches */
+  if (rx_payload->passcode != m_test_phrase_crc) {
+    return;
+  }
+
+  /* Packet Received, reset timeout */
+  m_testing_timeout = osKernelGetTickCount();
+
+  /* If the testing is armed, arm pyros */
+  if (rx_payload->enable_testing_telemetry) {
+    HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
+    m_testing_armed = true;
+  } else {
+    HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
+    m_testing_armed = false;
+  }
+
+  /* Check if we received a zero; if we do, a new event can be triggered */
+  if (rx_payload->event == 0) {
+    m_event_reset = true;
+  }
+
+  /* Add event to eventqueue if its a valid event, if the flight computer is armed and if the last triggered event was
+   * cleared by the groundstation */
+  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_MOVING) && m_testing_armed && m_event_reset) {
+    trigger_event(static_cast<cats_event_e>(rx_payload->event), false);
+    /* Event thrown, set boolean to false and wait until groundstation clears the event again before triggering new
+     * events */
+    m_event_reset = false;
+  }
+}
 
 [[noreturn]] void Telemetry::Run() noexcept {
   /* Give the telemetry hardware some time to initialize */
   osDelay(5000);
+
+  /* Check if we are in testing mode */
+  bool testing_enabled = false;
+  /* Check if valid link parameters are set for testing mode to be enabled */
+  /* If no test phrase is set, dont allow testing mode */
+  if (global_cats_config.telemetry_settings.test_phrase[0] != 0) {
+    testing_enabled = global_cats_config.enable_testing_mode;
+  }
 
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);
   osDelay(100);
   SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
   osDelay(100);
-  SendSettings(CMD_MODE, BIDIRECTIONAL);
+
+  /* if we are in the testing mode, set the receiver to bidirectional mode */
+  if (testing_enabled) {
+    SendSettings(CMD_MODE, BIDIRECTIONAL);
+    m_test_phrase_crc = crc32(global_cats_config.telemetry_settings.test_phrase, 8);
+  } else {
+    SendSettings(CMD_MODE, UNIDIRECTIONAL);
+  }
   osDelay(100);
+
   /* Only start the telemetry when a link phrase is set */
   if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
     SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
@@ -135,7 +196,13 @@ void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
     packed_tx_msg_t tx_payload = {};
-    PackTxMessage(tick_count, &gnss_data, &tx_payload, m_task_state_estimation.GetEstimationOutput());
+    estimation_output_t estimation_output = {};
+    if (m_task_state_estimation != nullptr) {
+      estimation_output = m_task_state_estimation->GetEstimationOutput();
+    }
+
+    PackTxMessage(tick_count, &gnss_data, &tx_payload, estimation_output);
+
     SendTxPayload((uint8_t*)&tx_payload, sizeof(packed_tx_msg_t));
 
     if ((tick_count - uart_timeout) > 60000) {
@@ -214,6 +281,12 @@ void Telemetry::ParseRxMessage(packed_tx_msg_t* rx_payload) const noexcept { log
       }
     }
 
+    /* Disable the pyro channels if we are in testing mode and the timeout is achieved */
+    if ((osKernelGetTickCount() - m_testing_timeout) > 2000 && testing_enabled) {
+      HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
+      m_testing_armed = false;
+    }
+
     tick_count += tick_update;
     osDelayUntil(tick_count);
   }
@@ -238,13 +311,13 @@ bool Telemetry::CheckValidOpCode(uint8_t op_code) const noexcept {
  * @param gnss [out]
  * @return
  */
-bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) const noexcept {
+bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) noexcept {
   if (length < 1) return false;
 
   bool gnss_position_received = false;
 
   if (op_code == CMD_RX) {
-    packed_tx_msg_t rx_payload{};
+    packed_rx_msg_t rx_payload{};
     memcpy(&rx_payload, buffer, length);
     ParseRxMessage(&rx_payload);
     // log_info("RX received");

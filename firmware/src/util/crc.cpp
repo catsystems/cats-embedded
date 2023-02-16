@@ -73,6 +73,7 @@ uint8_t crc8(const uint8_t *buf, uint32_t size) {
   for (uint32_t i = 0; i < size; i++) {
     crc = crc8_tab[crc ^ *buf++];
   }
+
   return crc;
 }
 

@@ -23,7 +23,7 @@
 #include "util/types.hpp"
 
 /* The system will reload the default config when the number changes */
-#define CONFIG_VERSION 208U
+#define CONFIG_VERSION 209U
 
 /* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10
@@ -46,6 +46,8 @@ struct cats_config_t {
   uint8_t buzzer_volume;
   battery_type_e battery_type;
   uint8_t rec_speed_idx;  // == inverse recording rate - 1
+  /* Testing Mode */
+  bool enable_testing_mode;
   bool is_set_by_user;
 };
 
