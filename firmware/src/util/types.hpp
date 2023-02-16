@@ -104,7 +104,7 @@ struct calibration_data_t {
   uint8_t axis;
 };
 
-enum flight_fsm_e : uint32_t { INVALID = 0, MOVING = 1, READY, THRUSTING, COASTING, DROGUE, MAIN, TOUCHDOWN };
+enum flight_fsm_e : uint32_t { INVALID = 0, CALIBRATING = 1, READY, THRUSTING, COASTING, DROGUE, MAIN, TOUCHDOWN };
 
 /* Todo: Comment out this struct */
 struct flight_fsm_t {
@@ -189,7 +189,7 @@ struct event_action_map_elem_t {
 };
 
 enum cats_event_e : uint32_t {
-  EV_MOVING = 0,
+  EV_CALIBRATE = 0,
   EV_READY,
   EV_LIFTOFF,
   EV_MAX_V,

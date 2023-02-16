@@ -30,7 +30,7 @@ class Buzzer final : public Task<Buzzer, 256> {
     kNone = 0,
     kBootup,
     kReady,
-    kChangedMoving,
+    kChangedCalibrating,
     kChangedReady,
   };
 
@@ -74,8 +74,8 @@ class Buzzer final : public Task<Buzzer, 256> {
       " ",
       "caef",  // bootup
       "aa",    // ready
-      "Eca",   // ready -> moving
-      "ace",   // moving -> ready
+      "Eca",   // ready -> calibrating
+      "ace",   // calibrating -> ready
   };
 
   /// Lookup table with the length of the beep codes

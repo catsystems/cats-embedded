@@ -224,17 +224,17 @@ void kalman_update(kalman_filter_t *filter) {
 
 float32_t R_interpolation(float32_t velocity) {
   /* Todo: Can be optimized */
-  float32_t lower_bound = 20;
-  float32_t upper_bound = 100;
-  float32_t f_lower_bound = 0.1f;
-  float32_t f_upper_bound = 1;
+  float32_t lower_bound = 20.0F;
+  float32_t upper_bound = 100.0F;
+  float32_t f_lower_bound = 0.1F;
+  float32_t f_upper_bound = 1.0F;
 
   float32_t m = (f_lower_bound - f_upper_bound) / (lower_bound - upper_bound);
   float32_t b = f_upper_bound - m * upper_bound;
   if (velocity < lower_bound) {
-    return powf(f_lower_bound, 5.0f);
+    return powf(f_lower_bound, 5.0F);
   } else if (velocity < upper_bound) {
-    return powf(m * velocity + b, 5.0f);
+    return powf(m * velocity + b, 5.0F);
   } else {
     return f_upper_bound;
   }
@@ -246,7 +246,7 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
     case READY:
       filter->R = STD_NOISE_BARO_INITIAL;
       break;
-    case MOVING:
+    case CALIBRATING:
       filter->R = STD_NOISE_BARO_INITIAL;
       break;
     case THRUSTING:

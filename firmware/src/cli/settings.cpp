@@ -88,7 +88,10 @@ const cli_value_t value_table[] = {
     {"timer4_duration", VAR_UINT32, {.u32_max = 1200000}, offsetof(cats_config_t, timers[3].duration)},
 
     // Events
-    {"ev_moving", VAR_INT16 | MODE_ARRAY, {.array = {.length = 16}}, offsetof(cats_config_t, action_array[EV_MOVING])},
+    {"ev_calibrate",
+     VAR_INT16 | MODE_ARRAY,
+     {.array = {.length = 16}},
+     offsetof(cats_config_t, action_array[EV_CALIBRATE])},
     {"ev_ready", VAR_INT16 | MODE_ARRAY, {.array = {.length = 16}}, offsetof(cats_config_t, action_array[EV_READY])},
     {"ev_liftoff",
      VAR_INT16 | MODE_ARRAY,

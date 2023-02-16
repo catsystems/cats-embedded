@@ -20,7 +20,7 @@
 #include "config/cats_config.hpp"
 #include "tasks/task_peripherals.hpp"
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data);
+static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data);
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_t height_AGL,
                               const control_settings_t *settings);
 static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t state_data);
@@ -38,8 +38,8 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_da
 
   /* Check FSM State */
   switch (fsm_state->flight_state) {
-    case MOVING:
-      check_moving_phase(fsm_state, acc_data, gyro_data);
+    case CALIBRATING:
+      check_calibrating_phase(fsm_state, acc_data, gyro_data);
       break;
     case READY:
       check_ready_phase(fsm_state, acc_data, height_AGL, settings);
@@ -69,7 +69,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_da
   }
 }
 
-static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data) {
+static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data) {
   /* Check if the IMU moved between two timesteps */
   /* Add an error bound as the IMU is noisy which is accepted */
   if ((fabsf(fsm_state->old_acc_data.x - acc_data.x) < ALLOWED_ACC_ERROR) &&
@@ -88,7 +88,7 @@ static void check_moving_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t 
   fsm_state->old_gyro_data = gyro_data;
 
   /* Check if we reached the threshold */
-  if (fsm_state->memory[0] > TIME_THRESHOLD_MOV_TO_READY) {
+  if (fsm_state->memory[0] > TIME_THRESHOLD_CALIB_TO_READY) {
     change_state_to(READY, EV_READY, fsm_state);
   }
 }
