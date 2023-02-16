@@ -104,13 +104,6 @@ bool cc_load() {
     ret &= cc_save();
   }
 
-  /* Check if valid link parameters are set for testing mode to be enabled */
-  /* If no test phrase is set, dont allow testing mode */
-  if (global_cats_config.telemetry_settings.test_phrase[0] == 0) {
-    log_error("Testing Password is not valid. Testing mode disabled.");
-    global_cats_config.enable_testing_mode = false;
-  }
-
   if (!global_cats_config.is_set_by_user) {
     /* Emit an error if the config is not set by user every time the system boots up. */
     add_error(CATS_ERR_NON_USER_CFG);

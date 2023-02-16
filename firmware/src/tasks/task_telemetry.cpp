@@ -148,7 +148,12 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   osDelay(5000);
 
   /* Check if we are in testing mode */
-  bool testing_enabled = global_cats_config.enable_testing_mode;
+  bool testing_enabled = false;
+  /* Check if valid link parameters are set for testing mode to be enabled */
+  /* If no test phrase is set, dont allow testing mode */
+  if (global_cats_config.telemetry_settings.test_phrase[0] != 0) {
+    testing_enabled = global_cats_config.enable_testing_mode;
+  }
 
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);
