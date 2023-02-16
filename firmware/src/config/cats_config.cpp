@@ -110,16 +110,6 @@ bool cc_load() {
     log_error("Testing Password is not valid. Testing mode disabled.");
     global_cats_config.enable_testing_mode = false;
   }
-  /* If link phrase and test phrase are the same, dont allow test mode */
-  for (uint32_t i = 0; i < 8; i++) {
-    if (global_cats_config.telemetry_settings.test_phrase[i] != global_cats_config.telemetry_settings.link_phrase[i]) {
-      break;
-    }
-    if (i == 7) {
-      log_error("Testing Password and Link Password are equal. Testing mode disabled.");
-      global_cats_config.enable_testing_mode = false;
-    }
-  }
 
   if (!global_cats_config.is_set_by_user) {
     /* Emit an error if the config is not set by user every time the system boots up. */

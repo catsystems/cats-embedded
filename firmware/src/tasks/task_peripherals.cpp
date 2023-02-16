@@ -89,18 +89,20 @@ osStatus_t trigger_event(cats_event_e ev, bool event_unique) {
   static uint32_t event_tracking = 0U;
 
   /* Check if the event was already triggered. If it was, ignore */
-  if (static_cast<bool>(event_tracking & (1U << static_cast<uint32_t>(ev)))) {
-    return osOK;
-  }
+  if (event_unique) {
+    if (static_cast<bool>(event_tracking & (1U << static_cast<uint32_t>(ev)))) {
+      return osOK;
+    }
 
-  /* Set the event to done, only custom events can be repeated */
-  if ((ev != EV_CUSTOM_1) && (ev != EV_CUSTOM_2)) {
-    event_tracking |= 1U << ev;
-  }
+    /* Set the event to done, only custom events can be repeated */
+    if ((ev != EV_CUSTOM_1) && (ev != EV_CUSTOM_2)) {
+      event_tracking |= 1U << ev;
+    }
 
-  /* If Touchdown is triggered, prevent further actions from being triggered */
-  if (ev == EV_TOUCHDOWN) {
-    event_tracking = 0xFFFFFFFF;
+    /* If Touchdown is triggered, prevent further actions from being triggered */
+    if (ev == EV_TOUCHDOWN) {
+      event_tracking = 0xFFFFFFFF;
+    }
   }
 
   log_warn("Event %lu Queued", ev);

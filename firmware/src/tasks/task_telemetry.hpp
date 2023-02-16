@@ -61,8 +61,15 @@ class Telemetry final : public Task<Telemetry, 1024> {
   } __attribute__((packed));
 
   uint32_t m_test_phrase_crc = 0;
+  /* used to notify the groundstation that the flight computer is in testing mode */
   bool m_testing_enabled;
+  /* used to notify the groundstation if the testing is armed */
   bool m_testing_armed = false;
+  /* used to check if the current groundstation event was already triggered and that we are waiting for the
+   * groundstation to reset the event */
+  bool m_event_reset = false;
+  /* timeout to check if data is received from the groundstation for the testing mode */
+  uint32_t m_testing_timeout = 0;
   static constexpr uint32_t RX_PACKET_HEADER{0x72}; /* Random Header */
 
   void PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,

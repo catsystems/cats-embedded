@@ -116,6 +116,9 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     return;
   }
 
+  /* Packet Received, reset timeout */
+  m_testing_timeout = osKernelGetTickCount();
+
   /* If the testing is armed, arm pyros */
   if (rx_payload->enable_testing_telemetry) {
     HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
@@ -125,9 +128,18 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     m_testing_armed = false;
   }
 
-  /* Add event to eventqueue */
-  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_MOVING) && m_testing_armed) {
-    trigger_event(static_cast<cats_event_e>(rx_payload->event));
+  /* Check if we received a zero; if we do, a new event can be triggered */
+  if (rx_payload->event == 0) {
+    m_event_reset = true;
+  }
+
+  /* Add event to eventqueue if its a valid event, if the flight computer is armed and if the last triggered event was
+   * cleared by the groundstation */
+  if ((rx_payload->event <= EV_CUSTOM_2) && (rx_payload->event > EV_MOVING) && m_testing_armed && m_event_reset) {
+    trigger_event(static_cast<cats_event_e>(rx_payload->event), false);
+    /* Event thrown, set boolean to false and wait until groundstation clears the event again before triggering new
+     * events */
+    m_event_reset = false;
   }
 }
 
@@ -262,6 +274,12 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
       if (fsm_updated && (m_fsm_enum == TOUCHDOWN)) {
         SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
       }
+    }
+
+    /* Disable the pyro channels if we are in testing mode and the timeout is achieved */
+    if ((osKernelGetTickCount() - m_testing_timeout) > 2000 && testing_enabled) {
+      HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_RESET);
+      m_testing_armed = false;
     }
 
     tick_count += tick_update;
