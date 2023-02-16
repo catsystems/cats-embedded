@@ -83,7 +83,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
   void SendTxPayload(uint8_t* payload, uint32_t length) const noexcept;
   [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
 
-  const StateEstimation* m_task_state_estimation;
+  const StateEstimation* m_task_state_estimation = nullptr;
 
   float32_t m_amplifier_temperature{0.0F};
 
