@@ -110,6 +110,16 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
       return;
     }
 
+    // First bytes represent the code version
+    char tmp_char = '\0';
+    while (lfs_file_read(&lfs, &curr_file, &tmp_char, 1) > 0) {
+      log_raw("read char: %hu", tmp_char);
+      // Read until we encounter the NULL terminator
+      if (tmp_char == 0) {
+        break;
+      }
+    }
+
     while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem, 8) > 0) {
       const rec_entry_type_e rec_type = rec_elem.rec_type;
       const rec_entry_type_e rec_type_without_id = get_record_type_without_id(rec_type);
