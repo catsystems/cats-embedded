@@ -23,7 +23,7 @@
 #include "util/types.hpp"
 
 /* The system will reload the default config when the number changes */
-#define CONFIG_VERSION 209U
+#define CONFIG_VERSION 211U
 
 /* Number of supported recording speeds */
 #define NUM_REC_SPEEDS 10

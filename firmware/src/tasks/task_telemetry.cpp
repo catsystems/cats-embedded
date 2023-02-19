@@ -170,11 +170,14 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   }
   osDelay(100);
 
-  /* Only start the telemetry when a link phrase is set */
-  if (global_cats_config.telemetry_settings.link_phrase[0] != 0) {
+  /* Only start the telemetry when a link phrase is set  and if the telemetry is enabled.*/
+  if ((global_cats_config.telemetry_settings.link_phrase[0] != 0) &&
+      (global_cats_config.telemetry_settings.enable_telemetry)) {
     SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
     osDelay(100);
     SendEnable();
+  } else {
+    SendDisable();
   }
 
   /* Start the interrupt request for the UART */

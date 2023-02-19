@@ -51,6 +51,8 @@ void log_set_mode(log_mode_e mode) {
 log_mode_e log_get_mode() {
 #ifdef CATS_DEBUG
   return L.log_mode;
+#else
+  return LOG_MODE_NONE;
 #endif
 }
 
