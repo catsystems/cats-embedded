@@ -17,7 +17,8 @@
         "limits": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "type_traits": "cpp"
     },
     "cmake.configureOnOpen": true
 }

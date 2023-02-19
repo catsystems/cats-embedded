@@ -29,8 +29,7 @@ bool Recorder::begin(){
         return false;
     }
 
-    file.println("ts,state,errors,lat,lon,altitude,velocity,airbrake");
-    file.sync();
+    file.println("ts,state,errors,lat,lon,altitude,velocity,battery,pyro1,pyro2");
 
     queue = xQueueCreate(10, sizeof(packedRXMessage));
     xTaskCreate(recordTask, "task_recorder", 4096, this, 1, NULL);
@@ -45,8 +44,8 @@ void Recorder::recordTask(void* pvParameter){
     packedRXMessage element;
     while(ref->initialized){
         if(xQueueReceive(ref->queue, &element, portMAX_DELAY) == pdPASS){
-            snprintf(line, 128, "%d, %d, %d, %d, %d, %d, %d, %d", element.timestamp, element.state, element.errors,
-            element.lat, element.lon, element.altitude, element.velocity, element.d1);
+            snprintf(line, 128, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d", element.timestamp, element.state, element.errors,
+            element.lat, element.lon, element.altitude, element.velocity, element.voltage, (bool)(element.pyro_continuity&0x01), (bool)(element.pyro_continuity & 0x02));
             ref->file.println(line);
             count++;
 

@@ -90,5 +90,4 @@ def installPackages():
 
     print("All needed packages are installed")
 
-if __name__ == '__main__':
-    installPackages()
+installPackages()

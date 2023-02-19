@@ -132,7 +132,6 @@ void Navigation::calculateDistanceDirection(){
     float dx = (pointB.lon - pointA.lon)*(PI/180) * dx_dtheta;
     float dz = pointB.alt-pointA.alt;
 
-    //dist = np.linalg.norm((dx, dy, dz))
     dist = sqrt(dx*dx + dy*dy + dz*dz);
     azimuth = atan2(dx, dy);
     elevation = atan2(dz, sqrt(dx*dx+dy*dy));

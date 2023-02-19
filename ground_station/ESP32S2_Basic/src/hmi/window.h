@@ -1,10 +1,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SharpMem.h>
 
-#include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSans12pt7b.h>
-#include <Fonts/FreeSans18pt7b.h>
-
 #include "telemetry/telemetryData.h"
 #include "navigation.h"
 #include "settings.h"
@@ -44,6 +40,19 @@ class Window{
     void initRecovery();
     void updateRecovery(Navigation* navigation);
 
+    void initTesting();
+    void initTestingConfirmed(bool connected, bool testingEnabled);
+    void initTestingFailed();
+    void initTestingWait();
+    void initTestingReady();
+    void initTestingLost();
+    void updateTesting(uint32_t index);
+    void initTestingBox(uint32_t index);
+
+    void initData();
+
+    void initSesnors();
+    
     void initSettings(uint32_t submenu);
     void updateSettings(int32_t index);
 
@@ -51,6 +60,10 @@ class Window{
 
     void initKeyboard(char* text, uint32_t maxLength = 0);
     void updateKeyboard(char* text, int32_t keyHighlight, bool keyPressed = false);
+
+    void refresh() {
+      display.refresh();
+    }
 
   private:
     void updateLiveData(TelemetryData* data, uint32_t index, uint32_t color);
@@ -78,4 +91,7 @@ class Window{
     bool upperCase = true;
     int32_t oldKey = 0;
     uint32_t keyboardTextMaxLength = 0;
+
+    const char* eventName[9] = {"Ready", "Liftoff", "Burnout", "Apogee", "Main", "Touchdown", "Custom 1", "Custom 2"};
+
 };

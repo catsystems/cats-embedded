@@ -66,74 +66,35 @@ bool SystemParser::loadFile(const char* path) {
   return true;
 }
 
-/**
- * @brief Get the USB Vender Identifier
- *
- * @return uin16_t with the USB VID
- */
-uint16_t SystemParser::getUsbVid(void)
-{
-  if(doc.containsKey("usb_vid"))
-  {
-    return (uint16_t)strtol(doc["usb_vid"].as<const char*>(), NULL, 0);
-  }
-  return -1;
+bool SystemParser::setNeverStopLoggingFlag(bool flag) {
+  doc["never_stop_logging"] = flag;
+  return true;
 }
 
-/**
- * @brief Get the USB Product Identifier
- *
- * @return uin16_t with the USB PID
- */
-uint16_t SystemParser::getUsbPid(void)
-{
-  if(doc.containsKey("usb_pid"))
-  {
-    return (uint16_t)strtol(doc["usb_pid"].as<const char*>(), NULL, 0);
-  }
-  return -1;
+bool SystemParser::setTimeZone(int16_t timezone){
+  doc["timezone"] = timezone;
+  return true;
 }
 
-/**
- * @brief Get the USB Serial Number
- *
- * @return const char* with the serial number as string
- */
-const char* SystemParser::getUsbSerial(void)
-{
-  if(doc.containsKey("usb_serial"))
-  {
-    return doc["usb_serial"].as<const char*>();
-  }
-  return "";
+bool SystemParser::setTelemetryMode(bool mode){
+  doc["telemetry_mode"] = mode;
+  return true;
 }
 
-/**
- * @brief Get the name of the access point
- *
- * @return const char* with the name
- */
-const char* SystemParser::getSsid(void)
-{
-  if(doc.containsKey("ssid"))
-  {
-    return doc["ssid"].as<const char*>();
+bool SystemParser::setLinkPhrase1(const char* phrase){
+  if (phrase == NULL) {
+    return false;
   }
-  return "";
+  doc["link_phrase_1"] = phrase;
+  return true;
 }
 
-/**
- * @brief get the password of the access point
- *
- * @return const char* with the password
- */
-const char* SystemParser::getPassword(void)
-{
-  if(doc.containsKey("password"))
-  {
-    return doc["password"].as<const char*>();
+bool SystemParser::setLinkPhrase2(const char* phrase){
+  if (phrase == NULL) {
+    return false;
   }
-  return "";
+  doc["link_phrase_2"] = phrase;
+  return true;
 }
 
 /**
@@ -144,6 +105,7 @@ const char* SystemParser::getPassword(void)
  * @return false on error
  */
 bool SystemParser::saveFile(const char* path) {
+  console.log.println("[PARSER] Store file");
   if(path != NULL)
   {
     filePath = path;

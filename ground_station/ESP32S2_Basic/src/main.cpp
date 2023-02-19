@@ -80,6 +80,8 @@ void loop()
     link1.setLinkPhrase("cats");
     link2.setLinkPhrase("cats");
 
+    link1.setTestingPhrase("whatever");
+
     navigation.begin();
   }
 

@@ -129,8 +129,8 @@ boolean Adafruit_SharpMem::begin(void) {
 }
 
 // 1<<n is a costly operation on AVR -- table usu. smaller & faster
-static const uint8_t PROGMEM set[] = {1, 2, 4, 8, 16, 32, 64, 128},
-                             clr[] = {(uint8_t)~1,  (uint8_t)~2,  (uint8_t)~4,
+static const uint8_t set[] = {1, 2, 4, 8, 16, 32, 64, 128},
+                     clr[] = {(uint8_t)~1,  (uint8_t)~2,  (uint8_t)~4,
                                       (uint8_t)~8,  (uint8_t)~16, (uint8_t)~32,
                                       (uint8_t)~64, (uint8_t)~128};
 
@@ -148,28 +148,64 @@ static const uint8_t PROGMEM set[] = {1, 2, 4, 8, 16, 32, 64, 128},
 */
 /**************************************************************************/
 void Adafruit_SharpMem::drawPixel(int16_t x, int16_t y, uint16_t color) {
-  if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height))
+  if ((x < 0) || (x >= _width) || (y < 0) || (y >= HEIGHT))
     return;
 
-  switch (rotation) {
-  case 1:
-    _swap_int16_t(x, y);
-    x = WIDTH - 1 - x;
-    break;
-  case 2:
-    x = WIDTH - 1 - x;
-    y = HEIGHT - 1 - y;
-    break;
-  case 3:
-    _swap_int16_t(x, y);
-    y = HEIGHT - 1 - y;
-    break;
+  if (color) {
+    sharpmem_buffer[(y * WIDTH + x) / 8] |= set[x % 8];
+  } else {
+    sharpmem_buffer[(y * WIDTH + x) / 8] &= clr[x % 8];
   }
+}
+
+void Adafruit_SharpMem::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+  if ((x < 0) || (x >= _width) || (y < 0) || (y >= HEIGHT))
+    return;
+
+  int end = x+w;
+  if((end) >= WIDTH) end = WIDTH-1;
+  
 
   if (color) {
-    sharpmem_buffer[(y * WIDTH + x) / 8] |= pgm_read_byte(&set[x & 7]);
-  } else {
-    sharpmem_buffer[(y * WIDTH + x) / 8] &= pgm_read_byte(&clr[x & 7]);
+    for(int i = x; i < end; i++){
+        if(i % 8 == 0 && (i - end) >= 8) {
+          sharpmem_buffer[(y * WIDTH + i) / 8] = 0xFF;
+          i += 7;
+        }
+        else {
+          sharpmem_buffer[(y * WIDTH + i) / 8] |= set[i % 8];
+        }
+    }
+  }
+  else {
+    for(int i = x; i < end; i++){
+      if(i % 8 == 0 && (i - end) >= 8) {
+          sharpmem_buffer[(y * WIDTH + i) / 8] = 0x00;
+          i += 7;
+        }
+        else {
+          sharpmem_buffer[(y * WIDTH + i) / 8] &= clr[i % 8];
+        }
+    }
+  }
+}
+
+void Adafruit_SharpMem::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){
+  if ((x < 0) || (x >= _width) || (y < 0) || ((y) >= HEIGHT))
+    return;
+  if(y+h >= HEIGHT) h = HEIGHT-y-1;
+
+  if (color) {
+    uint8_t mask = set[x % 8];
+    for(int i = y; i < y+h; i++){
+        sharpmem_buffer[(i * WIDTH + x) / 8] |= mask;
+    }
+  }
+  else {
+    uint8_t mask = clr[x % 8];
+    for(int i = y; i < y+h; i++){
+      sharpmem_buffer[(i * WIDTH + x) / 8] &= mask;
+    }
   }
 }
 

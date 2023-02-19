@@ -27,7 +27,8 @@ typedef union {
 typedef struct{
 
     const char* name;
-    const char* description;
+    const char* description1;
+    const char* description2;
     settings_type_e type;
     settings_limits_u config;
 
@@ -42,7 +43,7 @@ typedef enum {
 } lookup_table_index_e;
 
 const char* const mode_map[2] = {
-    "DIVERSITY", "DUAL",
+    "SINGLE", "DUAL",
 };
 
 const char* const unit_map[2] = {
@@ -71,15 +72,16 @@ const char* const settingPageName[2] = {
     "General", "Telemetry",
 };
 
-const device_settings_t settingsTable[][3] = {{
-    {"Time Zone", "Set the time offset", NUMBER, {.minmax = {.min = -12, .max = 12}}, &systemConfig.config.timeZoneOffset},
-    {"Stop Logging", "Stops logging at touchdown or never stops", TOGGLE, {.lookup = TABLE_LOGGING}, &systemConfig.config.neverStopLogging},
+const device_settings_t settingsTable[][4] = {{
+    {"Time Zone", "Set the time offset", "", NUMBER, {.minmax = {.min = -12, .max = 12}}, &systemConfig.config.timeZoneOffset},
+    {"Stop Logging", "Down: Stop the log at touchdown", "Never: Never stop logging after liftoff", TOGGLE, {.lookup = TABLE_LOGGING}, &systemConfig.config.neverStopLogging},
 },
 {
-    {"Mode", "Diversity = Track one tracker with 2 antennas", TOGGLE, {.lookup = TABLE_MODE}, &systemConfig.config.receiverMode},
-    {"Link Phrase 1", "", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase1},
-    {"Link Phrase 2", "", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase2},
+    {"Mode", "Single: Use both receiver to track one rocket" ,"Dual: Use both receivers individually", TOGGLE, {.lookup = TABLE_MODE}, &systemConfig.config.receiverMode},
+    {"Link Phrase 1", "Single Mode: Set phrase for both receivers", "Dual Mode: Set phrase for the left receiver", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase1},
+    {"Link Phrase 2", "Single Mode: No functionality", "Dual Mode: Set phrase for the right receiver", STRING, {.stringLength = 8}, systemConfig.config.linkPhrase2},
+    {"Testing Phrase", "Set the phrase for the testing mode", "", STRING, {.stringLength = 8}, systemConfig.config.testingPhrase},
 },
 };
 
-const uint16_t settingsTableValueCount[2] = {2, 3};
+const uint16_t settingsTableValueCount[2] = {2, 4};

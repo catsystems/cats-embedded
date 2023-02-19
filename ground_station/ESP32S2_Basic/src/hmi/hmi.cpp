@@ -42,8 +42,23 @@ void Hmi::fsm(){
             recovery();
         break;
 
+        case TESTING:
+            testing();
+        break;
+
+        case DATA:
+            data();
+        break;
+
+        case SENSORS:
+            sensors();
+        break;
+
         case SETTINGS:
             settings();
+        break;
+
+        default:
         break;
     }
 }
@@ -56,12 +71,20 @@ void Hmi::initMenu(){
 
 void Hmi::menu(){
     uint32_t oldIndex = menuIndex;
-    if(rightButton.wasPressed() && menuIndex < 2){
+    if(rightButton.wasPressed() && (menuIndex % 3) < 2){
         menuIndex++;
     }
     
-    if(leftButton.wasPressed() && menuIndex > 0) {
+    if(leftButton.wasPressed() && (menuIndex % 3) > 0) {
         menuIndex--;
+    }
+
+    if(downButton.wasPressed() && menuIndex < 3) {
+        menuIndex += 3;
+    }
+
+    if(upButton.wasPressed() && menuIndex > 2) {
+        menuIndex -= 3;
     }
 
     if(menuIndex != oldIndex){
@@ -74,11 +97,18 @@ void Hmi::menu(){
             initLive();
         } else if(state == RECOVERY){
             initRecovery();
-        } else {
+        } else if (state == TESTING) {
+            initTesting();
+        } else if (state == DATA) {
+            initData();
+        } else if (state == SENSORS) {
+            initSensors();
+        } else if (state == SETTINGS) {
             initSettings();
         }
     }
 }
+
 
 /* LIVE */
 
@@ -92,42 +122,54 @@ void Hmi::live(){
         /* Arming Window Mode */
         bool exit = false;
 
-        if(armChannel == 1){
-            exit = link1.isArmed();
-        } else {
-            exit = link2.isArmed();
+        if(link1.data.state() == 1 && enableTestMode) {
+            exit = true;
+        }
+
+        if(okButton.wasPressed()){
+            link2.disable();
+            if(triggerTouchdown) {
+                link1.triggerEvent(6);
+                exit = true;
+            } else {
+                link1.triggerEvent(0);
+            }
         }
 
         if(backButton.wasPressed() || exit){
             window.initLive();
             boxWindow = false;
-        }
-
-        if(okButton.wasPressed()){
-            if(armChannel == 1){
-                link1.arm();
-            } else {
-                link2.arm();
-            }
+            enableTestMode = false;
+            triggerTouchdown = false;
         }
     } else {
         /* Normal Mode */
+        bool updated = false;
+        
         if(link1.data.isUpdated() && link1.info.isUpdated()){
-        window.updateLive(&link1.data, &link1.info, 0);
+            window.updateLive(&link1.data, &link1.info, 0);
+            updated = true;
         } else if (link1.info.isUpdated()){
             window.updateLive(&link1.info, 0);
+            updated = true;
         }
 
         if(link2.data.isUpdated() && link2.info.isUpdated()){
-            if(link2.data.state() > 1){
+            if(link2.data.state() > 2){
                 recorder.record(&link2.data.rxData);
                 isLogging = true;
             } else {
                 isLogging = false;
             }
             window.updateLive(&link2.data, &link2.info, 1);
+            updated = true;
         } else if (link2.info.isUpdated()){
             window.updateLive(&link2.info, 1);
+            updated = true;
+        }
+
+        if(updated) {
+            window.refresh();
         }
 
         if(backButton.wasPressed()){
@@ -135,16 +177,16 @@ void Hmi::live(){
             window.initMenu(menuIndex);
         }
 
-        if(leftButton.pressedFor(3000) && !link1.data.state()){
-        window.initBox("ARM CH1?");
-        boxWindow = true;
-        armChannel = 1;
+        if(rightButton.pressedFor(100) && link1.data.testingMode() && link1.data.state() == 0){
+            window.initBox("Go to Testing?");
+            boxWindow = true;
+            enableTestMode = true;
         }
 
-        if(rightButton.pressedFor(3000) && !link2.data.state()){
-            window.initBox("ARM CH2?");
+        if(rightButton.pressedFor(100) && link1.data.testingMode() && link1.data.state() == 1){
+            window.initBox("Go to Touchdown?");
             boxWindow = true;
-            armChannel = 2;
+            triggerTouchdown = true;
         }
     }    
 
@@ -154,8 +196,6 @@ void Hmi::live(){
 
 void Hmi::initRecovery(){
     window.initRecovery();
-
-    
 }
 
 void Hmi::recovery(){
@@ -176,6 +216,171 @@ void Hmi::recovery(){
         window.updateRecovery(&navigation);
     }
     
+    if(backButton.wasPressed()){
+        state = MENU;
+        window.initMenu(menuIndex);
+    }
+}
+
+/* TESTING */
+
+void Hmi::initTesting(){
+    window.initTesting();
+}
+
+void Hmi::testing() {
+
+    if(boxWindow){
+
+        bool exit = false;
+        if(okButton.wasPressed()){
+            link1.triggerEvent(testingIndex + 1);
+            exit = true;
+        }
+
+        if(backButton.wasPressed() || exit){
+            window.initTestingReady();
+            window.updateTesting(testingIndex);
+            boxWindow = false;
+        }
+        return;
+    }
+
+    if(backButton.wasPressed()){
+        state = MENU;
+        if(testingState >= WAIT_FOR_START) {
+            link1.exitTesting();
+            link2.enable();
+        }
+        testingState = DISCLAIMER;
+        
+        window.initMenu(menuIndex);
+    }
+
+    switch(testingState){
+        case DISCLAIMER: {
+            if(okButton.wasPressed()) {
+                bool connected = false; 
+                if((link1.data.getLastUpdateTime() + 1000) > xTaskGetTickCount()){
+                    connected = true; 
+                }
+                
+                window.initTestingConfirmed(connected, link1.data.testingMode());
+                if(connected) {
+                    testingState = CAN_START;
+                } else {
+                    testingState = CAN_NOT_START;
+                }
+            }
+        } break;
+
+        case CAN_START: {
+            if(okButton.wasPressed()) {
+                // Disable Link2
+                link2.disable();
+                link1.enterTesting();
+                
+                window.initTestingWait();
+
+                startTestingTime = xTaskGetTickCount();
+                testingState = WAIT_FOR_START;
+            }
+        } break;
+
+        case WAIT_FOR_START: {
+            static uint32_t counter = 0;
+            if(link1.data.isUpdated()) {
+                // In testing mode state indicates if we sucessfully started the mode
+                if((link1.data.getLastUpdateTime() + 200) > xTaskGetTickCount()){
+                    counter++;
+                    if(link1.data.state() == 1 && counter > 5) {
+                        window.initTestingReady();
+                        window.updateTesting(0);
+                        testingIndex = 0;
+                        testingState = STARTED;
+                        counter = 0;
+                    }
+                } else {
+                    counter = 0;
+                }
+            } 
+            if((startTestingTime + 10000) < xTaskGetTickCount()) {
+                    link1.disable();
+                    window.initTestingFailed();
+                    testingState = FAILED;
+                    counter = 0;
+            }
+        } break;
+
+        case CAN_NOT_START: {
+
+        } break;
+
+        case FAILED: {
+
+        } break;
+
+        case STARTED: {
+            uint32_t oldIndex = testingIndex;
+            if(upButton.wasPressed() && (testingIndex % 4) > 0) {
+                testingIndex--;
+            } else if(downButton.wasPressed() && (testingIndex % 4) < 3) {
+                testingIndex++;
+            } else if (rightButton.wasPressed() && (testingIndex < 4)){
+                testingIndex += 4; 
+            } else if (leftButton.wasPressed() && (testingIndex > 3)) {
+                testingIndex -= 4;
+            }
+
+            if(link1.data.isUpdated()) {
+                if(link1.data.state() != 1) {
+                    testingState = FAILED;
+                    link1.exitTesting();
+                    window.initTestingLost();
+                }
+            } 
+            
+            if ((link1.data.getLastUpdateTime() + 1000) < xTaskGetTickCount()){
+                testingState = FAILED;
+                link1.exitTesting();
+                window.initTestingLost();
+            }
+
+            if(oldIndex != testingIndex) {
+                window.updateTesting(testingIndex);
+            }
+
+            if(okButton.wasPressed()) {
+                window.initTestingBox(testingIndex);
+                boxWindow = true;
+            }
+        } break;
+
+        default:
+        break;
+    }
+}
+
+/* DATA */
+
+void Hmi::initData(){
+    window.initData();
+}
+
+void Hmi::data() {
+    if(backButton.wasPressed()){
+        state = MENU;
+        window.initMenu(menuIndex);
+    }
+}
+
+/* SENSORS */
+
+void Hmi::initSensors(){
+    window.initSesnors();
+}
+
+void Hmi::sensors() {
     if(backButton.wasPressed()){
         state = MENU;
         window.initMenu(menuIndex);
@@ -247,6 +452,7 @@ void Hmi::settings(){
         }
 
         if(backButton.wasPressed()){
+            memcpy((char*)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 8);
             window.initSettings(settingSubMenu);
             window.updateSettings(settingIndex);
             keyboardActive = false;
@@ -316,6 +522,8 @@ void Hmi::settings(){
 
         if(backButton.wasPressed()){
             state = MENU;
+            systemConfig.save();
+            console.log.println("Save config");
             window.initMenu(menuIndex);
         }
     }
