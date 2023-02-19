@@ -12,7 +12,7 @@ void Telemetry::begin(){
     xTaskCreate(update, "task_telemetry", 2048, this, 1, NULL);
 }
 
-void Telemetry::setLinkPhrase(uint8_t* phrase, uint32_t length){
+void Telemetry::setLinkPhrase(char* phrase, uint32_t length){
     memset(linkPhrase, 0, 8);
     memcpy(linkPhrase, phrase, length);
     newSetting = true;
@@ -25,7 +25,7 @@ void Telemetry::setLinkPhrase(String phrase){
     newSetting = true;
 }
 
-void Telemetry::setTestingPhrase(uint8_t* phrase, uint32_t length){
+void Telemetry::setTestingPhrase(char* phrase, uint32_t length){
     memset(testingPhrase, 0, 8);
     memcpy(testingPhrase, phrase, length);
     newSetting = true;

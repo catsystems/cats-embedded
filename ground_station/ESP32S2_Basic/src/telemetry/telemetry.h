@@ -9,10 +9,10 @@ class Telemetry {
         Telemetry(HardwareSerial& serial, int rxPin, int txPin) : serial(serial), rxPin(rxPin), txPin(txPin){}
         void begin();
 
-        void setLinkPhrase(uint8_t* phrase, uint32_t length);
+        void setLinkPhrase(char* phrase, uint32_t length);
         void setLinkPhrase(String phrase);
 
-        void setTestingPhrase(uint8_t* phrase, uint32_t length);
+        void setTestingPhrase(char* phrase, uint32_t length);
         void setTestingPhrase(String phrase);
 
         void setDirection(transmission_direction_e dir);

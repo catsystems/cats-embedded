@@ -59,10 +59,10 @@ void setup()
     console.error.println("[MAIN] Could not initialize utilities");
   }
 
+  systemConfig.load();
+
   link1.begin();
   link2.begin();
-
-  
 
   navigation.setPointA(47.236777221226646, 8.819492881367166);
   navigation.setPointB(47.236777221226646, 8.819492881367166);
@@ -77,10 +77,10 @@ void loop()
   if(millis() > 5000 && !ini)
   {
     ini = true;
-    link1.setLinkPhrase("cats");
-    link2.setLinkPhrase("cats");
+    link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+    link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
 
-    link1.setTestingPhrase("whatever");
+    link1.setTestingPhrase(systemConfig.config.testingPhrase, 8);
 
     navigation.begin();
   }

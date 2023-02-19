@@ -97,6 +97,68 @@ bool SystemParser::setLinkPhrase2(const char* phrase){
   return true;
 }
 
+bool SystemParser::setTestingPhrase(const char* phrase){
+  if (phrase == NULL) {
+    return false;
+  }
+  doc["testing_phrase"] = phrase;
+  return true;
+}
+
+bool SystemParser::getLinkPhrase1(char* phrase){
+  if(doc.containsKey("link_phrase_1") && phrase != nullptr)
+  {
+    strncpy(phrase, doc["link_phrase_1"].as<const char*>(), 9);
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getLinkPhrase2(char* phrase){
+  if(doc.containsKey("link_phrase_2") && phrase != nullptr)
+  {
+    strncpy(phrase, doc["link_phrase_2"].as<const char*>(), 9);
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getTestingPhrase(char* phrase){
+  if(doc.containsKey("testing_phrase") && phrase != nullptr)
+  {
+    strncpy(phrase, doc["testing_phrase"].as<const char*>(), 9);
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getNeverStopLoggingFlag(bool& flag){
+  if(doc.containsKey("never_stop_logging"))
+  {
+    flag = doc["never_stop_logging"].as<bool>();
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getTimeZone(int16_t& timezone){
+  if(doc.containsKey("timezone"))
+  {
+    timezone = doc["timezone"].as<int16_t>();
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getTelemetryMode(bool& mode){
+  if(doc.containsKey("telemetry_mode"))
+  {
+    mode = doc["telemetry_mode"].as<bool>();
+    return true;
+  }
+  return false;
+}
+
 /**
  * @brief Save the current loaded system config as a file
  *
