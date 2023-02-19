@@ -23,7 +23,7 @@
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/w25q.hpp"
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 #include "flash/reader.hpp"
 #include "main.h"
 #include "tasks/task_state_est.hpp"

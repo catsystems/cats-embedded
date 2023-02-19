@@ -28,7 +28,7 @@
 #include "emfat.h"
 #include "lfs.h"
 
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 #include "util/log.h"
 
 #define FILESYSTEM_SIZE_MB 32

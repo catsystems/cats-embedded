@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 #include "config/globals.hpp"
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 #include "flash/recorder.hpp"
 #include "tasks/task_recorder.hpp"
 #include "util/log.h"

@@ -21,7 +21,7 @@
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/servo.hpp"
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 #include "target.h"
 
 extern driver::Servo* global_servo1;
