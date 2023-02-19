@@ -668,7 +668,6 @@ void emfat_write(emfat_t *emfat, const uint8_t *data, uint32_t sector, int num_s
   write_data_sector(emfat, data, sector);
 }
 
-
 #define FEBRUARY         2
 #define STARTOFTIME      1970
 #define SECDAY           86400L

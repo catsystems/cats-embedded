@@ -113,11 +113,9 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* 
   return (int32_t)bufsize;
 }
 
-void tud_msc_read10_complete_cb(uint8_t lun) {
-}
+void tud_msc_read10_complete_cb(uint8_t lun) {}
 
-void tud_msc_write10_complete_cb(uint8_t lun) {
-}
+void tud_msc_write10_complete_cb(uint8_t lun) {}
 
 // Callback invoked when received an SCSI command not in built-in list below
 // - READ_CAPACITY10, READ_FORMAT_CAPACITY, INQUIRY, MODE_SENSE6, REQUEST_SENSE
