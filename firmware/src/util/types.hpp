@@ -171,6 +171,7 @@ typedef struct {
   uint8_t link_phrase[8];
   uint8_t test_phrase[8];
   uint8_t power_level;
+  bool enable_telemetry;
   adaptive_power_e adaptive_power;
 } config_telemetry_t;
 
