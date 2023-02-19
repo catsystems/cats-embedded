@@ -77,9 +77,10 @@ static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_ent
 }
 
 static const char readme_file[] =
-    "Welcome to CATS!\r\nTo get started please visit our website: https://catsystems.io\r\n\r\nTo erase log files "
-    "please use the CATS Configurator. You can find the latest version on our Github: "
-    "https://github.com/catsystems/cats-configurator/releases";
+    "Welcome to CATS!\r\n\r\n"
+    "To get started please visit our website: https://catsystems.io.\r\n\r\n"
+    "To erase log files and to plot your flights, please use the CATS Configurator.\r\n\r\n"
+    "You can find the latest version on our Github: https://github.com/catsystems/cats-configurator/releases";
 #define README_SIZE (sizeof(readme_file) - 1)
 
 static const emfat_entry_t entriesPredefined[] = {
@@ -124,7 +125,6 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char 
 }
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount) {
-
   int logCount = 0;
 
   logCount = lfs_cnt("/flights/", LFS_TYPE_REG);

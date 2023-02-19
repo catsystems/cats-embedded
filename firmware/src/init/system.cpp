@@ -20,7 +20,7 @@
 #include "lfs.h"
 
 #include "drivers/w25q.hpp"
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 
 static void init_lfs();
 

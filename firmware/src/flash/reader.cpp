@@ -23,7 +23,7 @@
 
 #include "cli/settings.hpp"
 #include "config/globals.hpp"
-#include "flash/lfs_custom.h"
+#include "flash/lfs_custom.hpp"
 #include "recorder.hpp"
 #include "util/enum_str_maps.hpp"
 #include "util/log.h"
