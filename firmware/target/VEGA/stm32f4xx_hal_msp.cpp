@@ -505,16 +505,14 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart) {
 
 /* USER CODE BEGIN 1 */
 /**
-* @brief PCD MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hpcd: PCD handle pointer
-* @retval None
+ * @brief PCD MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param hpcd: PCD handle pointer
+ * @retval None
  */
-void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
-{
+void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(hpcd->Instance==USB_OTG_FS)
-  {
+  if (hpcd->Instance == USB_OTG_FS) {
     /* USER CODE BEGIN USB_OTG_FS_MspInit 0 */
 
     /* USER CODE END USB_OTG_FS_MspInit 0 */
@@ -524,7 +522,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
     PA11     ------> USB_OTG_FS_DM
     PA12     ------> USB_OTG_FS_DP
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -540,19 +538,16 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
 
     /* USER CODE END USB_OTG_FS_MspInit 1 */
   }
-
 }
 
 /**
-* @brief PCD MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hpcd: PCD handle pointer
-* @retval None
+ * @brief PCD MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param hpcd: PCD handle pointer
+ * @retval None
  */
-void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd)
-{
-  if(hpcd->Instance==USB_OTG_FS)
-  {
+void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd) {
+  if (hpcd->Instance == USB_OTG_FS) {
     /* USER CODE BEGIN USB_OTG_FS_MspDeInit 0 */
 
     /* USER CODE END USB_OTG_FS_MspDeInit 0 */
@@ -563,7 +558,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd)
     PA11     ------> USB_OTG_FS_DM
     PA12     ------> USB_OTG_FS_DP
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11 | GPIO_PIN_12);
 
     /* USB_OTG_FS interrupt DeInit */
     HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
@@ -571,7 +566,6 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd)
 
     /* USER CODE END USB_OTG_FS_MspDeInit 1 */
   }
-
 }
 /* USER CODE END 1 */
 
