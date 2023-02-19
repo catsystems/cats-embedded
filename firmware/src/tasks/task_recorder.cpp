@@ -113,7 +113,7 @@ namespace task {
         snprintf(current_flight_filename, MAX_FILENAME_SIZE, "flights/flight_%05lu", flight_counter);
         log_info("Creating log file %lu...", flight_counter);
         lfs_file_open(&lfs, &current_flight_file, current_flight_filename, LFS_O_WRONLY | LFS_O_CREAT);
-        lfs_file_write(&lfs, &current_flight_file, code_version, strlen(code_version) + 1); //including '\0'
+        lfs_file_write(&lfs, &current_flight_file, code_version, strlen(code_version) + 1);  // including '\0'
         rec_elem_t curr_log_elem;
         uint32_t sync_counter = 0;
         log_info("Started writing to flash");
