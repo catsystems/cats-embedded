@@ -41,15 +41,19 @@ class SystemParser {
  public:
   SystemParser(void);
   bool loadFile(const char* path);
-  uint16_t getUsbVid(void);
-  uint16_t getUsbPid(void);
-  const char* getUsbSerial(void);
-  const char* getSsid(void);
-  const char* getPassword(void);
+
+
+  bool setLinkPhrase1(const char* phrase);
+  bool setLinkPhrase2(const char* phrase);
+  bool setNeverStopLoggingFlag(bool flag);
+  bool setTimeZone(int16_t timezone);
+  bool setTelemetryMode(bool mode);
+
+  bool saveFile(const char* path = NULL);
 
  private:
   StaticJsonDocument<MAX_SYSTEM_FILE_SIZE> doc;
   const char* filePath;
 
-  bool saveFile(const char* path = NULL);
+  
 };

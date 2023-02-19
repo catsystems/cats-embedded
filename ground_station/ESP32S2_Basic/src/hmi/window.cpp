@@ -1,6 +1,11 @@
 #include "bmp.h"
 #include "window.h"
 #include <TimeLib.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSans12pt7b.h>
+#include <Fonts/FreeSans18pt7b.h>
 
 
 void Window::begin(){
@@ -138,14 +143,35 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
 void Window::initMenu(uint32_t index){
     display.fillRect(0,19,400,222, WHITE);
 
-    display.drawBitmap(35,80, menu_live, 80, 80, BLACK);
-    display.drawRoundRect(25,70,100,100,9,BLACK);
+    display.setFont(&FreeSans9pt7b);
+    display.setTextSize(1);
+    display.setTextColor(BLACK);
+
+    drawCentreString("Live", 75, 127);
+    drawCentreString("Recovery", 200, 127);
+    drawCentreString("Testing", 325, 127);
+
+    drawCentreString("Data", 75, 233);
+    drawCentreString("Sensors", 200, 233);
+    drawCentreString("Settings", 325, 233);
+
+    display.drawBitmap(43,38, menu_live, 64, 64, BLACK);
+    display.drawRoundRect(35,30,80,80,9,BLACK);
+
+    display.drawBitmap(43,143, menu_data, 64, 64, BLACK);
+    display.drawRoundRect(35,135,80,80,9,BLACK);
   
-    display.drawBitmap(160,80, menu_recover, 80, 80, BLACK);
-    display.drawRoundRect(150,70,100,100,10,BLACK);
+    display.drawBitmap(168,38, menu_recover, 64, 64, BLACK);
+    display.drawRoundRect(160,30,80,80,10,BLACK);
+
+    display.drawBitmap(168,143, menu_sensors, 64, 64, BLACK);
+    display.drawRoundRect(160,135,80,80,10,BLACK);
   
-    display.drawBitmap(285,80, menu_settings, 80, 80, BLACK);
-    display.drawRoundRect(275,70,100,100,10,BLACK);
+    display.drawBitmap(293,38, menu_testing, 64, 64, BLACK);
+    display.drawRoundRect(285,30,80,80,10,BLACK);
+
+    display.drawBitmap(293,143, menu_settings, 64, 64, BLACK);
+    display.drawRoundRect(285,135,80,80,10,BLACK);
     updateMenu(index);
 
   
@@ -156,34 +182,15 @@ void Window::updateMenu(uint32_t index){
     static int oldHighlight = 0;
 
     /* Pait over last selcted with white */
-    int xPos = oldHighlight * 125 + 25;
-    display.drawRoundRect(xPos+1,71,98,98,9,WHITE);
-    display.drawRoundRect(xPos+2,72,96,96,8,WHITE);
 
-    xPos = index * 125 + 25;
-    display.drawRoundRect(xPos+1,71,98,98,9,BLACK);
-    display.drawRoundRect(xPos+2,72,96,96,8,BLACK);
+    int xPos = (oldHighlight % 3) * 125 + 36;
+    int yPos = (oldHighlight / 3) * 105 + 31;
 
+    display.drawRoundRect(xPos,yPos,78,78,9,WHITE);
 
-    display.setFont(&FreeSans18pt7b);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    if(oldHighlight == 0) {
-    drawCentreString("Live Data", 200, 210);
-    } else if (oldHighlight == 1) {
-    drawCentreString("Recovery", 200, 210);
-    } else {
-    drawCentreString("Settings", 200, 210);
-    }
-
-    display.setTextColor(BLACK);
-    if(index == 0) {
-    drawCentreString("Live Data", 200, 210);
-    } else if (index == 1) {
-    drawCentreString("Recovery", 200, 210);
-    } else {
-    drawCentreString("Settings", 200, 210 );
-    }
+    xPos = (index % 3) * 125 + 36;
+    yPos = (index / 3) * 105 + 31;
+    display.drawRoundRect(xPos,yPos,78,78,9,BLACK);
 
     display.refresh();
 
@@ -203,11 +210,19 @@ void Window::initLive(){
     display.drawBitmap(5, 75, live_speed, 24, 24, BLACK);
     display.drawBitmap(5, 100, live_lat, 24, 24, BLACK);
     display.drawBitmap(5, 125, live_lon, 24, 24, BLACK);
+    display.drawBitmap(3, 150, live_battery, 24, 24, BLACK);
+
+    display.drawBitmap(120, 149, live_one, 24, 24, BLACK);
+    display.drawBitmap(158, 149, live_two, 24, 24, BLACK);
+
+    display.drawBitmap(320, 149, live_one, 24, 24, BLACK);
+    display.drawBitmap(358, 149, live_two, 24, 24, BLACK);
 
     display.drawBitmap(205, 50, live_altitude, 24, 24, BLACK);
     display.drawBitmap(205, 75, live_speed, 24, 24, BLACK);
     display.drawBitmap(205, 100, live_lat, 24, 24, BLACK);
     display.drawBitmap(205, 125, live_lon, 24, 24, BLACK);
+    display.drawBitmap(203, 150, live_battery, 24, 24, BLACK);
 
 
     display.setFont(&FreeSans9pt7b);
@@ -240,9 +255,6 @@ void Window::updateLive(TelemetryInfo* info, uint32_t index){
     memcpy(&infoData[index], info, sizeof(infoData[0]));
     dataAge[index] = millis() - lastTeleData[index];
     updateLiveInfo(&infoData[index], index, WHITE);
-
-    
-    display.refresh();
 }
 
 void Window::updateLive(TelemetryData* data, TelemetryInfo* info, uint32_t index){
@@ -257,6 +269,8 @@ void Window::updateLive(TelemetryData* data, TelemetryInfo* info, uint32_t index
     updateLiveData(&teleData[index], index, WHITE);
     updateLiveInfo(&infoData[index], index, BLACK);
 
+    //display.fillRect(10,19,190,200, WHITE);
+
     memcpy(&teleData[index], data, sizeof(teleData[0]));
     memcpy(&infoData[index], info, sizeof(infoData[0]));
     
@@ -264,100 +278,15 @@ void Window::updateLive(TelemetryData* data, TelemetryInfo* info, uint32_t index
 
     updateLiveData(&teleData[index], index, BLACK);
     updateLiveInfo(&infoData[index], index, WHITE);
-
-    
-
-    display.refresh();
-}
-
-void Window::initRecovery(){
-    display.fillRect(0,19,400,222, WHITE);
-    
-    display.drawCircle(300, 125, 80, BLACK);
-
-    display.drawBitmap(5,40,rocket_recovery,32,32,BLACK);
-
-    display.drawBitmap(40, 30, live_lat, 24, 24, BLACK);
-    display.drawBitmap(40, 55, live_lon, 24, 24, BLACK);
-
-    display.drawBitmap(5, 100,house_recovery,32,32,BLACK);
-    display.drawBitmap(40, 90, live_lat, 24, 24, BLACK);
-    display.drawBitmap(40, 115, live_lon, 24, 24, BLACK);
-
-    display.refresh();
-
-}
-
-void Window::updateRecovery(Navigation* navigation){
-    display.fillRect(200,19,400,222, WHITE);
-    
-    float angle = navigation->getNorth();
-    
-    display.setFont(&FreeSans12pt7b);
-    display.setTextSize(1);
-
-    display.setCursor(70, 50);
-    display.print(navigation->getPointB().lat, 4);
-
-    display.setCursor(70, 75);
-    display.print(navigation->getPointB().lon, 4);
-
-    
-    display.setCursor(70, 110);
-    display.print(navigation->getPointA().lat, 4);
-
-    display.setCursor(70, 135);
-    display.print(navigation->getPointA().lon, 4);
-
-    display.setCursor(70, 170);
-    display.print(navigation->getDistance());
-    display.print("m");
-
-
-    display.setFont(&FreeSans9pt7b);
-    
-
-
-    float radius = 90;
-    float correctionFactor = 0.06;
-    
-    int x = radius * cos(angle - PI/2);
-    int y = radius * sin(angle - PI/2) + 125;
-    drawCentreString("N", x+300, y + correctionFactor*y);
-
-    x = radius * cos(angle);
-    y = radius * sin(angle) +125;
-    drawCentreString("E", x+300, y + correctionFactor*y);
-
-    x = radius * cos(angle + PI/2);
-    y = radius * sin(angle + PI/2) +125;
-    drawCentreString("S", x+300, y + correctionFactor*y);
-
-    x = radius * cos(angle + PI);
-    y = radius * sin(angle + PI) +125;
-    drawCentreString("W", x+300, y + correctionFactor*y);
-
-    angle = navigation->getAzimuth() + angle - PI/2;
-
-    x = 70 * cos(angle) + 300;
-    y = 70 * sin(angle) + 125;
-    int x1 = 30 * cos(angle + 0.2) + 300;
-    int y1 = 30 * sin(angle + 0.2) + 125;
-    int x2 = 30 * cos(angle - 0.2) + 300;
-    int y2 = 30 * sin(angle - 0.2) + 125;
-
-    display.drawCircle(300, 125, 80, BLACK);
-    
-    display.fillTriangle(x,y,x1,y1,x2,y2,BLACK);
-    //display.fill
-
-    
-    display.refresh();
 }
 
 const char* const stateName [] = {
-    "MOVING", "READY", "THRUST", "COAST", "APOGEE", "DROGUE", "MAIN", "DOWN"
+    "INVALID", "CALIB", "READY", "THRUST", "COAST", "DROGUE", "MAIN", "DOWN"
     };
+
+const char* const errorName [] = {
+    "No Config", "Log Full", "Filter Error", "Overheating", "Continuity Error" 
+};
 
 void Window::updateLiveData(TelemetryData* data, uint32_t index, uint32_t color){
 
@@ -367,7 +296,15 @@ void Window::updateLiveData(TelemetryData* data, uint32_t index, uint32_t color)
     display.setTextSize(1);
     display.setTextColor(color);
 
-    drawCentreString(stateName[data->state()], xOffset+100, 42);
+    if(data->testingMode()) {
+        drawCentreString("TESTING", xOffset+100, 42);
+        display.fillRect(xOffset+1, 50, 198, 151, WHITE);
+        display.setCursor(xOffset + 20,80);
+        display.print("DO NOT FLY!");
+        return;
+    } else {
+        drawCentreString(stateName[data->state()], xOffset+100, 42);
+    }
 
     display.setCursor(xOffset + 35,70);
     display.print(data->altitude());
@@ -386,8 +323,36 @@ void Window::updateLiveData(TelemetryData* data, uint32_t index, uint32_t color)
     display.print(" E");
 
     display.setCursor(xOffset + 35,170);
-    display.print(data->d1());
-    display.print(" \%");
+    display.print(data->voltage());
+    display.print(" V");
+
+    if(data->pyroContinuity() & 0x01){
+        display.drawBitmap(xOffset + 142, 156, live_checkmark, 16, 16, color);
+    } else {
+        display.drawBitmap(xOffset + 142, 156, live_cross, 16, 16, color);
+    }
+
+    if(data->pyroContinuity() & 0x02){
+        display.drawBitmap(xOffset + 180, 156, live_checkmark, 16, 16, color);
+    } else {
+        display.drawBitmap(xOffset + 180, 156, live_cross, 16, 16, color);
+    }
+    
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(xOffset + 35,192);
+    
+
+    if(data->errors() & 0x04) {
+        display.print(errorName[2]);
+    } else if (data->errors() & 0x10) {
+        display.print(errorName[4]);
+    } else if (data->errors() & 0x02) {
+        display.print(errorName[1]);
+    } else if (data->errors() & 0x01) {
+        display.print(errorName[0]);
+    } else if (data->errors() & 0x08) {
+        display.print(errorName[3]);
+    }
 
     display.setFont(&FreeSans9pt7b);
     display.setTextSize(1);
@@ -438,6 +403,91 @@ void Window::updateLiveInfo(TelemetryInfo* info, uint32_t index, uint32_t color)
     
 }
 
+void Window::initRecovery(){
+    display.fillRect(0,19,400,222, WHITE);
+    
+    display.drawCircle(300, 125, 80, BLACK);
+
+    display.drawBitmap(5,40,rocket_recovery,32,32,BLACK);
+
+    display.drawBitmap(40, 30, live_lat, 24, 24, BLACK);
+    display.drawBitmap(40, 55, live_lon, 24, 24, BLACK);
+
+    display.drawBitmap(5, 100,house_recovery,32,32,BLACK);
+    display.drawBitmap(40, 90, live_lat, 24, 24, BLACK);
+    display.drawBitmap(40, 115, live_lon, 24, 24, BLACK);
+
+    display.refresh();
+}
+
+void Window::updateRecovery(Navigation* navigation){
+    display.fillRect(60,19,400,222, WHITE);
+    
+    float angle = navigation->getNorth();
+    
+    display.setFont(&FreeSans12pt7b);
+    display.setTextSize(1);
+
+    display.setCursor(70, 50);
+    display.print(navigation->getPointB().lat, 4);
+
+    display.setCursor(70, 75);
+    display.print(navigation->getPointB().lon, 4);
+
+    
+    display.setCursor(70, 110);
+    display.print(navigation->getPointA().lat, 4);
+
+    display.setCursor(70, 135);
+    display.print(navigation->getPointA().lon, 4);
+
+    display.setCursor(70, 170);
+    display.print(navigation->getDistance());
+    display.print("m");
+
+
+    display.setFont(&FreeSans9pt7b);
+
+    float radius = 90;
+    float correctionFactor = 0.06;
+    
+    int x = radius * cos(angle - PI/2);
+    int y = radius * sin(angle - PI/2) + 125;
+    drawCentreString("N", x+300, y + correctionFactor*y);
+
+    x = radius * cos(angle);
+    y = radius * sin(angle) +125;
+    drawCentreString("E", x+300, y + correctionFactor*y);
+
+    x = radius * cos(angle + PI/2);
+    y = radius * sin(angle + PI/2) +125;
+    drawCentreString("S", x+300, y + correctionFactor*y);
+
+    x = radius * cos(angle + PI);
+    y = radius * sin(angle + PI) +125;
+    drawCentreString("W", x+300, y + correctionFactor*y);
+
+    angle = navigation->getAzimuth() + angle - PI/2;
+
+    x = 70 * cos(angle) + 300;
+    y = 70 * sin(angle) + 125;
+    int x1 = 30 * cos(angle + 0.2) + 300;
+    int y1 = 30 * sin(angle + 0.2) + 125;
+    int x2 = 30 * cos(angle - 0.2) + 300;
+    int y2 = 30 * sin(angle - 0.2) + 125;
+
+    display.drawCircle(300, 125, 80, BLACK);
+    
+    if(navigation->getDistance() > 20){
+        display.fillTriangle(x,y,x1,y1,x2,y2,BLACK);
+    } else {
+        display.drawCircle(300,125,6,BLACK);
+    }
+    
+    
+    display.refresh();
+}
+
 void Window::initBox(const char* text){
     display.fillRect(60,60,280,120, WHITE);
     display.drawRect(60,60,280,120, BLACK);
@@ -456,31 +506,270 @@ void Window::initBox(const char* text){
     display.setCursor(255, 160);
     display.print("OK (A)");
 
+    display.refresh();
+}
+
+void Window::initTestingBox(uint32_t index){
+    display.fillRect(60,60,280,120, WHITE);
+    display.drawRect(60,60,280,120, BLACK);
+
+    display.setFont(&FreeSans12pt7b);
+    display.setTextSize(1);
+    display.setTextColor(BLACK);
+
+    drawCentreString("Trigger Event?", 200, 110);
+
+    display.setFont(&FreeSans9pt7b);
+
+    display.setCursor(80, 160);
+    display.print("Cancel (B)");
+
+    display.setCursor(255, 160);
+    display.print("OK (A)");
+
+    display.refresh();
+}
+
+void Window::initTesting(){
+    display.fillRect(0,19,400,222, WHITE);
+
+    display.setFont(&FreeSansBold12pt7b);
+    display.setCursor(10, 120);
+    display.setTextSize(1);
+    
+    drawCentreString("Read this before continuing!", 200, 50);
+    
+    display.setFont(&FreeSans9pt7b);
+    
+    display.setCursor(6, 80);
+    display.print("Testing mode enables manual triggering of");
+    display.setCursor(6, 100);
+    display.print("events and the corresponding actions associated");
+    display.setCursor(6, 120);
+    display.print("with them. This feature should only be used for");
+    display.setCursor(6, 140);
+    display.print("testing purposes and never during flight."); 
+    display.setCursor(6, 160);
+    display.print("CATS GmbH is not responsible for any potential");
+    display.setCursor(6, 180);
+    display.print("injuries or material damage caused by operation");
+    display.setCursor(6, 200);
+    display.print("of the CATS flight computers.");
+
+    display.setCursor(6, 225);
+    display.print("Cancel (B)");
+
+    display.setCursor(290, 225);
+    display.print("Continue (A)");
+
+    display.refresh();
+}
+
+void Window::initTestingConfirmed(bool connected, bool testingEnabled) {
+    display.fillRect(0,19,400,222, WHITE);
+    display.setTextSize(1);
+    if(connected) {
+        if(testingEnabled) {
+            display.drawRect(90, 95, 220, 50, BLACK);
+            display.drawRect(91, 96, 218, 48, BLACK);
+            display.drawRect(92, 97, 216, 46, BLACK);
+            display.setFont(&FreeSansBold12pt7b);
+            drawCentreString("ARM", 200, 127);
+
+            display.setFont(&FreeSans9pt7b);
+            display.setCursor(6, 225);
+            display.print("Cancel (B)");
+
+            display.setCursor(290, 225);
+            display.print("Continue (A)");
+        } else {
+            display.setFont(&FreeSansBold9pt7b);
+            drawCentreString("Not in Testing Mode.", 200, 100);
+            display.setFont(&FreeSans9pt7b);
+            display.setCursor(6, 130);
+            display.print("Connect the flight computer to the Configurator,");
+            display.setCursor(6, 150);
+            display.print("enable 'Testing Mode' and set 'Testing Phrase'.");
+
+            display.setFont(&FreeSans9pt7b);
+            display.setCursor(6, 225);
+            display.print("Cancel (B)");
+        }
+    } else {
+        display.setFont(&FreeSansBold9pt7b);
+        drawCentreString("No Connection", 200, 100);
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(6, 130);
+        display.print("Make sure the 'Link Phrase 1' is set correctly on");
+        display.setCursor(6, 150);
+        display.print("both the flight computer and the ground station.");
+
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(6, 225);
+        display.print("Cancel (B)");
+    }
+
+    display.refresh();
+}
+void Window::initTestingFailed() {
+    display.fillRect(0,19,400,222, WHITE);
+    display.setTextSize(1);
+    display.setFont(&FreeSansBold9pt7b);
+    drawCentreString("Could not ARM System", 200, 100);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 130);
+    display.print("Make sure 'Test Phrase' is set correctly on both");
+    display.setCursor(6, 150);
+    display.print("the flight computer and the ground station.");
+
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 225);
+    display.print("Cancel (B)");
+
+    display.refresh();
+}
+
+void Window::initTestingLost() {
+    display.fillRect(0,19,400,222, WHITE);
+    display.setTextSize(1);
+    display.setTextColor(BLACK);
+    display.setFont(&FreeSansBold9pt7b);
+    drawCentreString("Connection Lost", 200, 100);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 130);
+    display.print("For safety reason the ground station disconnects");
+    display.setCursor(6, 150);
+    display.print("very quickly. Make sure you have a good");
+    display.setCursor(6, 170);
+    display.print("connection before continuing.");
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 225);
+    display.print("Cancel (B)");
+
+    display.refresh();
+}
+
+void Window::initTestingWait() {
+    display.fillRect(0,19,400,222, WHITE);
+    display.setTextSize(1);
+    display.setFont(&FreeSansBold9pt7b);
+    drawCentreString("Starting testing mode...", 200, 100);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 130);
+    display.print("This may take a few seconds.");
+
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(6, 225);
+    display.print("Cancel (B)");
+
+    display.refresh();
+}
+
+
+void Window::initTestingReady() {
+    display.fillRect(0,19,400,222, WHITE);
+
+    display.drawLine(199,18,199,220, BLACK);
+    display.drawLine(200,18,200,220, BLACK);
+
+    display.drawLine(0,19,399,19, BLACK);
+
+    display.drawLine(0,68,399,68, BLACK);
+    display.drawLine(0,69,399,69, BLACK);
+
+    display.drawLine(0,118,399,118, BLACK);
+    display.drawLine(0,119,399,119, BLACK);
+
+    display.drawLine(0,168,399,168, BLACK);
+    display.drawLine(0,169,399,169, BLACK);
+
+    display.drawLine(0,218,399,218, BLACK);
+    display.drawLine(0,219,399,219, BLACK);
+
+    display.setTextSize(1);
+    display.setFont(&FreeSans12pt7b);
+
+    drawCentreString(eventName[0], 100, 51);
+    drawCentreString(eventName[1], 100, 101);
+    drawCentreString(eventName[2], 100, 151);
+    drawCentreString(eventName[3], 100, 201);
+
+    drawCentreString(eventName[4], 300, 51);
+    drawCentreString(eventName[5], 300, 101);
+    drawCentreString(eventName[6], 300, 151);
+    drawCentreString(eventName[7], 300, 201);
+}
+
+void Window::updateTesting(uint32_t index) {
+    static uint32_t oldIndex = 0;
+    uint32_t xOffset = 201 * (oldIndex / 4);
+    uint32_t yOffset = 50 * (oldIndex % 4) + 20;
+
+    display.fillRect(xOffset, yOffset, 199, 48, WHITE);
+
+    display.setTextSize(1);
+    display.setFont(&FreeSans12pt7b);
+    display.setTextColor(BLACK);
+
+    xOffset = 200 * (oldIndex / 4) + 100;
+    yOffset = 50 * (oldIndex % 4) + 51;
+
+    drawCentreString(eventName[oldIndex], xOffset, yOffset);
+
+    xOffset = 201 * (index / 4);
+    yOffset = 50 * (index % 4) + 20;
+
+    display.fillRect(xOffset, yOffset, 199, 48, BLACK);
+
+    display.setTextColor(WHITE);
+    xOffset = 200 * (index / 4) + 100;
+    yOffset = 50 * (index % 4) + 51;
+    drawCentreString(eventName[index], xOffset, yOffset);
+
+    oldIndex = index;
+    display.refresh();
+}
+
+void Window::initData(){
+    display.fillRect(0,19,400,222, WHITE);
+
+    display.refresh();
+}
+
+void Window::initSesnors(){
+    display.fillRect(0,19,400,222, WHITE);
+
+    display.refresh();
 }
 
 void Window::initSettings(uint32_t submenu){
     display.fillRect(0,19,400,222, WHITE);
 
     display.drawLine(0,49,400,49, BLACK);
+    
 
     display.setFont(&FreeSans12pt7b);
     display.setTextSize(1);
+    display.setTextColor(WHITE);
 
+    display.fillRect(0,19,400,30, BLACK);
     drawCentreString(settingPageName[submenu], 200, 42);
 
+    display.setTextColor(BLACK);
     for(int i = 0; i < settingsTableValueCount[submenu]; i++){
             addSettingEntry(i, &settingsTable[submenu][i]);
     }
 
     if(submenu == 0){
-        display.fillTriangle(386, 33, 378, 25, 378, 41, BLACK);
+        display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
     } else {
-        display.fillTriangle(13, 33, 21, 25, 21, 41, BLACK);
+        display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
     }
     
     oldSettingsIndex = -1;
     subMenuSettingIndex = submenu;
 
+    display.drawLine(0,177,400,177, BLACK);
     display.refresh();
 }
 
@@ -528,23 +817,24 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t* set
 }
 
 void Window::updateSettings(int32_t index){
-    display.setFont(&FreeSans12pt7b);
-    display.setTextSize(1);
     
+    display.setTextSize(1);
+
     if(oldSettingsIndex >= 0) {
         if(oldSettingsIndex != index){
             highlightSetting(oldSettingsIndex, BLACK);
         }
     } else {
-        if(subMenuSettingIndex == 0) display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
-        else display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
+        if(subMenuSettingIndex == 0) display.fillTriangle(386, 33, 378, 25, 378, 41, BLACK);
+        else display.fillTriangle(13, 33, 21, 25, 21, 41, BLACK);
     }
 
     if(index >= 0) {
         highlightSetting(index, WHITE);
     } else {
-        if(subMenuSettingIndex == 0) display.fillTriangle(386, 33, 378, 25, 378, 41, BLACK);
-        else display.fillTriangle(13, 33, 21, 25, 21, 41, BLACK);
+        if(subMenuSettingIndex == 0) display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
+        else display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
+        display.fillRect(0,178,400,62, WHITE);
     }
 
     oldSettingsIndex = index;
@@ -552,10 +842,20 @@ void Window::updateSettings(int32_t index){
 }
 
 void Window::highlightSetting(uint32_t index, bool color){
+    display.setFont(&FreeSans12pt7b);
     uint32_t yPos = 52 + 30 * index;
     display.fillRect(0,yPos,400,30,!color);
     if(subMenuSettingIndex == 0) addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
     else addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
+
+    display.fillRect(0,178,400,62, WHITE);
+    display.setFont(&FreeSans9pt7b);
+    display.setTextColor(BLACK);
+    display.setCursor(10,195);
+    display.print(settingsTable[subMenuSettingIndex][index].description1);
+    display.setCursor(10,215);
+    display.print(settingsTable[subMenuSettingIndex][index].description2);
+
 }
 
 int keybXY[38][2] = {  {  20, 125}, //'1'

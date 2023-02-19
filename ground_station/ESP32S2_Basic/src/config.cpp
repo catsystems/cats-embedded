@@ -28,3 +28,10 @@ if(systemParser.loadFile(configFileName))
     status = false;
   }
   */
+
+void Config::save() {
+  systemParser.setLinkPhrase1(config.linkPhrase1);
+  systemParser.setLinkPhrase2(config.linkPhrase2);
+  systemParser.setTelemetryMode(config.receiverMode);
+  systemParser.saveFile("/config.json");
+}

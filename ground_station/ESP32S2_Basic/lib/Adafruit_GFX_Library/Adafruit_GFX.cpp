@@ -187,7 +187,7 @@ void Adafruit_GFX::startWrite() {}
    @param    color 16-bit 5-6-5 Color to fill with
 */
 /**************************************************************************/
-void Adafruit_GFX::writePixel(int16_t x, int16_t y, uint16_t color) {
+inline void Adafruit_GFX::writePixel(int16_t x, int16_t y, uint16_t color) {
   drawPixel(x, y, color);
 }
 
@@ -279,7 +279,7 @@ inline void Adafruit_GFX::drawFastVLine(int16_t x, int16_t y, int16_t h,
    @param    color 16-bit 5-6-5 Color to fill with
 */
 /**************************************************************************/
-void Adafruit_GFX::drawFastHLine(int16_t x, int16_t y, int16_t w,
+void inline Adafruit_GFX::drawFastHLine(int16_t x, int16_t y, int16_t w,
                                  uint16_t color) {
   startWrite();
   writeLine(x, y, x + w - 1, y, color);
@@ -300,8 +300,8 @@ void Adafruit_GFX::drawFastHLine(int16_t x, int16_t y, int16_t w,
 void Adafruit_GFX::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
                             uint16_t color) {
   startWrite();
-  for (int16_t i = x; i < x + w; i++) {
-    writeFastVLine(i, y, h, color);
+  for (int16_t i = y; i < y + h; i++) {
+    writeFastHLine(x, i, w, color);
   }
   endWrite();
 }
@@ -1774,7 +1774,7 @@ GFXcanvas1::~GFXcanvas1(void) {
     @param  color Binary (on or off) color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawPixel(int16_t x, int16_t y, uint16_t color) {
+inline void GFXcanvas1::drawPixel(int16_t x, int16_t y, uint16_t color) {
   if (buffer) {
     if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
       return;

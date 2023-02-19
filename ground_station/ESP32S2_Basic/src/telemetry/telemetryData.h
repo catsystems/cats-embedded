@@ -4,28 +4,29 @@
 #include "console.h"
 
 typedef struct {
-  uint8_t state : 3;
-  uint8_t errors : 4;
-  uint16_t timestamp : 15;
-  int32_t lat : 22;
-  int32_t lon : 22;
-  int32_t altitude : 17;
-  int16_t velocity : 10;
-  uint16_t voltage : 8;
-  uint16_t continuity : 3;
-  // fill up to 16 bytes
-  uint8_t : 0;  // sent
-  uint8_t d1;   // dummy
-  uint8_t d2;   // dummy
-  uint8_t d3;   // dummy
-} __attribute__((packed)) packedRXMessage;
+    uint8_t state : 3;
+    uint16_t timestamp : 15;
+    uint8_t errors : 6;
+    int32_t lat : 22;
+    int32_t lon : 22;
+    int32_t altitude : 17;
+    int16_t velocity : 10;
+    uint16_t voltage : 8;
+    uint8_t pyro_continuity : 2;
+    bool testing_mode : 1;
+    // fill up to 16 bytes
+    uint8_t : 0;  // sent
+    uint8_t d1;   // dummy
+  } __attribute__((packed)) packedRXMessage;
 
+static_assert(sizeof(packedRXMessage) == 15);
 
 class TelemetryData {
     public:
         void commit(uint8_t* data, uint32_t length){
+
             memcpy(&rxData, data, length);
-            lastCommitTime = millis();
+            lastCommitTime = xTaskGetTickCount();
             updated = true;
         }
 
@@ -68,9 +69,32 @@ class TelemetryData {
             return rxData.state;
         }
 
+        uint8_t errors() {
+            updated = false;
+            return rxData.errors;
+        }
+
+        float voltage() {
+            updated = false;
+            return static_cast<float>(rxData.voltage / 10.0F);
+        }
+
+        uint8_t pyroContinuity() {
+            updated = false;
+            return rxData.pyro_continuity;
+        }
+
+        bool testingMode() {
+            updated = false;
+            return rxData.testing_mode;
+        }
+
+        uint32_t getLastUpdateTime() const {
+            return lastCommitTime;
+        }
+
         packedRXMessage rxData;
 
-    
     private:
         bool updated;
         uint32_t lastCommitTime;        
@@ -199,6 +223,7 @@ class TelemetryLocation {
             updated = false;
             return (uint16_t)locationData.alt;
         }
+
 
     private:
         TelemetryLocationData locationData;

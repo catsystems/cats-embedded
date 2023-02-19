@@ -9,10 +9,6 @@ void Telemetry::begin(){
     parser.init(&data, &info, &location, &time);
     initialized = true;
 
-    armingMsg.d1 = 0xAA;
-    armingMsg.d2 = 0xBB;
-    armingMsg.d3 = 0xCC;
-
     xTaskCreate(update, "task_telemetry", 2048, this, 1, NULL);
 }
 
@@ -26,6 +22,19 @@ void Telemetry::setLinkPhrase(String phrase){
     uint32_t length = phrase.length();
     memset(linkPhrase, 0, 8);
     memcpy(linkPhrase, phrase.c_str(), length);
+    newSetting = true;
+}
+
+void Telemetry::setTestingPhrase(uint8_t* phrase, uint32_t length){
+    memset(testingPhrase, 0, 8);
+    memcpy(testingPhrase, phrase, length);
+    newSetting = true;
+}
+
+void Telemetry::setTestingPhrase(String phrase){
+    uint32_t length = phrase.length();
+    memset(testingPhrase, 0, 8);
+    memcpy(testingPhrase, phrase.c_str(), length);
     newSetting = true;
 }
 
@@ -59,19 +68,47 @@ void Telemetry::initLink(){
     vTaskDelay(100);
 
     if(linkPhrase[0] != 0){
-        sendLinkPhrase(linkPhrase, 8);
+        uint32_t phraseCrc = crc32(linkPhrase, 8);
+        sendLinkPhraseCrc(phraseCrc, 4);
         vTaskDelay(100);
         sendEnable();
         console.warning.println("[TELE] Link Enabled");
     }
+
+    if(testingPhrase[0] != 0) {
+        testingCrc = crc32(testingPhrase, 8);
+    }
 }
 
-void Telemetry::arm(){
-    sendTXPayload((uint8_t*)&armingMsg, 16);
+void Telemetry::exitTesting(){
+    testingMsg.header = 0x72;
+    testingMsg.passcode = testingCrc;
+    testingMsg.enable_pyros = 0;
+    testingMsg.event = 0;
+    sendTXPayload((uint8_t*)&testingMsg, 15);
     vTaskDelay(50);
     setMode(BIDIRECTIONAL);
-    rocketArmed = false;
-    arming = true;
+    requestExitTesting = true;
+}
+
+void Telemetry::enterTesting(){
+    testingMsg.header = 0x72;
+    testingMsg.passcode = testingCrc;
+    testingMsg.enable_pyros = 1;
+    testingMsg.event = 0;
+    sendTXPayload((uint8_t*)&testingMsg, 15);
+    vTaskDelay(50);
+    setMode(BIDIRECTIONAL);
+}
+
+void Telemetry::triggerEvent(uint8_t event){
+    testingMsg.header = 0x72;
+    testingMsg.passcode = testingCrc;
+    testingMsg.enable_pyros = 1;
+    testingMsg.event = event;
+    sendTXPayload((uint8_t*)&testingMsg, 15);
+    triggerAction = true;
+    triggerActionStart = xTaskGetTickCount();
 }
 
 void Telemetry::update(void *pvParameter){
@@ -84,30 +121,37 @@ void Telemetry::update(void *pvParameter){
             ref->newSetting = false;
             ref->initLink();
         }
-
-        if(ref->arming){
-            if(ref->data.isUpdated()){
-                if(ref->data.state() > 0){
-                    ref->arming = false;
-                    ref->rocketArmed = true;
-                    ref->setMode(UNIDIRECTIONAL);
-                }
-            }
-        }
         
+        if(ref->requestExitTesting) {
+            ref->requestExitTesting = false;
+            vTaskDelay(1000);
+            ref->setMode(UNIDIRECTIONAL);
+        }
+
+        if(ref->triggerAction && (ref->triggerActionStart + 1000) < xTaskGetTickCount()) {
+            ref->triggerAction = false;
+            ref->testingMsg.header = 0x72;
+            ref->testingMsg.passcode = ref->testingCrc;
+            ref->testingMsg.enable_pyros = 1;
+            ref->testingMsg.event = 0;
+            ref->sendTXPayload((uint8_t*)&ref->testingMsg, 15);
+        }
+
         while(ref->serial.available()){
-           ref->parser.process(ref->serial.read()); 
+            ref->parser.process(ref->serial.read()); 
         }
 
         vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_TELE_FREQ);
     }
 }
 
-void Telemetry::sendLinkPhrase(uint8_t* phrase, uint32_t length){
-  uint8_t out[11]; // 1 OP + 1 LEN + 8 DATA + 1 CRC
+void Telemetry::sendLinkPhraseCrc(uint32_t crc, uint32_t length){
+  console.log.println(crc);
+  console.log.println(length);
+  uint8_t out[7]; // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = (uint8_t)length;
-  memcpy(&out[2], phrase, length);
+  memcpy(&out[2], &crc, length);
   out[length+2] = crc8(out, length+2);
 
   serial.write(out, length+3);
