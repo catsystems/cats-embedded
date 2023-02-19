@@ -757,7 +757,7 @@ void Window::initSettings(uint32_t submenu){
 
     display.setTextColor(BLACK);
     for(int i = 0; i < settingsTableValueCount[submenu]; i++){
-            addSettingEntry(i, &settingsTable[submenu][i]);
+        addSettingEntry(i, &settingsTable[submenu][i]);
     }
 
     if(submenu == 0){
@@ -783,10 +783,11 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t* set
     
 
     if(setting->type == TOGGLE){
-        drawCentreString(lookup_tables[setting->config.lookup].values[*(int16_t*)setting->dataPtr], 305, y);
+        bool data = *(bool*)setting->dataPtr;
+        drawCentreString(lookup_tables[setting->config.lookup].values[static_cast<uint16_t>(data)], 305, y);
 
         y -= 23;
-        if(*(int16_t*)setting->dataPtr == 0){
+        if(data == false){
             display.fillTriangle(386,y+14, 378, y+6, 378, y+22, color);
         } else {
             display.fillTriangle(224,y+14, 232, y+6, 232, y+22, color);
@@ -836,7 +837,7 @@ void Window::updateSettings(int32_t index){
         else display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
         display.fillRect(0,178,400,62, WHITE);
     }
-
+    
     oldSettingsIndex = index;
     display.refresh();
 }

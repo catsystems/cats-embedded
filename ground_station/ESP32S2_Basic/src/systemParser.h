@@ -45,9 +45,17 @@ class SystemParser {
 
   bool setLinkPhrase1(const char* phrase);
   bool setLinkPhrase2(const char* phrase);
+  bool setTestingPhrase(const char* phrase);
   bool setNeverStopLoggingFlag(bool flag);
   bool setTimeZone(int16_t timezone);
   bool setTelemetryMode(bool mode);
+
+  bool getLinkPhrase1(char* phrase);
+  bool getLinkPhrase2(char* phrase);
+  bool getTestingPhrase(char* phrase);
+  bool getNeverStopLoggingFlag(bool& flag);
+  bool getTimeZone(int16_t& timezone);
+  bool getTelemetryMode(bool& mode);
 
   bool saveFile(const char* path = NULL);
 

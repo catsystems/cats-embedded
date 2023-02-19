@@ -26,11 +26,16 @@ class Recorder {
     private:
         bool initialized = false;
         bool enabled = false;
+        bool fileCreated = false;
 
-        const char* directory; 
+        const char* directory;
+
+        char fileName [30] = {};
 
         QueueHandle_t queue;
         File file;
+
+        void createFile();
 
         static void recordTask (void* pvParameter);
 };

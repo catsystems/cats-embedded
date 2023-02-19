@@ -397,6 +397,7 @@ void Hmi::initSettings(){
 
 void Hmi::settings(){
     static bool keyboardActive = false;
+    static bool configChanged = false;
     static int32_t i = 0;
     if(keyboardActive){
         if(rightButton.wasPressed() || rightButton.pressedFor(500)){
@@ -444,6 +445,7 @@ void Hmi::settings(){
             } else if (i == 37) { // enter
                 memcpy((char*)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 8);
                 window.initSettings(settingSubMenu);
+                configChanged = true;
                 window.updateSettings(settingIndex);
                 keyboardActive = false;
             } else {
@@ -454,6 +456,7 @@ void Hmi::settings(){
         if(backButton.wasPressed()){
             memcpy((char*)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 8);
             window.initSettings(settingSubMenu);
+            configChanged = true;
             window.updateSettings(settingIndex);
             keyboardActive = false;
         }
@@ -477,23 +480,27 @@ void Hmi::settings(){
                     *(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr < \
                     settingsTable[settingSubMenu][settingIndex].config.minmax.max) {
                         (*(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr)++;
+                        configChanged = true;
                         window.updateSettings(settingIndex);
                 }
                 if((leftButton.wasPressed() || leftButton.pressedFor(500)) && \
                     *(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr > \
                     settingsTable[settingSubMenu][settingIndex].config.minmax.min) {
                         (*(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr)--;
+                        configChanged = true;
                         window.updateSettings(settingIndex);
                 }
             }
 
             if(settingsTable[settingSubMenu][settingIndex].type == TOGGLE){
-                if(rightButton.wasPressed() && *(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr == 0) {
-                    (*(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr) = 1;
+                if(rightButton.wasPressed() && *(bool*)settingsTable[settingSubMenu][settingIndex].dataPtr == false) {
+                    (*(bool*)settingsTable[settingSubMenu][settingIndex].dataPtr) = true;
+                    configChanged = true;
                     window.updateSettings(settingIndex);
                 }
-                if(leftButton.wasPressed() && *(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr == 1) {
-                    (*(int16_t*)settingsTable[settingSubMenu][settingIndex].dataPtr) = 0;
+                if(leftButton.wasPressed() && *(bool*)settingsTable[settingSubMenu][settingIndex].dataPtr == true) {
+                    (*(bool*)settingsTable[settingSubMenu][settingIndex].dataPtr) = false;
+                    configChanged = true;
                     window.updateSettings(settingIndex);
                 }
             }
@@ -510,11 +517,13 @@ void Hmi::settings(){
 
         if(downButton.wasPressed() && settingIndex < settingsTableValueCount[settingSubMenu]-1){
             settingIndex++;
+            configChanged = true;
             window.updateSettings(settingIndex);
         }
 
         if(upButton.wasPressed() && settingIndex > -1){
             settingIndex--;
+            configChanged = true;
             window.updateSettings(settingIndex);
         }
 
@@ -522,8 +531,14 @@ void Hmi::settings(){
 
         if(backButton.wasPressed()){
             state = MENU;
-            systemConfig.save();
-            console.log.println("Save config");
+            if(configChanged) {
+                configChanged = false;
+                link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+                link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+                link1.setTestingPhrase(systemConfig.config.testingPhrase, 8);
+                systemConfig.save();
+                console.log.println("Save config");
+            }
             window.initMenu(menuIndex);
         }
     }
