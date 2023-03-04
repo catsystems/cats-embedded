@@ -59,7 +59,7 @@ public:
   void txDoneISR();
 
 private:
-  void processRFPacket();
+  bool processRFPacket();
 
   void resetTransmission() {
     disableTransmission();

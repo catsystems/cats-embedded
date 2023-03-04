@@ -120,9 +120,10 @@ int main(void) {
   /* USER CODE BEGIN 2 */
 
   /* Set code version */
-  const char* telemetry_code_version = "1.0.0";
+  const char *telemetry_code_version = "1.0.0";
   uint8_t code_version_size = strlen(telemetry_code_version);
-  const uint8_t* code_version = reinterpret_cast<const uint8_t*>(telemetry_code_version);
+  const uint8_t *code_version =
+      reinterpret_cast<const uint8_t *>(telemetry_code_version);
 
   /* Wait for the GNSS module to initialize*/
   HAL_Delay(4000);
@@ -257,7 +258,7 @@ int main(void) {
       HAL_UART_Transmit(&huart2, uartOutBuffer, 7, 2);
     }
 
-    if(send_version_num){
+    if (send_version_num) {
       /* Send Version number to Host */
       uartOutBuffer[0] = CMD_VERSION_INFO;
       uartOutBuffer[1] = code_version_size;
@@ -268,8 +269,6 @@ int main(void) {
       HAL_UART_Transmit(&huart2, uartOutBuffer, code_version_size + 3, 2);
       send_version_num = false;
     }
-
-
   }
 }
 
@@ -591,11 +590,11 @@ static void MX_GPIO_Init(void) {
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BUSY_Pin */
-  GPIO_InitStruct.Pin = BUSY_Pin;
+  /*Configure GPIO pins : BUSY_Pin HARDWARE_ID_Pin */
+  GPIO_InitStruct.Pin = BUSY_Pin | HARDWARE_ID_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BUSY_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : FE_EN_Pin RX_EN_Pin LED_Pin */
   GPIO_InitStruct.Pin = FE_EN_Pin | RX_EN_Pin | LED_Pin;

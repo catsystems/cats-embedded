@@ -79,6 +79,8 @@ void Error_Handler(void);
 #define INT2_GPIO_Port GPIOB
 #define INT1_Pin GPIO_PIN_8
 #define INT1_GPIO_Port GPIOB
+#define HARDWARE_ID_Pin GPIO_PIN_3
+#define HARDWARE_ID_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define RADIO_SPI &hspi1
 /* USER CODE END Private defines */

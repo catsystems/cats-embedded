@@ -75,6 +75,8 @@ void Error_Handler(void);
 #define RX_EN_GPIO_Port GPIOA
 #define LED_Pin GPIO_PIN_15
 #define LED_GPIO_Port GPIOA
+#define HARDWARE_ID_Pin GPIO_PIN_3
+#define HARDWARE_ID_GPIO_Port GPIOB
 #define INT2_Pin GPIO_PIN_5
 #define INT2_GPIO_Port GPIOB
 #define INT1_Pin GPIO_PIN_8
