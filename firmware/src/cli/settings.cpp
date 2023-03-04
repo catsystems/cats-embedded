@@ -122,11 +122,11 @@ const cli_value_t value_table[] = {
 
     {"tele_link_phrase",
      VAR_UINT8 | MODE_STRING,
-     {.string = {4, 8}},
+     {.string = {kMinConnPhraseChars, kMaxConnPhraseChars}},
      offsetof(cats_config_t, telemetry_settings.link_phrase)},
     {"tele_test_phrase",
      VAR_UINT8 | MODE_STRING,
-     {.string = {4, 8}},
+     {.string = {kMinConnPhraseChars, kMaxConnPhraseChars}},
      offsetof(cats_config_t, telemetry_settings.test_phrase)},
     {"tele_power_level",
      VAR_UINT8,

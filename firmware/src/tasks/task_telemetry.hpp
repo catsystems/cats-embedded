@@ -79,7 +79,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
                      estimation_output_t estimation_data) const noexcept;
   void ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept;
   bool Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, gnss_data_t* gnss) noexcept;
-  static void SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept;
+  static void SendLinkPhrase() noexcept;
   static void SendSettings(uint8_t command, uint8_t value) noexcept;
   static void SendEnable() noexcept;
   static void SendDisable() noexcept;

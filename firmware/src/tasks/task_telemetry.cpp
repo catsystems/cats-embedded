@@ -17,6 +17,9 @@
  */
 
 #include "tasks/task_telemetry.hpp"
+
+#include <cstring>
+
 #include "comm/fifo.hpp"
 #include "comm/stream.hpp"
 #include "config/cats_config.hpp"
@@ -111,7 +114,7 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     return;
   }
 
-  /* Check if the linkphrase matches */
+  /* Check if the test phrase matches */
   if (rx_payload->passcode != m_test_phrase_crc) {
     return;
   }
@@ -150,9 +153,11 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   /* Check if we are in testing mode */
   bool testing_enabled = false;
   /* Check if valid link parameters are set for testing mode to be enabled */
-  /* If no test phrase is set, dont allow testing mode */
-  if (global_cats_config.telemetry_settings.test_phrase[0] != 0) {
+  /* If no test phrase is set, don't allow testing mode */
+  if (global_cats_config.telemetry_settings.test_phrase[0] != '\0') {
     testing_enabled = global_cats_config.enable_testing_mode;
+    const char* test_phrase = global_cats_config.telemetry_settings.test_phrase;
+    m_test_phrase_crc = crc32(reinterpret_cast<const uint8_t*>(test_phrase), strlen(test_phrase));
   }
 
   /* Configure the telemetry MCU */
@@ -164,16 +169,16 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   /* if we are in the testing mode, set the receiver to bidirectional mode */
   if (testing_enabled) {
     SendSettings(CMD_MODE, BIDIRECTIONAL);
-    m_test_phrase_crc = crc32(global_cats_config.telemetry_settings.test_phrase, 8);
   } else {
     SendSettings(CMD_MODE, UNIDIRECTIONAL);
   }
+
   osDelay(100);
 
-  /* Only start the telemetry when a link phrase is set  and if the telemetry is enabled.*/
-  if ((global_cats_config.telemetry_settings.link_phrase[0] != 0) &&
+  /* Only start the telemetry when a link phrase is set and if the telemetry is enabled. */
+  if ((global_cats_config.telemetry_settings.link_phrase[0] != '\0') &&
       (global_cats_config.telemetry_settings.enable_telemetry)) {
-    SendLinkPhrase(global_cats_config.telemetry_settings.link_phrase, 8);
+    SendLinkPhrase();
     osDelay(100);
     SendEnable();
   } else {
@@ -364,8 +369,9 @@ bool Telemetry::Parse(uint8_t op_code, const uint8_t* buffer, uint32_t length, g
   return gnss_position_received;
 }
 
-void Telemetry::SendLinkPhrase(uint8_t* phrase, uint32_t length) noexcept {
-  uint32_t uplink_phrase_crc = crc32(global_cats_config.telemetry_settings.link_phrase, length);
+void Telemetry::SendLinkPhrase() noexcept {
+  const char* phrase = global_cats_config.telemetry_settings.link_phrase;
+  uint32_t uplink_phrase_crc = crc32(reinterpret_cast<const uint8_t*>(phrase), strlen(phrase));
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = 4;

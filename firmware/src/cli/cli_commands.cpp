@@ -355,7 +355,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
           }
           value_changed = true;
         } else {
-          cli_print_error_linef(cmd_name, "STRING MUST BE 1..%d CHARACTERS OR '-' FOR EMPTY", max);
+          cli_print_error_linef(cmd_name, "STRING MUST BE %hu..%hu CHARACTERS OR '-' FOR EMPTY", min, max);
         }
       } break;
     }
