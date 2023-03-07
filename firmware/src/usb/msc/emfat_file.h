@@ -1,5 +1,7 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file was forked from Cleanflight and Betaflight.
+ *
+ * See the Cleanflight and Betaflight License below.
  *
  * Cleanflight and Betaflight are free software. You can redistribute
  * this software and/or modify this software under the terms of the

@@ -17,6 +17,7 @@
  */
 
 #include "cmsis_os.h"
+#include "log.h"
 #include "target.h"
 
 #include <cstdio>
@@ -31,20 +32,12 @@
  * The function will loop forever.
  */
 void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
-  static char print_buf[STACK_OVERFLOW_PRINT_BUF_SZ] = {};
-  /* uint32_t msg_len = */ snprintf(print_buf, sizeof(print_buf), "Stack overflow detected in %s...\n", task_name);
-
-  // USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
-
   while (true) {
     /* Toggle the red LED. */
     HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 
-    // if (hcdc != nullptr) {
-    /* Force the TxState to 0 because someone might have been writing to the USB before, but we don't care anymore. */
-    // hcdc->TxState = 0;
-    // CDC_Transmit_FS((uint8_t *)print_buf, msg_len);
-    //}
+    /* Todo: Fix this log_raw, it doesn't work */
+    log_raw("Stack overflow detected in %s...\n", task_name);
 
     /* osDelay doesn't work here because this is an interrupt. */
     HAL_Delay(1000);

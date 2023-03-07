@@ -48,9 +48,6 @@
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;
 
-#include "tusb.h"
-#include "usb/cdc/cdc_if.hpp"
-
 static void init_logging() {
   log_set_level(LOG_TRACE);
   log_enable();
@@ -198,10 +195,6 @@ int main(void) {
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   if (htim->Instance == TIM1) {
     HAL_IncTick();
-  }
-
-  if (htim->Instance == TIMUsb) {
-    cdc_transmit_elapsed();
   }
 }
 
