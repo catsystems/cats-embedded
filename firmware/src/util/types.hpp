@@ -167,13 +167,17 @@ struct config_action_t {
 
 enum adaptive_power_e { OFF, ON };
 
-typedef struct {
-  uint8_t link_phrase[8];
-  uint8_t test_phrase[8];
+constexpr int kMinConnPhraseChars = 4;
+constexpr int kMaxConnPhraseChars = 16;
+
+struct config_telemetry_t {
+  /* +1 for null terminator */
+  char link_phrase[kMaxConnPhraseChars + 1]{};
+  char test_phrase[kMaxConnPhraseChars + 1]{};
   uint8_t power_level;
   bool enable_telemetry;
   adaptive_power_e adaptive_power;
-} config_telemetry_t;
+};
 
 struct peripheral_act_t {
   /* Action type */
