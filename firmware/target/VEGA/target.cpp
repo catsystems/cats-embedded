@@ -121,7 +121,6 @@ void SystemClock_Config(void) {
  * @retval None
  */
 static void MX_ADC1_Init(void) {
-
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
@@ -171,7 +170,6 @@ static void MX_ADC1_Init(void) {
  * @retval None
  */
 static void MX_SPI1_Init(void) {
-
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -196,7 +194,6 @@ static void MX_SPI1_Init(void) {
  * @retval None
  */
 static void MX_SPI2_Init(void) {
-
   /* SPI2 parameter configuration*/
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
@@ -221,7 +218,6 @@ static void MX_SPI2_Init(void) {
  * @retval None
  */
 static void MX_TIM3_Init(void) {
-
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -259,7 +255,6 @@ static void MX_TIM3_Init(void) {
  * @retval None
  */
 static void MX_TIM4_Init(void) {
-
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -294,7 +289,6 @@ static void MX_TIM4_Init(void) {
  * @retval None
  */
 static void MX_USART1_UART_Init(void) {
-
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -334,7 +328,6 @@ static void MX_USART2_UART_Init(void) {
  */
 
 void MX_USB_OTG_FS_PCD_Init(void) {
-
   hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
   hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
   hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
@@ -417,7 +410,6 @@ static void MX_GPIO_Init(void) {
  * @retval None
  */
 void Error_Handler(void) {
-
   __disable_irq();
   while (true) {
   }

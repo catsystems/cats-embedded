@@ -65,6 +65,7 @@ typedef struct emfat_entry_s {
     struct emfat_entry_s *sub;
     struct emfat_entry_s *next;
   } priv;
+  uint8_t lfs_flight_idx;  // custom - used for storing lfs flight log index
 } emfat_entry_t;
 
 typedef struct emfat_s {
