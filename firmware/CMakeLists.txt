@@ -53,6 +53,8 @@ add_compile_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_compile_options(-ffunction-sections -fdata-sections -fno-common -fmessage-length=0 -fdiagnostics-color=always -fstack-usage
         -Wall -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -Wformat=2 -Wformat-truncation=2 -Wformat-overflow -Wformat-signedness -Werror -Wno-packed-bitfield-compat)
 
+set_source_files_properties(src/usb/msc/emfat_file.c PROPERTIES COMPILE_FLAGS "-Wno-missing-braces -Wno-int-conversion -Wno-error")
+
 # Disable volatile warnings of type "compound assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]"
 # This is heavily used by STM libraries and creates too much noise when compiling
 # Eventually this flag should be set only for library files
@@ -81,8 +83,7 @@ include_directories(
         lib/STM/${MCU_FAMILY}/${MCU_FAMILY}xx_HAL_Driver/Inc/Legacy
         lib/STM/${MCU_FAMILY}/${MCU_FAMILY}xx/Include
         lib/STM/${MCU_FAMILY}/USB_DEVICE
-        lib/STM/USB/STM32_USB_Device_Library/Core/Inc
-        lib/STM/USB/STM32_USB_Device_Library/Class/CDC/Inc
+        lib/TinyUSB/src
         lib/CMSIS/Include
         lib/CMSIS/DSP/Inc
         lib/FreeRTOS/Source/include
@@ -103,6 +104,7 @@ file(GLOB_RECURSE LIB_FILES
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
         "lib/LittleFS/*.*"
+        "lib/TinyUSB/src/*.*"
         "lib/Tracing/*.*")
 
 set_source_files_properties(
@@ -124,6 +126,7 @@ file(GLOB_RECURSE SOURCES
         "lib/CMSIS/*.*"
         "lib/FreeRTOS/*.*"
         "lib/LittleFS/*.*"
+        "lib/TinyUSB/src/*.*"
         "target/${CATS_TARGET}/*.*"
         "src/*.*")
 

@@ -62,7 +62,7 @@ void init_lfs_cfg(const w25q_t *w25q_ptr) {
                               .lookahead_buffer = lookahead_buffer}));
 }
 
-const lfs_config *get_lfs_cfg() noexcept {
+extern "C" const lfs_config *get_lfs_cfg() noexcept {
   if (!lfs_cfg.has_value()) {
     init_lfs_cfg(&w25q);
   }
@@ -142,10 +142,12 @@ int lfs_ls(const char *path) {
   return 0;
 }
 
-int32_t lfs_cnt(const char *path, enum lfs_type type) {
+extern "C" int32_t lfs_cnt(const char *path, enum lfs_type type) {
   if (type != LFS_TYPE_REG && type != LFS_TYPE_DIR) {
     return -1;
   }
+
+  //  log_raw("%lu, lfs_cnt...", osKernelGetTickCount());
 
   int32_t cnt = 0;
 

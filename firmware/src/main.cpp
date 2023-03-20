@@ -16,10 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.hpp"
+#include "main.h"
 #include "cmsis_os.h"
 #include "target.h"
-#include "usbd_cdc_if.h"
 
 #include "drivers/adc.hpp"
 
@@ -105,11 +104,11 @@ int main(void) {
   init_logging();
   log_info("System initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   init_storage();
   log_info("LFS initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   load_and_set_config();
   log_info("Config load complete.");
 
@@ -132,7 +131,7 @@ int main(void) {
   init_devices(imu, barometer);
   log_info("Device initialization complete.");
 
-  HAL_Delay(100);
+  HAL_Delay(10);
   adc_init();
   battery_monitor_init(global_cats_config.battery_type);
   log_info("Battery monitor initialization complete.");
@@ -196,10 +195,6 @@ int main(void) {
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   if (htim->Instance == TIM1) {
     HAL_IncTick();
-  }
-
-  if (htim->Instance == TIMUsb) {
-    CDC_Transmit_Elapsed();
   }
 }
 

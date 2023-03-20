@@ -25,7 +25,7 @@
 #include "drivers/w25q.hpp"
 #include "flash/lfs_custom.hpp"
 #include "flash/reader.hpp"
-#include "main.hpp"
+#include "main.h"
 #include "tasks/task_state_est.hpp"
 #include "util/actions.hpp"
 #include "util/battery.hpp"

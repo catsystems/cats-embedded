@@ -17,15 +17,13 @@
  */
 
 #include <cstdarg>
+#include <cstdio>
 
 #include "comm/stream_group.hpp"
 #include "util/log.h"
-#include "util/task_util.hpp"
 
 #ifdef CATS_DEBUG
 #include "cmsis_os.h"
-
-#include <cstdio>
 
 #define CATS_RAINBOW_LOG
 
