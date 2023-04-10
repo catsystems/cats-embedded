@@ -38,9 +38,9 @@ const cats_config_t DEFAULT_CONFIG = {
          // EV_MAX_V
          {},
          // EV_APOGEE
-         {ACT_HIGH_CURRENT_ONE, 1},
+         {ACT_HIGH_CURRENT_ONE, 1, ACT_OS_DELAY, 2000, ACT_HIGH_CURRENT_ONE, 0},
          // EV_MAIN_DEPLOYMENT
-         {ACT_HIGH_CURRENT_TWO, 1},
+         {ACT_HIGH_CURRENT_TWO, 1, ACT_OS_DELAY, 2000, ACT_HIGH_CURRENT_TWO, 0},
          // EV_TOUCHDOWN
          {ACT_SET_RECORDER_STATE, REC_OFF}},
     .initial_servo_position = {0, 0},
@@ -79,7 +79,7 @@ void cc_init() {
 
 void cc_defaults(bool use_default_outputs, bool set_by_user) {
   memcpy(&global_cats_config, &DEFAULT_CONFIG, sizeof(global_cats_config));
-  /* Remove APOGEE & POST_APOGEE actions */
+  /* Remove APOGEE & MAIN_DEPLOYMENT actions */
   if (!use_default_outputs) {
     memset(global_cats_config.action_array[EV_APOGEE], 0, sizeof(global_cats_config.action_array[EV_APOGEE]));
     memset(global_cats_config.action_array[EV_MAIN_DEPLOYMENT], 0,
