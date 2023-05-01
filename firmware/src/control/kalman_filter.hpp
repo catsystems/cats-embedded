@@ -26,7 +26,7 @@
  * Hence, the noise matrices are changed over time. At liftoff, the offset is large and close to apogee
  * it is close to zero. The noise matrices here are therefore not agreeing to the data analysis. */
 // Tuned by simulations
-#define STD_NOISE_BARO 9000.0f
+#define STD_NOISE_BARO 900.0f
 
 // From data analysis: 2.6f m - but in practice this value makes the barometer too trustworthy
 #define STD_NOISE_BARO_INITIAL 9.0f
