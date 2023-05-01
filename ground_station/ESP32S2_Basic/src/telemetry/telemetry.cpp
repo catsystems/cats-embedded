@@ -68,7 +68,7 @@ void Telemetry::initLink(){
     vTaskDelay(100);
 
     if(linkPhrase[0] != 0){
-        uint32_t phraseCrc = crc32(linkPhrase, 8);
+        uint32_t phraseCrc = crc32(linkPhrase, strlen((const char*)linkPhrase));
         sendLinkPhraseCrc(phraseCrc, 4);
         vTaskDelay(100);
         sendEnable();
@@ -76,7 +76,7 @@ void Telemetry::initLink(){
     }
 
     if(testingPhrase[0] != 0) {
-        testingCrc = crc32(testingPhrase, 8);
+        testingCrc = crc32(testingPhrase, strlen((const char*)testingPhrase));
     }
 }
 
