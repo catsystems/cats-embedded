@@ -226,7 +226,7 @@ float32_t R_interpolation(float32_t velocity) {
   /* Todo: Can be optimized */
   float32_t lower_bound = 20.0F;
   float32_t upper_bound = 100.0F;
-  float32_t f_lower_bound = 0.1F;
+  float32_t f_lower_bound = 0.3981F;
   float32_t f_upper_bound = 1.0F;
 
   float32_t m = (f_lower_bound - f_upper_bound) / (lower_bound - upper_bound);
