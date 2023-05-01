@@ -34,8 +34,8 @@ UART_HandleTypeDef huart2;
 
 sens_info_t acc_info[NUM_IMU] = {{.sens_type = SensorType::kAcc,
                                   .conversion_to_SI = 9.81F / 1024.0F,
-                                  .upper_limit = 16.0F * 9.81F,
-                                  .lower_limit = -16.0F * 9.81F,
+                                  .upper_limit = 32.0F * 9.81F,
+                                  .lower_limit = -32.0F * 9.81F,
                                   .resolution = 1.0F}};
 sens_info_t gyro_info[NUM_IMU] = {{.sens_type = SensorType::kGyro,
                                    .conversion_to_SI = 0.07F,
