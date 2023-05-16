@@ -101,10 +101,10 @@ void Parser::cmdLinkPhrase(uint8_t *args, uint32_t length) {
     return;
 
   if (args[0] != 0) {
-	uint32_t phrasecrc = args[0] << 24;
-	phrasecrc += args[1] << 16;
-	phrasecrc += args[2] << 8;
-	phrasecrc += args[3];
+    uint32_t phrasecrc = args[0] << 24;
+    phrasecrc += args[1] << 16;
+    phrasecrc += args[2] << 8;
+    phrasecrc += args[3];
     Link.setLinkPhraseCrc(phrasecrc);
   }
 }
@@ -127,6 +127,10 @@ void Parser::cmdTX(uint8_t *args, uint32_t length) {
 
 void Parser::cmdVersionNum(uint8_t *args, uint32_t length) {
   send_version_num = true;
+}
+
+void Parser::cmdBootloader(uint8_t *args, uint32_t length) {
+  // UNUSED
 }
 
 void Parser::cmdRX(uint8_t *args, uint32_t length) {

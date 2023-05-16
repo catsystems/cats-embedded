@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cstdint>
 #include "telemetry_reg.h"
+#include <cstdint>
 
 typedef void cmd_fn(uint8_t *args, uint32_t length);
 
@@ -67,6 +67,8 @@ public:
 
   static void cmdVersionNum(uint8_t *args, uint32_t length);
 
+  static void cmdBootloader(uint8_t *args, uint32_t length);
+
 private:
   int32_t getOpCodeIndex(uint8_t opCode);
 
@@ -90,20 +92,28 @@ private:
   state_e state = STATE_OP;
 
   enum {
-    CMD_NUMBER = 15,
+    CMD_NUMBER = 16,
   };
 
   const cmd_t cmd_table[CMD_NUMBER] = {
-    CMD_DEF(CMD_DIRECTION, cmdDirection),    CMD_DEF(CMD_PA_GAIN, cmdPAGain),
-	CMD_DEF(CMD_POWER_LEVEL, cmdPowerLevel), CMD_DEF(CMD_MODE, cmdMode),
-	CMD_DEF(CMD_MODE_INDEX, cmdModeIndex),   CMD_DEF(CMD_LINK_PHRASE, cmdLinkPhrase),
+      CMD_DEF(CMD_DIRECTION, cmdDirection),
+      CMD_DEF(CMD_PA_GAIN, cmdPAGain),
+      CMD_DEF(CMD_POWER_LEVEL, cmdPowerLevel),
+      CMD_DEF(CMD_MODE, cmdMode),
+      CMD_DEF(CMD_MODE_INDEX, cmdModeIndex),
+      CMD_DEF(CMD_LINK_PHRASE, cmdLinkPhrase),
+      CMD_DEF(CMD_ENABLE, cmdEnable),
+      CMD_DEF(CMD_DISBALE, cmdDisable),
 
-	CMD_DEF(CMD_ENABLE, cmdEnable),          CMD_DEF(CMD_DISBALE, cmdDisable),
+      CMD_DEF(CMD_TX, cmdTX),
+      CMD_DEF(CMD_RX, cmdRX),
+      CMD_DEF(CMD_INFO, cmdInfo),
 
-	CMD_DEF(CMD_TX, cmdTX),                  CMD_DEF(CMD_RX, cmdRX),
-	CMD_DEF(CMD_INFO, cmdInfo),
+      CMD_DEF(CMD_GNSS_LOC, cmdGNSSLoc),
+      CMD_DEF(CMD_GNSS_TIME, cmdGNSSTime),
+      CMD_DEF(CMD_GNSS_INFO, cmdGNSSInfo),
+      CMD_DEF(CMD_VERSION_INFO, cmdVersionNum),
 
-	CMD_DEF(CMD_GNSS_LOC, cmdGNSSLoc),       CMD_DEF(CMD_GNSS_TIME, cmdGNSSTime),
-	CMD_DEF(CMD_GNSS_INFO, cmdGNSSInfo),     CMD_DEF(CMD_VERSION_INFO, cmdVersionNum),
+      CMD_DEF(CMD_BOOTLOADER, cmdBootloader),
   };
 };
