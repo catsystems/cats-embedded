@@ -36,7 +36,9 @@ void SX1280Hal::end() {
 void SX1280Hal::init() {}
 
 void SX1280Hal::reset(void) {
-  // We do not have this pin
+  HAL_GPIO_WritePin(N_RST_GPIO_Port, N_RST_Pin, GPIO_PIN_RESET);
+  HAL_Delay(10);
+  HAL_GPIO_WritePin(N_RST_GPIO_Port, N_RST_Pin, GPIO_PIN_SET);
 }
 
 void SX1280Hal::WriteCommand(SX1280_RadioCommands_t command, uint8_t val) {

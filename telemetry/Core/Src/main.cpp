@@ -120,7 +120,7 @@ int main(void) {
   /* USER CODE BEGIN 2 */
 
   /* Set code version */
-  const char *telemetry_code_version = "1.0.0";
+  const char *telemetry_code_version = "1.1.0";
   uint8_t code_version_size = strlen(telemetry_code_version);
   const uint8_t *code_version =
       reinterpret_cast<const uint8_t *>(telemetry_code_version);
@@ -572,7 +572,8 @@ static void MX_GPIO_Init(void) {
   HAL_GPIO_WritePin(GPIOB, CS_Pin | INT2_Pin | INT1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, FE_EN_Pin | RX_EN_Pin | LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, FE_EN_Pin | RX_EN_Pin | N_RST_Pin | LED_Pin,
+                    GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(TX_EN_GPIO_Port, TX_EN_Pin, GPIO_PIN_RESET);
@@ -596,8 +597,8 @@ static void MX_GPIO_Init(void) {
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : FE_EN_Pin RX_EN_Pin LED_Pin */
-  GPIO_InitStruct.Pin = FE_EN_Pin | RX_EN_Pin | LED_Pin;
+  /*Configure GPIO pins : FE_EN_Pin RX_EN_Pin N_RST_Pin LED_Pin */
+  GPIO_InitStruct.Pin = FE_EN_Pin | RX_EN_Pin | N_RST_Pin | LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
