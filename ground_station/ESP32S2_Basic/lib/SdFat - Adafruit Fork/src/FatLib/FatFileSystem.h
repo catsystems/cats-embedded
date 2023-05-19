@@ -329,4 +329,6 @@ fail:
  private:
   FatFile m_vwd;
 };
+
+
 #endif  // FatFileSystem_h
