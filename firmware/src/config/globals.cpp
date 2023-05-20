@@ -55,6 +55,6 @@ volatile recorder_status_e global_recorder_status = REC_OFF;
 
 event_action_map_elem_t* event_action_map = nullptr;
 
-const char* code_version = "2.3.3";
+const char* code_version = "2.3.4";
 char telemetry_code_version[20] = {};
 const char* board_name = "CATS Vega";

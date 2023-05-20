@@ -123,6 +123,7 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_
   /* If the above condition is correct for some samples, detect liftoff */
   if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER_HEIGHT) {
     change_state_to(THRUSTING, EV_LIFTOFF, fsm_state);
+    fsm_state->is_liftoff_by_pressure = true;
   }
 }
 

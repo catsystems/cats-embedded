@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "task.hpp"
 
 #include "control/kalman_filter.hpp"
@@ -43,6 +44,7 @@ class StateEstimation final : public Task<StateEstimation, 512> {
     global_state_estimation = this;
   }
   [[nodiscard]] estimation_output_t GetEstimationOutput() const noexcept;
+  void SetLiftoffTrigger(bool is_liftoff_by_pressure);
 
  private:
   [[noreturn]] void Run() noexcept override;
@@ -54,6 +56,7 @@ class StateEstimation final : public Task<StateEstimation, 512> {
   /* Initialize State Estimation */
   kalman_filter_t m_filter;
   orientation_filter_t m_orientation_filter;
+  std::atomic<bool> m_is_liftoff_by_pressure{false};
 };
 
 }  // namespace task

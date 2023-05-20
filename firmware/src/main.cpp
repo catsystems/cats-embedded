@@ -160,7 +160,7 @@ int main(void) {
 
     static const task::Preprocessing& task_preprocessing = task::Preprocessing::Start(task_sensor_read);
 
-    static const task::StateEstimation& task_state_estimation = task::StateEstimation::Start(task_preprocessing);
+    static task::StateEstimation& task_state_estimation = task::StateEstimation::Start(task_preprocessing);
 
     task::FlightFsm::Start(task_preprocessing, task_state_estimation);
 
