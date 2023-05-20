@@ -114,6 +114,7 @@ struct flight_fsm_t {
   uint32_t clock_memory;
   uint32_t memory[3];
   timestamp_t thrust_trigger_time;
+  bool is_liftoff_by_pressure;
   bool state_changed;
 };
 

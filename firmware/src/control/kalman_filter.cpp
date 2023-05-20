@@ -240,7 +240,7 @@ float32_t R_interpolation(float32_t velocity) {
   }
 }
 
-void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
+void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state, bool is_liftoff_by_pressure) {
   /* Update IMU trust value based on flight phase */
   switch (flight_state) {
     case READY:
@@ -264,6 +264,11 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
     filter->R = STD_NOISE_BARO_INITIAL;
   }
 
+  /* If liftoff is detected by pressure, do not fully trust the IMU */
+  if (is_liftoff_by_pressure) {
+    filter->R = STD_NOISE_BARO_INITIAL;
+  }
+
   kalman_prediction(filter);
 
   kalman_update(filter);
@@ -271,5 +276,10 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   /* Do not update offset estimation if we took off */
   if (flight_state >= THRUSTING) {
     filter->x_bar_data[2] = filter->x_hat_data[2];
+  }
+
+  /* Do not use offset estimation while descending */
+  if (flight_state >= DROGUE) {
+    filter->x_bar_data[2] = 0;
   }
 }

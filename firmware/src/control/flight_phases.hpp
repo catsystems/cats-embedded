@@ -37,9 +37,9 @@
 // num iterations, if the acceleration is bigger than the threshold for 0.1 s we detect liftoff
 #define LIFTOFF_SAFETY_COUNTER 10
 
-// num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 1 second, detect
+// num iterations, if the height is bigger than config.control_settings.liftoff_height_agl m for 0.4 second, detect
 // liftoff
-#define LIFTOFF_SAFETY_COUNTER_HEIGHT 100
+#define LIFTOFF_SAFETY_COUNTER_HEIGHT 40
 
 /* THRUSTING */
 // num iterations, acceleration needs to be smaller than 0 for at least 0.1 s for the transition THRUSTING -> COASTING
