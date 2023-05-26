@@ -5,103 +5,121 @@ on:
   push:
     branches: main
 
-env:
-  # CMake build type (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Debug
-
 jobs:
-  formatting-check:
-    name: Formatting Check
+  generate_matrix:
+    name: Generate Matrix
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Run clang-format style check for C/C++/Protobuf programs.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get changed directories
+        id: changed-files
+        uses: tj-actions/changed-files@v37
+        with:
+          dir_names: 'true'
+          dir_names_max_depth: '1'
+          json: 'true'
+          escape_json: 'false'
+
+      - name: Filter changed directories
+        id: changed-files-filtered
+        # The build pipeline is triggered only for the project in which the changes happened.
+        # For example if a change was made in flight_computer/src/main.cpp, a pipeline will
+        # run only for the flight_computer project.
+        # Additionally, if changes happened at the root of the repository, or in .github/,
+        # the pipeline will run for all three projects.
+        run: |
+          contains_dot=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".")) | length')
+          contains_dotgithub=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".github")) | length')
+
+          if [[ $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
+            filtered_array='["flight_computer","ground_station","telemetry"]'
+          else
+            filtered_array=${{ steps.changed-files.outputs.all_changed_files }}
+          fi
+
+          echo "$filtered_array"
+          echo "matrix=$filtered_array" >> "$GITHUB_OUTPUT"
+    
+    outputs:
+      matrix: ${{ steps.changed-files-filtered.outputs.matrix }}
+  
+  format_check:
+    if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    name: Format Check
+    needs: generate_matrix
+    strategy:
+      fail-fast: false
+      matrix: 
+        project: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Run clang-format
       uses: jidicula/clang-format-action@v4.9.0
       with:
         clang-format-version: '13'
-        check-path: 'firmware'
-        exclude-regex: '(firmware/lib)'
+        check-path: '${{ matrix.project }}/src'
+        exclude-regex: '(lib|telemetry/src/st|ground_station/src/format)'
 
   build:
-    name: Build
-    runs-on: ubuntu-latest
+    if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    needs: [generate_matrix, format_check]
+    name: Build + Lint
+    # We are running this on windows because the users get binaries compiled on windows.
+    # The code should also be tested in a linux build.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: 
+        project: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
 
     steps:
-    - uses: actions/checkout@v3
-
-    - name: arm-none-eabi-gcc
-      uses: ryanwinter/arm-none-eabi-gcc@master
-      with:
-        release: '10.3-2021.10'
-
-    - name: Install Ninja
-      uses: seanmiddleditch/gha-setup-ninja@v3
-
-    - name: Configure CMake
-      working-directory: ./firmware
-      run: cmake -B build -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-    - name: Build
-      working-directory: ./firmware
-      run: cmake --build build
-
-    - name: Upload Compile Commands
-      uses: actions/upload-artifact@v3
-      with:
-        # Artifact name
-        name: compile-commands
-        path: ./firmware/build/compile_commands.json
-        if-no-files-found: error
-        retention-days: 1
-
-  clang-tidy:
-    name: Clang-Tidy Check
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Download Compile Commands
-      uses: actions/download-artifact@v3
-      with:
-        name: compile-commands
-        path: ./firmware/build/
-
-    # - name: clang-tidy review
-    #   uses: ZedThree/clang-tidy-review@v0.10.1
-    #   id: review
-    #   with:
-    #     clang_tidy_version: 14
-    #     build_dir: firmware/build
-    #     config_file: firmware/.clang-tidy
-    #     exclude: firmware/lib
-    #     max_comments: 50
-
-    # - if: steps.review.outputs.total_comments > 0
-    #   run: exit 1
-
-
-    - name: clang-tidy
-      uses: cpp-linter/cpp-linter-action@v2
-      id: linter
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        style: ''
-       # lines-changed-only: true
-       # file-annotations: true
-        file-annotations: false
-        lines-changed-only: true
-        files-changed-only: true
-        thread-comments: true
-        tidy-checks: ''
-       # repo-root: ./firmware
-        version: 12
-        ignore: firmware/lib|firmware/build
-        database: ./firmware/build/compile_commands.json
-       
-
-    - if: steps.linter.outputs.checks-failed > 0
-      run: echo "Some files failed linting checks!"
+      - name: Checkout
+        uses: actions/checkout@v3
+  
+      - name: Check cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio/.cache
+          # Add OS to key if testing with multiple OSes
+          key: ${{ matrix.project }}-pio
+  
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+  
+      - name: Install dependencies
+        run: pip install --upgrade platformio
+      
+      - name: Install PlatformIO Libraries
+        run: pio pkg install --global
+  
+      - name: Build
+        run: platformio run -d ${{ matrix.project }}
+  
+      - name: Generate compile_commands.json
+        run: platformio run -d ${{ matrix.project }} --target compiledb
+  
+      - name: Lint
+        working-directory: ./${{ matrix.project }}
+        run: platformio check
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./${{ matrix.project }}/.pio/build/**/firmware.bin
+            ./${{ matrix.project }}/.pio/build/**/firmware.elf
+            ./${{ matrix.project }}/.pio/build/**/compile_commands.json
+          if-no-files-found: error
+          retention-days: 90

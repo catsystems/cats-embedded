@@ -232,3 +232,11 @@ ts-gen
 
 # Used to accelerate builds after sync
 patches/mtime-cache.json
+
+# platformio
+.pio
+
+# children .gitignores
+flight_computer/.gitignore
+telemetry/.gitignore
+ground_station/**/.gitignore

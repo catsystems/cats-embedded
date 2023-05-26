@@ -23,10 +23,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "TinyGps.hpp"
 
-#include <ctype.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <numbers>
 
 #define _GPRMCterm "GPRMC"
 #define _GPGGAterm "GPGGA"
@@ -59,6 +60,7 @@ bool TinyGps::encode(char c) {
   switch (c) {
     case ',':  // term terminators
       parity ^= (uint8_t)c;
+      [[fallthrough]]; // TODO: check if this is actually the case
     case '\r':
     case '\n':
     case '*': {
@@ -195,18 +197,15 @@ bool TinyGps::endOfTermHandler() {
       curSentenceType = GPS_SENTENCE_OTHER;
 
     // Any custom candidates of this sentence type?
-    for (customCandidates = customElts;
-         customCandidates != NULL && strcmp(customCandidates->sentenceName, term) < 0;
+    for (customCandidates = customElts; customCandidates != NULL && strcmp(customCandidates->sentenceName, term) < 0;
          customCandidates = customCandidates->next)
       ;
-    if (customCandidates != NULL && strcmp(customCandidates->sentenceName, term) > 0)
-      customCandidates = NULL;
+    if (customCandidates != NULL && strcmp(customCandidates->sentenceName, term) > 0) customCandidates = NULL;
 
     return false;
   }
 
-  if (curSentenceType != GPS_SENTENCE_OTHER && term[0])
-    switch (COMBINE(curSentenceType, curTermNumber)) {
+  if (curSentenceType != GPS_SENTENCE_OTHER && term[0]) switch (COMBINE(curSentenceType, curTermNumber)) {
       case COMBINE(GPS_SENTENCE_GPRMC, 1):  // Time in both sentences
       case COMBINE(GPS_SENTENCE_GPGGA, 1):
         time.setTime(term);
@@ -255,8 +254,7 @@ bool TinyGps::endOfTermHandler() {
 
   // Set custom values as needed
   for (TinyGPSCustom *p = customCandidates;
-       p != NULL && strcmp(p->sentenceName, customCandidates->sentenceName) == 0 &&
-       p->termNumber <= curTermNumber;
+       p != NULL && strcmp(p->sentenceName, customCandidates->sentenceName) == 0 && p->termNumber <= curTermNumber;
        p = p->next)
     if (p->termNumber == curTermNumber) p->set(term);
 
@@ -270,11 +268,11 @@ double TinyGps::distanceBetween(double lat1, double long1, double lat2, double l
   // distance computation for hypothetical sphere of radius 6372795 meters.
   // Because Earth is no exact sphere, rounding errors may be up to 0.5%.
   // Courtesy of Maarten Lamers
-  double delta = (long1 - long2) * (M_PI / 180);  // Conversion to Radian
+  double delta = (long1 - long2) * (std::numbers::pi / 180);  // Conversion to Radian
   double sdlong = sin(delta);
   double cdlong = cos(delta);
-  lat1 = (lat1) * (M_PI / 180);
-  lat2 = (lat2) * (M_PI / 180);
+  lat1 = (lat1) * (std::numbers::pi / 180);
+  lat2 = (lat2) * (std::numbers::pi / 180);
   double slat1 = sin(lat1);
   double clat1 = cos(lat1);
   double slat2 = sin(lat2);
@@ -293,23 +291,23 @@ double TinyGps::courseTo(double lat1, double long1, double lat2, double long2) {
   // 2, both specified as signed decimal-degrees latitude and longitude. Because
   // Earth is no exact sphere, calculated course may be off by a tiny fraction.
   // Courtesy of Maarten Lamers
-  double dlon = (long2 - long1) * (M_PI / 180);  // Conversion to Radian
-  lat1 = (lat1) * (M_PI / 180);
-  lat2 = (lat2) * (M_PI / 180);
+  double dlon = (long2 - long1) * (std::numbers::pi / 180);  // Conversion to Radian
+  lat1 = (lat1) * (std::numbers::pi / 180);
+  lat2 = (lat2) * (std::numbers::pi / 180);
   double a1 = sin(dlon) * cos(lat2);
   double a2 = sin(lat1) * cos(lat2) * cos(dlon);
   a2 = cos(lat1) * sin(lat2) - a2;
   a2 = atan2(a1, a2);
   if (a2 < 0.0) {
-    a2 += M_PI * 2;
+    a2 += std::numbers::pi * 2;
   }
-  return (a2 * (180 / M_PI));  // Conversion to Degree
+  return (a2 * (180 / std::numbers::pi));  // Conversion to Degree
 }
 
 const char *TinyGps::cardinal(double course) {
   static const char *directions[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
                                      "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
-  int direction = (int)((course + 11.25f) / 22.5f);
+  int direction = (int)((course + 11.25) / 22.5);  // this is a double operation
   return directions[direction % 16];
 }
 
@@ -426,9 +424,7 @@ void TinyGPSCustom::commit() {
   valid = updated = true;
 }
 
-void TinyGPSCustom::set(const char *term) {
-  strncpy(this->stagingBuffer, term, sizeof(this->stagingBuffer));
-}
+void TinyGPSCustom::set(const char *term) { strncpy(this->stagingBuffer, term, sizeof(this->stagingBuffer)); }
 
 void TinyGps::insertCustom(TinyGPSCustom *pElt, const char *sentenceName, int termNumber) {
   TinyGPSCustom **ppelt;

@@ -129,11 +129,11 @@ void Transmission::enableTransmission() {
   modulation_settings_s *const modParams = &Settings.modulationConfig[Settings.modeIndex];
 
   if (Settings.transmissionDirection == TX) {
-    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
-                 modParams->PreambleLen, 0, modParams->PayloadLength, modParams->interval);
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, 0,
+                 modParams->PayloadLength, modParams->interval);
   } else {
-    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(),
-                 modParams->PreambleLen, 0, modParams->PayloadLength, 0);
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, 0,
+                 modParams->PayloadLength, 0);
   }
 
   payloadLength = modParams->PayloadLength;
