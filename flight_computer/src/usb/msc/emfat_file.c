@@ -39,7 +39,7 @@
 #define CMA \
   { CMA_TIME, CMA_TIME, CMA_TIME }
 
-static void lfs_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
+static void lfs_read_file(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
   char filename[32] = {};
   static lfs_file_t curr_file;
   static int32_t number = -1;
@@ -51,7 +51,10 @@ static void lfs_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_
       file_open = false;
       lfs_file_close(&lfs, &curr_file);
     }
-    snprintf(filename, 32, "/flights/flight_%05hu", entry->lfs_flight_idx);
+
+    // Assume the files starting with 'f' are flight logs; all others are considered to be stats files.
+    const bool flight_log = entry->name != NULL && entry->name[0] == 'f';
+    snprintf(filename, 32, flight_log ? "/flights/flight_%05hu" : "/stats/stats_%05hu.txt", entry->lfs_flight_idx);
     int err = lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY);
     if (err) {
       return;
@@ -93,6 +96,8 @@ static const emfat_entry_t entriesPredefined[] = {
 #define PREDEFINED_ENTRY_COUNT 2
 #define README_FILE_IDX        1
 
+// We are limited to 50 flight logs & 50 stats files due to RAM memory limits
+// TODO: It seems the number has to be 1 more than the actual limit, this should be investigated
 #define EMFAT_MAX_LOG_ENTRY 100
 #define EMFAT_MAX_ENTRY     (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY)
 
@@ -109,65 +114,95 @@ static void emfat_set_entry_cma(emfat_entry_t *entry) {
   entry->cma_time[2] = cmaTime;
 }
 
-static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, char *name) {
+typedef enum { FLIGHT_LOG, STATS_LOG } log_type_e;
+
+static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, const char *name, log_type_e log_type) {
   static char logNames[EMFAT_MAX_LOG_ENTRY][8 + 1 + 3 + 1];
 
   uint16_t lfs_flight_idx = number;
+  int idx_start = log_type == FLIGHT_LOG ? 7 : 6;
+
   // flight_000xx
-  if (sscanf(&name[7], "%hu", &lfs_flight_idx) > 0) {
+  if (sscanf(&name[idx_start], "%hu", &lfs_flight_idx) > 0) {
     log_error("Reading lfs_flight_idx failed: %hu", lfs_flight_idx);
   }
 
-  snprintf(logNames[number], 12, "fl%03d.cfl", (uint8_t)lfs_flight_idx);
+  snprintf(logNames[number], 12, "%s%03d.%s", log_type == FLIGHT_LOG ? "fl" : "st", (uint8_t)lfs_flight_idx,
+           log_type == FLIGHT_LOG ? "cfl" : "txt");
   entry->name = logNames[number];
   entry->level = 1;
   entry->number = number;
   entry->lfs_flight_idx = lfs_flight_idx;
   entry->curr_size = size;
   entry->max_size = entry->curr_size;
-  entry->readcb = lfs_read_proc;
+  entry->readcb = lfs_read_file;
   entry->writecb = NULL;
   // Set file modification/access times to be the same as the creation time
   entry->cma_time[1] = entry->cma_time[0];
   entry->cma_time[2] = entry->cma_time[0];
 }
 
-static int emfat_find_logs(emfat_entry_t *entry) {
-  int logCount = lfs_cnt("/flights/", LFS_TYPE_REG);
-  //  lfs_cnt_called = true;
-  if (logCount < 1 || logCount > EMFAT_MAX_LOG_ENTRY) {
-    return 0;
-  }
-
+/**
+ * @brief Add file from path, returns 0 on success.
+ */
+static int add_logs_from_path(emfat_entry_t **entry, const char *path, log_type_e log_type, int log_count,
+                              int start_idx) {
   struct lfs_info info;
   lfs_dir_t dir;
-
-  int err = lfs_dir_open(&lfs, &dir, "/flights/");
-  if (err) {
-    return 0;
+  int err = lfs_dir_open(&lfs, &dir, path);
+  if (err < 0) {
+    return err;
   }
 
-  for (int i = 0; i < logCount + 2; i++) {
+  // +2 because '.' and '..' are read first
+  for (int i = 0; i < log_count + 2; i++) {
     lfs_dir_read(&lfs, &dir, &info);
 
     if (i > 1) {
       // Set the default timestamp
-      entry->cma_time[0] = cmaTime;
-
-      emfat_add_log(entry++, i - 1, info.size, info.name);
+      (*entry)->cma_time[0] = cmaTime;
+      // TODO: why - 1??
+      emfat_add_log((*entry)++, i + start_idx - 1, info.size, info.name, log_type);
     }
   }
 
   lfs_dir_close(&lfs, &dir);
 
-  return logCount;
+  return 0;
 }
 
-void emfat_init_files(void) {
+static int emfat_find_logs(emfat_entry_t *entry) {
+  const char *flight_path = "/flights/";
+  const char *stats_path = "/stats/";
+
+  int flight_log_count = lfs_cnt(flight_path, LFS_TYPE_REG);
+  int stats_log_count = lfs_cnt(stats_path, LFS_TYPE_REG);
+
+  if ((flight_log_count < 1 && stats_log_count < 1) || (flight_log_count + stats_log_count) > EMFAT_MAX_LOG_ENTRY) {
+    return 0;
+  }
+
+  if (add_logs_from_path(&entry, flight_path, FLIGHT_LOG, flight_log_count, 0) != 0) {
+    return 0;
+  }
+
+  // flight_log_count is the start index here
+  if (add_logs_from_path(&entry, stats_path, STATS_LOG, stats_log_count, flight_log_count) != 0) {
+    return 0;
+  }
+
+  return flight_log_count + stats_log_count;
+}
+
+/**
+ * @return true on success, false on failure
+ */
+bool emfat_init_files() {
+  // TODO: this should be a tri-state of 'not initialized', 'succeeded', 'failed'
   static bool initialized = false;
 
   if (initialized) {
-    return;
+    return true;
   }
 
   memset(entries, 0, sizeof(entries));
@@ -191,5 +226,5 @@ void emfat_init_files(void) {
   entries[README_FILE_IDX].max_size = (total_sz_kb - curr_sz_kb) * 1024;
 
   initialized = true;
-  emfat_init(&emfat, "CATS", entries);
+  return emfat_init(&emfat, "CATS", entries);
 }

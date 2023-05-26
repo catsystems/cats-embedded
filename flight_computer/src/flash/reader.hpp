@@ -22,7 +22,11 @@
 #include "recorder.hpp"
 #include "util/types.hpp"
 
-void dump_recording(uint16_t number);
-void parse_recording(uint16_t number, rec_entry_type_e filter_mask);
+namespace reader {
 
-void parse_stats(uint16_t number);
+void dump_recording(uint16_t flight_num);
+void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask);
+
+void print_stats_and_cfg(uint16_t flight_num);
+
+}  // namespace reader

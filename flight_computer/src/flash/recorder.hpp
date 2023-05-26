@@ -157,7 +157,7 @@ inline void init_global_flight_stats() {
  * @param rec_type record type with or without ID
  * @return record type without ID
  */
-inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) {
+constexpr rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) {
   return (rec_entry_type_e)(rec_type & ~REC_ID_MASK);
 }
 
@@ -168,7 +168,7 @@ inline rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) {
  * @param id - identifier of the record element; should be between 0 & 15
  * @return record type with ID
  */
-inline rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t id) {
+constexpr rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t id) {
   return (rec_entry_type_e)(rec_type | (id & REC_ID_MASK));
 }
 
@@ -178,4 +178,4 @@ inline rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t
  * @param rec_type record type information with ID
  * @return ID of the record element without record type information
  */
-inline uint8_t get_id_from_record_type(rec_entry_type_e rec_type) { return rec_type & REC_ID_MASK; }
+constexpr uint8_t get_id_from_record_type(rec_entry_type_e rec_type) { return rec_type & REC_ID_MASK; }

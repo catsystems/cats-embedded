@@ -153,7 +153,7 @@ void *get_cats_config_member_ptr(const cats_config_t *cfg, const cli_value_t *va
 
 void print_cats_config(const char *cmd_name, const cats_config_t *cfg, bool print_limits) {
   const char *prefix = "";
-  if (!strcmp(cmd_name, "dump")) {
+  if (strcmp(cmd_name, "dump") == 0) {
     prefix = "set ";
   }
 

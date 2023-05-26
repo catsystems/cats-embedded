@@ -22,4 +22,6 @@
 
 #pragma once
 
-void emfat_init_files(void);
+#include <stdbool.h>
+
+bool emfat_init_files();

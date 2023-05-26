@@ -66,6 +66,7 @@ void init_lfs() {
     /* create the flights directory */
     lfs_mkdir(&lfs, "flights");
     lfs_mkdir(&lfs, "stats");
+    lfs_mkdir(&lfs, "configs");
 
     strncpy(cwd, "/", sizeof(cwd));
 
