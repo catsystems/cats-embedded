@@ -64,7 +64,7 @@ static void cli_cmd_rec_info(const char *cmd_name, char *args);
 
 static void cli_cmd_dump_flight(const char *cmd_name, char *args);
 static void cli_cmd_parse_flight(const char *cmd_name, char *args);
-static void cli_cmd_parse_stats(const char *cmd_name, char *args);
+static void cli_cmd_print_stats(const char *cmd_name, char *args);
 
 static void cli_cmd_lfs_format(const char *cmd_name, char *args);
 static void cli_cmd_erase_flash(const char *cmd_name, char *args);
@@ -103,7 +103,7 @@ const clicmd_t cmd_table[] = {
 #ifdef CATS_DEBUG
     CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
 #endif
-    CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_parse_stats),
+    CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_print_stats),
     CLI_COMMAND_DEF("status", "show status", nullptr, cli_cmd_status),
     CLI_COMMAND_DEF("version", "show version", nullptr, cli_cmd_version),
 };
@@ -607,7 +607,7 @@ static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
 
   if (flight_idx_or_err > 0) {
     cli_print_linefeed();
-    dump_recording(flight_idx_or_err);
+    reader::dump_recording(flight_idx_or_err);
   }
 }
 
@@ -647,15 +647,15 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
     filter_mask = (rec_entry_type_e)(UINT32_MAX);
   }
 
-  parse_recording(flight_idx_or_err, filter_mask);
+  reader::parse_recording(flight_idx_or_err, filter_mask);
 }
 
-static void cli_cmd_parse_stats(const char *cmd_name, char *args) {
+static void cli_cmd_print_stats(const char *cmd_name, char *args) {
   int32_t flight_idx_or_err = get_flight_idx(args);
 
   if (flight_idx_or_err > 0) {
     cli_print_linefeed();
-    parse_stats(flight_idx_or_err);
+    reader::print_stats_and_cfg(flight_idx_or_err);
   }
 }
 
@@ -671,6 +671,7 @@ static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
     /* create the flights directory */
     lfs_mkdir(&lfs, "flights");
     lfs_mkdir(&lfs, "stats");
+    lfs_mkdir(&lfs, "configs");
 
     strncpy(cwd, "/", sizeof(cwd));
   }
@@ -700,6 +701,7 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   /* create the flights directory */
   lfs_mkdir(&lfs, "flights");
   lfs_mkdir(&lfs, "stats");
+  lfs_mkdir(&lfs, "configs");
 
   strncpy(cwd, "/", sizeof(cwd));
 }

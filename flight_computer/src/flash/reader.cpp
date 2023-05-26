@@ -31,7 +31,96 @@
 #define STRING_BUF_SZ 400
 #define READ_BUF_SZ   256
 
-void dump_recording(uint16_t number) {
+namespace {
+
+/**
+ * Prints the stats by reading them from the stats txt file.
+ * The file is read READ_BUF_SZ bytes at a time.
+ */
+void print_stats(uint16_t flight_num) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    log_raw("The recorder is currently active, stop it first!");
+    return;
+  }
+
+  char filename[MAX_FILENAME_SIZE] = {};
+  snprintf(filename, MAX_FILENAME_SIZE, "stats/stats_%05d.txt", flight_num);
+
+  log_raw("Reading file: %s", filename);
+
+  lfs_file_t curr_file;
+
+  if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
+    const auto file_size = lfs_file_size(&lfs, &curr_file);
+    if (file_size > 0) {
+      uint8_t *read_buf = (uint8_t *)(pvPortMalloc(READ_BUF_SZ * sizeof(uint8_t)));
+
+      for (lfs_size_t i = 0; i < static_cast<lfs_size_t>(file_size); i += READ_BUF_SZ) {
+        memset(read_buf, 0, READ_BUF_SZ);
+        lfs_size_t bytes_read = lfs_min(READ_BUF_SZ, file_size - i);
+
+        lfs_file_read(&lfs, &curr_file, read_buf, bytes_read);
+
+        log_rawr("%.*s", static_cast<int>(bytes_read), reinterpret_cast<const char *>(read_buf));
+      }
+
+      vPortFree(read_buf);
+    }
+    lfs_file_close(&lfs, &curr_file);
+  } else {
+    log_raw("Stats %d not found!", flight_num);
+  }
+}
+
+/**
+ * Prints the config for a given flight by reading it from the configs directory.
+ * The config is stored in binary format and is printed by calling print_cats_config CLI function.
+ */
+void print_cfg(uint16_t flight_num) {
+  if (global_recorder_status == REC_WRITE_TO_FLASH) {
+    log_raw("The recorder is currently active, stop it first!");
+    return;
+  }
+
+  char filename[MAX_FILENAME_SIZE] = {};
+  snprintf(filename, MAX_FILENAME_SIZE, "configs/flight_%05d.cfg", flight_num);
+
+  log_raw("Reading file: %s", filename);
+
+  lfs_file_t curr_file;
+
+  if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
+    auto *local_config = static_cast<cats_config_t *>(pvPortMalloc(sizeof(cats_config_t)));
+
+    if (local_config == nullptr) {
+      log_raw("Could not allocate enough memory for flight config readout.");
+      lfs_file_close(&lfs, &curr_file);
+      return;
+    }
+    if (lfs_file_read(&lfs, &curr_file, local_config, sizeof(flight_stats_t)) > 0) {
+      if (local_config->config_version == CONFIG_VERSION) {
+        print_cats_config("cli", local_config, false);
+      } else {
+        log_raw("Config versions do not match, cannot print -- version in config file: %lu, current config version: %u",
+                local_config->config_version, CONFIG_VERSION);
+      }
+
+    } else {
+      log_raw("Error while reading flight config %d", flight_num);
+    }
+
+    vPortFree(local_config);
+    lfs_file_close(&lfs, &curr_file);
+  } else {
+    log_raw("Flight config %d not found!", flight_num);
+  }
+}
+
+}  // namespace
+
+namespace reader {
+
+void dump_recording(uint16_t flight_num) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
     log_raw("The recorder is currently active, stop it first!");
     return;
@@ -51,7 +140,7 @@ void dump_recording(uint16_t number) {
   memset(read_buf, 0, READ_BUF_SZ);
 
   char filename[MAX_FILENAME_SIZE] = {};
-  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);
+  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", flight_num);
 
   log_raw("Dumping file: %s", filename);
 
@@ -80,7 +169,7 @@ void dump_recording(uint16_t number) {
       }
     }
   } else {
-    log_error("Flight %d not found!", number);
+    log_error("Flight %d not found!", flight_num);
   }
 
   lfs_file_close(&lfs, &curr_file);
@@ -90,14 +179,14 @@ void dump_recording(uint16_t number) {
   vPortFree(read_buf);
 }
 
-void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
+void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
     log_raw("The recorder is currently active, stop it first!");
     return;
   }
 
   char filename[MAX_FILENAME_SIZE] = {};
-  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", number);
+  snprintf(filename, MAX_FILENAME_SIZE, "flights/flight_%05d", flight_num);
 
   log_raw("Reading file: %s", filename);
 
@@ -215,73 +304,13 @@ void parse_recording(uint16_t number, rec_entry_type_e filter_mask) {
     }
     lfs_file_close(&lfs, &curr_file);
   } else {
-    log_raw("Flight %d not found!", number);
+    log_raw("Flight %d not found!", flight_num);
   }
 }
 
-void parse_stats(uint16_t number) {
-  if (global_recorder_status == REC_WRITE_TO_FLASH) {
-    log_raw("The recorder is currently active, stop it first!");
-    return;
-  }
-
-  char filename[MAX_FILENAME_SIZE] = {};
-  snprintf(filename, MAX_FILENAME_SIZE, "stats/stats_%05d", number);
-
-  log_raw("Reading file: %s", filename);
-
-  lfs_file_t curr_file;
-
-  if (lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY) == LFS_ERR_OK) {
-    flight_stats_t *local_flight_stats = (flight_stats_t *)(pvPortMalloc(sizeof(flight_stats_t)));
-
-    if (local_flight_stats == nullptr) {
-      log_raw("Could not allocate enough memory for flight stats readout.");
-      return;
-    }
-    if (lfs_file_read(&lfs, &curr_file, local_flight_stats, sizeof(flight_stats_t)) > 0) {
-      log_raw("Flight Stats %d", number);
-      log_raw("========================");
-      log_raw("  Height");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_height.ts);
-      log_raw("    Max. Height [m]: %f", (double)local_flight_stats->max_height.val);
-      log_raw("========================");
-      log_raw("  Velocity");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_velocity.ts);
-      log_raw("    Max. Velocity [m/s]: %f", (double)local_flight_stats->max_velocity.val);
-      log_raw("========================");
-      log_raw("  Acceleration");
-      log_raw("    Time Since Bootup: %lu", local_flight_stats->max_acceleration.ts);
-      log_raw("    Max. Acceleration [m/s^2]: %f", (double)local_flight_stats->max_acceleration.val);
-      log_raw("========================");
-      log_raw("  Calibration Values");
-      log_raw("    Height_0: %f", (double)local_flight_stats->height_0);
-      log_raw("    IMU:");
-      log_raw("      Angle: %f", (double)local_flight_stats->calibration_data.angle);
-      log_raw("      Axis: %hu", local_flight_stats->calibration_data.axis);
-      log_raw("    Gyro:");
-      log_raw("      x: %f", (double)local_flight_stats->calibration_data.gyro_calib.x);
-      log_raw("      y: %f", (double)local_flight_stats->calibration_data.gyro_calib.y);
-      log_raw("      z: %f", (double)local_flight_stats->calibration_data.gyro_calib.z);
-      log_raw("========================");
-      log_raw("  Liftoff Time: %02hu:%02hu:%02hu UTC", local_flight_stats->liftoff_time.hour,
-              local_flight_stats->liftoff_time.min, local_flight_stats->liftoff_time.sec);
-      log_raw("========================");
-      log_raw("  Config");
-      if (local_flight_stats->config.config_version == CONFIG_VERSION) {
-        print_cats_config("cli", &(local_flight_stats->config), false);
-      } else {
-        log_raw("    Config versions do not match, cannot print -- stats file: %lu, current: %u",
-                local_flight_stats->config.config_version, CONFIG_VERSION);
-      }
-
-    } else {
-      log_raw("Error while reading Stats %d", number);
-    }
-
-    vPortFree(local_flight_stats);
-    lfs_file_close(&lfs, &curr_file);
-  } else {
-    log_raw("Stats %d not found!", number);
-  }
+void print_stats_and_cfg(uint16_t flight_num) {
+  print_stats(flight_num);
+  print_cfg(flight_num);
 }
+
+}  // namespace reader

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cstdarg>
 #include <cstdio>
 
 #include "cmsis_os.h"
@@ -31,11 +32,15 @@
 
 /** Private Function Declarations **/
 
-static inline uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
-static inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
-                               uint_fast8_t *rec_elem_size);
+namespace {
 
-static void create_stats_file();
+constexpr uint_fast8_t get_rec_elem_size(const rec_elem_t *rec_elem);
+inline void write_value(const rec_elem_t *rec_elem, uint8_t *rec_buffer, uint16_t *rec_buffer_idx,
+                        uint_fast8_t *rec_elem_size);
+
+void create_stats_and_cfg_log();
+
+}  // namespace
 
 /** Exported Function Definitions **/
 
@@ -185,7 +190,7 @@ namespace task {
         /* TODO: stats file is not always created. Try adding a delay before creating it. */
         // osDelay(200);
         /* create flight stats file */
-        create_stats_file();
+        create_stats_and_cfg_log();
       } break;
       default:
         log_error("Unknown command value: %u", curr_rec_cmd);
@@ -199,7 +204,9 @@ namespace task {
 
 /** Private Function Definitions **/
 
-static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
+namespace {
+
+constexpr uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
   uint_fast8_t rec_elem_size = sizeof(rec_elem->rec_type) + sizeof(rec_elem->ts);
   switch (get_record_type_without_id(rec_elem->rec_type)) {
     case IMU:
@@ -239,8 +246,8 @@ static uint_fast8_t get_rec_elem_size(const rec_elem_t *const rec_elem) {
   return rec_elem_size;
 }
 
-static inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const rec_buffer, uint16_t *rec_buffer_idx,
-                               uint_fast8_t *const rec_elem_size) {
+inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const rec_buffer, uint16_t *rec_buffer_idx,
+                        uint_fast8_t *const rec_elem_size) {
   *rec_elem_size = get_rec_elem_size(rec_elem);
   if (*rec_buffer_idx + *rec_elem_size > REC_BUFFER_LEN) {
     memcpy(&(rec_buffer[*rec_buffer_idx]), rec_elem, (REC_BUFFER_LEN - *rec_buffer_idx));
@@ -250,27 +257,94 @@ static inline void write_value(const rec_elem_t *const rec_elem, uint8_t *const 
   *rec_buffer_idx += *rec_elem_size;
 }
 
-static void create_stats_file() {
+void create_cfg_file() {
   lfs_file_t current_stats_file;
   char current_stats_filename[MAX_FILENAME_SIZE] = {};
 
-  snprintf(current_stats_filename, MAX_FILENAME_SIZE, "stats/stats_%05lu", flight_counter);
+  snprintf(current_stats_filename, MAX_FILENAME_SIZE, "configs/flight_%05lu.cfg", flight_counter);
+
+  log_info("Creating flights_%05lu.cfg...", flight_counter);
+  int err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
+
+  if (err != LFS_ERR_OK) {
+    log_error("Creating config file %lu failed with %d", flight_counter, err);
+  } else {
+    log_info("Created config file %lu.", flight_counter);
+  }
+  /* This will work as long as there are no pointers in the config struct */
+  err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats.config, sizeof(global_flight_stats.config));
+
+  if (err < 0) {
+    log_error("Writing to config file failed with %d", err);
+  } else if (auto err_u = static_cast<uint32_t>(err); err_u < sizeof(global_flight_stats.config)) {
+    log_error("Written less bytes to config file than expected: %lu vs %u", err_u, sizeof(global_flight_stats.config));
+  }
+
+  err = lfs_file_close(&lfs, &current_stats_file);
+
+  if (err != LFS_ERR_OK) {
+    log_error("Closing config file failed with %d", err);
+  }
+}
+
+void create_stats_file() {
+  lfs_file_t current_stats_file;
+  char current_stats_filename[MAX_FILENAME_SIZE] = {};
+
+  snprintf(current_stats_filename, MAX_FILENAME_SIZE, "stats/stats_%05lu.txt", flight_counter);
+
+  constexpr int kStringBufSz = 300;
+  auto *string_buf = static_cast<char *>(pvPortMalloc(kStringBufSz * sizeof(char)));
 
   log_info("Creating stats file %lu...", flight_counter);
   int err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
 
   if (err != LFS_ERR_OK) {
     log_error("Creating stats file %lu failed with %d", flight_counter, err);
+    vPortFree(string_buf);
+    return;
   } else {
     log_info("Created stats file %lu.", flight_counter);
   }
-  /* This will work as long as there are no pointers in the global_flight_stats struct */
-  err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats, sizeof(global_flight_stats));
+
+  auto write_line = [&](const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
+    va_list va;
+    va_start(va, fmt);
+    vsnprintf(string_buf, kStringBufSz, fmt, va);
+    va_end(va);
+    err |= lfs_file_write(&lfs, &current_stats_file, string_buf, strlen(string_buf));
+  };
+
+  write_line("Flight #%lu Stats\r\n", flight_counter);
+  write_line("========================\r\n");
+  write_line("  Height\r\n");
+  write_line("    Time Since Bootup: %lu\r\n", global_flight_stats.max_height.ts);
+  write_line("    Max. Height [m]: %.10f\r\n", static_cast<double>(global_flight_stats.max_height.val));
+  write_line("========================\r\n");
+  write_line("  Velocity\r\n");
+  write_line("    Time Since Bootup: %lu\r\n", global_flight_stats.max_velocity.ts);
+  write_line("    Max. Velocity [m/s]: %.10f\r\n", static_cast<double>(global_flight_stats.max_velocity.val));
+  write_line("========================\r\n");
+  write_line("  Acceleration\r\n");
+  write_line("    Time Since Bootup: %lu\r\n", global_flight_stats.max_acceleration.ts);
+  write_line("    Max. Acceleration [m/s^2]: %.10f\r\n", static_cast<double>(global_flight_stats.max_acceleration.val));
+  write_line("========================\r\n");
+  write_line("  Calibration Values\r\n");
+  write_line("    Height_0 [m ASL]: %.10f\r\n", static_cast<double>(global_flight_stats.height_0));
+  write_line("    IMU:\r\n");
+  write_line("      Angle: %.10f\r\n", static_cast<double>(global_flight_stats.calibration_data.angle));
+  write_line("      Axis: %hu\r\n", global_flight_stats.calibration_data.axis);
+  write_line("    Gyro:\r\n");
+  write_line("      x [dps]: %.10f\r\n", static_cast<double>(global_flight_stats.calibration_data.gyro_calib.x));
+  write_line("      y [dps]: %.10f\r\n", static_cast<double>(global_flight_stats.calibration_data.gyro_calib.y));
+  write_line("      z [dps]: %.10f\r\n", static_cast<double>(global_flight_stats.calibration_data.gyro_calib.z));
+  write_line("========================\r\n");
+  write_line("  Liftoff Time: %02hu:%02hu:%02hu UTC\r\n", global_flight_stats.liftoff_time.hour,
+             global_flight_stats.liftoff_time.min, global_flight_stats.liftoff_time.sec);
+  write_line("========================\r\n");
 
   if (err < 0) {
     log_error("Writing to stats file failed with %d", err);
-  } else if (auto err_u = static_cast<uint32_t>(err); err_u < sizeof(global_flight_stats)) {
-    log_error("Written less bytes to stats file than expected: %lu vs %u", err_u, sizeof(global_flight_stats));
   }
 
   err = lfs_file_close(&lfs, &current_stats_file);
@@ -278,4 +352,13 @@ static void create_stats_file() {
   if (err != LFS_ERR_OK) {
     log_error("Closing stats file failed with %d", err);
   }
+
+  vPortFree(string_buf);
 }
+
+void create_stats_and_cfg_log() {
+  create_stats_file();
+  create_cfg_file();
+}
+
+}  // namespace
