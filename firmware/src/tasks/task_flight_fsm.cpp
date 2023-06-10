@@ -36,21 +36,16 @@ namespace task {
 
   trigger_event(EV_CALIBRATE);
 
-  flight_fsm_t flight_state = {.flight_state = CALIBRATING, .is_liftoff_by_pressure = false};
+  flight_fsm_t flight_state = {.flight_state = CALIBRATING};
 
   uint32_t tick_count = osKernelGetTickCount();
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
   while (true) {
     /* Check Flight Phases */
     check_flight_phase(&flight_state, m_task_preprocessing.GetSIData().acc, m_task_preprocessing.GetSIData().gyro,
-                       m_task_state_estimation.GetEstimationOutput(),
-                       m_task_preprocessing.GetEstimationInput().height_AGL, &settings);
+                       m_task_state_estimation.GetEstimationOutput(), &settings);
 
     if (flight_state.state_changed) {
-      /* If the flight state change happened through pressure, tell the state estimation */
-      if (flight_state.flight_state == THRUSTING) {
-        m_task_state_estimation.SetLiftoffTrigger(flight_state.is_liftoff_by_pressure);
-      }
       log_info("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
       log_sim("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
       record(tick_count, FLIGHT_STATE, &flight_state.flight_state);

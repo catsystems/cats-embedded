@@ -24,10 +24,6 @@ namespace task {
 
 StateEstimation* global_state_estimation = nullptr;
 
-void StateEstimation::SetLiftoffTrigger(bool is_liftoff_by_pressure) {
-  m_is_liftoff_by_pressure = is_liftoff_by_pressure;
-}
-
 void StateEstimation::GetEstimationInputData() {
   /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
    * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
@@ -93,7 +89,7 @@ estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
     GetEstimationInputData();
 
     /* Do a Kalman Step */
-    kalman_step(&m_filter, m_fsm_enum, m_is_liftoff_by_pressure);
+    kalman_step(&m_filter, m_fsm_enum);
 
     orientation_info_t orientation_info;
     /*
