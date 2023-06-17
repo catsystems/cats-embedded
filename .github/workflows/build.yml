@@ -1,0 +1,44 @@
+name: Build
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main branch
+on:
+  pull_request:
+  push:
+    branches: main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        project: [telemetry, ground_station/ESP32S2_Basic]
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: "recursive"
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+    - name: Install dependencies
+      run: |
+        pip install -U https://github.com/platformio/platformio/archive/develop.zip
+    
+    - name: Install platformIO libraries
+      run: pio pkg install --global
+
+    - name: Run PlatformIO
+      run: platformio run -d ${{ matrix.project }}
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        # Artifact name
+        name: build-artifacts
+        path: ./${{ matrix.project }}/.pio/build/**
+        if-no-files-found: error
+        retention-days: 90
