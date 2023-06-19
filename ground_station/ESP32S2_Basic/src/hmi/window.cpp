@@ -83,13 +83,13 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging,
 
     display.setTextColor(WHITE);
 
-    String t = String(oldFreeMemory);
+    String t = String(oldFreeMemory) + "%";
     drawCentreString(t, 50, 2);
 
     oldFreeMemory = free_memory;
     display.setTextColor(BLACK);
 
-    t = String(oldFreeMemory);
+    t = String(oldFreeMemory) + "%";
     drawCentreString(t, 50, 2);
   }
 

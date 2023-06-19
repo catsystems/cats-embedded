@@ -163,7 +163,8 @@ bool Utils::isUpdated(bool clearFlag) {
 bool Utils::isConnected(void) { return connected; }
 
 bool Utils::format(const char *labelName) {
-  static FATFS elmchamFatfs;
+
+  static FATFS elmchanFatfs;
   static uint8_t workbuf[4096]; // Working buffer for f_fdisk function.
 
   console.log.println("[UTILS] Partitioning flash with 1 primary partition...");
@@ -189,7 +190,7 @@ bool Utils::format(const char *labelName) {
     return 0;
   }
 
-  r = f_mount(&elmchamFatfs, "0:", 1); // mount to set disk label
+  r = f_mount(&elmchanFatfs, "0:", 1); // mount to set disk label
   if (r != FR_OK) {
     console.error.printf("[UTILS] Error, f_mount failed with error code: %d\n",
                          r);
@@ -218,30 +219,14 @@ bool Utils::format(const char *labelName) {
 }
 
 int32_t Utils::getFlashMemoryUsage() {
-  FATFS *fs;
-  DWORD fre_clust, fre_sect, tot_sect;
 
-  uint32_t num_clusters = fatfs.clusterCount();
+  uint32_t num_clusters = fatfs.clusterCount() - 2;
   uint32_t available_clusters = fatfs.freeClusterCount();
-  console.ok.printf("[UTILS] %lu KiB total drive space.\n%lu KiB available.\n",
-                    num_clusters, available_clusters);
 
-  /* Get volume information and free clusters of drive 1 */
-  // console.ok.printf("[UTILS] Got Here!");
-  // f_mount(fs, "0:", 1);  // mount to set disk label
-  // FRESULT res = f_getfree("0:", &fre_clust, &fs);
-  // f_unmount("0:");
+  double percentage =
+      100 - (static_cast<double>(available_clusters) / num_clusters) * 100;
 
-  // console.ok.printf("[UTILS] get Free Returned: %d\n", res);
-
-  /* Get total sectors and free sectors */
-  // tot_sect = (fs->n_fatent - 2) * fs->csize;
-  // fre_sect = fre_clust * fs->csize;
-
-  /* Print the free space (assuming 512 bytes/sector) */
-  // console.ok.printf("[UTILS] %10lu KiB total drive space.\n%10lu KiB
-  // available.\n", tot_sect / 2, fre_sect / 2);
-  return 50;
+  return static_cast<int32_t>(std::ceil(percentage));
 }
 
 void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id,
