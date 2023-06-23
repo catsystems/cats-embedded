@@ -322,12 +322,56 @@ void Hmi::data() {
 
 /* SENSORS */
 
-void Hmi::initSensors() { window.initSesnors(); }
+void Hmi::initSensors() { window.initSensors(); }
 
 void Hmi::sensors() {
-  if (backButton.wasPressed()) {
-    state = MENU;
-    window.initMenu(menuIndex);
+  switch (calibrationState) {
+    case IDLE:
+
+      window.updateSensors(&navigation);
+
+      if (okButton.wasPressed()) {
+        window.initSensorPrepareCalibrate();
+        calibrationState = PREPARE;
+      }
+      if (backButton.wasPressed()) {
+        state = MENU;
+        window.initMenu(menuIndex);
+      }
+      break;
+    case PREPARE:
+      if (okButton.wasPressed()) {
+        window.initSensorCalibrate();
+        calibrationState = CALIBRATING;
+        navigation.setCalibrationState(navigation.CALIB_ONGOING);
+      }
+      if (backButton.wasPressed()) {
+        calibrationState = IDLE;
+        window.initSensors();
+      }
+      break;
+    case CALIBRATING:
+      window.updateSensorCalibrate(&navigation);
+      if (backButton.wasPressed()) {
+        navigation.setCalibrationState(navigation.CALIB_CANCELLED);
+        calibrationState = IDLE;
+        window.initSensors();
+        return;
+      }
+      if (navigation.getCalibrationState() == navigation.CALIB_CONCLUDED) {
+        calibrationState = CONCLUDED;
+        window.initSensorCalibrateDone();
+      }
+      break;
+    case CONCLUDED:
+      if (okButton.wasPressed() || backButton.wasPressed()) {
+        calibrationState = IDLE;
+        systemConfig.save();
+        window.initSensors();
+      }
+      break;
+    default:
+      break;
   }
 }
 
