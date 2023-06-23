@@ -1,91 +1,94 @@
 #pragma once
-#include <Arduino.h>
 #include "JC_Button.h"
-#include "window.h"
 #include "logging/recorder.h"
-
+#include "window.h"
+#include <Arduino.h>
 
 class Hmi {
-    public:
-        Hmi(const char* dir) : recorder(dir),  
-                upButton(3), 
-                downButton(4), 
-                leftButton(2), 
-                rightButton(5), 
-                centerButton(1), 
-                okButton(7), 
-                backButton(6) {}
+public:
+  Hmi(const char *dir)
+      : recorder(dir), upButton(3), downButton(4), leftButton(2),
+        rightButton(5), centerButton(1), okButton(7), backButton(6) {}
 
-        void begin();
+  void begin();
 
-    private:
-        enum State{
-            MENU = 0,
-            LIVE = 1,
-            RECOVERY = 2,
-            TESTING = 3,
-            DATA = 4,
-            SENSORS = 5,
-            SETTINGS = 6,
-        };
+private:
+  enum State {
+    MENU = 0,
+    LIVE = 1,
+    RECOVERY = 2,
+    TESTING = 3,
+    DATA = 4,
+    SENSORS = 5,
+    SETTINGS = 6,
+  };
 
-        enum TestingState{
-            DISCLAIMER = 0,
-            CAN_START = 1,
-            CAN_NOT_START = 2,
-            WAIT_FOR_START = 3,
-            FAILED = 4,
-            STARTED = 5,
-        };
+  enum TestingState {
+    DISCLAIMER = 0,
+    CAN_START = 1,
+    CAN_NOT_START = 2,
+    WAIT_FOR_START = 3,
+    FAILED = 4,
+    STARTED = 5,
+  };
 
+  enum CalibrationState {
+    IDLE = 0,
+    PREPARE = 1,
+    CALIBRATING = 2,
+    CONCLUDED = 3,
+  };
 
-        State state = MENU;
-        
-        TestingState testingState = DISCLAIMER;
-        uint32_t startTestingTime = 0;
-        uint32_t testingIndex = 0;
+  State state = MENU;
 
-        Recorder recorder;
+  TestingState testingState = DISCLAIMER;
+  uint32_t startTestingTime = 0;
+  uint32_t testingIndex = 0;
 
-        uint32_t settingSubMenu = 0;
-        int32_t settingIndex = -1;
-        char keyboardString[9] = {};
+  CalibrationState calibrationState = IDLE;
+  uint32_t startCalibrationTime = 0;
 
-        static void update (void *pvParameter);
+  Recorder recorder;
 
-        void fsm();
-        void initMenu();
-        void menu();
-        void initLive();
-        void live();
-        void initRecovery();
-        void recovery();
-        void initTesting();
-        void testing();
-        void initData();
-        void data();
-        void initSensors();
-        void sensors();
-        void initSettings();
-        void settings();
+  uint32_t settingSubMenu = 0;
+  int32_t settingIndex = -1;
+  char keyboardString[9] = {};
 
-        bool initialized = false;
-        bool isLogging = false;
-        bool boxWindow = false;
-        bool enableTestMode = false;
-        bool triggerTouchdown = false;
+  static void update(void *pvParameter);
 
-        Button upButton;
-        Button downButton;
-        Button leftButton;
-        Button rightButton;
-        Button centerButton;
+  void fsm();
+  void initMenu();
+  void menu();
+  void initLive();
+  void live();
+  void initRecovery();
+  void recovery();
+  void initTesting();
+  void testing();
+  void initData();
+  void data();
+  void initSensors();
+  void sensors();
+  void initSettings();
+  void settings();
 
-        Button okButton;
-        Button backButton;
+  bool initialized = false;
+  bool isLogging = false;
+  bool boxWindow = false;
+  bool enableTestMode = false;
+  bool triggerTouchdown = false;
+  bool isCalibrating = false;
 
-        Window window;
+  Button upButton;
+  Button downButton;
+  Button leftButton;
+  Button rightButton;
+  Button centerButton;
 
-        uint32_t menuIndex = 0;
+  Button okButton;
+  Button backButton;
 
+  Window window;
+
+  uint32_t menuIndex = 0;
 };

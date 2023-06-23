@@ -1,5 +1,4 @@
 
-#include "systemParser.h"
 #include "config.h"
 #include "console.h"
 
@@ -38,6 +37,7 @@ void Config::save()
   systemParser.setTelemetryMode(config.receiverMode);
   systemParser.setNeverStopLoggingFlag(config.neverStopLogging);
   systemParser.setTimeZone(config.timeZoneOffset);
+  systemParser.setMagCalib(config.mag_calib);
   systemParser.saveFile("/config.json");
 }
 
@@ -80,6 +80,18 @@ void Config::load()
   } else {
     console.log.println(config.timeZoneOffset);
   }
+  if (!systemParser.getMagCalib(config.mag_calib)) {
+    config.mag_calib.mag_offset_x = 0;
+    config.mag_calib.mag_offset_y = 0;
+    config.mag_calib.mag_offset_z = 0;
+
+    config.mag_calib.mag_scale_x = 1000;
+    config.mag_calib.mag_scale_y = 1000;
+    config.mag_calib.mag_scale_z = 1000;
+  } else {
+    console.log.println(config.timeZoneOffset);
+  }
+
   config.neverStopLogging = static_cast<uint8_t>(stop);
   config.receiverMode = static_cast<ReceiverTelemetryMode_e>(mode);
 }

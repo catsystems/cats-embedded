@@ -1,183 +1,192 @@
 #pragma once
 
-#include <Arduino.h>
-#include <math.h>
 #include "console.h"
-#include <QMC5883LCompass.h>
+#include <Arduino.h>
 #include <LSM6DS3.h>
-#include <Wire.h>
 #include <MadgwickAHRS.h>
+#include <QMC5883LCompass.h>
+#include <Wire.h>
+#include <math.h>
 
-const float R = 6378100.0f; // Earth radius in m (zero tide radius IAU)
+const float R = 6378100.0f;  // Earth radius in m (zero tide radius IAU)
 const float C = 40075017.0f; // Earth circumference in m
 
-class EarthPoint3D{
-    public:
-        //Point3D() : x(0), y(0), z(0) { }
-        //Point3D(float x, float y) : x(x), y(y), z(0) { }
-        EarthPoint3D(float lat = 0, float lon = 0, float alt = 0) : lat(lat), lon(lon), alt(alt) { }
+class EarthPoint3D {
+public:
+  // Point3D() : x(0), y(0), z(0) { }
+  // Point3D(float x, float y) : x(x), y(y), z(0) { }
+  EarthPoint3D(float lat = 0, float lon = 0, float alt = 0)
+      : lat(lat), lon(lon), alt(alt) {}
 
-        EarthPoint3D operator= (EarthPoint3D const &other){
-            // Guard self assignment
-            if(this == &other) return *this;
-            lat = other.lat;
-            lon = other.lon;
-            alt = other.alt;
-            return *this;
-        }
+  EarthPoint3D operator=(EarthPoint3D const &other) {
+    // Guard self assignment
+    if (this == &other)
+      return *this;
+    lat = other.lat;
+    lon = other.lon;
+    alt = other.alt;
+    return *this;
+  }
 
-        EarthPoint3D deg(){
-            return *this;
-        }
+  EarthPoint3D deg() { return *this; }
 
-        EarthPoint3D rad(){
-            EarthPoint3D res;
-            res.lat = lat * (PI / 180);
-            res.lon = lon * (PI / 180);
-            return res;
-        }
+  EarthPoint3D rad() {
+    EarthPoint3D res;
+    res.lat = lat * (PI / 180);
+    res.lon = lon * (PI / 180);
+    return res;
+  }
 
-        void print(){
-            console.log.print("Lat:"); console.log.println(lat);
-            console.log.print("Lon:"); console.log.println(lon);
-            console.log.print("Alt:"); console.log.println(alt);
-        }
+  void print() {
+    console.log.print("Lat:");
+    console.log.println(lat);
+    console.log.print("Lon:");
+    console.log.println(lon);
+    console.log.print("Alt:");
+    console.log.println(alt);
+  }
 
-        float lat;
-        float lon;
-        float alt;
+  float lat;
+  float lon;
+  float alt;
 
-    private:
-        
-        
+private:
 };
 
 class Navigation {
-    public:
+public:
+  bool begin();
 
-    bool begin();
+  void setPointA(EarthPoint3D point) { pointA = point; }
+  void setPointA(float lat, float lon, float height = 0) {
+    pointA = EarthPoint3D(lat, lon, height);
+  }
 
-    void setPointA(EarthPoint3D point){
-        pointA = point;
-    }
-    void setPointA(float lat, float lon, float height = 0){
-        pointA = EarthPoint3D(lat, lon, height);
-    }
+  void setPointB(EarthPoint3D point) { pointB = point; }
+  void setPointB(float lat, float lon, float height = 0) {
+    pointB = EarthPoint3D(lat, lon, height);
+  }
 
-    void setPointB(EarthPoint3D point){
-        pointB = point;
-    }
-    void setPointB(float lat, float lon, float height = 0){
-        pointB = EarthPoint3D(lat, lon, height);
-    }
+  inline EarthPoint3D getPointA() const { return pointA; }
 
-    inline EarthPoint3D getPointA() const {
-        return pointA;
-    }
+  inline EarthPoint3D getPointB() const { return pointB; }
 
-    inline EarthPoint3D getPointB() const{
-        return pointB;
-    }
+  inline float getNorth() {
+    updated = false;
+    // return filter.getYawRadians();
 
-    inline float getNorth(){
-        updated = false;
-        return filter.getYawRadians();
-    }
+    float angle = atan(m[1] / m[0]);
 
-    inline float getPitch(){
-        updated = false;
-        return filter.getPitchRadians();
-    }
-    
-    inline float getRoll(){
-        updated = false;
-        return filter.getRollRadians();
+    if (m[0] < 0 && m[1] > 0) {
+      angle = PI + angle;
+    } else if(m[0] < 0 && m[1] < 0){
+      angle = PI + angle;
+    } else if(m[0] > 0 && m[1] < 0){
+      angle = 2 * PI + angle;
     }
 
-    inline float getGX() const {
-        return gx;
-    }
+    return (angle + PI / 2);
+  }
 
-    inline float getGY() const {
-        return gy;
-    }
+  inline float getPitch() {
+    updated = false;
+    return filter.getPitchRadians();
+  }
 
-    inline float getGZ() const {
-        return gz;
-    }
+  inline float getRoll() {
+    updated = false;
+    return filter.getRollRadians();
+  }
 
-    inline float getAX() const {
-        return ax;
-    }
+  inline float getGX() const { return gx; }
 
-    inline float getAY() const {
-        return ay;
-    }
+  inline float getGY() const { return gy; }
 
-    inline float getAZ() const {
-        return az;
-    }
+  inline float getGZ() const { return gz; }
 
-    inline float getMX() const {
-        return m[0];
-    }
+  inline float getAX() const { return ax; }
 
-    inline float getMY() const {
-        return m[1];
-    }
+  inline float getAY() const { return ay; }
 
-    inline float getMZ() const{
-        return m[2];
-    }
+  inline float getAZ() const { return az; }
 
-    inline bool isUpdated() const {
-        return updated;
-    }
+  inline float getMX() const { return m[0]; }
 
-    inline float getDistance() {
-        updated = false;
-        return dist;
-    }
+  inline float getMY() const { return m[1]; }
 
-    inline float getAzimuth() {
-        updated = false;
-        return azimuth;
-    }
+  inline float getMZ() const { return m[2]; }
 
-    inline float getElevation() {
-        updated = false;
-        return elevation;
-    }
+  inline bool isUpdated() const { return updated; }
 
-    
-    void print() {
-        console.log.println("Point A:");
-        pointA.print();
-        console.log.println("Point B:");
-        pointB.print();
-    }
+  inline float getDistance() {
+    updated = false;
+    return dist;
+  }
 
-    private:
-        bool initialized = false;
-        bool updated = false;
-        bool calibration = false;
+  inline float getAzimuth() {
+    updated = false;
+    return azimuth;
+  }
 
-        EarthPoint3D pointA;
-        EarthPoint3D pointB;
+  inline float getElevation() {
+    updated = false;
+    return elevation;
+  }
 
-        QMC5883LCompass compass;
-        LSM6DS3Class imu;
+  struct mag_calibration_t {
+    float offset[3];
+    float scaling[3];
+    float max_vals[3];
+    float min_vals[3];
+    float max_vals_scal[3];
+    float min_vals_scal[3];
+  };
 
-        Madgwick filter;
+  void set_saved_calib(mag_calibration_t mag_calib);
 
-        float gx, gy, gz, ax, ay, az;
-        float m[3];
+  void get_saved_calib();
 
-        float q0, q1, q2, q3;
+  void setCalibrationBool(bool setCalibration) { calibration = setCalibration; }
 
-        float dist, azimuth, elevation;
+  void print() {
+    console.log.println("Point A:");
+    pointA.print();
+    console.log.println("Point B:");
+    pointB.print();
+  }
 
-        static void navigationTask (void* pvParameter);
-        void calculateDistanceDirection();
+private:
+  bool initialized = false;
+  bool updated = false;
+  bool calibration = false;
 
+  EarthPoint3D pointA;
+  EarthPoint3D pointB;
+
+  QMC5883LCompass compass;
+  LSM6DS3Class imu;
+
+  Madgwick filter;
+
+  float gx, gy, gz, ax, ay, az;
+  float m[3];
+  float raw_m[3];
+
+  float q0, q1, q2, q3;
+
+  float dist, azimuth, elevation;
+
+  mag_calibration_t mag_calib = {.offset = {0, 0, 0},
+                                 .scaling = {1.0f, 1.0f, 1.0f},
+                                 .max_vals = {-100, -100, -100},
+                                 .min_vals = {100, 100, 100},
+                                 .max_vals_scal = {-100, -100, -100},
+                                 .min_vals_scal = {100, 100, 100}};
+
+  static void navigationTask(void *pvParameter);
+  void calculateDistanceDirection();
+  void calibrate(float *val);
+  void transform(float *val, float *output);
+
+  void resetCalib();
 };

@@ -37,6 +37,15 @@
 
 #define MAX_SYSTEM_FILE_SIZE 1 * 1024
 
+typedef struct{
+  int32_t mag_offset_x;
+  int32_t mag_offset_y;
+  int32_t mag_offset_z;
+  int32_t mag_scale_x;
+  int32_t mag_scale_y;
+  int32_t mag_scale_z;
+} mag_calib_t;
+
 class SystemParser {
  public:
   SystemParser(void);
@@ -49,6 +58,7 @@ class SystemParser {
   bool setNeverStopLoggingFlag(bool flag);
   bool setTimeZone(int16_t timezone);
   bool setTelemetryMode(bool mode);
+  bool setMagCalib(mag_calib_t calib);
 
   bool getLinkPhrase1(char* phrase);
   bool getLinkPhrase2(char* phrase);
@@ -56,6 +66,7 @@ class SystemParser {
   bool getNeverStopLoggingFlag(bool& flag);
   bool getTimeZone(int16_t& timezone);
   bool getTelemetryMode(bool& mode);
+  bool getMagCalib(mag_calib_t& calib);
 
   bool saveFile(const char* path = NULL);
 

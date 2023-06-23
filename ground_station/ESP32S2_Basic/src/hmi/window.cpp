@@ -747,8 +747,202 @@ void Window::initData() {
   display.refresh();
 }
 
-void Window::initSesnors() {
+void Window::initSensors() {
   display.fillRect(0, 19, 400, 222, WHITE);
+
+  display.drawLine(200, 19, 200, 250, BLACK);
+
+  //display.drawLine(0, 125 + 19, 400, 125 + 19, BLACK);
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  display.fillRect(0, 19, 200, 30, BLACK);
+  drawCentreString("IMU", 100, 42);
+
+  display.fillRect(200, 19, 200, 30, BLACK);
+  drawCentreString("GNSS", 300, 42);
+
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSansBold9pt7b);
+
+  /* Units */
+
+  display.setCursor(40, 65);
+  display.print("[G]");
+
+  display.setCursor(120, 65);
+  display.print("[deg/s]");
+
+  display.setCursor(80, 170);
+  display.print("[uT]");
+
+  display.setCursor(215, 200);
+  display.print("Press A to calibrate");
+  display.setCursor(220, 225);
+  display.print("the magnetometer");
+
+  display.refresh();
+}
+
+void Window::updateSensors(Navigation *navigation) {
+
+  int xinitOffset = 10;
+  int xOffset = 30;
+  int yinitOffset = 90;
+  int yOffset = 30;
+
+  display.setFont(&FreeSans9pt7b);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+
+  display.fillRect(20, 75, 75, 80, WHITE);
+
+  /* Ax, Ay, Az*/
+
+  display.setCursor(xinitOffset, yinitOffset);
+  display.print("Ax: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset);
+  display.print((float)navigation->getAX(), 2);
+
+  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.print("Ay: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
+  display.print((float)navigation->getAY(), 2);
+
+  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
+  display.print("Az: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset + 2 * yOffset);
+  display.print((float)navigation->getAZ(), 2);
+
+  /* Gx, Gy, Gz*/
+
+  xinitOffset = 110;
+
+  display.fillRect(120, 75, 80, 80, WHITE);
+
+  display.setCursor(xinitOffset, yinitOffset);
+  display.print("Gx: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset);
+  display.print((float)navigation->getGX(), 2);
+
+  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.print("Gy: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
+  display.print((float)navigation->getGY(), 2);
+
+  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
+  display.print("Gz: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset + 2 * yOffset);
+  display.print((float)navigation->getGZ(), 2);
+
+  /* GNSS */
+
+  yinitOffset = 80;
+
+  display.fillRect(202, 50, 200, 95, WHITE);
+
+  xinitOffset = 230;
+  xOffset = 50;
+
+  display.setCursor(xinitOffset, yinitOffset);
+  display.print("Lon: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset);
+  display.print((float)navigation->getPointB().lon, 5);
+
+  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.print("Lat: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
+  display.print((float)navigation->getPointB().lat, 5);
+
+  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
+  display.print("Time: ");
+
+
+  String t = String(hour()) + ":";
+  if (minute() < 10)
+    t += '0';
+  t += String(minute());
+
+  drawCentreString(t, xinitOffset + xOffset + 20, yinitOffset + 2 * yOffset);
+
+  /* MAG */
+
+  display.fillRect(20, 180, 180, 55, WHITE);
+
+  xinitOffset = 10;
+  xOffset = 30;
+
+  yinitOffset = 200;
+
+  display.setCursor(xinitOffset, yinitOffset);
+  display.print("Mx: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset);
+  display.print((float)navigation->getMX() / 1000, 2);
+
+  xinitOffset = 110;
+
+  display.setCursor(xinitOffset, yinitOffset);
+  display.print("My: ");
+
+  display.setCursor(xinitOffset + xOffset, yinitOffset);
+  display.print((float)navigation->getMY() / 1000, 2);
+
+  display.setCursor(70, yinitOffset + yOffset);
+  display.print("Mz: ");
+
+  display.setCursor(70 + xOffset, yinitOffset + yOffset);
+  display.print((float)navigation->getMZ() / 1000, 2);
+}
+
+void Window::initSensorPrepareCalibrate() {
+
+  display.fillRect(0, 19, 400, 222, WHITE);
+  display.setTextSize(1);
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("Ready To Calibrate Magnetometer", 200, 100);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(57, 130);
+  display.print("Spin the Groundstation right around.");
+  display.setCursor(50, 160);
+  display.print("When ready press A, to cancel press B.");
+
+  display.refresh();
+}
+
+void Window::initSensorCalibrate() {
+
+  display.fillRect(0, 19, 400, 222, WHITE);
+  display.setTextSize(1);
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("Calibrating Magnetometer...", 200, 100);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(67, 130);
+  display.print("Keep Spinning the Groundstation!");
+  display.setCursor(130, 160);
+  display.print("Press B to cancel.");
+
+  display.refresh();
+}
+
+void Window::initSensorCalibrateDone() {
+
+  display.fillRect(0, 19, 400, 222, WHITE);
+  display.setTextSize(1);
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("Calibrating Magnetometer was successful.", 200, 100);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(130, 160);
+  display.print("Press A to continue.");
 
   display.refresh();
 }

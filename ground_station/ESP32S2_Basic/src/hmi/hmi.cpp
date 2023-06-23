@@ -368,12 +368,55 @@ void Hmi::data() {
 
 /* SENSORS */
 
-void Hmi::initSensors() { window.initSesnors(); }
+void Hmi::initSensors() { window.initSensors(); }
 
 void Hmi::sensors() {
-  if (backButton.wasPressed()) {
-    state = MENU;
-    window.initMenu(menuIndex);
+
+  switch (calibrationState) {
+  case IDLE:
+
+    window.updateSensors(&navigation);
+
+    if (okButton.wasPressed()) {
+      window.initSensorPrepareCalibrate();
+      calibrationState = PREPARE;
+    }
+    if (backButton.wasPressed()) {
+      state = MENU;
+      window.initMenu(menuIndex);
+    }
+    break;
+  case PREPARE:
+    if (okButton.wasPressed()) {
+      window.initSensorCalibrate();
+      calibrationState = CALIBRATING;
+      startCalibrationTime = xTaskGetTickCount();
+      navigation.setCalibrationBool(true);
+    }
+    if (backButton.wasPressed()) {
+      calibrationState = IDLE;
+      window.initSensors();
+    }
+    break;
+  case CALIBRATING:
+    if (backButton.wasPressed()) {
+      calibrationState = IDLE;
+      window.initSensors();
+    }
+    if (xTaskGetTickCount() - startCalibrationTime > 10000) {
+      calibrationState = CONCLUDED;
+      window.initSensorCalibrateDone();
+    }
+    break;
+  case CONCLUDED:
+    if (okButton.wasPressed() || backButton.wasPressed()) {
+      calibrationState = IDLE;
+      systemConfig.save();
+      window.initSensors();
+    }
+    break;
+  default:
+    break;
   }
 }
 

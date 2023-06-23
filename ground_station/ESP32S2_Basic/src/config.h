@@ -1,5 +1,7 @@
 #pragma once
 
+#include "systemParser.h"
+
 typedef enum : bool{
     DIVERSITY = 0,
     DUAL = 1
@@ -12,6 +14,7 @@ typedef struct {
     char linkPhrase1[9];
     char linkPhrase2[9];
     char testingPhrase[9];
+    mag_calib_t mag_calib;
 } systemConfig_t;
 
 class Config{

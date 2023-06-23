@@ -52,7 +52,11 @@ public:
 
   void initData();
 
-  void initSesnors();
+  void initSensors();
+  void initSensorPrepareCalibrate();
+  void initSensorCalibrate();
+  void initSensorCalibrateDone();
+  void updateSensors(Navigation *navigation);
 
   void initSettings(uint32_t submenu);
   void updateSettings(int32_t index);

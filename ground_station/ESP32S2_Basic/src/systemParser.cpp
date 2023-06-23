@@ -105,6 +105,18 @@ bool SystemParser::setTestingPhrase(const char* phrase){
   return true;
 }
 
+bool SystemParser::setMagCalib(mag_calib_t calib){
+  doc["mag_o_x"] = calib.mag_offset_x;
+  doc["mag_o_y"] = calib.mag_offset_y;
+  doc["mag_o_z"] = calib.mag_offset_z;
+
+  doc["mag_s_x"] = calib.mag_scale_x;
+  doc["mag_s_y"] = calib.mag_scale_y;
+  doc["mag_s_z"] = calib.mag_scale_z;
+
+  return true;
+}
+
 bool SystemParser::getLinkPhrase1(char* phrase){
   if(doc.containsKey("link_phrase_1") && phrase != nullptr)
   {
@@ -154,6 +166,21 @@ bool SystemParser::getTelemetryMode(bool& mode){
   if(doc.containsKey("telemetry_mode"))
   {
     mode = doc["telemetry_mode"].as<bool>();
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getMagCalib(mag_calib_t& calib){
+  if(doc.containsKey("mag_o_x"))
+  {
+    calib.mag_offset_x = doc["mag_o_x"].as<int32_t>();
+    calib.mag_offset_y = doc["mag_o_y"].as<int32_t>();
+    calib.mag_offset_z = doc["mag_o_z"].as<int32_t>();
+
+    calib.mag_scale_x = doc["mag_s_x"].as<int32_t>();
+    calib.mag_scale_y = doc["mag_s_y"].as<int32_t>();
+    calib.mag_scale_z = doc["mag_s_z"].as<int32_t>();
     return true;
   }
   return false;

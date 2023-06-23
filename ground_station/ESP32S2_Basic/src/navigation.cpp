@@ -1,138 +1,173 @@
 #include "navigation.h"
 #include "console.h"
 
+#include "config.h"
+
 #define NAVIGATION_TASK_FREQUENCY 50
 
-bool Navigation::begin(){
-    initialized = true;
+bool Navigation::begin() {
+  initialized = true;
 
-    compass.init();
-    if(imu.begin(Wire, 0x6A) != 1) console.error.println("IMU init failed!");
+  compass.init();
+  if (imu.begin(Wire, 0x6A) != 1)
+    console.error.println("IMU init failed!");
 
-    filter.begin(NAVIGATION_TASK_FREQUENCY);
+  filter.begin(NAVIGATION_TASK_FREQUENCY);
 
-    calibration = false;
-    compass.setCalibration(-851, 2160, -1223, 1563, -1036, 1832);
+  calibration = false;
 
-    xTaskCreate(navigationTask, "task_recorder", 1024, this, 1, NULL);
-    return true;
+  xTaskCreate(navigationTask, "task_recorder", 1024, this, 1, NULL);
+  return true;
 }
 
+void Navigation::calibrate(float *val) {
 
-void Navigation::navigationTask(void* pvParameter){
-    Navigation* ref = (Navigation*)pvParameter;
+  /* Dumb Calibration Approach */
 
-    TickType_t task_last_tick = xTaskGetTickCount();
+  /* Hard Iron */
+  for (uint32_t i = 0; i < 3; i++) {
 
-    uint32_t count = 0;
-
-    float magBias[3] = {0, 0, 0};
-    float magScale[3] = {0, 0, 0};
-    float magMax[3] = {-32768, -32768, -32768};
-    float magMin[3] = {32767, 32767, 32767};
-
-    enum {
-        POINTS = 72,
-    };
-
-    bool calibrationPoints[POINTS] = {};
-    uint32_t axis = 0;
-    int32_t angle;
-    uint32_t n = 0;
-    int32_t currentAngle;
-
-
-    while(ref->initialized){
-        ref->compass.read();
-        
-        if(ref->calibration){
-            ref->compass.readRaw(ref->m);
-        } else {
-            ref->compass.readCalibrated(ref->m);
-        }
-        
-        
-        ref->imu.readAcceleration(ref->ax, ref->ay, ref->az);
-        ref->imu.readGyroscope(ref->gx, ref->gy, ref->gz);
-
-        ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[0], ref->m[1], -ref->m[2]);
-
-        ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
-
-        if(ref->calibration){
-            for (int i = 0; i < 3; i++) {
-                if (ref->m[i] > magMax[i]) magMax[i] = ref->m[i];
-                if (ref->m[i] < magMin[i]) magMin[i] = ref->m[i];
-            }
-
-            if(axis == 0) {
-                angle = ref->filter.getYaw();
-                currentAngle = 0;
-            } else if (axis == 1){
-                angle = ref->filter.getRoll();
-                currentAngle = -180;
-            } else {
-                angle = ref->filter.getPitch();
-                currentAngle = -180;
-            }
-
-            n++;
-            /*
-            for(int i = 0; i < POINTS; i++){
-                if(angle > currentAngle && angle < (currentAngle + (360/POINTS)) && !calibrationPoints[i]){
-                    calibrationPoints[i] = true;
-                    n++;
-                    //console.log.print("Added Point: "); console.log.println(i);
-                    break;
-                }
-                currentAngle += (360/POINTS); 
-            }*/
-
-            if(n == 500){//POINTS){
-                // TODO also calibrate pitch
-                /*if(axis < 0){
-                    memset(calibrationPoints, false, POINTS);
-                    n = 0;
-                    axis++;
-                    console.log.println("Axis Calibration Done");
-                } else {*/
-                    ref->calibration = false;
-                    ref->compass.setCalibration(magMin[0], magMax[0], magMin[1], magMax[1], magMin[2], magMax[2]);
-                    
-                //}
-                
-            }
-
-        }
-        /*
-        console.log.print("q0 "); console.log.print(ref->q0);
-        console.log.print(" q1 "); console.log.print(ref->q1);
-        console.log.print(" q2 "); console.log.print(ref->q2);
-        console.log.print(" q3 "); console.log.println(ref->q3);
-        */
-        if(count >= 10){
-            if(ref->pointA.lat != 0 && ref->pointA.lon != 0 && ref->pointB.lat != 0 && ref->pointB.lon != 0) {
-                ref->calculateDistanceDirection();
-                ref->updated = true;
-            }
-            count = 0;
-        }
-        count++;
-        
-        vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / NAVIGATION_TASK_FREQUENCY);
+    if (mag_calib.max_vals[i] < val[i]) {
+      mag_calib.max_vals[i] = val[i];
     }
-    vTaskDelete(NULL);
+
+    if (mag_calib.min_vals[i] > val[i]) {
+      mag_calib.min_vals[i] = val[i];
+    }
+
+    mag_calib.offset[i] = (mag_calib.max_vals[i] + mag_calib.min_vals[i]) / 2.0F;
+  }
+  /* Soft Iron */
+
+  float offseted_val[3];
+  float avg_scale[3];
+
+  for (uint32_t i = 0; i < 3; i++) {
+    /* offset value */
+    offseted_val[i] = val[i] - mag_calib.offset[i];
+
+    if (mag_calib.max_vals_scal[i] < offseted_val[i]) {
+      mag_calib.max_vals_scal[i] = offseted_val[i];
+    }
+
+    if (mag_calib.min_vals_scal[i] > offseted_val[i]) {
+      mag_calib.min_vals_scal[i] = offseted_val[i];
+    }
+
+    /* average scaling */
+    avg_scale[i] =
+        (mag_calib.max_vals_scal[i] - mag_calib.min_vals_scal[i]) / 2.0F;
+  }
+
+  float avg = (avg_scale[0] + avg_scale[1] + avg_scale[2]) / 3.0F;
+
+  for (uint32_t i = 0; i < 3; i++) {
+
+    mag_calib.scaling[i] = avg / avg_scale[i];
+
+  }
 }
 
-void Navigation::calculateDistanceDirection(){
-    float dy_dphi = (2*R*PI)/(2*PI);
-    float dx_dtheta = cos(pointA.lat*(PI/180))  * (2*R*PI)/(2*PI);
+void Navigation::set_saved_calib(mag_calibration_t mag_calib){
+    systemConfig.config.mag_calib.mag_offset_x = static_cast<int32_t>(mag_calib.offset[0]*1000.0F);
+    systemConfig.config.mag_calib.mag_offset_y = static_cast<int32_t>(mag_calib.offset[1]*1000.0F);
+    systemConfig.config.mag_calib.mag_offset_z = static_cast<int32_t>(mag_calib.offset[2]*1000.0F);
+    
+    systemConfig.config.mag_calib.mag_scale_x = static_cast<int32_t>(mag_calib.scaling[0]*1000.0F);
+    systemConfig.config.mag_calib.mag_scale_y = static_cast<int32_t>(mag_calib.scaling[1]*1000.0F);
+    systemConfig.config.mag_calib.mag_scale_z = static_cast<int32_t>(mag_calib.scaling[2]*1000.0F);
+}
 
-    float dy = (pointB.lat - pointA.lat)*(PI/180) * dy_dphi;
-    float dx = (pointB.lon - pointA.lon)*(PI/180) * dx_dtheta;
-    float dz = pointB.alt-pointA.alt;
+void Navigation::get_saved_calib(){
+    mag_calib.offset[0] = static_cast<float>(systemConfig.config.mag_calib.mag_offset_x) / 1000.0F;
+    mag_calib.offset[1] = static_cast<float>(systemConfig.config.mag_calib.mag_offset_y) / 1000.0F;
+    mag_calib.offset[2] = static_cast<float>(systemConfig.config.mag_calib.mag_offset_z) / 1000.0F;
+    
+    mag_calib.scaling[0] = static_cast<float>(systemConfig.config.mag_calib.mag_scale_x) / 1000.0F;
+    mag_calib.scaling[1] = static_cast<float>(systemConfig.config.mag_calib.mag_scale_y) / 1000.0F;
+    mag_calib.scaling[2] = static_cast<float>(systemConfig.config.mag_calib.mag_scale_z) / 1000.0F;
+}
 
-    dist = sqrt(dx*dx + dy*dy + dz*dz);
-    azimuth = atan2(dx, dy);
-    elevation = atan2(dz, sqrt(dx*dx+dy*dy));
+void Navigation::transform(float *val, float *output) {
+
+  for (uint32_t i = 0; i < 3; i++) {
+    output[i] = (val[i] - mag_calib.offset[i]) * mag_calib.scaling[i];
+  }
+}
+
+void Navigation::resetCalib(){
+  for(uint32_t i = 0; i < 3; i++){
+    mag_calib.max_vals[i] = -100;
+    mag_calib.min_vals[i] = 100;
+  }
+  
+}
+
+void Navigation::navigationTask(void *pvParameter) {
+  Navigation *ref = (Navigation *)pvParameter;
+
+  TickType_t task_last_tick = xTaskGetTickCount();
+
+  uint32_t count = 0;
+
+  ref->get_saved_calib();
+
+  int32_t angle;
+  uint32_t n = 0;
+
+  while (ref->initialized) {
+    ref->compass.read();
+
+    ref->compass.readRaw(ref->raw_m);
+    ref->transform(ref->raw_m, ref->m);
+
+    ref->imu.readAcceleration(ref->ax, ref->ay, ref->az);
+    ref->imu.readGyroscope(ref->gx, ref->gy, ref->gz);
+
+    ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az,
+                       -ref->m[0], ref->m[1], -ref->m[2]);
+
+    ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
+
+    if (ref->calibration) {
+
+      n++;
+
+      ref->calibrate(ref->raw_m);
+
+      if (n >= 500) {
+        ref->setCalibrationBool(false);
+        ref->set_saved_calib(ref->mag_calib);
+        ref->resetCalib();
+        n = 0;
+      }
+    }
+
+    if (count >= 10) {
+      if (ref->pointA.lat != 0 && ref->pointA.lon != 0 &&
+          ref->pointB.lat != 0 && ref->pointB.lon != 0) {
+        ref->calculateDistanceDirection();
+        ref->updated = true;
+      }
+      count = 0;
+    }
+    count++;
+
+    vTaskDelayUntil(&task_last_tick,
+                    (const TickType_t)1000 / NAVIGATION_TASK_FREQUENCY);
+  }
+  vTaskDelete(NULL);
+}
+
+void Navigation::calculateDistanceDirection() {
+  float dy_dphi = (2 * R * PI) / (2 * PI);
+  float dx_dtheta = cos(pointA.lat * (PI / 180)) * (2 * R * PI) / (2 * PI);
+
+  float dy = (pointB.lat - pointA.lat) * (PI / 180) * dy_dphi;
+  float dx = (pointB.lon - pointA.lon) * (PI / 180) * dx_dtheta;
+  float dz = pointB.alt - pointA.alt;
+
+  dist = sqrt(dx * dx + dy * dy + dz * dz);
+  azimuth = atan2(dx, dy);
+  elevation = atan2(dz, sqrt(dx * dx + dy * dy));
 }
