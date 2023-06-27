@@ -55,7 +55,6 @@ const cats_config_t DEFAULT_CONFIG = {
     .control_settings =
         {
             .liftoff_acc_threshold = 35,
-            .liftoff_detection_agl = 50,
             .main_altitude = 200,
         },
     .buzzer_volume = 100U,

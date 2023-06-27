@@ -114,7 +114,6 @@ struct flight_fsm_t {
   uint32_t clock_memory;
   uint32_t memory[3];
   timestamp_t thrust_trigger_time;
-  bool is_liftoff_by_pressure;
   bool state_changed;
 };
 
@@ -149,7 +148,6 @@ struct kalman_filter_t {
 
 struct control_settings_t {
   uint16_t liftoff_acc_threshold;  // m/s^2
-  uint16_t liftoff_detection_agl;  // m; if the height is bigger than this for 1 second, detect liftoff
   uint16_t main_altitude;          // m
 };
 

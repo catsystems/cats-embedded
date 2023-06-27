@@ -21,8 +21,7 @@
 #include "tasks/task_peripherals.hpp"
 
 static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data);
-static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_t height_AGL,
-                              const control_settings_t *settings);
+static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, const control_settings_t *settings);
 static void check_thrusting_phase(flight_fsm_t *fsm_state, estimation_output_t state_data);
 static void check_coasting_phase(flight_fsm_t *fsm_state, estimation_output_t state_data);
 static void check_drogue_phase(flight_fsm_t *fsm_state, estimation_output_t state_data);
@@ -32,7 +31,7 @@ static void clear_fsm_memory(flight_fsm_t *fsm_state);
 static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigger, flight_fsm_t *fsm_state);
 
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
-                        float32_t height_AGL, const control_settings_t *settings) {
+                        const control_settings_t *settings) {
   /* Save old FSM State */
   flight_fsm_t old_fsm_state = *fsm_state;
 
@@ -42,7 +41,7 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_da
       check_calibrating_phase(fsm_state, acc_data, gyro_data);
       break;
     case READY:
-      check_ready_phase(fsm_state, acc_data, height_AGL, settings);
+      check_ready_phase(fsm_state, acc_data, settings);
       break;
     case THRUSTING:
       check_thrusting_phase(fsm_state, state_data);
@@ -93,8 +92,7 @@ static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf
   }
 }
 
-static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_t height_AGL,
-                              const control_settings_t *settings) {
+static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, const control_settings_t *settings) {
   /* Check if we move from READY To THRUSTING */
   /* The absolute value of the acceleration is used here to make sure that we detect liftoff */
   float32_t accel_x = acc_data.x * acc_data.x;
@@ -111,19 +109,6 @@ static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, float32_
 
   if (fsm_state->memory[1] > LIFTOFF_SAFETY_COUNTER) {
     change_state_to(THRUSTING, EV_LIFTOFF, fsm_state);
-  }
-
-  /* Check if we move from Ready to Thrusting based on baro data */
-  if (height_AGL > static_cast<float32_t>(global_cats_config.control_settings.liftoff_detection_agl)) {
-    fsm_state->memory[2]++;
-  } else {
-    fsm_state->memory[2] = 0;
-  }
-
-  /* If the above condition is correct for some samples, detect liftoff */
-  if (fsm_state->memory[2] > LIFTOFF_SAFETY_COUNTER_HEIGHT) {
-    change_state_to(THRUSTING, EV_LIFTOFF, fsm_state);
-    fsm_state->is_liftoff_by_pressure = true;
   }
 }
 

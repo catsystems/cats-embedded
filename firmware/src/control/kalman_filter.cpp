@@ -240,7 +240,7 @@ float32_t R_interpolation(float32_t velocity) {
   }
 }
 
-void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state, bool is_liftoff_by_pressure) {
+void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   /* Update IMU trust value based on flight phase */
   switch (flight_state) {
     case READY:
@@ -261,11 +261,6 @@ void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state, bool is_lif
 
   /* If all IMUs are disabled, trust the barometer */
   if (get_error_by_tag(CATS_ERR_FILTER_ACC)) {
-    filter->R = STD_NOISE_BARO_INITIAL;
-  }
-
-  /* If liftoff is detected by pressure, do not fully trust the IMU */
-  if (is_liftoff_by_pressure) {
     filter->R = STD_NOISE_BARO_INITIAL;
   }
 
