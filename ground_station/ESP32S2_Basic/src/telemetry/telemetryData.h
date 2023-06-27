@@ -1,233 +1,222 @@
 #pragma once
 
-#include <Arduino.h>
 #include "console.h"
+#include <Arduino.h>
 
 typedef struct {
-    uint8_t state : 3;
-    uint16_t timestamp : 15;
-    uint8_t errors : 6;
-    int32_t lat : 22;
-    int32_t lon : 22;
-    int32_t altitude : 17;
-    int16_t velocity : 10;
-    uint16_t voltage : 8;
-    uint8_t pyro_continuity : 2;
-    bool testing_mode : 1;
-    // fill up to 16 bytes
-    uint8_t : 0;  // sent
-    uint8_t d1;   // dummy
-  } __attribute__((packed)) packedRXMessage;
+  uint8_t state : 3;
+  uint16_t timestamp : 15;
+  uint8_t errors : 6;
+  int32_t lat : 22;
+  int32_t lon : 22;
+  int32_t altitude : 17;
+  int16_t velocity : 10;
+  uint16_t voltage : 8;
+  uint8_t pyro_continuity : 2;
+  bool testing_mode : 1;
+  // fill up to 16 bytes
+  uint8_t : 0; // sent
+  uint8_t d1;  // dummy
+} __attribute__((packed)) packedRXMessage;
 
 static_assert(sizeof(packedRXMessage) == 15);
 
 class TelemetryData {
-    public:
-        void commit(uint8_t* data, uint32_t length){
+public:
+  void commit(uint8_t *data, uint32_t length) {
 
-            memcpy(&rxData, data, length);
-            lastCommitTime = xTaskGetTickCount();
-            updated = true;
-        }
+    memcpy(&rxData, data, length);
+    lastCommitTime = xTaskGetTickCount();
+    updated = true;
+  }
 
-        bool isUpdated() const {
-            
-            return updated; 
-        }
+  /// Clears the updated flag
+  void clear() { updated = false; }
 
-        int16_t velocity(){
-            updated = false;
-            return rxData.velocity;
-        }
+  /// Returns true if the data has been updated since the last call to clear()
+  bool isUpdated() const { return updated; }
 
-        int32_t altitude(){
-            updated = false;
-            return rxData.altitude;
-        }
+  int16_t velocity() {
+    updated = false;
+    return rxData.velocity;
+  }
 
-        uint16_t ts(){
-            updated = false;
-            return rxData.timestamp;
-        }
+  int32_t altitude() {
+    updated = false;
+    return rxData.altitude;
+  }
 
-        float lat(){
-            updated = false;
-            return (float) rxData.lat / 10000.0f;
-        }
+  uint16_t ts() {
+    updated = false;
+    return rxData.timestamp;
+  }
 
-        float lon(){
-            updated = false;
-            return (float) rxData.lon / 10000.0f;
-        }
+  float lat() {
+    updated = false;
+    return (float)rxData.lat / 10000.0f;
+  }
 
-        int8_t d1(){
-            return rxData.d1;
-        }
+  float lon() {
+    updated = false;
+    return (float)rxData.lon / 10000.0f;
+  }
 
-        uint16_t state(){
-            updated = false;
-            return rxData.state;
-        }
+  int8_t d1() { return rxData.d1; }
 
-        uint8_t errors() {
-            updated = false;
-            return rxData.errors;
-        }
+  uint16_t state() {
+    updated = false;
+    return rxData.state;
+  }
 
-        float voltage() {
-            updated = false;
-            return static_cast<float>(rxData.voltage / 10.0F);
-        }
+  uint8_t errors() {
+    updated = false;
+    return rxData.errors;
+  }
 
-        uint8_t pyroContinuity() {
-            updated = false;
-            return rxData.pyro_continuity;
-        }
+  float voltage() {
+    updated = false;
+    return static_cast<float>(rxData.voltage / 10.0F);
+  }
 
-        bool testingMode() {
-            updated = false;
-            return rxData.testing_mode;
-        }
+  uint8_t pyroContinuity() {
+    updated = false;
+    return rxData.pyro_continuity;
+  }
 
-        uint32_t getLastUpdateTime() const {
-            return lastCommitTime;
-        }
+  bool testingMode() {
+    updated = false;
+    return rxData.testing_mode;
+  }
 
-        packedRXMessage rxData;
+  uint32_t getLastUpdateTime() const { return lastCommitTime; }
 
-    private:
-        bool updated;
-        uint32_t lastCommitTime;        
+  packedRXMessage rxData;
 
+private:
+  bool updated;
+  uint32_t lastCommitTime;
 };
 
 typedef struct {
-    uint8_t lq;
-    int8_t rssi;
-    int8_t snr;
+  uint8_t lq;
+  int8_t rssi;
+  int8_t snr;
 } __attribute__((packed)) TelemetryInfoData;
 
 class TelemetryInfo {
-    public:
-        void commit(uint8_t* data, uint32_t length){
-            memcpy(&infoData, data, sizeof(infoData));
-            lastCommitTime = millis();
-            updated = true;
-        }
+public:
+  void commit(uint8_t *data, uint32_t length) {
+    memcpy(&infoData, data, sizeof(infoData));
+    lastCommitTime = millis();
+    updated = true;
+  }
 
-        bool isUpdated() const {
-            return updated; 
-        }
+  void clear() { updated = false; }
 
-        int16_t snr(){
-            updated = false;
-            return (int16_t)infoData.snr;
-        }
+  bool isUpdated() const { return updated; }
 
-        int16_t rssi(){
-            updated = false;
-            return (int16_t)infoData.rssi;
-        }
+  int16_t snr() {
+    updated = false;
+    return (int16_t)infoData.snr;
+  }
 
-        uint16_t lq(){
-            updated = false;
-            return (uint16_t)infoData.lq;
-        }
+  int16_t rssi() {
+    updated = false;
+    return (int16_t)infoData.rssi;
+  }
 
+  uint16_t lq() {
+    updated = false;
+    return (uint16_t)infoData.lq;
+  }
 
-    private:
-        TelemetryInfoData infoData;
-        uint32_t lastCommitTime;
-        bool updated;
+private:
+  TelemetryInfoData infoData;
+  uint32_t lastCommitTime;
+  bool updated;
 };
 
 typedef struct {
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
+  uint8_t second;
+  uint8_t minute;
+  uint8_t hour;
 } __attribute__((packed)) TelemetryTimeData;
 
 class TelemetryTime {
-    public:
-        void commit(uint8_t* data, uint32_t length){
-            memcpy(&timeData, data, sizeof(TelemetryTimeData));
-            lastCommitTime = millis();
-            updated = true;
-            wasUpdated = true;
-        }
+public:
+  void commit(uint8_t *data, uint32_t length) {
+    memcpy(&timeData, data, sizeof(TelemetryTimeData));
+    lastCommitTime = millis();
+    updated = true;
+    wasUpdated = true;
+  }
 
-        bool isUpdated() const {
-            return updated; 
-        }
+  bool isUpdated() const { return updated; }
 
-        uint8_t second() {
-            updated = false;
-            return timeData.second;
-        }
+  uint8_t second() {
+    updated = false;
+    return timeData.second;
+  }
 
-        uint8_t minute() {
-            updated = false;
-            return timeData.minute;
-        }
+  uint8_t minute() {
+    updated = false;
+    return timeData.minute;
+  }
 
-        uint8_t hour() {
-            updated = false;
-            return timeData.hour;
-        }
+  uint8_t hour() {
+    updated = false;
+    return timeData.hour;
+  }
 
-
-    private:
-        TelemetryTimeData timeData;
-        uint32_t lastCommitTime;
-        bool updated;
-        bool wasUpdated = false;
+private:
+  TelemetryTimeData timeData;
+  uint32_t lastCommitTime;
+  bool updated;
+  bool wasUpdated = false;
 };
 
 typedef struct {
-    float lat;
-    float lon;
-    int32_t alt;
+  float lat;
+  float lon;
+  int32_t alt;
 } __attribute__((packed)) TelemetryLocationData;
 
 class TelemetryLocation {
-    public:
-        void commit(uint8_t* data, uint32_t length){
-            memcpy(&locationData, data, sizeof(TelemetryLocationData));
-            lastCommitTime = millis();
-            updated = true;
-            wasUpdated = true;
-        }
+public:
+  void commit(uint8_t *data, uint32_t length) {
+    memcpy(&locationData, data, sizeof(TelemetryLocationData));
+    lastCommitTime = millis();
+    updated = true;
+    wasUpdated = true;
+  }
 
-        bool isUpdated() const {
-            return updated; 
-        }
+  bool isUpdated() const { return updated; }
 
-        bool isValid() const {
-            if(locationData.lat && locationData.lon && wasUpdated){
-                return true;
-            } 
-            return false;
-        }
+  bool isValid() const {
+    if (locationData.lat && locationData.lon && wasUpdated) {
+      return true;
+    }
+    return false;
+  }
 
-        float lat(){
-            updated = false;
-            return locationData.lat;
-        }
+  float lat() {
+    updated = false;
+    return locationData.lat;
+  }
 
-        float lon(){
-            updated = false;
-            return locationData.lon;
-        }
+  float lon() {
+    updated = false;
+    return locationData.lon;
+  }
 
-        int16_t alt(){
-            updated = false;
-            return (uint16_t)locationData.alt;
-        }
+  int16_t alt() {
+    updated = false;
+    return (uint16_t)locationData.alt;
+  }
 
-
-    private:
-        TelemetryLocationData locationData;
-        uint32_t lastCommitTime;
-        bool updated;
-        bool wasUpdated = false;
+private:
+  TelemetryLocationData locationData;
+  uint32_t lastCommitTime;
+  bool updated;
+  bool wasUpdated = false;
 };

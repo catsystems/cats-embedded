@@ -77,8 +77,15 @@ void loop()
   if(millis() > 5000 && !ini)
   {
     ini = true;
-    link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
-    link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+    if(systemConfig.config.receiverMode == SINGLE) {
+        // Set both link phrases to the same
+        link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+        link2.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+    } else {
+        // Use two different link phrases
+        link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+        link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+    }
 
     link1.setTestingPhrase(systemConfig.config.testingPhrase, 8);
 

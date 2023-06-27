@@ -113,79 +113,38 @@ void Hmi::menu() {
 void Hmi::initLive() { window.initLive(); }
 
 void Hmi::live() {
+  bool updated = false;
 
-  if (boxWindow) {
-    /* Arming Window Mode */
-    bool exit = false;
+  /* Dual Mode */
+  if (link1.data.isUpdated() && link1.info.isUpdated()) {
+    window.updateLive(&link1.data, &link1.info, 0);
+    updated = true;
+  } else if (link1.info.isUpdated()) {
+    window.updateLive(&link1.info, 0);
+    updated = true;
+  }
 
-    if (link1.data.state() == 1 && enableTestMode) {
-      exit = true;
+  if (link2.data.isUpdated() && link2.info.isUpdated()) {
+    if (link2.data.state() > 2) {
+      recorder.record(&link2.data.rxData);
+      isLogging = true;
+    } else {
+      isLogging = false;
     }
+    window.updateLive(&link2.data, &link2.info, 1);
+    updated = true;
+  } else if (link2.info.isUpdated()) {
+    window.updateLive(&link2.info, 1);
+    updated = true;
+  }
 
-    if (okButton.wasPressed()) {
-      link2.disable();
-      if (triggerTouchdown) {
-        link1.triggerEvent(6);
-        exit = true;
-      } else {
-        link1.triggerEvent(0);
-      }
-    }
+  if (updated) {
+    window.refresh();
+  }
 
-    if (backButton.wasPressed() || exit) {
-      window.initLive();
-      boxWindow = false;
-      enableTestMode = false;
-      triggerTouchdown = false;
-    }
-  } else {
-    /* Normal Mode */
-    bool updated = false;
-
-    if (link1.data.isUpdated() && link1.info.isUpdated()) {
-      window.updateLive(&link1.data, &link1.info, 0);
-      updated = true;
-    } else if (link1.info.isUpdated()) {
-      window.updateLive(&link1.info, 0);
-      updated = true;
-    }
-
-    if (link2.data.isUpdated() && link2.info.isUpdated()) {
-      if (link2.data.state() > 2) {
-        recorder.record(&link2.data.rxData);
-        isLogging = true;
-      } else {
-        isLogging = false;
-      }
-      window.updateLive(&link2.data, &link2.info, 1);
-      updated = true;
-    } else if (link2.info.isUpdated()) {
-      window.updateLive(&link2.info, 1);
-      updated = true;
-    }
-
-    if (updated) {
-      window.refresh();
-    }
-
-    if (backButton.wasPressed()) {
-      state = MENU;
-      window.initMenu(menuIndex);
-    }
-
-    if (rightButton.pressedFor(100) && link1.data.testingMode() &&
-        link1.data.state() == 0) {
-      window.initBox("Go to Testing?");
-      boxWindow = true;
-      enableTestMode = true;
-    }
-
-    if (rightButton.pressedFor(100) && link1.data.testingMode() &&
-        link1.data.state() == 1) {
-      window.initBox("Go to Touchdown?");
-      boxWindow = true;
-      triggerTouchdown = true;
-    }
+  if (backButton.wasPressed()) {
+    state = MENU;
+    window.initMenu(menuIndex);
   }
 }
 
@@ -518,13 +477,11 @@ void Hmi::settings() {
     if (downButton.wasPressed() &&
         settingIndex < settingsTableValueCount[settingSubMenu] - 1) {
       settingIndex++;
-      configChanged = true;
       window.updateSettings(settingIndex);
     }
 
     if (upButton.wasPressed() && settingIndex > -1) {
       settingIndex--;
-      configChanged = true;
       window.updateSettings(settingIndex);
     }
 
@@ -532,8 +489,16 @@ void Hmi::settings() {
       state = MENU;
       if (configChanged) {
         configChanged = false;
-        link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
-        link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+        if (systemConfig.config.receiverMode == SINGLE) {
+          // Set both link phrases to the same
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+        } else {
+          // Use two different link phrases
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+        }
+
         link1.setTestingPhrase(systemConfig.config.testingPhrase, 8);
         systemConfig.save();
         console.log.println("Save config");
