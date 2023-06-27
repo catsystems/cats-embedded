@@ -47,6 +47,8 @@ class Hmi {
 
         Recorder recorder;
 
+        uint16_t oldTimeStamp = 0;
+
         uint32_t settingSubMenu = 0;
         int32_t settingIndex = -1;
         char keyboardString[9] = {};

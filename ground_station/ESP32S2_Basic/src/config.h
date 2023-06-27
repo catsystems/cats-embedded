@@ -1,7 +1,7 @@
 #pragma once
 
 typedef enum : bool{
-    DIVERSITY = 0,
+    SINGLE = 0,
     DUAL = 1
 } ReceiverTelemetryMode_e;
 

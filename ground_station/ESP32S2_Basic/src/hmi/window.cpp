@@ -263,8 +263,8 @@ void Window::updateLive(TelemetryInfo *info, uint32_t index) {
   if (index > 1)
     return;
 
-  // Read some random data to reset the updated flag
-  info->lq();
+  // clear update flag
+  info->clear();
 
   updateLiveInfo(&infoData[index], index, BLACK);
 
@@ -280,9 +280,9 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info,
 
   lastTeleData[index] = millis();
 
-  // Read some random data to reset the updated flag
-  data->state();
-  info->lq();
+  // Clear update flag
+  data->clear();
+  info->clear();
 
   updateLiveData(&teleData[index], index, WHITE);
   updateLiveInfo(&infoData[index], index, BLACK);
@@ -296,6 +296,26 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info,
 
   updateLiveData(&teleData[index], index, BLACK);
   updateLiveInfo(&infoData[index], index, WHITE);
+}
+
+void Window::updateLive(TelemetryData *data, uint32_t index) {
+  if (index > 1)
+    return;
+
+  lastTeleData[index] = millis();
+
+  // Clear update flag
+  data->clear();
+
+  updateLiveData(&teleData[index], index, WHITE);
+
+  // display.fillRect(10,19,190,200, WHITE);
+
+  memcpy(&teleData[index], data, sizeof(teleData[0]));
+
+  dataAge[index] = 0;
+
+  updateLiveData(&teleData[index], index, BLACK);
 }
 
 const char *const stateName[] = {"INVALID", "CALIB",  "READY", "THRUST",
@@ -743,13 +763,13 @@ void Window::updateTesting(uint32_t index) {
 
 void Window::initData() {
   display.fillRect(0, 19, 400, 222, WHITE);
-
+  drawCentreString("Coming soon...", 70, 51);
   display.refresh();
 }
 
 void Window::initSesnors() {
   display.fillRect(0, 19, 400, 222, WHITE);
-
+  drawCentreString("Coming soon...", 70, 51);
   display.refresh();
 }
 

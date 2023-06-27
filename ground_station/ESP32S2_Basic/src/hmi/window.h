@@ -37,6 +37,7 @@ public:
   void initLive();
   void updateLive(TelemetryInfo *info, uint32_t index);
   void updateLive(TelemetryData *data, TelemetryInfo *info, uint32_t index);
+  void updateLive(TelemetryData *data, uint32_t index);
 
   void initRecovery();
   void updateRecovery(Navigation *navigation);
