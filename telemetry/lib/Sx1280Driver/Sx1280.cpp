@@ -64,8 +64,8 @@ bool SX1280Driver::Begin() {
   hal.reset();
   // DBGLN("SX1280 Begin");
   HAL_Delay(100);
-  uint16_t firmwareRev = (((hal.ReadRegister(REG_LR_FIRMWARE_VERSION_MSB)) << 8) |
-                          (hal.ReadRegister(REG_LR_FIRMWARE_VERSION_MSB + 1)));
+  uint16_t firmwareRev =
+      (((hal.ReadRegister(REG_LR_FIRMWARE_VERSION_MSB)) << 8) | (hal.ReadRegister(REG_LR_FIRMWARE_VERSION_MSB + 1)));
   // DBGLN("Read Vers: %d", firmwareRev);
   if ((firmwareRev == 0) || (firmwareRev == 65535)) {
     // SPI communication failed, just return without configuration
@@ -78,23 +78,22 @@ bool SX1280Driver::Begin() {
   ConfigModParamsLoRa(SX1280_LORA_BW_0800, SX1280_LORA_SF6,
                       SX1280_LORA_CR_4_7);          // Configure Modulation Params
   hal.WriteCommand(SX1280_RADIO_SET_AUTOFS, 0x01);  // Enable auto FS
-  hal.WriteRegister(0x0891,
-                    (hal.ReadRegister(0x0891) |
-                     0xC0));  // default is low power mode, switch to high sensitivity instead
+  hal.WriteRegister(
+      0x0891,
+      (hal.ReadRegister(0x0891) | 0xC0));  // default is low power mode, switch to high sensitivity instead
   SetPacketParamsLoRa(12, SX1280_LORA_PACKET_IMPLICIT, 8, SX1280_LORA_CRC_OFF,
                       SX1280_LORA_IQ_NORMAL);  // default params
   SetFrequencyReg(currFreq);                   // Set Freq
   SetFIFOaddr(0x00, 0x00);                     // Config FIFO addr
-  SetDioIrqParams(
-      SX1280_IRQ_RADIO_ALL,
-      SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE);  // set IRQ to both RXdone/TXdone on DIO1
+  SetDioIrqParams(SX1280_IRQ_RADIO_ALL,
+                  SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE);  // set IRQ to both RXdone/TXdone on DIO1
   instance->ClearIrqStatus(SX1280_IRQ_RADIO_ALL);
   return true;
 }
 
-void SX1280Driver::Config(uint8_t bw, uint8_t sf, uint8_t cr, uint32_t freq, uint8_t PreambleLength,
-                          bool InvertIQ, uint8_t _PayloadLength, uint32_t interval,
-                          uint32_t flrcSyncWord, uint16_t flrcCrcSeed, uint8_t flrc) {
+void SX1280Driver::Config(uint8_t bw, uint8_t sf, uint8_t cr, uint32_t freq, uint8_t PreambleLength, bool InvertIQ,
+                          uint8_t _PayloadLength, uint32_t interval, uint32_t flrcSyncWord, uint16_t flrcCrcSeed,
+                          uint8_t flrc) {
   uint8_t irqs = SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE;
   uint8_t const mode = (flrc) ? SX1280_PACKET_TYPE_FLRC : SX1280_PACKET_TYPE_LORA;
 
@@ -106,14 +105,13 @@ void SX1280Driver::Config(uint8_t bw, uint8_t sf, uint8_t cr, uint32_t freq, uin
   if (mode == SX1280_PACKET_TYPE_FLRC) {
     // DBGLN("Config FLRC");
     ConfigModParamsFLRC(bw, cr, sf);
-    SetPacketParamsFLRC(SX1280_FLRC_PACKET_FIXED_LENGTH, /*crc=*/1, PreambleLength, _PayloadLength,
-                        flrcSyncWord, flrcCrcSeed);
+    SetPacketParamsFLRC(SX1280_FLRC_PACKET_FIXED_LENGTH, /*crc=*/1, PreambleLength, _PayloadLength, flrcSyncWord,
+                        flrcCrcSeed);
     irqs |= SX1280_IRQ_CRC_ERROR;
   } else {
     // DBGLN("Config LoRa");
     ConfigModParamsLoRa(bw, sf, cr);
-    SetPacketParamsLoRa(PreambleLength, SX1280_LORA_PACKET_IMPLICIT, _PayloadLength,
-                        SX1280_LORA_CRC_OFF, InvertIQ);
+    SetPacketParamsLoRa(PreambleLength, SX1280_LORA_PACKET_IMPLICIT, _PayloadLength, SX1280_LORA_CRC_OFF, InvertIQ);
   }
   SetFrequencyReg(freq);
   SetDioIrqParams(SX1280_IRQ_RADIO_ALL, irqs);
@@ -222,15 +220,13 @@ void SX1280Driver::ConfigModParamsLoRa(uint8_t bw, uint8_t sf, uint8_t cr) {
   }
 }
 
-void SX1280Driver::SetPacketParamsLoRa(uint8_t PreambleLength,
-                                       SX1280_RadioLoRaPacketLengthsModes_t HeaderType,
-                                       uint8_t PayloadLength, SX1280_RadioLoRaCrcModes_t crc,
-                                       uint8_t InvertIQ) {
+void SX1280Driver::SetPacketParamsLoRa(uint8_t PreambleLength, SX1280_RadioLoRaPacketLengthsModes_t HeaderType,
+                                       uint8_t PayloadLengthLoc, SX1280_RadioLoRaCrcModes_t crc, uint8_t InvertIQ) {
   uint8_t buf[7];
 
   buf[0] = PreambleLength;
   buf[1] = HeaderType;
-  buf[2] = PayloadLength;
+  buf[2] = PayloadLengthLoc;
   buf[3] = crc;
   buf[4] = InvertIQ ? SX1280_LORA_IQ_INVERTED : SX1280_LORA_IQ_NORMAL;
   buf[5] = 0x00;
@@ -245,7 +241,7 @@ void SX1280Driver::ConfigModParamsFLRC(uint8_t bw, uint8_t cr, uint8_t bt) {
 }
 
 void SX1280Driver::SetPacketParamsFLRC(uint8_t HeaderType, uint8_t crc, uint8_t PreambleLength,
-                                       uint8_t PayloadLength, uint32_t syncWord, uint16_t crcSeed) {
+                                       uint8_t PayloadLengthLoc, uint32_t syncWord, uint16_t crcSeed) {
   if (PreambleLength < 8) PreambleLength = 8;
   PreambleLength = ((PreambleLength / 4) - 1) << 4;
   crc = (crc) ? SX1280_FLRC_CRC_2_BYTE : SX1280_FLRC_CRC_OFF;
@@ -255,7 +251,7 @@ void SX1280Driver::SetPacketParamsFLRC(uint8_t HeaderType, uint8_t crc, uint8_t 
   buf[1] = SX1280_FLRC_SYNC_WORD_LEN_P32S;    // SyncWordLength
   buf[2] = SX1280_FLRC_RX_MATCH_SYNC_WORD_1;  // SyncWordMatch
   buf[3] = HeaderType;                        // PacketType
-  buf[4] = PayloadLength;                     // PayloadLength
+  buf[4] = PayloadLengthLoc;                  // PayloadLength
   buf[5] = (crc << 4);                        // CrcLength
   buf[6] = 0x08;                              // Must be whitening disabled
   hal.WriteCommand(SX1280_RADIO_SET_PACKETPARAMS, buf, sizeof(buf));
@@ -313,7 +309,7 @@ int32_t SX1280Driver::GetFrequencyError() {
 
   efe &= SX1280_REG_LR_ESTIMATED_FREQUENCY_ERROR_MASK;
 
-  efeHz = 1.55 * efe / (1600.0f / 800000.0f);
+  efeHz = 1.55F * efe / (1600.0F / 800000.0F);
   return efeHz;
 }
 
@@ -325,8 +321,7 @@ void SX1280Driver::SetFIFOaddr(uint8_t txBaseAddr, uint8_t rxBaseAddr) {
   hal.WriteCommand(SX1280_RADIO_SET_BUFFERBASEADDRESS, buf, sizeof(buf));
 }
 
-void SX1280Driver::SetDioIrqParams(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask,
-                                   uint16_t dio3Mask) {
+void SX1280Driver::SetDioIrqParams(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask) {
   uint8_t buf[8];
 
   buf[0] = (uint8_t)((irqMask >> 8) & 0x00FF);
@@ -400,8 +395,8 @@ void SX1280Driver::RXnbISR() {
     // transition to state SX1280_MODE_FS
     currOpmode = SX1280_MODE_FS;
   }
-  uint8_t FIFOaddr = GetRxBufferAddr();
-  hal.ReadBuffer(FIFOaddr, RXdataBuffer, PayloadLength);
+  uint8_t FIFOaddrLoc = GetRxBufferAddr();
+  hal.ReadBuffer(FIFOaddrLoc, RXdataBuffer, PayloadLength);
   GetLastPacketStats();
   if (RXdoneCallback) RXdoneCallback();
 }

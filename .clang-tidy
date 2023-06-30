@@ -1,0 +1,62 @@
+# Some duplicate checks were removed; only check per tuple was left from the following:
+#  - cppcoreguidelines-pro-type-member-init,hicpp-member-init
+#  - hicpp-uppercase-literal-suffix,readability-uppercase-literal-suffix
+#  - google-readability-braces-around-statements,hicpp-braces-around-statements,readability-braces-around-statements
+#  - bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions
+#  - hicpp-use-auto,modernize-use-auto
+#  - cppcoreguidelines-special-member-functions,hicpp-special-member-functions
+#  - cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes
+#  - google-explicit-constructor,hicpp-explicit-conversions
+#  - hicpp-use-equals-default,modernize-use-equals-default
+#  - hicpp-deprecated-headers,modernize-deprecated-headers
+#  - hicpp-use-nullptr,modernize-use-nullptr
+
+Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-narrowing-conversions,
+  google-*,
+  -google-readability-todo,
+  -google-readability-braces-around-statements,
+  hicpp-*,
+  -hicpp-avoid-c-arrays,
+  -hicpp-vararg,
+  -hicpp-no-array-decay,
+  -hicpp-uppercase-literal-suffix,
+  -hicpp-member-init,
+  -hicpp-braces-around-statements,
+  -hicpp-use-auto,
+  -hicpp-special-member-functions,
+  -hicpp-explicit-conversions,
+  -hicpp-deprecated-headers,
+  -hicpp-use-nullptr,
+  -hicpp-use-equals-default,
+  llvm-*,
+  -llvm-else-after-return,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-macro-to-enum,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length
+
+# Example for future CheckOptions configuration
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 50
+
+FormatStyle: 'file'

@@ -19,7 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32g0xx_it.h"
-#include "main.hpp"
+#include "Main.hpp"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
