@@ -383,21 +383,16 @@ void Hmi::settings() {
       }
     }
     if (okButton.wasPressed() || okButton.pressedFor(500)) {
-      if (i == 29) {  // shift
+      if (i == Window::kShiftIdx) {  // shift
         window.updateKeyboard(keyboardString, i, true);
-      } else if (i == 37) {  // enter
-        memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 8);
-        window.initSettings(settingSubMenu);
-        configChanged = true;
-        window.updateSettings(settingIndex);
-        keyboardActive = false;
       } else {
         window.updateKeyboard(keyboardString, i, true);
       }
     }
 
     if (backButton.wasPressed()) {
-      memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 8);
+      memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 16);
+      keyboardString[16] = '\0';
       window.initSettings(settingSubMenu);
       configChanged = true;
       window.updateSettings(settingIndex);
@@ -448,7 +443,8 @@ void Hmi::settings() {
 
       if (settingsTable[settingSubMenu][settingIndex].type == STRING) {
         if (okButton.wasPressed()) {
-          memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, 8);
+          memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, 16);
+          keyboardString[16] = '\0';
 
           window.initKeyboard(keyboardString, settingsTable[settingSubMenu][settingIndex].config.stringLength);
           keyboardActive = true;
@@ -472,15 +468,15 @@ void Hmi::settings() {
         configChanged = false;
         if (systemConfig.config.receiverMode == SINGLE) {
           // Set both link phrases to the same
-          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
-          link2.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
         } else {
           // Use two different link phrases
-          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 8);
-          link2.setLinkPhrase(systemConfig.config.linkPhrase2, 8);
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase2, 16);
         }
 
-        link1.setTestingPhrase(systemConfig.config.testingPhrase, 8);
+        link1.setTestingPhrase(systemConfig.config.testingPhrase, 16);
         systemConfig.save();
         console.log.println("Save config");
       }
