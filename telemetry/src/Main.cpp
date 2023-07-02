@@ -52,7 +52,7 @@ static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 
 /**
- * @brief  The application entry point.
+ * @brief  The application entry  point.
  * @retval int
  */
 int main(void) {
