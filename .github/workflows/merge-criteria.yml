@@ -22,6 +22,7 @@ jobs:
           dir_names_max_depth: '1'
           json: 'true'
           escape_json: 'false'
+          since_last_remote_commit: 'true'
 
       - name: Filter changed directories
         id: changed-files-filtered
@@ -37,7 +38,7 @@ jobs:
           if [[ $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
             filtered_array='["flight_computer","ground_station","telemetry"]'
           else
-            filtered_array=${{ steps.changed-files.outputs.all_changed_files }}
+            filtered_array='${{ steps.changed-files.outputs.all_changed_files }}'
           fi
 
           echo "$filtered_array"

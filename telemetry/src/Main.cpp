@@ -28,7 +28,7 @@
 #include <TinyGps.hpp>
 #include <cstring>
 
-/* Private variables ---------------------------------------------------------*/
+/* Private variables ------------- --------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
