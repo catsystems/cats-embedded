@@ -12,31 +12,21 @@ void Telemetry::begin() {
   xTaskCreate(update, "task_telemetry", 2048, this, 1, NULL);
 }
 
-void Telemetry::setLinkPhrase(char* phrase, uint32_t length) {
-  memset(linkPhrase, 0, 8);
+void Telemetry::setLinkPhrase(const char* phrase, uint32_t length) {
+  memset(linkPhrase, 0, 17);
   memcpy(linkPhrase, phrase, length);
   newSetting = true;
 }
 
-void Telemetry::setLinkPhrase(String phrase) {
-  uint32_t length = phrase.length();
-  memset(linkPhrase, 0, 8);
-  memcpy(linkPhrase, phrase.c_str(), length);
-  newSetting = true;
-}
+void Telemetry::setLinkPhrase(String phrase) { setLinkPhrase(phrase.c_str(), phrase.length()); }
 
-void Telemetry::setTestingPhrase(char* phrase, uint32_t length) {
-  memset(testingPhrase, 0, 8);
+void Telemetry::setTestingPhrase(const char* phrase, uint32_t length) {
+  memset(testingPhrase, 0, 17);
   memcpy(testingPhrase, phrase, length);
   newSetting = true;
 }
 
-void Telemetry::setTestingPhrase(String phrase) {
-  uint32_t length = phrase.length();
-  memset(testingPhrase, 0, 8);
-  memcpy(testingPhrase, phrase.c_str(), length);
-  newSetting = true;
-}
+void Telemetry::setTestingPhrase(String phrase) { setTestingPhrase(phrase.c_str(), phrase.length()); }
 
 void Telemetry::setDirection(transmission_direction_e dir) {
   if (dir != transmissionDirection) {
@@ -69,10 +59,11 @@ void Telemetry::initLink() {
 
   if (linkPhrase[0] != 0) {
     uint32_t phraseCrc = crc32(linkPhrase, strlen((const char*)linkPhrase));
+    console.error.printf("[TELEMETRY] Sending link phrase: %s (CRC: %lu)\n", linkPhrase, phraseCrc);
     sendLinkPhraseCrc(phraseCrc, 4);
     vTaskDelay(100);
     sendEnable();
-    console.warning.println("[TELE] Link Enabled");
+    console.warning.println("[TELEMETRY] Link Enabled");
   }
 
   if (testingPhrase[0] != 0) {

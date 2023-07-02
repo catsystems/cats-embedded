@@ -1,6 +1,6 @@
 #include "window.h"
+#include <Fonts/FreeMonoBold12pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
-#include <Fonts/FreeSans18pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
@@ -14,7 +14,7 @@ void Window::begin() {
 }
 
 void Window::logo() {
-  display.drawBitmap(140, 20, cats_logo, 120, 200, BLACK);
+  display.drawBitmap(160, 20, cats_logo, 120, 200, BLACK);
   display.refresh();
 }
 
@@ -154,7 +154,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
 }
 
 void Window::initMenu(uint32_t index) {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
@@ -210,7 +210,7 @@ void Window::updateMenu(uint32_t index) {
 }
 
 void Window::initLive() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.drawLine(199, 18, 199, 240, BLACK);
   display.drawLine(200, 18, 200, 240, BLACK);
@@ -424,7 +424,7 @@ void Window::updateLiveInfo(TelemetryInfo *info, uint32_t index, uint32_t color)
 }
 
 void Window::initRecovery() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.drawCircle(300, 125, 80, BLACK);
 
@@ -548,7 +548,7 @@ void Window::initTestingBox(uint32_t index) {
 }
 
 void Window::initTesting() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.setFont(&FreeSansBold12pt7b);
   display.setCursor(10, 120);
@@ -583,7 +583,7 @@ void Window::initTesting() {
 }
 
 void Window::initTestingConfirmed(bool connected, bool testingEnabled) {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   display.setTextSize(1);
   if (connected) {
     if (testingEnabled) {
@@ -629,7 +629,7 @@ void Window::initTestingConfirmed(bool connected, bool testingEnabled) {
   display.refresh();
 }
 void Window::initTestingFailed() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   display.setTextSize(1);
   display.setFont(&FreeSansBold9pt7b);
   drawCentreString("Could not ARM System", 200, 100);
@@ -647,7 +647,7 @@ void Window::initTestingFailed() {
 }
 
 void Window::initTestingLost() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   display.setTextSize(1);
   display.setTextColor(BLACK);
   display.setFont(&FreeSansBold9pt7b);
@@ -667,7 +667,7 @@ void Window::initTestingLost() {
 }
 
 void Window::initTestingWait() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   display.setTextSize(1);
   display.setFont(&FreeSansBold9pt7b);
   drawCentreString("Starting testing mode...", 200, 100);
@@ -683,7 +683,7 @@ void Window::initTestingWait() {
 }
 
 void Window::initTestingReady() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.drawLine(199, 18, 199, 220, BLACK);
   display.drawLine(200, 18, 200, 220, BLACK);
@@ -747,19 +747,19 @@ void Window::updateTesting(uint32_t index) {
 }
 
 void Window::initData() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   drawCentreString("Coming soon...", 70, 51);
   display.refresh();
 }
 
 void Window::initSesnors() {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
   drawCentreString("Coming soon...", 70, 51);
   display.refresh();
 }
 
 void Window::initSettings(uint32_t submenu) {
-  display.fillRect(0, 19, 400, 222, WHITE);
+  clearMainScreen();
 
   display.drawLine(0, 49, 400, 49, BLACK);
 
@@ -793,7 +793,7 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *set
 
   display.setTextColor(color);
 
-  display.setCursor(20, y);
+  display.setCursor(10, y);
   display.print(setting->name);
 
   if (setting->type == TOGGLE) {
@@ -807,7 +807,9 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *set
       display.fillTriangle(224, y + 14, 232, y + 6, 232, y + 22, color);
     }
   } else if (setting->type == STRING) {
-    drawCentreString((const char *)setting->dataPtr, 305, y);
+    display.setFont(&FreeMonoBold12pt7b);
+    drawCentreString((const char *)setting->dataPtr, 285, y);
+    display.setFont(&FreeSans12pt7b);
   } else if (setting->type == NUMBER) {
     char buffer[8];
     snprintf(buffer, 8, "%+d", *(int16_t *)setting->dataPtr);
@@ -874,7 +876,11 @@ void Window::highlightSetting(uint32_t index, bool color) {
   display.print(settingsTable[subMenuSettingIndex][index].description2);
 }
 
-int keybXY[38][2] = {
+const uint8_t kNumKeyboardChars = 38;
+const uint32_t kBackspaceCoordX = 330;
+const uint32_t kBackspaceCoordY = 62;
+
+const int keybXY[kNumKeyboardChars][2] = {
     {20, 125},   //'1'
     {60, 125},   //'2'
     {100, 125},  //'3'
@@ -912,42 +918,49 @@ int keybXY[38][2] = {
     {220, 215},  //'B'
     {260, 215},  //'N'
     {300, 215},  //'M'
-    {340, 215},  //'ENTER'
+    {340, 215},  //'_'
 };
 
-char keybChar[38] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O',
-                     'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ' ', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ' '};
+// clang-format off
+const char keybChar[kNumKeyboardChars] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 
+                                          'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+                                             'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 
+                                          ' ', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '_'};
+// clang-format on
 
 void Window::initKeyboard(char *text, uint32_t maxLength) {
-  if (maxLength != 0) keyboardTextMaxLength = maxLength;
-  display.fillRect(0, 19, 400, 222, WHITE);
+  if (maxLength != 0) {
+    keyboardTextMaxLength = maxLength;
+  }
+  clearMainScreen();
 
-  display.setFont(&FreeSans12pt7b);
-  display.setTextSize(1);
-  display.setTextColor(BLACK);
-
-  display.setCursor(140, 80);
-  display.print(text);
+  updateKeyboardText(text, BLACK);
 
   display.setFont();
   display.setTextSize(2);
 
-  for (int i = 0; i < 38; i++) {
+  // console.error.println("[KEYBOARD] Initializing keyboard");
+  for (int i = 0; i < kNumKeyboardChars; i++) {
+    // console.error.printf("[KEYBOARD] Initializing %d\n", keybChar[i]);
     if (i == oldKey) {
       highlightKeyboardKey(i, BLACK);
-    } else if (i != 29 && i != 37) {
-      if (!upperCase && i > 9)
+    } else if (i != kShiftIdx) {
+      if (!upperCase && i > 9 && i != kUnderscoreIdx) {
         display.drawChar(keybXY[i][0], keybXY[i][1], keybChar[i] + 32, BLACK, WHITE, 2);
-      else
+      } else {
         display.drawChar(keybXY[i][0], keybXY[i][1], keybChar[i], BLACK, WHITE, 2);
+      }
     }
   }
-  if (oldKey != 29) display.drawBitmap(keybXY[29][0] - 4, keybXY[29][1] - 1, shift_keyboard, 16, 16, BLACK);
-  if (oldKey != 37) display.drawBitmap(keybXY[37][0] - 4, keybXY[37][1] - 1, enter_keyboard, 16, 16, BLACK);
-  if (oldKey != -1)
-    display.drawBitmap(280, 60, backspace_keyboard, 24, 24, BLACK);
-  else
+
+  if (oldKey != kShiftIdx) {
+    display.drawBitmap(keybXY[kShiftIdx][0] - 4, keybXY[kShiftIdx][1] - 1, shift_keyboard, 16, 16, BLACK);
+  }
+  if (oldKey != -1) {
+    display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, BLACK);
+  } else {
     highlightKeyboardKey(-1, BLACK);
+  }
 
   display.refresh();
 }
@@ -957,21 +970,28 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
   display.setTextSize(1);
   display.setTextColor(BLACK);
 
+  console.error.printf("[KEYBOARD] Updating keyboard: %s\n", text);
+
   if (keyPressed) {
-    if (keyHighlight == 29) {  // SHIFT
+    console.error.println("[KEYBOARD] Key pressed");
+    if (keyHighlight == kShiftIdx) {  // SHIFT
+      console.error.println("[KEYBOARD] Shift");
       upperCase = !upperCase;
       initKeyboard(text);
     } else if (keyHighlight == -1) {  // BACKSPACE
       updateKeyboardText(text, WHITE);
-      if (strlen(text) > 0) text[strlen(text) - 1] = 0;
+      if (strlen(text) > 0) {
+        text[strlen(text) - 1] = 0;
+      }
       updateKeyboardText(text, BLACK);
     } else {  // KEY
       if (strlen(text) < keyboardTextMaxLength) {
         updateKeyboardText(text, WHITE);
-        if (keyHighlight > 9)
+        if (keyHighlight > 9 && keyHighlight != kUnderscoreIdx) {
           text[strlen(text)] = keybChar[keyHighlight] + !upperCase * 32;
-        else
+        } else {
           text[strlen(text)] = keybChar[keyHighlight];
+        }
         updateKeyboardText(text, BLACK);
       }
     }
@@ -989,27 +1009,34 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
 }
 
 void Window::highlightKeyboardKey(int32_t key, bool color) {
+  console.error.printf("[KEYBOARD] Highlighting key %ld\n", key);
   if (key == -1) {
-    display.fillCircle(291, 71, 16, color);
-    display.drawBitmap(280, 60, backspace_keyboard, 24, 24, !color);
+    display.fillCircle(kBackspaceCoordX + 12, kBackspaceCoordY + 11, 16, color);
+    display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, !color);
   } else {
     display.fillCircle(keybXY[key][0] + 4, keybXY[key][1] + 7, 16, color);
   }
 
-  if (key == 29) {
-    display.drawBitmap(keybXY[29][0] - 4, keybXY[29][1] - 1, shift_keyboard, 16, 16, !color);
-  } else if (key == 37) {
-    display.drawBitmap(keybXY[37][0] - 4, keybXY[37][1] - 1, enter_keyboard, 16, 16, !color);
+  if (key == kShiftIdx) {
+    display.drawBitmap(keybXY[kShiftIdx][0] - 4, keybXY[kShiftIdx][1] - 1, shift_keyboard, 16, 16, !color);
   } else {
-    if (!upperCase && key > 9)
+    if (!upperCase && key > 9 && key != kUnderscoreIdx) {
       display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key] + 32, !color, color, 2);
-    else
+    } else {
       display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key], !color, color, 2);
+    }
   }
 }
 
 void Window::updateKeyboardText(char *text, bool color) {
+  display.setFont(&FreeMonoBold12pt7b);
   display.setTextColor(color);
-  display.setCursor(140, 80);
+  display.setCursor(90, 80);
   display.print(text);
+  display.setFont(&FreeSans12pt7b);
 }
+
+/**
+ * Clears everything except the status bar.
+ */
+void Window::clearMainScreen() { display.fillRect(0, 19, 400, 222, WHITE); }
