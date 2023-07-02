@@ -66,6 +66,9 @@ class Window {
 
   void refresh() { display.refresh(); }
 
+  static constexpr uint8_t kShiftIdx = 29;
+  static constexpr uint8_t kUnderscoreIdx = 37;
+
  private:
   void updateLiveData(TelemetryData *data, uint32_t index, uint32_t color);
   void updateLiveInfo(TelemetryInfo *info, uint32_t index, uint32_t color);
@@ -77,6 +80,9 @@ class Window {
 
   void highlightKeyboardKey(int32_t key, bool color);
   void updateKeyboardText(char *text, bool color);
+
+  void clearMainScreen();
+
   Adafruit_SharpMem display;
 
   bool connected[2];
@@ -89,7 +95,7 @@ class Window {
   int32_t oldSettingsIndex;
   uint32_t subMenuSettingIndex;
 
-  bool upperCase = true;
+  bool upperCase = false;
   int32_t oldKey = 0;
   uint32_t keyboardTextMaxLength = 0;
 

@@ -8,9 +8,9 @@ struct systemConfig_t {
   int16_t timeZoneOffset;
   uint8_t neverStopLogging;
   ReceiverTelemetryMode_e receiverMode;
-  char linkPhrase1[9];
-  char linkPhrase2[9];
-  char testingPhrase[9];
+  char linkPhrase1[17];
+  char linkPhrase2[17];
+  char testingPhrase[17];
 };
 
 class Config {

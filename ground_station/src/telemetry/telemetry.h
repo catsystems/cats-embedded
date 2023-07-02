@@ -9,10 +9,10 @@ class Telemetry {
   Telemetry(HardwareSerial& serial, int rxPin, int txPin) : serial(serial), rxPin(rxPin), txPin(txPin) {}
   void begin();
 
-  void setLinkPhrase(char* phrase, uint32_t length);
+  void setLinkPhrase(const char* phrase, uint32_t length);
   void setLinkPhrase(String phrase);
 
-  void setTestingPhrase(char* phrase, uint32_t length);
+  void setTestingPhrase(const char* phrase, uint32_t length);
   void setTestingPhrase(String phrase);
 
   void setDirection(transmission_direction_e dir);
@@ -62,8 +62,8 @@ class Telemetry {
   int rxPin;
   int txPin;
 
-  uint8_t linkPhrase[9] = {};
-  uint8_t testingPhrase[9] = {};
+  uint8_t linkPhrase[17] = {};
+  uint8_t testingPhrase[17] = {};
   uint32_t testingCrc = 0;
 
   bool requestExitTesting = false;
