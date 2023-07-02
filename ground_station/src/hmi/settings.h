@@ -69,7 +69,7 @@ const lookup_table_entry_t lookup_tables[] = {
 
 const char* const settingPageName[2] = {
     "General",
-    "Telemetry",
+    "Tele metry",
 };
 
 const device_settings_t settingsTable[][4] = {
