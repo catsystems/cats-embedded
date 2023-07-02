@@ -1,6 +1,8 @@
 import os
 Import("env")
 
+print(env["PIOENV"])
+
 env.Append(
     CFLAGS=["-std=c17"],
     CCFLAGS=[
@@ -49,7 +51,7 @@ env.Append(
         "-mfloat-abi=hard",
         "-mfpu=fpv4-sp-d16",
 
-        "-Wl,-gc-sections,--print-memory-usage,-Map,.pio/build/genericSTM32F411CE/output.map"
+        f"-Wl,-gc-sections,--print-memory-usage,-Map,.pio/build/{env['PIOENV']}/output.map"
     ]
 )
 
