@@ -64,8 +64,8 @@ namespace task {
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_table[action_list[i].action];
         if (curr_fp != nullptr) {
-          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", event_map[curr_event],
-                    action_map[action_list[i].action], action_list[i].action_arg);
+          log_error("EXECUTING EVENT: %s, ACTION: %s, ACTION_ARG: %d", GetStr(curr_event, event_map),
+                    GetStr(action_list[i].action, action_map), action_list[i].action_arg);
           /* call the actuator function */
           curr_fp(action_list[i].action_arg);
           event_info_t event_info = {.event = curr_event, .action = action_list[i]};
@@ -73,7 +73,8 @@ namespace task {
         }
       }
       if (num_actions == 0) {
-        log_error("EXECUTING EVENT: %s, ACTION: %s", event_map[curr_event], action_map[action_list[0].action]);
+        log_error("EXECUTING EVENT: %s, ACTION: %s", GetStr(curr_event, event_map),
+                  GetStr(action_list[0].action, action_map));
         timestamp_t curr_ts = osKernelGetTickCount();
         event_info_t event_info = {.event = curr_event, .action = {ACT_NO_OP}};
         record(curr_ts, EVENT_INFO, &event_info);

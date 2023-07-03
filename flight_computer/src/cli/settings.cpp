@@ -23,15 +23,6 @@
 
 #include <cstddef>
 
-#define LOOKUP_TABLE_ENTRY(name) \
-  { name, ARRAYLEN(name) }
-
-const lookup_table_entry_t lookup_tables[] = {
-    LOOKUP_TABLE_ENTRY(event_map),   LOOKUP_TABLE_ENTRY(action_map),
-    LOOKUP_TABLE_ENTRY(on_off_map),  {(const char *const *)recorder_speed_map, NUM_REC_SPEEDS},
-    LOOKUP_TABLE_ENTRY(battery_map),
-};
-
 #undef LOOKUP_TABLE_ENTRY
 
 const cli_value_t value_table[] = {

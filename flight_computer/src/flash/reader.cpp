@@ -262,7 +262,7 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.flight_state);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|FLIGHT_STATE|%s", rec_elem.ts, fsm_map[rec_elem.u.flight_state]);
+            log_raw("%lu|FLIGHT_STATE|%s", rec_elem.ts, GetStr(rec_elem.u.flight_state, fsm_map));
           }
         } break;
         case EVENT_INFO: {
@@ -270,8 +270,8 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             peripheral_act_t action = rec_elem.u.event_info.action;
-            log_raw("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, event_map[rec_elem.u.event_info.event],
-                    action_map[rec_elem.u.event_info.action.action], action.action_arg);
+            log_raw("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, GetStr(rec_elem.u.event_info.event, event_map),
+                    GetStr(rec_elem.u.event_info.action.action, action_map), action.action_arg);
           }
         } break;
         case ERROR_INFO: {

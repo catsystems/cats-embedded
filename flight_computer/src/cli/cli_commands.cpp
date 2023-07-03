@@ -260,10 +260,10 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
         } else {
           tableIndex = val->config.lookup.table_index;
         }
-        const lookup_table_entry_t *tableEntry = &lookup_tables[tableIndex];
+        const EnumToStrMap &tableEntry = lookup_tables[tableIndex];
         bool matched = false;
-        for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->value_count && !matched; tableValueIndex++) {
-          matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+        for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry.size() && !matched; tableValueIndex++) {
+          matched = tableEntry[tableValueIndex] && strcasecmp(tableEntry[tableValueIndex], eqptr) == 0;
 
           if (matched) {
             cli_set_var(val, tableValueIndex);
@@ -410,7 +410,7 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
   if (new_enum > TOUCHDOWN || new_enum < CALIBRATING) {
     new_enum = INVALID;
   }
-  cli_printf("State:       %s\n", fsm_map[new_enum]);
+  cli_printf("State:       %s\n", GetStr(new_enum, fsm_map));
   cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
   cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)task::global_state_estimation->GetEstimationOutput().height,
              (double)task::global_state_estimation->GetEstimationOutput().velocity,
@@ -847,33 +847,36 @@ static void print_control_config() {
 }
 
 static void print_action_config() {
-  const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
-  const lookup_table_entry_t *p_action_table = &lookup_tables[TABLE_ACTIONS];
+  const EnumToStrMap &p_event_table = lookup_tables[TABLE_EVENTS];
+  const EnumToStrMap &p_action_table = lookup_tables[TABLE_ACTIONS];
 
   cli_printf("\n * ACTION CONFIGURATION *\n");
   config_action_t action;
   for (int i = 0; i < NUM_EVENTS; i++) {
-    int nr_actions = cc_get_num_actions((cats_event_e)(i));
+    const auto ev = static_cast<cats_event_e>(i);
+    int nr_actions = cc_get_num_actions(ev);
     if (nr_actions > 0) {
-      cli_printf("\n%s\n", p_event_table->values[i]);
+      cli_printf("\n%s\n", GetStr(ev, p_event_table));
       cli_printf("   Number of Actions: %d\n", nr_actions);
       for (int j = 0; j < nr_actions; j++) {
-        cc_get_action((cats_event_e)(i), j, &action);
-        cli_printf("     %s - %d\n", p_action_table->values[action.action_idx], action.arg);
+        cc_get_action(ev, j, &action);
+        cli_printf("     %s - %d\n", p_action_table[action.action_idx], action.arg);
       }
     }
   }
 }
 
 static void print_timer_config() {
-  const lookup_table_entry_t *p_event_table = &lookup_tables[TABLE_EVENTS];
+  const EnumToStrMap &p_event_table = lookup_tables[TABLE_EVENTS];
 
   cli_printf("\n\n * TIMER CONFIGURATION *\n");
   for (int i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.timers[i].duration > 0) {
       cli_printf("\nTIMER %d\n", i + 1);
-      cli_printf("  Start:    %s\n", p_event_table->values[global_cats_config.timers[i].start_event]);
-      cli_printf("  Trigger:  %s\n", p_event_table->values[global_cats_config.timers[i].trigger_event]);
+      cli_printf("  Start:    %s\n",
+                 GetStr(static_cast<cats_event_e>(global_cats_config.timers[i].start_event), p_event_table));
+      cli_printf("  Trigger:  %s\n",
+                 GetStr(static_cast<cats_event_e>(global_cats_config.timers[i].trigger_event), p_event_table));
       cli_printf("  Duration: %lu ms\n", global_cats_config.timers[i].duration);
     }
   }
