@@ -391,8 +391,8 @@ void Hmi::settings() {
     }
 
     if (backButton.wasPressed()) {
-      memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, 16);
-      keyboardString[16] = '\0';
+      memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, kMaxPhraseLen);
+      keyboardString[kMaxPhraseLen] = '\0';
       window.initSettings(settingSubMenu);
       configChanged = true;
       window.updateSettings(settingIndex);
@@ -443,8 +443,8 @@ void Hmi::settings() {
 
       if (settingsTable[settingSubMenu][settingIndex].type == STRING) {
         if (okButton.wasPressed()) {
-          memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, 16);
-          keyboardString[16] = '\0';
+          memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, kMaxPhraseLen);
+          keyboardString[kMaxPhraseLen] = '\0';
 
           window.initKeyboard(keyboardString, settingsTable[settingSubMenu][settingIndex].config.stringLength);
           keyboardActive = true;
@@ -468,15 +468,15 @@ void Hmi::settings() {
         configChanged = false;
         if (systemConfig.config.receiverMode == SINGLE) {
           // Set both link phrases to the same
-          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
-          link2.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
         } else {
           // Use two different link phrases
-          link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
-          link2.setLinkPhrase(systemConfig.config.linkPhrase2, 16);
+          link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
+          link2.setLinkPhrase(systemConfig.config.linkPhrase2, kMaxPhraseLen);
         }
 
-        link1.setTestingPhrase(systemConfig.config.testingPhrase, 16);
+        link1.setTestingPhrase(systemConfig.config.testingPhrase, kMaxPhraseLen);
         systemConfig.save();
         console.log.println("Save config");
       }

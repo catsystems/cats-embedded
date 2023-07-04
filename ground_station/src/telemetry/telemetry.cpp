@@ -14,7 +14,7 @@ void Telemetry::begin() {
 }
 
 void Telemetry::setLinkPhrase(const char* phrase, uint32_t length) {
-  memset(linkPhrase, 0, 17);
+  memset(linkPhrase, 0, kMaxPhraseLen + 1);
   memcpy(linkPhrase, phrase, length);
   newSetting = true;
 }
@@ -22,7 +22,7 @@ void Telemetry::setLinkPhrase(const char* phrase, uint32_t length) {
 void Telemetry::setLinkPhrase(String phrase) { setLinkPhrase(phrase.c_str(), phrase.length()); }
 
 void Telemetry::setTestingPhrase(const char* phrase, uint32_t length) {
-  memset(testingPhrase, 0, 17);
+  memset(testingPhrase, 0, kMaxPhraseLen + 1);
   memcpy(testingPhrase, phrase, length);
   newSetting = true;
 }

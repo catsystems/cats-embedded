@@ -939,9 +939,7 @@ void Window::initKeyboard(char *text, uint32_t maxLength) {
   display.setFont();
   display.setTextSize(2);
 
-  // console.error.println("[KEYBOARD] Initializing keyboard");
   for (int i = 0; i < kNumKeyboardChars; i++) {
-    // console.error.printf("[KEYBOARD] Initializing %d\n", keybChar[i]);
     if (i == oldKey) {
       highlightKeyboardKey(i, BLACK);
     } else if (i != kShiftIdx) {
@@ -969,8 +967,6 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
   display.setFont(&FreeSans12pt7b);
   display.setTextSize(1);
   display.setTextColor(BLACK);
-
-  console.error.printf("[KEYBOARD] Updating keyboard: %s\n", text);
 
   if (keyPressed) {
     console.error.println("[KEYBOARD] Key pressed");
@@ -1009,7 +1005,6 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
 }
 
 void Window::highlightKeyboardKey(int32_t key, bool color) {
-  console.error.printf("[KEYBOARD] Highlighting key %ld\n", key);
   if (key == -1) {
     display.fillCircle(kBackspaceCoordX + 12, kBackspaceCoordY + 11, 16, color);
     display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, !color);

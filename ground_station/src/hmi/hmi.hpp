@@ -51,7 +51,7 @@ class Hmi {
 
   uint32_t settingSubMenu = 0;
   int32_t settingIndex = -1;
-  char keyboardString[17] = {};
+  char keyboardString[kMaxPhraseLen + 1] = {};
 
   static void update(void* pvParameter);
 

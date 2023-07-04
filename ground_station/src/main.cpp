@@ -72,15 +72,15 @@ void loop() {
     ini = true;
     if (systemConfig.config.receiverMode == SINGLE) {
       // Set both link phrases to the same
-      link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
-      link2.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
+      link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
+      link2.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
     } else {
       // Use two different link phrases
-      link1.setLinkPhrase(systemConfig.config.linkPhrase1, 16);
-      link2.setLinkPhrase(systemConfig.config.linkPhrase2, 16);
+      link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
+      link2.setLinkPhrase(systemConfig.config.linkPhrase2, kMaxPhraseLen);
     }
 
-    link1.setTestingPhrase(systemConfig.config.testingPhrase, 16);
+    link1.setTestingPhrase(systemConfig.config.testingPhrase, kMaxPhraseLen);
 
     navigation.begin();
   }
