@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "console.h"
+#include "console.hpp"
 
 typedef struct {
   uint8_t state : 3;

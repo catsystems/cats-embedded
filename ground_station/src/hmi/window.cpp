@@ -1,11 +1,11 @@
-#include "window.h"
+#include "window.hpp"
 #include <Fonts/FreeMonoBold12pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <TimeLib.h>
-#include "bmp.h"
+#include "bmp.hpp"
 
 void Window::begin() {
   display.begin();

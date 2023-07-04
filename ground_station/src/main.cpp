@@ -31,12 +31,12 @@
  ******************************************************************************/
 
 #include <Arduino.h>
-#include "console.h"
-#include "hmi/hmi.h"
-#include "logging/recorder.h"
-#include "navigation.h"
-#include "telemetry/telemetry.h"
-#include "utils.h"
+#include "console.hpp"
+#include "hmi/hmi.hpp"
+#include "logging/recorder.hpp"
+#include "navigation.hpp"
+#include "telemetry/telemetry.hpp"
+#include "utils.hpp"
 
 Utils utils;
 Hmi hmi("/logs");

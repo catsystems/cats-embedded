@@ -30,12 +30,12 @@
  * SOFTWARE.
  ******************************************************************************/
 
-#include "utils.h"
+#include "utils.hpp"
 #include "Adafruit_SPIFlash.h"
 #include "Adafruit_TinyUSB.h"
 #include "SPI.h"
-#include "console.h"
-#include "systemParser.h"
+#include "console.hpp"
+#include "systemParser.hpp"
 
 #include "diskio.h"
 #include "ff.h"

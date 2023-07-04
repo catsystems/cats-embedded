@@ -1,7 +1,7 @@
 #pragma once
 
-#include "telemetry/telemetryData.h"
-#include "utils.h"
+#include "telemetry/telemetryData.hpp"
+#include "utils.hpp"
 
 class Recorder {
  public:

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "JC_Button.h"
-#include "logging/recorder.h"
-#include "window.h"
+#include "config.hpp"
+#include "logging/recorder.hpp"
+#include "window.hpp"
 
 class Hmi {
  public:

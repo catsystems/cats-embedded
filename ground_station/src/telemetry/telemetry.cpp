@@ -1,6 +1,7 @@
-#include "telemetry/telemetry.h"
-#include "console.h"
-#include "crc.h"
+#include "telemetry/telemetry.hpp"
+#include "config.hpp"
+#include "console.hpp"
+#include "crc.hpp"
 
 #define TASK_TELE_FREQ 100
 

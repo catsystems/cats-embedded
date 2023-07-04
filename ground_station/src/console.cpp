@@ -30,7 +30,7 @@
  * SOFTWARE.
  ******************************************************************************/
 
-#include "console.h"
+#include "console.hpp"
 
 bool Console::begin(void) {
   if (type == USBCDC_t) {
