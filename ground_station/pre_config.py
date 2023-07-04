@@ -2,7 +2,9 @@ import os
 Import("env")
 
 env.Append(
-    CFLAGS=["-std=c17"],
+    # Unfortunately we can't use the standard standard,
+    # we have to use the GNU standard as the arduino library requires it..
+    CFLAGS=["-std=gnu17"],
     CCFLAGS=[
         #TODO: check if thumb should be enabled
         # cpu
@@ -20,7 +22,7 @@ env.Append(
         "-Wno-attributes"
     ],
     CXXFLAGS=[
-        "-std=c++20",
+        "-std=gnu++20",
         # "-frtti",
         # Disable volatile warnings of type "compound assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]"
         # This is heavily used by STM libraries and creates too much noise when compiling
