@@ -154,11 +154,10 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
   bool testing_enabled = false;
   /* Check if valid link parameters are set for testing mode to be enabled */
   /* If no test phrase is set, don't allow testing mode */
-  if (global_cats_config.telemetry_settings.test_phrase[0] != '\0') {
-    testing_enabled = global_cats_config.enable_testing_mode;
-    const char* test_phrase = global_cats_config.telemetry_settings.test_phrase;
-    m_test_phrase_crc = crc32(reinterpret_cast<const uint8_t*>(test_phrase), strlen(test_phrase));
-  }
+
+  testing_enabled = global_cats_config.enable_testing_mode;
+  const char test_phrase[] = "test";
+  m_test_phrase_crc = crc32(reinterpret_cast<const uint8_t*>(test_phrase), strlen(test_phrase));
 
   /* Configure the telemetry MCU */
   SendSettings(CMD_DIRECTION, TX);

@@ -102,15 +102,53 @@ int main(void) {
   global_servo2 = &servo2;
 
   init_logging();
-  log_info("System initialization complete.");
+  log_info("Hardware Init Done");
 
   HAL_Delay(10);
   init_storage();
-  log_info("LFS initialization complete.");
+  log_info("w25qxx Init Done");
 
   HAL_Delay(10);
   load_and_set_config();
-  log_info("Config load complete.");
+  log_info("Config Init Done");
+
+  // Barometer Test
+  if (barometer.Init()) {
+  } else {
+    log_error("Barometer Init Failed");
+    while (true) {
+    }
+  }
+
+  barometer.Prepare(sensor::Ms5607::Request::kPressure);
+  HAL_Delay(10);
+  barometer.Read();
+
+  barometer.Prepare(sensor::Ms5607::Request::kTemperature);
+  HAL_Delay(10);
+  barometer.Read();
+
+  int32_t pressure;
+  int32_t temperature;
+
+  barometer.GetMeasurement(pressure, temperature);
+
+  log_debug("Barometric pressure: %ld", pressure);
+  log_debug("Barometric temperature: %ld", temperature);
+
+  if (temperature > 0 && temperature < 100 && pressure > 70000 && pressure < 110000) {
+    log_info("Barometer readings within range");
+  } else {
+    log_error("Barometer readings out of range");
+  }
+
+  // IMU Test
+
+  if (imu.Init()) {
+    log_info("IMU Init Done");
+  } else {
+    log_error("IMU Init Failed");
+  }
 
   // After loading the config we can set the servos to the initial position
   servo1.SetPosition(global_cats_config.initial_servo_position[0]);
@@ -134,7 +172,50 @@ int main(void) {
   HAL_Delay(10);
   adc_init();
   battery_monitor_init(global_cats_config.battery_type);
-  log_info("Battery monitor initialization complete.");
+
+  log_debug("Battery voltage: %f V", (double)battery_voltage());
+  if (battery_voltage() < 7.0f) {
+    log_error("Battery voltage too low");
+    while (true) {
+    }
+  }
+
+  log_debug("PYROS OFF");
+  log_debug("PY1: %lu PY2: %lu", adc_get(ADC_PYRO1), adc_get(ADC_PYRO2));
+
+  uint32_t adcBefore = adc_get(ADC_PYRO1);
+
+  HAL_GPIO_WritePin(PYRO_EN_GPIO_Port, PYRO_EN_Pin, GPIO_PIN_SET);
+  HAL_Delay(100);
+  log_debug("HIGH CHANNEL ON");
+  log_debug("PY1: %lu PY2: %lu", adc_get(ADC_PYRO1), adc_get(ADC_PYRO2));
+
+  if ((adcBefore + 100) > adc_get(ADC_PYRO1)) {
+    log_error("High Channel MOSFET not working");
+    while (true) {
+    }
+  }
+
+  HAL_GPIO_WritePin(PYRO1_GPIO_Port, PYRO1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(PYRO2_GPIO_Port, PYRO2_Pin, GPIO_PIN_SET);
+  HAL_Delay(100);
+
+  log_debug("PYROS ON");
+  log_debug("PY1: %lu PY2: %lu", adc_get(ADC_PYRO1), adc_get(ADC_PYRO2));
+
+  if (adc_get(ADC_PYRO1) > 100) {
+    log_error("Pyros 1 MOSFET not working");
+    while (true) {
+    }
+  }
+
+  if (adc_get(ADC_PYRO2) > 100) {
+    log_error("Pyros 2 MOSFET not working");
+    while (true) {
+    }
+  }
+
+  log_info("All MOSFET working");
 
   /* Init scheduler */
   osKernelInitialize();
@@ -169,7 +250,7 @@ int main(void) {
 
   task::Telemetry::Start(task_state_estimation_ptr, task_buzzer);
 
-  log_info("Task initialization complete.");
+  log_info("Enabling telemetry...");
 
   log_disable();
 
