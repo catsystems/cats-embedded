@@ -1,10 +1,10 @@
 
-#include "hmi.h"
+#include "hmi.hpp"
 #include <TimeLib.h>
-#include "console.h"
-#include "navigation.h"
-#include "telemetry/telemetry.h"
-#include "utils.h"
+#include "console.hpp"
+#include "navigation.hpp"
+#include "telemetry/telemetry.hpp"
+#include "utils.hpp"
 
 extern Telemetry link1;
 extern Telemetry link2;

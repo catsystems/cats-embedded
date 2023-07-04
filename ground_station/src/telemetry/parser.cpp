@@ -1,8 +1,8 @@
 
-#include "parser.h"
+#include "parser.hpp"
 
-#include "console.h"
-#include "crc.h"
+#include "console.hpp"
+#include "crc.hpp"
 
 void Parser::parse() {
   (this->*commandFunction[opCodeIndex])(&buffer[2], dataIndex);

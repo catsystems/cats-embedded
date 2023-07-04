@@ -5,8 +5,8 @@
 #include <QMC5883LCompass.h>
 #include <Wire.h>
 #include <math.h>
-#include "console.h"
-#include "utils.h"
+#include "console.hpp"
+#include "utils.hpp"
 
 const float R = 6378100.0F;   // Earth radius in m (zero tide radius IAU)
 const float C = 40075017.0F;  // Earth circumference in m

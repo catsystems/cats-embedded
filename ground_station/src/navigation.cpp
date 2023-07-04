@@ -1,6 +1,6 @@
-#include "navigation.h"
-#include "console.h"
-#include "utils.h"
+#include "navigation.hpp"
+#include "console.hpp"
+#include "utils.hpp"
 
 #define NAVIGATION_TASK_FREQUENCY 50
 

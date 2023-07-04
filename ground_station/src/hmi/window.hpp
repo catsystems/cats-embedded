@@ -3,9 +3,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SharpMem.h>
 
-#include "navigation.h"
-#include "settings.h"
-#include "telemetry/telemetryData.h"
+#include "navigation.hpp"
+#include "settings.hpp"
+#include "telemetry/telemetryData.hpp"
 
 #define BLACK 0
 #define WHITE 1

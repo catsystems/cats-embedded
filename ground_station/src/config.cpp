@@ -1,8 +1,8 @@
 
-#include "config.h"
+#include "config.hpp"
 
-#include "console.h"
-#include "systemParser.h"
+#include "console.hpp"
+#include "systemParser.hpp"
 
 SystemParser systemParser;
 Config systemConfig;

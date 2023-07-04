@@ -1,8 +1,9 @@
 #pragma once
 
-#include "parser.h"
-#include "telemetryData.h"
-#include "telemetry_reg.h"
+#include "config.hpp"
+#include "parser.hpp"
+#include "telemetryData.hpp"
+#include "telemetry_reg.hpp"
 
 class Telemetry {
  public:

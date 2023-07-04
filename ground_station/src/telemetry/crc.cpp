@@ -1,4 +1,4 @@
-#include "crc.h"
+#include "crc.hpp"
 
 #include <cstddef>
 #include <cstdint>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.h"
+#include "config.hpp"
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 

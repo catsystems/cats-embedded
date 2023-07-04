@@ -20,8 +20,8 @@
 
 #include <time.h>
 #include <cstdint>
-#include "telemetryData.h"
-#include "telemetry_reg.h"
+#include "telemetryData.hpp"
+#include "telemetry_reg.hpp"
 
 typedef struct {
   uint8_t rssi;
