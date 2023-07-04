@@ -106,7 +106,7 @@ bool SystemParser::setTestingPhrase(const char* phrase) {
 
 bool SystemParser::getLinkPhrase1(char* phrase) {
   if (doc.containsKey("link_phrase_1") && phrase != nullptr) {
-    strncpy(phrase, doc["link_phrase_1"].as<const char*>(), 17);
+    strncpy(phrase, doc["link_phrase_1"].as<const char*>(), kMaxPhraseLen + 1);
     return true;
   }
   return false;
@@ -114,7 +114,7 @@ bool SystemParser::getLinkPhrase1(char* phrase) {
 
 bool SystemParser::getLinkPhrase2(char* phrase) {
   if (doc.containsKey("link_phrase_2") && phrase != nullptr) {
-    strncpy(phrase, doc["link_phrase_2"].as<const char*>(), 17);
+    strncpy(phrase, doc["link_phrase_2"].as<const char*>(), kMaxPhraseLen + 1);
     return true;
   }
   return false;
@@ -122,7 +122,7 @@ bool SystemParser::getLinkPhrase2(char* phrase) {
 
 bool SystemParser::getTestingPhrase(char* phrase) {
   if (doc.containsKey("testing_phrase") && phrase != nullptr) {
-    strncpy(phrase, doc["testing_phrase"].as<const char*>(), 17);
+    strncpy(phrase, doc["testing_phrase"].as<const char*>(), kMaxPhraseLen + 1);
     return true;
   }
   return false;

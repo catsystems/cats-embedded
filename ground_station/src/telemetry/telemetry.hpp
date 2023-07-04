@@ -63,8 +63,8 @@ class Telemetry {
   int rxPin;
   int txPin;
 
-  uint8_t linkPhrase[17] = {};
-  uint8_t testingPhrase[17] = {};
+  uint8_t linkPhrase[kMaxPhraseLen + 1] = {};
+  uint8_t testingPhrase[kMaxPhraseLen + 1] = {};
   uint32_t testingCrc = 0;
 
   bool requestExitTesting = false;
