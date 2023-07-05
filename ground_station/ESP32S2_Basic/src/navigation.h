@@ -140,6 +140,9 @@ public:
     float min_vals[3];
     float max_vals_scal[3];
     float min_vals_scal[3];
+    bool ax_rot[20];
+    bool ay_rot[20];
+    bool az_rot[20];
   };
 
   void set_saved_calib(mag_calibration_t mag_calib);
@@ -181,12 +184,17 @@ private:
                                  .max_vals = {-100, -100, -100},
                                  .min_vals = {100, 100, 100},
                                  .max_vals_scal = {-100, -100, -100},
-                                 .min_vals_scal = {100, 100, 100}};
+                                 .min_vals_scal = {100, 100, 100},
+                                 .ax_rot = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false},
+                                 .ay_rot = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false},
+                                 .az_rot = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false}};
 
   static void navigationTask(void *pvParameter);
   void calculateDistanceDirection();
   void calibrate(float *val);
   void transform(float *val, float *output);
+  void check_rotation();
+  void compute_calibration_status();
 
   void resetCalib();
 };

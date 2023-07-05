@@ -68,6 +68,69 @@ void Navigation::calibrate(float *val) {
   }
 }
 
+void Navigation::check_rotation(){
+
+  int8_t index_ax = static_cast<int8_t>(ax * 10.0F - 10.0F);
+  int8_t index_ay = static_cast<int8_t>(ay * 10.0F - 10.0F);
+  int8_t index_az = static_cast<int8_t>(az * 10.0F - 10.0F);
+
+  if(index_ax > 19){
+    index_ax = 19;
+  }
+  if(index_ax < 0){
+    index_ax = 0;
+  }
+
+  mag_calib.ax_rot[index_ax] = true;
+
+  if(index_ay > 19){
+    index_ay = 19;
+  }
+  if(index_ay < 0){
+    index_ay = 0;
+  }
+
+  mag_calib.ay_rot[index_ay] = true;
+
+  if(index_az > 19){
+    index_az = 19;
+  }
+  if(index_az < 0){
+    index_az = 0;
+  }
+
+  mag_calib.az_rot[index_az] = true;
+
+} 
+
+void Navigation::compute_calibration_status(){
+
+float ax_percentage = 0;
+float ay_percentage = 0;
+float az_percentage = 0;
+
+for(uint8_t i = 0; i < 20; i++){
+  if(mag_calib.ax_rot[i]){
+    ax_percentage += 1.0F / 20.0F;
+  }
+  if(mag_calib.ay_rot[i]){
+    ay_percentage += 1.0F / 20.0F;
+  }
+  if(mag_calib.az_rot[i]){
+    az_percentage += 1.0F / 20.0F;
+  }
+}
+  
+console.log.print(ax_percentage);
+console.log.print("; ");
+console.log.print(ay_percentage);
+console.log.print("; ");
+console.log.println(az_percentage);
+
+
+}
+
+
 void Navigation::set_saved_calib(mag_calibration_t mag_calib){
     systemConfig.config.mag_calib.mag_offset_x = static_cast<int32_t>(mag_calib.offset[0]*1000.0F);
     systemConfig.config.mag_calib.mag_offset_y = static_cast<int32_t>(mag_calib.offset[1]*1000.0F);
@@ -100,6 +163,12 @@ void Navigation::resetCalib(){
     mag_calib.max_vals[i] = -100;
     mag_calib.min_vals[i] = 100;
   }
+
+  for(uint32_t i = 0; i < 20; i++){
+    mag_calib.ax_rot[i] = false;
+    mag_calib.ay_rot[i] = false;
+    mag_calib.az_rot[i] = false;
+  }
   
 }
 
@@ -129,13 +198,21 @@ void Navigation::navigationTask(void *pvParameter) {
 
     ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
 
+    //console.log.print(ref->ax);
+    //console.log.print("; ");
+    //console.log.print(ref->ay);
+    //console.log.print("; ");
+    //console.log.println(ref->az);
+
     if (ref->calibration) {
 
       n++;
 
       ref->calibrate(ref->raw_m);
+      ref->check_rotation();
+      ref->compute_calibration_status();
 
-      if (n >= 500) {
+      if (n >= 5000) {
         ref->setCalibrationBool(false);
         ref->set_saved_calib(ref->mag_calib);
         ref->resetCalib();
