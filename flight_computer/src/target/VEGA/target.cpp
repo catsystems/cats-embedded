@@ -392,11 +392,11 @@ static void MX_GPIO_Init(void) {
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : RF_INT2_Pin */
-  GPIO_InitStruct.Pin = RF_INT2_Pin;
+  /*Configure GPIO pin : TEST_BUTTON_Pin */
+  GPIO_InitStruct.Pin = TEST_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(RF_INT2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(TEST_BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RF_INT1_Pin USB_DET_Pin */
   GPIO_InitStruct.Pin = RF_INT1_Pin | USB_DET_Pin;

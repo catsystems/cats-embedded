@@ -23,30 +23,30 @@
 #include "stm32f4xx_hal.h"
 
 /***** Pin config *****/
-#define LED1_Pin           GPIO_PIN_13
-#define LED1_GPIO_Port     GPIOC
-#define LED2_Pin           GPIO_PIN_14
-#define LED2_GPIO_Port     GPIOC
-#define CS_BARO1_Pin       GPIO_PIN_1
-#define CS_BARO1_GPIO_Port GPIOB
-#define CS_IMU1_Pin        GPIO_PIN_0
-#define CS_IMU1_GPIO_Port  GPIOB
-#define PYRO_EN_Pin        GPIO_PIN_2
-#define PYRO_EN_GPIO_Port  GPIOB
-#define FLASH_CS_Pin       GPIO_PIN_12
-#define FLASH_CS_GPIO_Port GPIOB
-#define RF_INT2_Pin        GPIO_PIN_13
-#define RF_INT2_GPIO_Port  GPIOB
-#define RF_INT1_Pin        GPIO_PIN_8
-#define RF_INT1_GPIO_Port  GPIOA
-#define USB_DET_Pin        GPIO_PIN_15
-#define USB_DET_GPIO_Port  GPIOA
-#define IO1_Pin            GPIO_PIN_7
-#define IO1_GPIO_Port      GPIOB
-#define PYRO1_Pin          GPIO_PIN_8
-#define PYRO1_GPIO_Port    GPIOB
-#define PYRO2_Pin          GPIO_PIN_9
-#define PYRO2_GPIO_Port    GPIOB
+#define LED1_Pin              GPIO_PIN_13
+#define LED1_GPIO_Port        GPIOC
+#define LED2_Pin              GPIO_PIN_14
+#define LED2_GPIO_Port        GPIOC
+#define CS_BARO1_Pin          GPIO_PIN_1
+#define CS_BARO1_GPIO_Port    GPIOB
+#define CS_IMU1_Pin           GPIO_PIN_0
+#define CS_IMU1_GPIO_Port     GPIOB
+#define PYRO_EN_Pin           GPIO_PIN_2
+#define PYRO_EN_GPIO_Port     GPIOB
+#define FLASH_CS_Pin          GPIO_PIN_12
+#define FLASH_CS_GPIO_Port    GPIOB
+#define TEST_BUTTON_Pin       GPIO_PIN_13
+#define TEST_BUTTON_GPIO_Port GPIOB
+#define RF_INT1_Pin           GPIO_PIN_8
+#define RF_INT1_GPIO_Port     GPIOA
+#define USB_DET_Pin           GPIO_PIN_15
+#define USB_DET_GPIO_Port     GPIOA
+#define IO1_Pin               GPIO_PIN_7
+#define IO1_GPIO_Port         GPIOB
+#define PYRO1_Pin             GPIO_PIN_8
+#define PYRO1_GPIO_Port       GPIOB
+#define PYRO2_Pin             GPIO_PIN_9
+#define PYRO2_GPIO_Port       GPIOB
 
 /***** Peripherals config *****/
 // #define USE_CAN
