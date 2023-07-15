@@ -25,9 +25,10 @@
  */
 #include "emfat_file.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 
 #include "emfat.h"
 #include "lfs.h"
@@ -84,24 +85,53 @@ static const char readme_file[] =
     "Welcome to CATS!\r\n\r\n"
     "To get started please visit our website: https://catsystems.io.\r\n\r\n"
     "To erase log files and to plot your flights, please use the CATS Configurator.\r\n\r\n"
-    "You can find the latest version on our Github: https://github.com/catsystems/cats-configurator/releases\r\n";
+    "You can find the latest version on our Github: https://github.com/catsystems/cats-configurator/releases\r\n\r\n"
+    "The number of logs exposed via Mass Storage Controller is limited to 50 flight log files and 50 stats files.\r\n";
 #define README_SIZE_BYTES (sizeof(readme_file) - 1)
-
-static const emfat_entry_t entriesPredefined[] = {
-    // name - dir - attr - lvl - offset - size - max_size - user - time - read - write
-    {"", true, ATTR_DIR, 0, 0, 0, 0, 0, CMA, NULL, NULL, 0},
-    {"readme.txt", false, ATTR_READ, 1, 0, 0, README_SIZE_BYTES, README_SIZE_BYTES, (long)readme_file, CMA,
-     memory_read_proc, NULL, 0}};
 
 #define PREDEFINED_ENTRY_COUNT 2
 #define README_FILE_IDX        1
 
 // We are limited to 50 flight logs & 50 stats files due to RAM memory limits
 // TODO: It seems the number has to be 1 more than the actual limit, this should be investigated
-#define EMFAT_MAX_LOG_ENTRY 100
-#define EMFAT_MAX_ENTRY     (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY)
+constexpr uint32_t kMaxNumVisibleLogs = 100;
+static_assert(kMaxNumVisibleLogs > 0 && kMaxNumVisibleLogs % 2 == 0,
+              "Maximum number of visible logs has to be divisible by 2!");
 
-static emfat_entry_t entries[EMFAT_MAX_ENTRY];
+#define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + kMaxNumVisibleLogs)
+
+static char logNames[EMFAT_MAX_ENTRY][8 + 1 + 3 + 1] = {"", "readme.txt"};
+
+static const emfat_entry_t entriesPredefined[] = {{
+                                                      logNames[0],  // name
+                                                      true,         // dir
+                                                      ATTR_DIR,     // attr
+                                                      0,            // level
+                                                      0,            // offset
+                                                      0,            // number
+                                                      0,            // curr_size
+                                                      0,            // max_size
+                                                      0,            // user_data
+                                                      CMA,          // cma_time[3]
+                                                      NULL,         // readcb
+                                                      NULL          // writecb
+                                                  },
+                                                  {
+                                                      logNames[1],        // name
+                                                      false,              // dir
+                                                      ATTR_READ,          // attr
+                                                      1,                  // level
+                                                      0,                  // offset
+                                                      0,                  // number
+                                                      README_SIZE_BYTES,  // curr_size
+                                                      README_SIZE_BYTES,  // max_siize
+                                                      (long)readme_file,  // user_data
+                                                      CMA,                // cma_time[3]
+                                                      memory_read_proc,   // readcb
+                                                      NULL                // writecb
+                                                  }};
+
+static emfat_entry_t entries[EMFAT_MAX_ENTRY]{};
 
 emfat_t emfat;
 static uint32_t cmaTime = CMA_TIME;
@@ -116,93 +146,78 @@ static void emfat_set_entry_cma(emfat_entry_t *entry) {
 
 typedef enum { FLIGHT_LOG, STATS_LOG } log_type_e;
 
-static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t size, const char *name, log_type_e log_type) {
-  static char logNames[EMFAT_MAX_LOG_ENTRY][8 + 1 + 3 + 1];
+static void emfat_add_log(emfat_entry_t *entry, uint32_t size, const char *name, log_type_e log_type) {
+  const uint64_t entry_idx = entry - entries;
 
-  uint16_t lfs_flight_idx = number;
+  uint16_t lfs_flight_idx = 0;
   int idx_start = log_type == FLIGHT_LOG ? 7 : 6;
 
-  // flight_000xx
+  // flight_000xx, stats_000xx.txt
   if (sscanf(&name[idx_start], "%hu", &lfs_flight_idx) > 0) {
     log_error("Reading lfs_flight_idx failed: %hu", lfs_flight_idx);
   }
 
-  snprintf(logNames[number], 12, "%s%03d.%s", log_type == FLIGHT_LOG ? "fl" : "st", (uint8_t)lfs_flight_idx,
+  snprintf(logNames[entry_idx], 12, "%s%03d.%s", log_type == FLIGHT_LOG ? "fl" : "st", (uint8_t)lfs_flight_idx,
            log_type == FLIGHT_LOG ? "cfl" : "txt");
-  entry->name = logNames[number];
+  entry->name = logNames[entry_idx];
   entry->level = 1;
-  entry->number = number;
+  entry->number = entry_idx;
   entry->lfs_flight_idx = lfs_flight_idx;
   entry->curr_size = size;
   entry->max_size = entry->curr_size;
   entry->readcb = lfs_read_file;
   entry->writecb = NULL;
-  // Set file modification/access times to be the same as the creation time
-  entry->cma_time[1] = entry->cma_time[0];
-  entry->cma_time[2] = entry->cma_time[0];
+  emfat_set_entry_cma(entry);
 }
 
 /**
  * @brief Add file from path, returns 0 on success.
  */
-static int add_logs_from_path(emfat_entry_t **entry, const char *path, log_type_e log_type, int log_count,
-                              int start_idx) {
+static void add_logs_from_path(emfat_entry_t **entry, const char *path, log_type_e log_type, uint32_t max_logs_to_add) {
   struct lfs_info info;
   lfs_dir_t dir;
   int err = lfs_dir_open(&lfs, &dir, path);
   if (err < 0) {
-    return err;
+    return;
   }
 
-  // +2 because '.' and '..' are read first
-  for (int i = 0; i < log_count + 2; i++) {
-    lfs_dir_read(&lfs, &dir, &info);
+  // read twice because '.' and '..' are read first
+  lfs_dir_read(&lfs, &dir, &info);
+  lfs_dir_read(&lfs, &dir, &info);
 
-    if (i > 1) {
-      // Set the default timestamp
-      (*entry)->cma_time[0] = cmaTime;
-      // TODO: why - 1??
-      emfat_add_log((*entry)++, i + start_idx - 1, info.size, info.name, log_type);
+  uint32_t curr_log_idx = 0;
+  while (++curr_log_idx <= max_logs_to_add) {
+    if (lfs_dir_read(&lfs, &dir, &info) <= 0) {
+      break;
     }
+    emfat_add_log((*entry), info.size, info.name, log_type);
+    // Move to next entry in the array
+    ++(*entry);
   }
 
   lfs_dir_close(&lfs, &dir);
 
-  return 0;
+  return;
 }
 
-static int emfat_find_logs(emfat_entry_t *entry) {
-  const char *flight_path = "/flights/";
-  const char *stats_path = "/stats/";
+static void emfat_find_logs(emfat_entry_t *entry) {
+  constexpr uint32_t max_logs_to_add_per_file_type = kMaxNumVisibleLogs / 2;
 
-  int flight_log_count = lfs_cnt(flight_path, LFS_TYPE_REG);
-  int stats_log_count = lfs_cnt(stats_path, LFS_TYPE_REG);
-
-  if ((flight_log_count < 1 && stats_log_count < 1) || (flight_log_count + stats_log_count) > EMFAT_MAX_LOG_ENTRY) {
-    return 0;
-  }
-
-  if (add_logs_from_path(&entry, flight_path, FLIGHT_LOG, flight_log_count, 0) != 0) {
-    return 0;
-  }
-
-  // flight_log_count is the start index here
-  if (add_logs_from_path(&entry, stats_path, STATS_LOG, stats_log_count, flight_log_count) != 0) {
-    return 0;
-  }
-
-  return flight_log_count + stats_log_count;
+  add_logs_from_path(&entry, "/flights/", FLIGHT_LOG, max_logs_to_add_per_file_type);
+  add_logs_from_path(&entry, "/stats/", STATS_LOG, max_logs_to_add_per_file_type);
 }
+
+enum class InitState { kNotInitialized, kInitFailed, kInitSucceeded };
 
 /**
  * @return true on success, false on failure
  */
-bool emfat_init_files() {
-  // TODO: this should be a tri-state of 'not initialized', 'succeeded', 'failed'
+extern "C" bool emfat_init_files() {
   static bool initialized = false;
+  static InitState init_state = InitState::kNotInitialized;
 
   if (initialized) {
-    return true;
+    return init_state == InitState::kInitSucceeded;
   }
 
   memset(entries, 0, sizeof(entries));
@@ -226,5 +241,7 @@ bool emfat_init_files() {
   entries[README_FILE_IDX].max_size = (total_sz_kb - curr_sz_kb) * 1024;
 
   initialized = true;
-  return emfat_init(&emfat, "CATS", entries);
+  init_state = emfat_init(&emfat, "CATS", entries) ? InitState::kInitSucceeded : InitState::kInitFailed;
+
+  return init_state == InitState::kInitSucceeded;
 }

@@ -55,26 +55,6 @@ env.Append(
     ]
 )
 
-
-# Configure emfat_file.c separately
-def emfat_file_config(env, node):
-    """
-    `node.name` - a name of File System Node
-    `node.get_path()` - a relative path
-    `node.get_abspath()` - an absolute path
-    """
-
-    if "emfat_file.c" not in node.name:
-        return node
-
-    return env.Object(
-        node,
-        CCFLAGS=env["CCFLAGS"] + ["-Wno-missing-braces",
-                                  "-Wno-int-conversion",
-                                  "-Wno-error"]
-    )
-env.AddBuildMiddleware(emfat_file_config)
-
 # include toolchain paths
 env.Replace(COMPILATIONDB_INCLUDE_TOOLCHAIN=True)
 # override compilation DB path
