@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "systemParser.hpp"
 
 typedef enum : bool { SINGLE = 0, DUAL = 1 } ReceiverTelemetryMode_e;
 
@@ -14,6 +15,7 @@ struct systemConfig_t {
   char linkPhrase1[kMaxPhraseLen + 1];
   char linkPhrase2[kMaxPhraseLen + 1];
   char testingPhrase[kMaxPhraseLen + 1];
+  mag_calib_t mag_calib;
 };
 
 class Config {

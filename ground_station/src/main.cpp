@@ -60,8 +60,8 @@ void setup() {
   link1.begin();
   link2.begin();
 
-  navigation.setPointA(47.236777221226646, 8.819492881367166);
-  navigation.setPointB(47.236777221226646, 8.819492881367166);
+  navigation.setPointA(0, 0);
+  navigation.setPointB(0, 0);
 
   hmi.begin();
 }

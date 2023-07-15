@@ -39,11 +39,20 @@ class Hmi {
     STARTED = 5,
   };
 
+  enum CalibrationState {
+    IDLE = 0,
+    PREPARE = 1,
+    CALIBRATING = 2,
+    CONCLUDED = 3,
+  };
+
   State state = MENU;
 
   TestingState testingState = DISCLAIMER;
   uint32_t startTestingTime = 0;
   uint32_t testingIndex = 0;
+
+  CalibrationState calibrationState = IDLE;
 
   Recorder recorder;
 
@@ -76,6 +85,7 @@ class Hmi {
   bool boxWindow = false;
   bool enableTestMode = false;
   bool triggerTouchdown = false;
+  bool isCalibrating = false;
 
   Button upButton;
   Button downButton;

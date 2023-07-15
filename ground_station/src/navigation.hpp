@@ -17,7 +17,7 @@ class EarthPoint3D {
   // Point3D(float x, float y) : x(x), y(y), z(0) { }
   EarthPoint3D(float lat = 0, float lon = 0, float alt = 0) : lat(lat), lon(lon), alt(alt) {}
 
-  EarthPoint3D operator=(EarthPoint3D const& other) {
+  EarthPoint3D operator=(EarthPoint3D const &other) {
     // Guard self assignment
     if (this == &other) return *this;
     lat = other.lat;
@@ -98,6 +98,8 @@ class Navigation {
 
   inline float getMZ() const { return m[2]; }
 
+  inline float getCalibrationPercentage() const { return calibration_progress; }
+
   inline bool isUpdated() const { return updated; }
 
   inline float getDistance() {
@@ -115,6 +117,24 @@ class Navigation {
     return elevation;
   }
 
+  struct mag_calibration_t {
+    float offset[3];
+    float scaling[3];
+    float max_vals[3];
+    float min_vals[3];
+    float max_vals_scal[3];
+    float min_vals_scal[3];
+  };
+
+  enum calibration_state_e { INV_CALIB = 0, CALIB_ONGOING, CALIB_CANCELLED, CALIB_CONCLUDED };
+
+  void set_saved_calib(mag_calibration_t mag_calib);
+
+  void get_saved_calib();
+
+  void setCalibrationState(calibration_state_e setCalibration) { calibration = setCalibration; }
+  calibration_state_e getCalibrationState() { return calibration; }
+
   void print() {
     console.log.println("Point A:");
     pointA.print();
@@ -125,7 +145,7 @@ class Navigation {
  private:
   bool initialized = false;
   bool updated = false;
-  bool calibration = false;
+  calibration_state_e calibration = INV_CALIB;
 
   EarthPoint3D pointA;
   EarthPoint3D pointB;
@@ -137,11 +157,40 @@ class Navigation {
 
   float gx, gy, gz, ax, ay, az;
   float m[3];
+  float raw_m[3];
+  static constexpr uint32_t n_points = 64;
+  static constexpr float max_sphere_error = 0.1F;
+  float sphere_points[n_points][3];
+  bool sphere_checked[n_points];
+  float calibration_progress = 0;
 
   float q0, q1, q2, q3;
 
-  float dist, azimuth, elevation;
+  float dist = 0;
+  float azimuth = 0;
+  float elevation = 0;
 
-  static void navigationTask(void* pvParameter);
+  mag_calibration_t mag_calib_temp = {.offset = {0, 0, 0},
+                                      .scaling = {1.0f, 1.0f, 1.0f},
+                                      .max_vals = {-100, -100, -100},
+                                      .min_vals = {100, 100, 100},
+                                      .max_vals_scal = {-100, -100, -100},
+                                      .min_vals_scal = {100, 100, 100}};
+
+  mag_calibration_t mag_calib = {.offset = {0, 0, 0},
+                                 .scaling = {1.0f, 1.0f, 1.0f},
+                                 .max_vals = {-100, -100, -100},
+                                 .min_vals = {100, 100, 100},
+                                 .max_vals_scal = {-100, -100, -100},
+                                 .min_vals_scal = {100, 100, 100}};
+
+  static void navigationTask(void *pvParameter);
   void calculateDistanceDirection();
+  void initFibonacciSphere();
+  void calibrate(float *val);
+  void transform(float *val, float *output);
+  void check_rotation();
+  void compute_calibration_status();
+
+  void resetCalib();
 };
