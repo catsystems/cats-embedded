@@ -77,6 +77,7 @@ int main(void) {
   static driver::OutputPin imu_cs(GPIOB, 0U);
   static driver::OutputPin barometer_cs(GPIOB, 1U);
   static driver::OutputPin status_led(GPIOC, 14U);
+  static driver::InputPin test_button(GPIOB, 13U);
 
   // Build the SPI driver
   static driver::Spi spi1(&hspi1);
@@ -115,6 +116,12 @@ int main(void) {
   // After loading the config we can set the servos to the initial position
   servo1.SetPosition(global_cats_config.initial_servo_position[0]);
   servo2.SetPosition(global_cats_config.initial_servo_position[1]);
+
+  // Check if the test button is pressed during boot up and if so enter test mode
+  if (!test_button.GetState() && strlen(global_cats_config.telemetry_settings.test_phrase) > 0) {
+    log_info("Entering test mode...");
+    global_cats_config.enable_testing_mode = true;
+  }
 
   // Set the buzzer to max volume in testing mode otherwise to user config
   if (global_cats_config.enable_testing_mode) {
