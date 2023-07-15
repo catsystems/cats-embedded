@@ -85,12 +85,35 @@ void loop() {
     navigation.begin();
   }
 
+  // Update the home location
   if (link2.location.isUpdated()) {
     navigation.setPointA(link2.location.lat(), link2.location.lon());
   }
 
-  if (link1.data.lat() != 0 && link1.data.lon() != 0) {
-    navigation.setPointB(link1.data.lat(), link1.data.lon());
+  // In single mode, both antennas track the same rocket
+  if (systemConfig.config.receiverMode == SINGLE) {
+    bool link1DataValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
+    bool link2DataValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
+    // Check if data from link 1 is newer than link 2
+    if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
+      // Take data from link 1 with higher priority
+      if (link1DataValid) {
+        navigation.setPointB(link1.data.lat(), link1.data.lon());
+      } else if (link2DataValid) {
+        navigation.setPointB(link2.data.lat(), link2.data.lon());
+      }
+    } else {
+      // Take data from link 2 with higher priority
+      if (link2DataValid) {
+        navigation.setPointB(link2.data.lat(), link2.data.lon());
+      } else if (link1DataValid) {
+        navigation.setPointB(link1.data.lat(), link1.data.lon());
+      }
+    }
+  } else {
+    if (link1.data.lat() != 0 && link1.data.lon() != 0) {
+      navigation.setPointB(link1.data.lat(), link1.data.lon());
+    }
   }
 
   delay(100);
