@@ -904,15 +904,6 @@ void Window::updateSensors(Navigation *navigation) {
     display.print(lat, 5);
   }
 
-  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
-  display.print("Time: ");
-
-  String t = String(hour()) + ":";
-  if (minute() < 10) t += '0';
-  t += String(minute());
-
-  drawCentreString(t, xinitOffset + xOffset + 20, yinitOffset + 2 * yOffset);
-
   /* MAG */
 
   display.fillRect(20, 180, 180, 55, WHITE);
