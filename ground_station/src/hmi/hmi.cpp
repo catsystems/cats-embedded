@@ -401,7 +401,7 @@ void Hmi::settings() {
 
   } else {
     if (settingIndex == -1) {
-      if (rightButton.wasPressed() && settingSubMenu < 1) {
+      if (rightButton.wasPressed() && settingSubMenu < (kSettingPages - 1)) {
         settingSubMenu++;
         window.initSettings(settingSubMenu);
       }
@@ -411,43 +411,62 @@ void Hmi::settings() {
         window.initSettings(settingSubMenu);
       }
     } else {
-      if (settingsTable[settingSubMenu][settingIndex].type == NUMBER) {
-        if ((rightButton.wasPressed() || rightButton.pressedFor(500)) &&
-            *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr <
-                settingsTable[settingSubMenu][settingIndex].config.minmax.max) {
-          (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)++;
-          configChanged = true;
-          window.updateSettings(settingIndex);
+      switch (settingsTable[settingSubMenu][settingIndex].type) {
+        case NUMBER: {
+          if ((rightButton.wasPressed() || rightButton.pressedFor(500)) &&
+              *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr <
+                  settingsTable[settingSubMenu][settingIndex].config.minmax.max) {
+            (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)++;
+            configChanged = true;
+            window.updateSettings(settingIndex);
+          }
+          if ((leftButton.wasPressed() || leftButton.pressedFor(500)) &&
+              *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr >
+                  settingsTable[settingSubMenu][settingIndex].config.minmax.min) {
+            (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)--;
+            configChanged = true;
+            window.updateSettings(settingIndex);
+          }
+          break;
         }
-        if ((leftButton.wasPressed() || leftButton.pressedFor(500)) &&
-            *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr >
-                settingsTable[settingSubMenu][settingIndex].config.minmax.min) {
-          (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)--;
-          configChanged = true;
-          window.updateSettings(settingIndex);
+        case TOGGLE: {
+          if (rightButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == false) {
+            (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = true;
+            configChanged = true;
+            window.updateSettings(settingIndex);
+          }
+          if (leftButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == true) {
+            (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = false;
+            configChanged = true;
+            window.updateSettings(settingIndex);
+          }
+          break;
         }
-      }
+        case STRING: {
+          if (okButton.wasPressed()) {
+            memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, kMaxPhraseLen);
+            keyboardString[kMaxPhraseLen] = '\0';
 
-      if (settingsTable[settingSubMenu][settingIndex].type == TOGGLE) {
-        if (rightButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == false) {
-          (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = true;
-          configChanged = true;
-          window.updateSettings(settingIndex);
+            window.initKeyboard(keyboardString, settingsTable[settingSubMenu][settingIndex].config.stringLength);
+            keyboardActive = true;
+          }
+          break;
         }
-        if (leftButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == true) {
-          (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = false;
-          configChanged = true;
-          window.updateSettings(settingIndex);
+        case BUTTON: {
+          if (okButton.wasPressed()) {
+            // If the setting is pointing to the bootloader function, we need to display the bootloader screen
+            // first
+            if (settingsTable[settingSubMenu][settingIndex].config.fun_ptr == Utils::startBootloader) {
+              window.Bootloader();
+            }
+            if (settingsTable[settingSubMenu][settingIndex].config.fun_ptr != nullptr) {
+              settingsTable[settingSubMenu][settingIndex].config.fun_ptr();
+            }
+          }
+          break;
         }
-      }
-
-      if (settingsTable[settingSubMenu][settingIndex].type == STRING) {
-        if (okButton.wasPressed()) {
-          memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, kMaxPhraseLen);
-          keyboardString[kMaxPhraseLen] = '\0';
-
-          window.initKeyboard(keyboardString, settingsTable[settingSubMenu][settingIndex].config.stringLength);
-          keyboardActive = true;
+        default: {
+          break;
         }
       }
     }

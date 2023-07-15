@@ -47,7 +47,7 @@ class Utils {
  public:
   Utils(const char *systemConfigFilename = DEFAULT_CONFIG_FILE_NAME) : configFileName(systemConfigFilename) {}
   bool begin(uint32_t watchdogTimeout = 0, const char *labelName = "DRIVE", bool forceFormat = false);
-  void startBootloader(void);
+  static void startBootloader(void);
   void startWatchdog(uint32_t seconds);
   void feedWatchdog(void);
   bool isUpdated(bool clearFlag = true);
