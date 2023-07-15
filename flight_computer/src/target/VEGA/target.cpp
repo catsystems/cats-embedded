@@ -395,7 +395,7 @@ static void MX_GPIO_Init(void) {
   /*Configure GPIO pin : TEST_BUTTON_Pin */
   GPIO_InitStruct.Pin = TEST_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(TEST_BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RF_INT1_Pin USB_DET_Pin */
