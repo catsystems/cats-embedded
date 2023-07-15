@@ -63,7 +63,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   static bool oldUsbStatus = false;
   static bool oldLocationStatus = false;
   static bool oldLoggingStatus = false;
-  static int32_t oldFreeMemory = 100;
+  static int32_t oldFreeMemory = 0;
 
   static uint32_t blinkStatus = 0;
 
