@@ -58,6 +58,6 @@ extern volatile recorder_status_e global_recorder_status;
 
 extern event_action_map_elem_t* event_action_map;
 
-static constexpr const char* code_version = "3.0.0";
+static constexpr const char* code_version = FIRMWARE_VERSION;
 static constexpr const char* board_name = "CATS Vega";
 extern char telemetry_code_version[20];

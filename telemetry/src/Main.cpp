@@ -73,7 +73,7 @@ int main(void) {
   MX_TIM2_Init();
 
   /* Set code version */
-  const char *telemetry_code_version = "1.1.1";
+  const char *telemetry_code_version = FIRMWARE_VERSION;
   uint8_t code_version_size = strlen(telemetry_code_version);
   const uint8_t *code_version = reinterpret_cast<const uint8_t *>(telemetry_code_version);
 
