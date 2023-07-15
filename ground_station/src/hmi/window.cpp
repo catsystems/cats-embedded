@@ -18,6 +18,12 @@ void Window::logo() {
   display.refresh();
 }
 
+void Window::Bootloader() {
+  display.clearDisplay();
+  display.drawBitmap(136, 56, usb_logo, 128, 128, BLACK);
+  display.refresh();
+}
+
 void Window::drawCentreString(const char *buf, int x, int y) {
   int16_t x1, y1;
   uint16_t w, h;

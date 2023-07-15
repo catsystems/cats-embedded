@@ -27,6 +27,7 @@ class Window {
   Window() : display(SHARP_SCK, SHARP_MOSI, SHARP_SS, 400, 240) {}
   void begin();
   void logo();
+  void Bootloader();
 
   void initBar();
   void updateBar(float batteryVoltage, bool usb = false, bool logging = false, bool location = false, bool time = false,

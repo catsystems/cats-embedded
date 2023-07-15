@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.hpp"
+#include "utils.hpp"
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -8,6 +9,7 @@ typedef enum {
   STRING = 0,
   TOGGLE = 1,
   NUMBER = 2,
+  BUTTON = 3,
 } settings_type_e;
 
 typedef struct {
@@ -19,6 +21,7 @@ typedef union {
   uint32_t stringLength;
   uint32_t lookup;
   settings_min_max_t minmax;
+  void (*fun_ptr)(void);
 } settings_limits_u;
 
 typedef struct {
@@ -67,10 +70,11 @@ const lookup_table_entry_t lookup_tables[] = {
     LOOKUP_TABLE_ENTRY(logging_map),
 };
 
-const char* const settingPageName[2] = {
-    "General",
-    "Telemetry",
+enum {
+  kSettingPages = 2,
 };
+
+const char* const settingPageName[kSettingPages] = {"General", "Telemetry"};
 
 const device_settings_t settingsTable[][4] = {
     {
@@ -86,6 +90,22 @@ const device_settings_t settingsTable[][4] = {
          TOGGLE,
          {.lookup = TABLE_LOGGING},
          &systemConfig.config.neverStopLogging},
+        {
+            "Version",
+            "Firmware Version: " FIRMWARE_VERSION,
+            "",
+            BUTTON,
+            {.fun_ptr = nullptr},
+            nullptr,
+        },
+        {
+            "Start Bootloader",
+            "Press A to start the bootloader",
+            "Make sure you are connected to a computer",
+            BUTTON,
+            {.fun_ptr = Utils::startBootloader},
+            nullptr,
+        },
     },
     {
         {"Mode",
@@ -115,4 +135,4 @@ const device_settings_t settingsTable[][4] = {
     },
 };
 
-const uint16_t settingsTableValueCount[2] = {2, 4};
+const uint16_t settingsTableValueCount[kSettingPages] = {4, 4};
