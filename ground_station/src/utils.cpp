@@ -210,7 +210,7 @@ int32_t Utils::getFlashMemoryUsage() {
   uint32_t num_clusters = fatfs.clusterCount() - 2;
   uint32_t available_clusters = fatfs.freeClusterCount();
 
-  double percentage = 100 - (static_cast<double>(available_clusters) / num_clusters) * 100;
+  double percentage = (static_cast<double>(available_clusters) / num_clusters) * 100;
 
   return static_cast<int32_t>(std::ceil(percentage));
 }
