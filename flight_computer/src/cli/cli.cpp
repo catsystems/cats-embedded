@@ -31,7 +31,7 @@
 #include "util/log.h"
 
 #define CLI_IN_BUFFER_SIZE  128
-#define CLI_OUT_BUFFER_SIZE 256
+#define CLI_OUT_BUFFER_SIZE 420
 
 static uint32_t buffer_index = 0;
 
