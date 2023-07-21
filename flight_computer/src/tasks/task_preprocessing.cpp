@@ -85,6 +85,20 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
     /* Get Sensor Readings already transformed in the right coordinate Frame */
     TransformData();
 
+    /* Check if there is a Calibration Error */
+    if (m_fsm_enum == READY) {
+      if (m_state_est_input.acceleration_z > 0.5F || m_state_est_input.acceleration_z < -0.5F) {
+        faulty_calibration_counter++;
+      } else {
+        faulty_calibration_counter = 0;
+      }
+      if (faulty_calibration_counter > MAX_FAULTY_CALIB) {
+        add_error(CATS_ERR_CALIB);
+      } else {
+        clear_error(CATS_ERR_CALIB);
+      }
+    }
+
 #ifdef USE_MEDIAN_FILTER
     /* Filter the data */
     MedianFilter();
