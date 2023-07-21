@@ -62,6 +62,10 @@ class Preprocessing final : public Task<Preprocessing, 512> {
   state_estimation_input_t m_state_est_input = {.acceleration_z = 0.0F, .height_AGL = 0.0F};
   float32_t m_height_0 = 0.0F;
 
+  /* Variable to keep track for the calibration health */
+  int32_t faulty_calibration_counter = 0;
+  static constexpr int32_t MAX_FAULTY_CALIB = 100;
+
   /* Gyro Calib tag */
   bool m_gyro_calibrated = false;
 };

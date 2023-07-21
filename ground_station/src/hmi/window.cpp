@@ -317,7 +317,8 @@ void Window::updateLive(TelemetryData *data, uint32_t index) {
 
 const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST", "DROGUE", "MAIN", "DOWN"};
 
-const char *const errorName[] = {"No Config", "Log Full", "Filter Error", "Overheating", "Continuity Error"};
+const char *const errorName[] = {"No Config",   "Log Full",         "Filter Error",
+                                 "Overheating", "Continuity Error", "Calibration Error"};
 
 void Window::updateLiveData(TelemetryData *data, uint32_t index, uint32_t color) {
   int xOffset = index * 200;
@@ -373,6 +374,8 @@ void Window::updateLiveData(TelemetryData *data, uint32_t index, uint32_t color)
 
   if (data->errors() & 0x04) {
     display.print(errorName[2]);
+  } else if (data->errors() & 0x20) {
+    display.print(errorName[5]);
   } else if (data->errors() & 0x10) {
     display.print(errorName[4]);
   } else if (data->errors() & 0x02) {

@@ -40,6 +40,7 @@
   CATS_ERR_FILTER_HEIGHT =  1 << 14,   // 0x4000
   CATS_ERR_HARD_FAULT =     1 << 15,   // 0x8000
   CATS_ERR_TELEMETRY_HOT =  1 << 16,   // 0x10000
+  CATS_ERR_CALIB =          1 << 17,   // 0x20000
 };
 // clang-format on
 
