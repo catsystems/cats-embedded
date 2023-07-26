@@ -32,7 +32,6 @@ void init_devices(TImu& imu, TBaro& barometer) {
   while (!imu.Init()) {
     HAL_Delay(10);
     if (++timeout_counter > 20) {
-      log_error("IMU initialization failed");
       break;
     }
   }
@@ -45,7 +44,6 @@ void init_devices(TImu& imu, TBaro& barometer) {
   while (!barometer.Init()) {
     HAL_Delay(10);
     if (++timeout_counter > 20) {
-      log_error("Barometer initialization failed");
       break;
     }
   }
