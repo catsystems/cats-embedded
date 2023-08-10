@@ -291,9 +291,14 @@ class UF2Loader:
             os.remove(tempFilePath)
         return None
 
-
+# If this script is called directly, it converts the .bin binary into the .UF2 binary
 if __name__ == "__main__":
     loader = UF2Loader("ESP32S2", 0)
-    status = loader.download(".pio/build/esp32-s2-saola-1/firmware.bin")
+    binary_path = ".pio/build/esp32-s2-saola-1/firmware"
+    # if an argument is passed to the script, use it as the path to the binary
+    if len(sys.argv) > 1:
+        binary_path = sys.argv[1]
+    input = f"{binary_path}.bin"
+    output = f"{binary_path}.UF2"
+    status = loader.save(input, output)
     print(f"Status: {status}")
-    
