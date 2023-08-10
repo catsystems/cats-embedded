@@ -104,8 +104,13 @@ jobs:
         run: pio pkg install --global
   
       - name: Build
-        run: platformio run -d ${{ matrix.project }}
-  
+        shell: bash
+        run: |
+          platformio run -d ${{ matrix.project }}
+          if [[ "${{ matrix.project }}" == "ground_station" ]]; then
+            python ${{ matrix.project }}/uf2_loader.py ${{ matrix.project }}/.pio/build/esp32-s2-saola-1/firmware
+          fi
+
       - name: Generate compile_commands.json
         run: platformio run -d ${{ matrix.project }} --target compiledb
   
@@ -118,6 +123,7 @@ jobs:
         with:
           name: artifacts
           path: |
+            ./${{ matrix.project }}/.pio/build/**/firmware.UF2
             ./${{ matrix.project }}/.pio/build/**/firmware.bin
             ./${{ matrix.project }}/.pio/build/**/firmware.elf
             ./${{ matrix.project }}/.pio/build/**/compile_commands.json
