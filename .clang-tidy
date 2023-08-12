@@ -11,6 +11,10 @@
 #  - hicpp-deprecated-headers,modernize-deprecated-headers
 #  - hicpp-use-nullptr,modernize-use-nullptr
 
+# Reasons for disabling certain checks:
+#  - llvm-header-guard: Giving false positives, either because of the copyright lines or because we're using #pragma once
+#  - performance-no-int-to-ptr,cppcoreguidelines-pro-type-cstyle-cast: HAL library relies on int to ptr conversions heavily
+
 Checks: >
   bugprone-*,
   -bugprone-easily-swappable-parameters,
@@ -24,6 +28,7 @@ Checks: >
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-pro-type-cstyle-cast,
   google-*,
   -google-readability-todo,
   -google-readability-braces-around-statements,
@@ -42,6 +47,7 @@ Checks: >
   -hicpp-use-equals-default,
   llvm-*,
   -llvm-else-after-return,
+  -llvm-header-guard,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   modernize-*,
@@ -49,6 +55,7 @@ Checks: >
   -modernize-avoid-c-arrays,
   -modernize-macro-to-enum,
   performance-*,
+  -performance-no-int-to-ptr,
   portability-*,
   readability-*,
   -readability-magic-numbers,

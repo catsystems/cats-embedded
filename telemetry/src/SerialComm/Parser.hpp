@@ -15,19 +15,17 @@
 /// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cstdint>
+
 #include "Telemetry_reg.h"
 
-typedef void cmd_fn(uint8_t *args, uint32_t length);
+using cmd_fn = void (*)(uint8_t *args, uint32_t length);
 
-typedef struct {
+struct cmd_t {
   const uint8_t identifier;
-  cmd_fn *cmd;
-} cmd_t;
+  cmd_fn cmd;
+};
 
-#define MAX_CMD_BUFFER 20
-
-#define CMD_DEF(identifier, cmd) \
-  { identifier, cmd }
+constexpr uint8_t kMaxCmdBuffer = 20;
 
 /* The parser is not interrupt safe! */
 
@@ -69,17 +67,17 @@ class Parser {
  private:
   int32_t getOpCodeIndex(uint8_t opCode);
 
-  uint8_t buffer[MAX_CMD_BUFFER];
+  uint8_t buffer[kMaxCmdBuffer];
   uint32_t dataIndex = 0;
 
   int32_t opCodeIndex = -1;
 
-  typedef enum {
+  enum state_e {
     STATE_OP,
     STATE_LEN,
     STATE_DATA,
     STATE_CRC,
-  } state_e;
+  };
 
   enum {
     INDEX_OP = 0,
@@ -93,24 +91,24 @@ class Parser {
   };
 
   const cmd_t cmd_table[CMD_NUMBER] = {
-      CMD_DEF(CMD_DIRECTION, cmdDirection),
-      CMD_DEF(CMD_PA_GAIN, cmdPAGain),
-      CMD_DEF(CMD_POWER_LEVEL, cmdPowerLevel),
-      CMD_DEF(CMD_MODE, cmdMode),
-      CMD_DEF(CMD_MODE_INDEX, cmdModeIndex),
-      CMD_DEF(CMD_LINK_PHRASE, cmdLinkPhrase),
-      CMD_DEF(CMD_ENABLE, cmdEnable),
-      CMD_DEF(CMD_DISBALE, cmdDisable),
+      {CMD_DIRECTION, cmdDirection},
+      {CMD_PA_GAIN, cmdPAGain},
+      {CMD_POWER_LEVEL, cmdPowerLevel},
+      {CMD_MODE, cmdMode},
+      {CMD_MODE_INDEX, cmdModeIndex},
+      {CMD_LINK_PHRASE, cmdLinkPhrase},
+      {CMD_ENABLE, cmdEnable},
+      {CMD_DISBALE, cmdDisable},
 
-      CMD_DEF(CMD_TX, cmdTX),
-      CMD_DEF(CMD_RX, cmdRX),
-      CMD_DEF(CMD_INFO, cmdInfo),
+      {CMD_TX, cmdTX},
+      {CMD_RX, cmdRX},
+      {CMD_INFO, cmdInfo},
 
-      CMD_DEF(CMD_GNSS_LOC, cmdGNSSLoc),
-      CMD_DEF(CMD_GNSS_TIME, cmdGNSSTime),
-      CMD_DEF(CMD_GNSS_INFO, cmdGNSSInfo),
-      CMD_DEF(CMD_VERSION_INFO, cmdVersionNum),
+      {CMD_GNSS_LOC, cmdGNSSLoc},
+      {CMD_GNSS_TIME, cmdGNSSTime},
+      {CMD_GNSS_INFO, cmdGNSSInfo},
+      {CMD_VERSION_INFO, cmdVersionNum},
 
-      CMD_DEF(CMD_BOOTLOADER, cmdBootloader),
+      {CMD_BOOTLOADER, cmdBootloader},
   };
 };

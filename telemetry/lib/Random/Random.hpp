@@ -16,18 +16,18 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 // the max value returned by rng
-#define RNG_MAX 0x7FFF
+constexpr uint16_t kRngMax = 0x7FFF;
 
-uint16_t rng(void);
+uint16_t rng();
 
 void rngSeed(uint32_t newSeed);
 // 0..255 returned
-uint8_t rng8Bit(void);
+uint8_t rng8Bit();
 // 0..31 returned
-uint8_t rng5Bit(void);
+uint8_t rng5Bit();
 
-// returns 0 <= x < upper where n < 256
-uint8_t rngN(uint8_t upper);
+// returns 0 <= x < max where n < 256
+uint8_t rngN(uint8_t max);

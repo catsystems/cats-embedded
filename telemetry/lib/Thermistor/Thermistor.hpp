@@ -16,14 +16,15 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stm32g0xx_hal.h>
 #include <cmath>
+#include <cstdint>
+
+#include <stm32g0xx_hal.h>
 
 template <uint32_t B>
 class Thermistor {
  public:
-  Thermistor(ADC_HandleTypeDef *adc) : adcHandle(adc) { HAL_ADC_Start_DMA(adc, &rawAdcValue, 1); }
+  explicit Thermistor(ADC_HandleTypeDef *adc) : adcHandle(adc) { HAL_ADC_Start_DMA(adc, &rawAdcValue, 1); }
 
   float getTemperature() {
     float resistance = 10000.0F / ((65535.0F / static_cast<float>((uint16_t)rawAdcValue)) - 1.0F);
