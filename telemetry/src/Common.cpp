@@ -16,6 +16,7 @@
 
 #include "Common.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 Transmission link;
-
 bool send_version_num = false;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

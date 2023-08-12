@@ -14,9 +14,10 @@
 /// You should have received a copy of the GNU General Public License
 /// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Parser.hpp"
 #include <Crc.hpp>
+
 #include "Common.hpp"
+#include "Parser.hpp"
 
 void Parser::parse() {
   cmd_table[opCodeIndex].cmd(&buffer[2], dataIndex);
@@ -27,7 +28,9 @@ void Parser::parse() {
 
 int32_t Parser::getOpCodeIndex(uint8_t opCode) {
   for (int32_t i = 0; i < CMD_NUMBER; i++) {
-    if (opCode == cmd_table[i].identifier) return i;
+    if (opCode == cmd_table[i].identifier) {
+      return i;
+    }
   }
   return -1;
 }
@@ -61,7 +64,7 @@ void Parser::process(uint8_t ch) {
       }
       break;
     case STATE_CRC: {
-      uint8_t crc = crc8(buffer, dataIndex + 2);
+      const uint8_t crc = crc8(buffer, dataIndex + 2);
       if (crc == ch) {
         parse();
       } else {
@@ -74,62 +77,80 @@ void Parser::process(uint8_t ch) {
 }
 
 void Parser::cmdDirection(uint8_t *args, uint32_t length) {
-  if (length != 1) return;
+  if (length != 1) {
+    return;
+  }
 
   if (args[0] == TX || args[0] == RX) {
-    link.setDirection((transmission_direction_e)args[0]);
+    link.setDirection(static_cast<transmission_direction_e>(args[0]));
   }
 }
 
 void Parser::cmdPAGain(uint8_t *args, uint32_t length) {
-  if (length != 1) return;
+  if (length != 1) {
+    return;
+  }
 
   if (args[0] < 50) {
-    link.setPAGain(args[0]);
+    link.setPAGain(static_cast<int8_t>(args[0]));
   }
 }
 
 void Parser::cmdPowerLevel(uint8_t *args, uint32_t length) {
-  if (length != 1) return;
+  if (length != 1) {
+    return;
+  }
 
-  link.setPowerLevel(args[0]);
+  link.setPowerLevel(static_cast<int8_t>(args[0]));
 }
 
 void Parser::cmdMode(uint8_t *args, uint32_t length) {
-  if (length != 1) return;
+  if (length != 1) {
+    return;
+  }
 
-  link.setMode((transmission_mode_e)args[0]);
+  link.setMode(static_cast<transmission_mode_e>(args[0]));
 }
 
 void Parser::cmdModeIndex(uint8_t *args, uint32_t length) {
   // UNUSED
 }
 
+// NOLINTNEXTLINE(readability-non-const-parameter) can't be const since the function pointer has a non-const param
 void Parser::cmdLinkPhrase(uint8_t *args, uint32_t length) {
-  if (length != 4) return;
+  if (length != 4) {
+    return;
+  }
 
   if (args[0] != 0) {
-    uint32_t phrasecrc = args[0] << 24;
-    phrasecrc += args[1] << 16;
-    phrasecrc += args[2] << 8;
+    uint32_t phrasecrc = args[0] << 24U;
+    phrasecrc += args[1] << 16U;
+    phrasecrc += args[2] << 8U;
     phrasecrc += args[3];
     link.setLinkPhraseCrc(phrasecrc);
   }
 }
 
-void Parser::cmdEnable(uint8_t *args, uint32_t length) {
-  if (length != 0) return;
+void Parser::cmdEnable([[maybe_unused]] uint8_t *args, uint32_t length) {
+  if (length != 0) {
+    return;
+  }
   link.enableTransmission();
 }
 
-void Parser::cmdDisable(uint8_t *args, uint32_t length) {
-  if (length != 0) return;
+void Parser::cmdDisable([[maybe_unused]] uint8_t *args, uint32_t length) {
+  if (length != 0) {
+    return;
+  }
+
   link.disableTransmission();
 }
 
 void Parser::cmdTX(uint8_t *args, uint32_t length) { link.writeBytes(args, length); }
 
-void Parser::cmdVersionNum(uint8_t *args, uint32_t length) { send_version_num = true; }
+void Parser::cmdVersionNum([[maybe_unused]] uint8_t *args, [[maybe_unused]] uint32_t length) {
+  send_version_num = true;
+}
 
 void Parser::cmdBootloader(uint8_t *args, uint32_t length) {
   // UNUSED

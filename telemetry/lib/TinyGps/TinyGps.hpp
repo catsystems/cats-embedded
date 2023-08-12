@@ -24,8 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __TinyGPSPlus_h
 #define __TinyGPSPlus_h
 
-#include <limits.h>
-#include <stdint.h>
+#include <climits>
+#include <cstdint>
+
 #include <stm32g0xx_hal.h>
 
 #define _GPS_VERSION         "1.0.2"  // software version of this library

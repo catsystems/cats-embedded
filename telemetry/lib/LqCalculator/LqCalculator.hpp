@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 template <uint8_t N>
 class LqCalculator {

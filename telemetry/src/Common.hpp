@@ -18,6 +18,7 @@
 
 #include "Transmission/Transmission.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern Transmission link;
-
 extern bool send_version_num;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
