@@ -26,9 +26,11 @@
 #include <Sx1280Driver.hpp>
 #include <Thermistor.hpp>
 #include <TinyGps.hpp>
+#include <cmath>
 #include <cstring>
 
 /* Private variables ---------------------------------------------------------*/
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
@@ -40,22 +42,23 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_USART1_UART_Init(void);
-static void MX_USART2_UART_Init(void);
-static void MX_DMA_Init(void);
-static void MX_TIM2_Init(void);
+void SystemClock_Config();
+static void MX_GPIO_Init();
+static void MX_ADC1_Init();
+static void MX_SPI1_Init();
+static void MX_USART1_UART_Init();
+static void MX_USART2_UART_Init();
+static void MX_DMA_Init();
+static void MX_TIM2_Init();
 
 /**
  * @brief  The application entry point.
  * @retval int
  */
-int main(void) {
+int main() {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick.
    */
   HAL_Init();
@@ -74,8 +77,9 @@ int main(void) {
 
   /* Set code version */
   const char *telemetry_code_version = FIRMWARE_VERSION;
-  uint8_t code_version_size = strlen(telemetry_code_version);
-  const uint8_t *code_version = reinterpret_cast<const uint8_t *>(telemetry_code_version);
+  const uint8_t code_version_size = strlen(telemetry_code_version);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) fine to cast since char is 8 bits on this platform
+  const auto *code_version = reinterpret_cast<const uint8_t *>(telemetry_code_version);
 
   /* Wait for the GNSS module to initialize*/
   HAL_Delay(4000);
@@ -96,7 +100,7 @@ int main(void) {
   TinyGps gps;
 
   /* Initalize the radio module */
-  while (link.begin(&htim2) == false) {
+  while (!link.begin(&htim2)) {
     HAL_Delay(10);
   }
 
@@ -104,7 +108,7 @@ int main(void) {
   uint8_t oldSecond = 0;
   uint32_t lastTemperatureUpdate = HAL_GetTick();
 
-  while (1) {
+  while (true) {
     uint8_t uartOutBuffer[20];
 
     /* Check if we received data from the GNSS module */
@@ -119,7 +123,7 @@ int main(void) {
 
     /* Transmit Link Information*/
     if (link.infoAvailable()) {
-      linkInfo_t info;
+      linkInfo_t info{};
       link.readInfo(&info);
       uartOutBuffer[0] = CMD_INFO;
       uartOutBuffer[1] = 3;
@@ -127,7 +131,7 @@ int main(void) {
       uartOutBuffer[3] = info.rssi;
       uartOutBuffer[4] = info.snr;
 
-      uint8_t crc = crc8(uartOutBuffer, 5);
+      const uint8_t crc = crc8(uartOutBuffer, 5);
       uartOutBuffer[5] = crc;
 
       HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
@@ -141,7 +145,7 @@ int main(void) {
       uartOutBuffer[0] = CMD_RX;
       uartOutBuffer[1] = 16;
       memcpy(&uartOutBuffer[2], rx_data, 16);
-      uint8_t crc = crc8(uartOutBuffer, 18);
+      const uint8_t crc = crc8(uartOutBuffer, 18);
       uartOutBuffer[18] = crc;
 
       HAL_UART_Transmit(&huart2, uartOutBuffer, 19, 2);
@@ -149,9 +153,9 @@ int main(void) {
 
     /* Transmit GPS Location */
     if (gps.location.isValid() && gps.location.isUpdated()) {
-      float lat = gps.location.lat();
-      float lng = gps.location.lng();
-      int32_t altitude = gps.altitude.meters();
+      auto lat = static_cast<float>(gps.location.lat());
+      auto lng = static_cast<float>(gps.location.lng());
+      int32_t altitude = std::lround(gps.altitude.meters());
 
       if (lat != 0) {
         uartOutBuffer[0] = CMD_GNSS_LOC;
@@ -159,7 +163,7 @@ int main(void) {
         memcpy(&uartOutBuffer[2], &lat, 4);
         memcpy(&uartOutBuffer[2 + 4], &lng, 4);
         memcpy(&uartOutBuffer[2 + 4 + 4], &altitude, 4);
-        uint8_t crc = crc8(uartOutBuffer, 14);
+        const uint8_t crc = crc8(uartOutBuffer, 14);
         uartOutBuffer[14] = crc;
 
         HAL_UART_Transmit(&huart2, uartOutBuffer, 15, 2);
@@ -173,7 +177,7 @@ int main(void) {
         uartOutBuffer[0] = CMD_GNSS_INFO;
         uartOutBuffer[1] = 1;
         uartOutBuffer[2] = gps.satellites.value();
-        uint8_t crc = crc8(uartOutBuffer, 3);
+        const uint8_t crc = crc8(uartOutBuffer, 3);
         uartOutBuffer[3] = crc;
 
         HAL_UART_Transmit(&huart2, uartOutBuffer, 4, 2);
@@ -189,7 +193,7 @@ int main(void) {
         uartOutBuffer[2] = gps.time.second();
         uartOutBuffer[3] = gps.time.minute();
         uartOutBuffer[4] = gps.time.hour();
-        uint8_t crc = crc8(uartOutBuffer, 5);
+        const uint8_t crc = crc8(uartOutBuffer, 5);
         uartOutBuffer[5] = crc;
         HAL_UART_Transmit(&huart2, uartOutBuffer, 6, 2);
       }
@@ -203,7 +207,7 @@ int main(void) {
       uartOutBuffer[0] = CMD_TEMP_INFO;
       uartOutBuffer[1] = 4;
       memcpy(&uartOutBuffer[2], &temperature, 4);
-      uint8_t crc = crc8(uartOutBuffer, 6);
+      const uint8_t crc = crc8(uartOutBuffer, 6);
       uartOutBuffer[6] = crc;
       HAL_UART_Transmit(&huart2, uartOutBuffer, 7, 2);
     }
@@ -213,7 +217,7 @@ int main(void) {
       uartOutBuffer[0] = CMD_VERSION_INFO;
       uartOutBuffer[1] = code_version_size;
       memcpy(&uartOutBuffer[2], code_version, code_version_size);
-      uint8_t crc = crc8(uartOutBuffer, code_version_size + 2);
+      const uint8_t crc = crc8(uartOutBuffer, code_version_size + 2);
       uartOutBuffer[code_version_size + 2] = crc;
 
       HAL_UART_Transmit(&huart2, uartOutBuffer, code_version_size + 3, 2);
@@ -226,7 +230,7 @@ int main(void) {
  * @brief System Clock Configuration
  * @retval None
  */
-void SystemClock_Config(void) {
+void SystemClock_Config() {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
@@ -267,7 +271,7 @@ void SystemClock_Config(void) {
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void) {
+static void MX_ADC1_Init() {
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configure the global features of the ADC (Clock, Resolution, Data
@@ -313,7 +317,7 @@ static void MX_ADC1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SPI1_Init(void) {
+static void MX_SPI1_Init() {
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -339,7 +343,7 @@ static void MX_SPI1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_TIM2_Init(void) {
+static void MX_TIM2_Init() {
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
@@ -368,7 +372,7 @@ static void MX_TIM2_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_USART1_UART_Init(void) {
+static void MX_USART1_UART_Init() {
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -399,7 +403,7 @@ static void MX_USART1_UART_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_USART2_UART_Init(void) {
+static void MX_USART2_UART_Init() {
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -428,7 +432,7 @@ static void MX_USART2_UART_Init(void) {
 /**
  * Enable DMA controller clock
  */
-static void MX_DMA_Init(void) {
+static void MX_DMA_Init() {
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -449,7 +453,7 @@ static void MX_DMA_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_GPIO_Init(void) {
+static void MX_GPIO_Init() {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
@@ -458,9 +462,11 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   HAL_GPIO_WritePin(GPIOB, CS_Pin | INT2_Pin | INT1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   HAL_GPIO_WritePin(GPIOA, FE_EN_Pin | RX_EN_Pin | N_RST_Pin | LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -473,6 +479,7 @@ static void MX_GPIO_Init(void) {
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : CS_Pin INT2_Pin INT1_Pin */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   GPIO_InitStruct.Pin = CS_Pin | INT2_Pin | INT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -486,6 +493,7 @@ static void MX_GPIO_Init(void) {
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : FE_EN_Pin RX_EN_Pin N_RST_Pin LED_Pin */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   GPIO_InitStruct.Pin = FE_EN_Pin | RX_EN_Pin | N_RST_Pin | LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -508,8 +516,8 @@ static void MX_GPIO_Init(void) {
  * @brief  This function is executed in case of error occurrence.
  * @retval None
  */
-void Error_Handler(void) {
+void Error_Handler() {
   __disable_irq();
-  while (1) {
+  while (true) {
   }
 }

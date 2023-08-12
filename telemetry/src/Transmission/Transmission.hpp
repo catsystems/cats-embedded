@@ -22,13 +22,11 @@
 #include <LqCalculator.hpp>
 #include <Sx1280Driver.hpp>
 
-#define MAX_PAYLOAD_SIZE 20
-
-typedef struct {
-  uint8_t rssi;
+struct linkInfo_t {
+  int8_t rssi;
   uint8_t lq;
   int8_t snr;
-} linkInfo_t;
+};
 
 class Transmission {
  public:
@@ -38,16 +36,16 @@ class Transmission {
   void setMode(transmission_mode_e transmissionMode);
   void setPAGain(int8_t gain);
   void setPowerLevel(int8_t gain);
-  void setLinkPhraseCrc(const uint32_t phraseCrc);
+  void setLinkPhraseCrc(uint32_t phraseCrc);
 
   /* Functions to read and write transmission data */
-  bool available();
+  [[nodiscard]] bool available() const;
   void writeBytes(const uint8_t *buffer, uint32_t length);
   bool readBytes(uint8_t *buffer, uint32_t length);
-  bool infoAvailable();
+  [[nodiscard]] bool infoAvailable() const;
   bool readInfo(linkInfo_t *info);
 
-  transmission_direction_e getDirection();
+  [[nodiscard]] transmission_direction_e getDirection() const;
 
   void enableTransmission();
   void disableTransmission();
@@ -71,19 +69,21 @@ class Transmission {
   LqCalculator<30> LqCalc;
   TransmissionSettings Settings;
 
-  TIM_HandleTypeDef *timer;
-  uint32_t timeout = 0;
+  TIM_HandleTypeDef *timer{nullptr};
+  uint32_t timeout{0};
 
-  bool radioInitialized = false;
+  bool radioInitialized{false};
 
   connectionState_e connectionState = disconnected;
-  volatile bool busyTransmitting;
-  uint8_t linkXOR[2];
-  uint32_t linkCRC;
+  volatile bool busyTransmitting{false};
+  uint8_t linkXOR[2]{};
+  uint32_t linkCRC{0};
 
-  volatile bool dataAvailable = false;
-  volatile bool linkInfoAvailable = false;
-  uint32_t payloadLength = 0;
-  uint8_t txData[MAX_PAYLOAD_SIZE];
-  uint8_t rxData[MAX_PAYLOAD_SIZE];
+  volatile bool dataAvailable{false};
+  volatile bool linkInfoAvailable{false};
+  uint32_t payloadLength{0};
+
+  constexpr static uint8_t kMaxPayloadSize{20};
+  uint8_t txData[kMaxPayloadSize]{};
+  uint8_t rxData[kMaxPayloadSize]{};
 };

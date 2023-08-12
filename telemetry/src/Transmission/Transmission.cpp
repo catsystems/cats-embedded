@@ -21,6 +21,7 @@
 #include <Crc.hpp>
 #include <cstring>
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static Transmission *pTransmission;
 
 static inline void rxCallback() { pTransmission->rxDoneISR(); }
@@ -29,14 +30,16 @@ static inline void txCallback() { pTransmission->txDoneISR(); }
 
 bool Transmission::begin(TIM_HandleTypeDef *t) {
   /* Catch if already initalized */
-  if (radioInitialized == true) return radioInitialized;
+  if (radioInitialized) {
+    return radioInitialized;
+  }
 
   timer = t;
   pTransmission = this;
   Radio.RXdoneCallback = &rxCallback;
   Radio.TXdoneCallback = &txCallback;
 
-  if (Radio.Begin() == true) {
+  if (Radio.Begin()) {
     radioInitialized = true;
     HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
   }
@@ -76,20 +79,22 @@ void Transmission::setPAGain(int8_t gain) {
   Settings.paGain = gain;
 
   if (Settings.transmissionEnabled) {
-    Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
+    Radio.SetOutputPower(static_cast<int8_t>(Settings.powerLevel - Settings.paGain));
   }
 }
 
 void Transmission::setPowerLevel(int8_t gain) { Settings.powerLevel = gain; }
 
-void Transmission::writeBytes(const uint8_t *data, uint32_t length) {
-  if (length > payloadLength) return;
-  memcpy(txData, data, length);
+void Transmission::writeBytes(const uint8_t *buffer, uint32_t length) {
+  if (length > payloadLength) {
+    return;
+  }
+  memcpy(txData, buffer, length);
 }
 
-bool Transmission::available() { return dataAvailable; }
+bool Transmission::available() const { return dataAvailable; }
 
-bool Transmission::infoAvailable() { return linkInfoAvailable; }
+bool Transmission::infoAvailable() const { return linkInfoAvailable; }
 
 bool Transmission::readBytes(uint8_t *buffer, uint32_t length) {
   if (dataAvailable) {
@@ -101,27 +106,29 @@ bool Transmission::readBytes(uint8_t *buffer, uint32_t length) {
 }
 
 bool Transmission::readInfo(linkInfo_t *info) {
-  info->lq = LqCalc.getLQ();
-  info->rssi = Radio.LastPacketRSSI;
-  info->snr = Radio.LastPacketSNR;
+  *info = {.rssi = Radio.LastPacketRSSI, .lq = LqCalc.getLQ(), .snr = Radio.LastPacketSNR};
   linkInfoAvailable = false;
   return true;
 }
 
 void Transmission::enableTransmission() {
-  if (radioInitialized == false) return;
+  if (!radioInitialized) {
+    return;
+  }
 
-  if (Settings.transmissionEnabled) return;
+  if (Settings.transmissionEnabled) {
+    return;
+  }
 
   Settings.transmissionEnabled = true;
 
   linkCRC = Settings.linkPhraseCrC;
-  linkXOR[0] = (linkCRC >> 8) & 0xFF;
-  linkXOR[1] = linkCRC & 0xFF;
+  linkXOR[0] = (linkCRC >> 8U) & 0xFFU;
+  linkXOR[1] = linkCRC & 0xFFU;
 
   FHSSrandomiseFHSSsequence(linkCRC);
 
-  Radio.SetOutputPower(Settings.powerLevel - Settings.paGain);
+  Radio.SetOutputPower(static_cast<int8_t>(Settings.powerLevel - Settings.paGain));
 
   HAL_Delay(10);
 
@@ -129,10 +136,10 @@ void Transmission::enableTransmission() {
   modulation_settings_s *const modParams = &Settings.modulationConfig[Settings.modeIndex];
 
   if (Settings.transmissionDirection == TX) {
-    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, 0,
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, false,
                  modParams->PayloadLength, modParams->interval);
   } else {
-    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, 0,
+    Radio.Config(modParams->bw, modParams->sf, modParams->cr, GetInitialFreq(), modParams->PreambleLen, false,
                  modParams->PayloadLength, 0);
   }
 
@@ -152,10 +159,12 @@ void Transmission::enableTransmission() {
 
 void Transmission::disableTransmission() {
   /* Wait until done transmitting / receiving*/
-  while (busyTransmitting)
-    ;
+  while (busyTransmitting) {
+  };
 
-  if (!Settings.transmissionEnabled) return;
+  if (!Settings.transmissionEnabled) {
+    return;
+  }
 
   Settings.transmissionEnabled = false;
 
@@ -179,21 +188,24 @@ void Transmission::disableTransmission() {
 bool Transmission::processRFPacket() {
   LqCalc.inc();
 
-  uint16_t crc = (uint16_t)crc32((const uint8_t *)Radio.RXdataBuffer, payloadLength - 2);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) safe to cast as RXdataBuffer is updated only in the ISR
+  const auto crc = static_cast<uint16_t>(crc32(const_cast<const uint8_t *>(Radio.RXdataBuffer), payloadLength - 2));
 
-  bool is_valid = (linkXOR[0] ^ (uint8_t)(crc >> 8)) == Radio.RXdataBuffer[payloadLength - 2];
-  is_valid &= (linkXOR[1] ^ (uint8_t)crc) == Radio.RXdataBuffer[payloadLength - 1];
+  bool is_valid = (linkXOR[0] ^ static_cast<uint8_t>(crc >> 8U)) == Radio.RXdataBuffer[payloadLength - 2];
+  is_valid &= (linkXOR[1] ^ static_cast<uint8_t>(crc)) == Radio.RXdataBuffer[payloadLength - 1];
 
   if (is_valid) {
-    if (connectionState == tentative)
+    if (connectionState == tentative) {
       connectionState = connected;
-    else if (connectionState == disconnected)
+    } else if (connectionState == disconnected) {
       connectionState = tentative;
+    }
     dataAvailable = true;
     linkInfoAvailable = true;
     timeout = 0;
 
-    memcpy(rxData, (const uint8_t *)Radio.RXdataBuffer, payloadLength);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) safe to cast as RXdataBuffer is updated only in the ISR
+    memcpy(rxData, const_cast<const uint8_t *>(Radio.RXdataBuffer), payloadLength);
 
     LqCalc.add();
     return true;
@@ -279,15 +291,17 @@ void Transmission::txTransmit() {
   }
 
   /* Calculate CRC and store in last position */
-  uint16_t crc = (uint16_t)crc32((const uint8_t *)txData, payloadLength - 2);
-  Radio.TXdataBuffer[payloadLength - 2] = linkXOR[0] ^ (uint8_t)(crc >> 8);
-  Radio.TXdataBuffer[payloadLength - 1] = linkXOR[1] ^ (uint8_t)crc;
+  const auto crc = static_cast<uint16_t>(crc32(static_cast<const uint8_t *>(txData), payloadLength - 2));
+  Radio.TXdataBuffer[payloadLength - 2] = linkXOR[0] ^ static_cast<uint8_t>(crc >> 8U);
+  Radio.TXdataBuffer[payloadLength - 1] = linkXOR[1] ^ static_cast<uint8_t>(crc);
 
   /* Transmit message */
-  if (!busyTransmitting) Radio.TXnb();
+  if (!busyTransmitting) {
+    Radio.TXnb();
+  }
 }
 
-transmission_direction_e Transmission::getDirection() { return Settings.transmissionDirection; }
+transmission_direction_e Transmission::getDirection() const { return Settings.transmissionDirection; }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   (void)htim;
