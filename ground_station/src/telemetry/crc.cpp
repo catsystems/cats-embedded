@@ -52,16 +52,18 @@ static const uint8_t crc8_tab[] = {
 
 uint32_t crc32(const uint8_t *buf, size_t size) {
   const uint8_t *p = buf;
-  uint32_t crc;
-
-  crc = ~0U;
-  while (size--) crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+  uint32_t crc{~0U};
+  while (size-- > 0) {
+    crc = crc32_tab[(crc ^ *p++) & 0xFFU] ^ (crc >> 8U);
+  }
   return crc ^ ~0U;
 }
 
 uint8_t crc8(const uint8_t *buf, size_t size) {
   uint8_t crc = 0;
-  for (int i = 0; i < size; i++) crc = crc8_tab[crc ^ *buf++];
+  for (int i = 0; i < size; i++) {
+    crc = crc8_tab[crc ^ *buf++];
+  }
 
   return crc;
 }

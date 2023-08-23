@@ -62,6 +62,8 @@ def src_file_config(env, node):
             "-Wformat-truncation=2",
             "-Wformat-overflow",
             "-Wformat-signedness",
+            "-Wattributes",
+            "-Wextra",
 
             "-Werror",
             ]

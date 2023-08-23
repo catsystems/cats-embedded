@@ -1,9 +1,10 @@
 #pragma once
 
-#include <Arduino.h>
 #include "console.hpp"
 
-typedef struct {
+#include <Arduino.h>
+
+struct [[gnu::packed]] packedRXMessage {
   uint8_t state : 3;
   uint16_t timestamp : 15;
   uint8_t errors : 6;
@@ -17,7 +18,7 @@ typedef struct {
   // fill up to 16 bytes
   uint8_t : 0;  // sent
   uint8_t d1;   // dummy
-} __attribute__((packed)) packedRXMessage;
+};
 
 static_assert(sizeof(packedRXMessage) == 15);
 
@@ -33,7 +34,7 @@ class TelemetryData {
   void clear() { updated = false; }
 
   /// Returns true if the data has been updated since the last call to clear()
-  bool isUpdated() const { return updated; }
+  [[nodiscard]] bool isUpdated() const { return updated; }
 
   int16_t velocity() {
     updated = false;
@@ -52,15 +53,15 @@ class TelemetryData {
 
   float lat() {
     updated = false;
-    return (float)rxData.lat / 10000.0f;
+    return static_cast<float>(rxData.lat) / 10000.0F;
   }
 
   float lon() {
     updated = false;
-    return (float)rxData.lon / 10000.0f;
+    return static_cast<float>(rxData.lon) / 10000.0F;
   }
 
-  int8_t d1() { return rxData.d1; }
+  [[nodiscard]] uint8_t d1() const { return rxData.d1; }
 
   uint16_t state() {
     updated = false;
@@ -74,7 +75,7 @@ class TelemetryData {
 
   float voltage() {
     updated = false;
-    return static_cast<float>(rxData.voltage / 10.0F);
+    return static_cast<float>(rxData.voltage) / 10.0F;
   }
 
   uint8_t pyroContinuity() {
@@ -87,24 +88,27 @@ class TelemetryData {
     return rxData.testing_mode;
   }
 
-  uint32_t getLastUpdateTime() const { return lastCommitTime; }
+  [[nodiscard]] uint32_t getLastUpdateTime() const { return lastCommitTime; }
 
-  packedRXMessage rxData;
+  packedRXMessage &getRxData() { return rxData; }
 
  private:
-  bool updated;
-  uint32_t lastCommitTime;
+  packedRXMessage rxData{};
+  bool updated{false};
+  uint32_t lastCommitTime{0};
 };
 
-typedef struct {
+struct [[gnu::packed]] TelemetryInfoData {
   uint8_t lq;
   int8_t rssi;
   int8_t snr;
-} __attribute__((packed)) TelemetryInfoData;
+};
+
+static_assert(sizeof(TelemetryInfoData) == 3);
 
 class TelemetryInfo {
  public:
-  void commit(uint8_t *data, uint32_t length) {
+  void commit(uint8_t *data, uint32_t length [[maybe_unused]]) {
     memcpy(&infoData, data, sizeof(infoData));
     lastCommitTime = millis();
     updated = true;
@@ -112,21 +116,21 @@ class TelemetryInfo {
 
   void clear() { updated = false; }
 
-  bool isUpdated() const { return updated; }
+  [[nodiscard]] bool isUpdated() const { return updated; }
 
   int16_t snr() {
     updated = false;
-    return (int16_t)infoData.snr;
+    return static_cast<int16_t>(infoData.snr);
   }
 
   int16_t rssi() {
     updated = false;
-    return (int16_t)infoData.rssi;
+    return static_cast<int16_t>(infoData.rssi);
   }
 
   uint16_t lq() {
     updated = false;
-    return (uint16_t)infoData.lq;
+    return static_cast<int16_t>(infoData.lq);
   }
 
  private:
@@ -135,22 +139,24 @@ class TelemetryInfo {
   bool updated;
 };
 
-typedef struct {
+struct [[gnu::packed]] TelemetryTimeData {
   uint8_t second;
   uint8_t minute;
   uint8_t hour;
-} __attribute__((packed)) TelemetryTimeData;
+};
+
+static_assert(sizeof(TelemetryTimeData) == 3);
 
 class TelemetryTime {
  public:
-  void commit(uint8_t *data, uint32_t length) {
+  void commit(uint8_t *data, uint32_t length [[maybe_unused]]) {
     memcpy(&timeData, data, sizeof(TelemetryTimeData));
     lastCommitTime = millis();
     updated = true;
     wasUpdated = true;
   }
 
-  bool isUpdated() const { return updated; }
+  [[nodiscard]] bool isUpdated() const { return updated; }
 
   uint8_t second() {
     updated = false;
@@ -168,35 +174,32 @@ class TelemetryTime {
   }
 
  private:
-  TelemetryTimeData timeData;
-  uint32_t lastCommitTime;
-  bool updated;
-  bool wasUpdated = false;
+  TelemetryTimeData timeData{};
+  uint32_t lastCommitTime{0};
+  bool updated{false};
+  bool wasUpdated{false};
 };
 
-typedef struct {
+struct [[gnu::packed]] TelemetryLocationData {
   float lat;
   float lon;
   int32_t alt;
-} __attribute__((packed)) TelemetryLocationData;
+};
+
+static_assert(sizeof(TelemetryLocationData) == 12);
 
 class TelemetryLocation {
  public:
-  void commit(uint8_t *data, uint32_t length) {
+  void commit(uint8_t *data, uint32_t length [[maybe_unused]]) {
     memcpy(&locationData, data, sizeof(TelemetryLocationData));
     lastCommitTime = millis();
     updated = true;
     wasUpdated = true;
   }
 
-  bool isUpdated() const { return updated; }
+  [[nodiscard]] bool isUpdated() const { return updated; }
 
-  bool isValid() const {
-    if (locationData.lat && locationData.lon && wasUpdated) {
-      return true;
-    }
-    return false;
-  }
+  [[nodiscard]] bool isValid() const { return locationData.lat != 0 && locationData.lon != 0 && wasUpdated; }
 
   float lat() {
     updated = false;
@@ -210,12 +213,12 @@ class TelemetryLocation {
 
   int16_t alt() {
     updated = false;
-    return (uint16_t)locationData.alt;
+    return static_cast<int16_t>(locationData.alt);
   }
 
  private:
-  TelemetryLocationData locationData;
-  uint32_t lastCommitTime;
-  bool updated;
-  bool wasUpdated = false;
+  TelemetryLocationData locationData{};
+  uint32_t lastCommitTime{0};
+  bool updated{false};
+  bool wasUpdated{false};
 };

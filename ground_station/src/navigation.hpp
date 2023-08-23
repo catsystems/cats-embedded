@@ -1,41 +1,32 @@
 #pragma once
 
+#include "console.hpp"
+#include "utils.hpp"
+
 #include <LSM6DS3.h>
 #include <MadgwickAHRS.h>
 #include <QMC5883LCompass.h>
 #include <Wire.h>
-#include <math.h>
-#include "console.hpp"
-#include "utils.hpp"
 
-const float R = 6378100.0F;   // Earth radius in m (zero tide radius IAU)
-const float C = 40075017.0F;  // Earth circumference in m
+#include <cmath>
+
+constexpr float R = 6378100.0F;   // Earth radius in m (zero tide radius IAU)
+constexpr float C = 40075017.0F;  // Earth circumference in m
 
 class EarthPoint3D {
  public:
-  // Point3D() : x(0), y(0), z(0) { }
-  // Point3D(float x, float y) : x(x), y(y), z(0) { }
-  EarthPoint3D(float lat = 0, float lon = 0, float alt = 0) : lat(lat), lon(lon), alt(alt) {}
-
-  EarthPoint3D operator=(EarthPoint3D const &other) {
-    // Guard self assignment
-    if (this == &other) return *this;
-    lat = other.lat;
-    lon = other.lon;
-    alt = other.alt;
-    return *this;
-  }
+  explicit EarthPoint3D(float lat = 0, float lon = 0, float alt = 0) : lat(lat), lon(lon), alt(alt) {}
 
   EarthPoint3D deg() { return *this; }
 
-  EarthPoint3D rad() {
+  EarthPoint3D rad() const {
     EarthPoint3D res;
     res.lat = lat * (PI_F / 180);
     res.lon = lon * (PI_F / 180);
     return res;
   }
 
-  void print() {
+  void print() const {
     console.log.print("Lat:");
     console.log.println(lat);
     console.log.print("Lon:");
@@ -47,8 +38,6 @@ class EarthPoint3D {
   float lat;
   float lon;
   float alt;
-
- private:
 };
 
 class Navigation {
@@ -128,7 +117,7 @@ class Navigation {
 
   enum calibration_state_e { INV_CALIB = 0, CALIB_ONGOING, CALIB_CANCELLED, CALIB_CONCLUDED };
 
-  void set_saved_calib(mag_calibration_t mag_calib);
+  static void set_saved_calib(mag_calibration_t mag_calib);
 
   void get_saved_calib();
 
@@ -171,14 +160,14 @@ class Navigation {
   float elevation = 0;
 
   mag_calibration_t mag_calib_temp = {.offset = {0, 0, 0},
-                                      .scaling = {1.0f, 1.0f, 1.0f},
+                                      .scaling = {1.0F, 1.0F, 1.0F},
                                       .max_vals = {-100, -100, -100},
                                       .min_vals = {100, 100, 100},
                                       .max_vals_scal = {-100, -100, -100},
                                       .min_vals_scal = {100, 100, 100}};
 
   mag_calibration_t mag_calib = {.offset = {0, 0, 0},
-                                 .scaling = {1.0f, 1.0f, 1.0f},
+                                 .scaling = {1.0F, 1.0F, 1.0F},
                                  .max_vals = {-100, -100, -100},
                                  .min_vals = {100, 100, 100},
                                  .max_vals_scal = {-100, -100, -100},
@@ -187,8 +176,8 @@ class Navigation {
   static void navigationTask(void *pvParameter);
   void calculateDistanceDirection();
   void initFibonacciSphere();
-  void calibrate(float *val);
-  void transform(float *val, float *output);
+  void calibrate(const float *val);
+  void transform(const float *val, float *output);
   void check_rotation();
   void compute_calibration_status();
 

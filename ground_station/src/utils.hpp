@@ -32,31 +32,29 @@
 #pragma once
 
 #include <Arduino.h>
-#include "SdFat.h"
+#include <SdFat.h>
 
-#define BOOT_BUTTON              0
-#define TASK_UTILS_FREQ          5     // [Hz]
-#define MSC_STARTUP_DELAY        2000  // [ms]
-#define DEFAULT_CONFIG_FILE_NAME "system.json"
+inline constexpr const char *DEFAULT_CONFIG_FILE_NAME = "system.json";
 
 constexpr float PI_F = static_cast<float>(PI);
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern FatFileSystem fatfs;
 
 class Utils {
  public:
-  Utils(const char *systemConfigFilename = DEFAULT_CONFIG_FILE_NAME) : configFileName(systemConfigFilename) {}
+  explicit Utils(const char *systemConfigFilename = DEFAULT_CONFIG_FILE_NAME) : configFileName(systemConfigFilename) {}
   bool begin(uint32_t watchdogTimeout = 0, const char *labelName = "DRIVE", bool forceFormat = false);
-  static void startBootloader(void);
-  void startWatchdog(uint32_t seconds);
-  void feedWatchdog(void);
-  bool isUpdated(bool clearFlag = true);
-  bool isConnected(void);
-  int32_t getFlashMemoryUsage();
-  bool format(const char *labelName);
-  inline const char *getSerialNumber(void) { return serial; }
+  static void startBootloader();
+  static void startWatchdog(uint32_t seconds);
+  static void feedWatchdog();
+  static bool isUpdated(bool clearFlag = true);
+  static bool isConnected();
+  static int32_t getFlashMemoryUsage();
+  static bool format(const char *labelName);
+  inline const char *getSerialNumber() { return serial; }
 
-  operator bool() const { return mscReady; }
+  explicit operator bool() const { return mscReady; }
 
  private:
   const char *configFileName;

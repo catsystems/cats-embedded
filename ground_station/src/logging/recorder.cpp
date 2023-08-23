@@ -21,7 +21,7 @@ bool Recorder::begin() {
   } while (fatfs.exists(fileName));
 
   queue = xQueueCreate(10, sizeof(packedRXMessage));
-  xTaskCreate(recordTask, "task_recorder", 4096, this, 1, NULL);
+  xTaskCreate(recordTask, "task_recorder", 4096, this, 1, nullptr);
   initialized = true;
   return initialized;
 }
@@ -38,18 +38,18 @@ void Recorder::createFile() {
 }
 
 void Recorder::recordTask(void *pvParameter) {
-  Recorder *ref = (Recorder *)pvParameter;
+  auto *ref = static_cast<Recorder *>(pvParameter);
   char line[128];
   uint32_t count = 0;
-  packedRXMessage element;
+  packedRXMessage element{};
   while (ref->initialized) {
     if (xQueueReceive(ref->queue, &element, portMAX_DELAY) == pdPASS) {
       if (!ref->fileCreated) {
         ref->createFile();
       }
-      snprintf(line, 128, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", element.timestamp, element.state, element.errors,
+      snprintf(line, 128, "%d,%d,%d,%d,%d,%d,%d,%d,%u,%u", element.timestamp, element.state, element.errors,
                element.lat, element.lon, element.altitude, element.velocity, element.voltage,
-               (bool)(element.pyro_continuity & 0x01), (bool)(element.pyro_continuity & 0x02));
+               (element.pyro_continuity & 0x01U), (element.pyro_continuity & 0x02U));
       ref->file.println(line);
       count++;
 
@@ -59,5 +59,5 @@ void Recorder::recordTask(void *pvParameter) {
       }
     }
   }
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }

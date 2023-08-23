@@ -7,20 +7,20 @@
 #include "settings.hpp"
 #include "telemetry/telemetryData.hpp"
 
-#define BLACK 0
-#define WHITE 1
+inline constexpr uint16_t BLACK = 0;
+inline constexpr uint16_t WHITE = 1;
 
-#define SHARP_SCK  36
-#define SHARP_MOSI 35
-#define SHARP_SS   34
+inline constexpr uint8_t SHARP_SCK = 36;
+inline constexpr uint8_t SHARP_MOSI = 35;
+inline constexpr uint8_t SHARP_SS = 34;
 
-typedef struct {
+struct topBarData {
   time_t time;
   uint32_t storage;
   bool saving;
   bool locationLock;
   bool usbDetection;
-} topBarData;
+};
 
 class Window {
  public:
@@ -33,13 +33,13 @@ class Window {
   void updateBar(float batteryVoltage, bool usb = false, bool logging = false, bool location = false, bool time = false,
                  int32_t free_memory = 100);
 
-  void initMenu(uint32_t index);
-  void updateMenu(uint32_t index);
+  void initMenu(int16_t index);
+  void updateMenu(int16_t index);
 
   void initLive();
-  void updateLive(TelemetryInfo *info, uint32_t index);
-  void updateLive(TelemetryData *data, TelemetryInfo *info, uint32_t index);
-  void updateLive(TelemetryData *data, uint32_t index);
+  void updateLive(TelemetryInfo *info, int16_t index);
+  void updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index);
+  void updateLive(TelemetryData *data, int16_t index);
 
   void initRecovery();
   void updateRecovery(Navigation *navigation);
@@ -50,8 +50,8 @@ class Window {
   void initTestingWait();
   void initTestingReady();
   void initTestingLost();
-  void updateTesting(uint32_t index);
-  void initTestingBox(uint32_t index);
+  void updateTesting(int16_t index);
+  void initTestingBox(int16_t index);
 
   void initData();
 
@@ -62,8 +62,8 @@ class Window {
   void initSensorCalibrateDone();
   void updateSensors(Navigation *navigation);
 
-  void initSettings(uint32_t submenu);
-  void updateSettings(int32_t index);
+  void initSettings(int16_t submenu);
+  void updateSettings(int16_t index);
 
   void initBox(const char *text);
 
@@ -76,34 +76,34 @@ class Window {
   static constexpr uint8_t kUnderscoreIdx = 37;
 
  private:
-  void updateLiveData(TelemetryData *data, uint32_t index, uint32_t color);
-  void updateLiveInfo(TelemetryInfo *info, uint32_t index, uint32_t color);
-  void drawCentreString(const char *buf, int x, int y);
-  void drawCentreString(String &buf, int x, int y);
+  void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
+  void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
+  void drawCentreString(const char *buf, int16_t x, int16_t y);
+  void drawCentreString(String &buf, int16_t x, int16_t y);
 
-  void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, bool color = BLACK);
-  void highlightSetting(uint32_t index, bool color);
+  void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color = BLACK);
+  void highlightSetting(int16_t index, uint16_t color);
 
-  void highlightKeyboardKey(int32_t key, bool color);
-  void updateKeyboardText(char *text, bool color);
+  void highlightKeyboardKey(int32_t key, uint16_t color);
+  void updateKeyboardText(char *text, uint16_t color);
 
   void clearMainScreen();
 
   Adafruit_SharpMem display;
 
-  bool connected[2];
-  uint32_t lastTeleData[2];
-  uint32_t dataAge[2];
-  topBarData barData;
-  TelemetryData teleData[2];
-  TelemetryInfo infoData[2];
+  bool connected[2]{};
+  uint32_t lastTeleData[2]{};
+  uint32_t dataAge[2]{};
+  topBarData barData{};
+  TelemetryData teleData[2]{};
+  TelemetryInfo infoData[2]{};
 
-  int32_t oldSettingsIndex;
-  uint32_t subMenuSettingIndex;
+  int16_t oldSettingsIndex{0};
+  int16_t subMenuSettingIndex{0};
 
-  bool upperCase = false;
-  int32_t oldKey = 0;
-  uint32_t keyboardTextMaxLength = 0;
+  bool upperCase{false};
+  int32_t oldKey{0};
+  uint32_t keyboardTextMaxLength{0};
 
   const char *eventName[9] = {"Ready", "Liftoff", "Burnout", "Apogee", "Main", "Touchdown", "Custom 1", "Custom 2"};
 };

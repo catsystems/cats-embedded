@@ -13,7 +13,9 @@ void Parser::parse() {
 
 int32_t Parser::getOpCodeIndex(uint8_t opCode) {
   for (int32_t i = 0; i < CMD_NUMBER; i++) {
-    if (opCode == cmdIndex[i]) return i;
+    if (opCode == cmdIndex[i]) {
+      return i;
+    }
   }
   return -1;
 }
@@ -47,7 +49,7 @@ void Parser::process(uint8_t ch) {
       }
       break;
     case STATE_CRC: {
-      uint8_t crc = crc8(buffer, dataIndex + 2);
+      const uint8_t crc = crc8(buffer, dataIndex + 2);
       if (crc == ch) {
         parse();
       } else {
@@ -65,15 +67,18 @@ void Parser::cmdRX(uint8_t *args, uint32_t length) { data->commit(args, length);
 void Parser::cmdInfo(uint8_t *args, uint32_t length) { info->commit(args, length); }
 
 void Parser::cmdGNSSLoc(uint8_t *args, uint32_t length) {
-  if (location != NULL) {
+  if (location != nullptr) {
     location->commit(args, length);
   }
 }
 
 void Parser::cmdGNSSTime(uint8_t *args, uint32_t length) {
-  if (time != NULL) {
+  if (time != nullptr) {
     time->commit(args, length);
   }
 }
 
-void Parser::cmdGNSSInfo(uint8_t *args, uint32_t length) { console.log.println("GNSS Info Received"); }
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) function ptr doesn't work if it's static
+void Parser::cmdGNSSInfo(uint8_t *args [[maybe_unused]], uint32_t length [[maybe_unused]]) {
+  console.log.println("GNSS Info Received");
+}

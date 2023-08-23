@@ -27,7 +27,7 @@ class Thermistor {
   explicit Thermistor(ADC_HandleTypeDef *adc) : adcHandle(adc) { HAL_ADC_Start_DMA(adc, &rawAdcValue, 1); }
 
   float getTemperature() {
-    float resistance = 10000.0F / ((65535.0F / static_cast<float>((uint16_t)rawAdcValue)) - 1.0F);
+    float resistance = 10000.0F / ((65535.0F / static_cast<float>(static_cast<uint16_t>(rawAdcValue))) - 1.0F);
 
     float steinhart = logf(resistance / 10000.0F);  // ln(R/R0)
 
@@ -41,5 +41,5 @@ class Thermistor {
 
  private:
   ADC_HandleTypeDef *adcHandle;
-  uint32_t rawAdcValue;
+  uint32_t rawAdcValue{0};
 };

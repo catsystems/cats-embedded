@@ -1,11 +1,19 @@
 #include "window.hpp"
+#include "bmp.hpp"
+
 #include <Fonts/FreeMonoBold12pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <TimeLib.h>
-#include "bmp.hpp"
+
+uint16_t GetNegativeColor(uint16_t color) {
+  if (color == BLACK) {
+    return WHITE;
+  }
+  return BLACK;
+}
 
 void Window::begin() {
   display.begin();
@@ -24,27 +32,31 @@ void Window::Bootloader() {
   display.refresh();
 }
 
-void Window::drawCentreString(const char *buf, int x, int y) {
-  int16_t x1, y1;
-  uint16_t w, h;
+void Window::drawCentreString(const char *buf, int16_t x, int16_t y) {
+  int16_t x1 = 0;
+  int16_t y1 = 0;
+  uint16_t w = 0;
+  uint16_t h = 0;
   display.getTextBounds(buf, 0, y, &x1, &y1, &w, &h);  // calc width of new
                                                        // string
-  display.setCursor(x - w / 2, y);
+  display.setCursor(static_cast<int16_t>(x - w / 2), static_cast<int16_t>(y));
   display.print(buf);
 }
 
-void Window::drawCentreString(String &buf, int x, int y) {
-  int16_t x1, y1;
-  uint16_t w, h;
+void Window::drawCentreString(String &buf, int16_t x, int16_t y) {
+  int16_t x1 = 0;
+  int16_t y1 = 0;
+  uint16_t w = 0;
+  uint16_t h = 0;
   display.getTextBounds(buf, 0, y, &x1, &y1, &w, &h);  // calc width of new
                                                        // string
-  display.setCursor(x - w / 2, y);
+  display.setCursor(static_cast<int16_t>(x - w / 2), static_cast<int16_t>(y));
   display.print(buf);
 }
 
 void Window::initBar() {
   // Memory
-  display.setFont(NULL);
+  display.setFont(nullptr);
   display.drawBitmap(5, 1, bar_memory, 16, 16, BLACK);
   display.setTextColor(BLACK);
   display.setTextSize(2);
@@ -59,30 +71,30 @@ void Window::initBar() {
 void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, int32_t free_memory) {
   static int32_t oldHour = 0;
   static int32_t oldMinute = 0;
-  static float oldBatteryVoltage = 0;
   static bool oldUsbStatus = false;
-  static bool oldLocationStatus = false;
-  static bool oldLoggingStatus = false;
   static int32_t oldFreeMemory = 0;
+  static bool blinkStatus = false;
 
-  static uint32_t blinkStatus = 0;
+  const float oldBatteryVoltage = 0;
+  const bool oldLocationStatus = false;
+  const bool oldLoggingStatus = false;
 
   // Logging
   if (logging != oldLoggingStatus) {
-    display.drawBitmap(65, 1, bar_download, 16, 16, !logging);
+    display.drawBitmap(65, 1, bar_download, 16, 16, static_cast<int16_t>(!logging));
   }
   if (logging) {
-    display.drawBitmap(65, 1, bar_download, 16, 16, blinkStatus);
+    display.drawBitmap(65, 1, bar_download, 16, 16, static_cast<int16_t>(blinkStatus));
   }
 
   // Location
   if (location != oldLocationStatus) {
-    display.drawBitmap(329, 1, bar_location, 16, 16, !location);
+    display.drawBitmap(329, 1, bar_location, 16, 16, static_cast<int16_t>(!location));
   }
 
   // Memory Usage
   if (free_memory != oldFreeMemory) {
-    display.setFont(NULL);
+    display.setFont(nullptr);
     display.setTextSize(2);
 
     display.setTextColor(WHITE);
@@ -98,13 +110,15 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   if ((minute() != oldMinute || hour() != oldHour) && time) {
-    display.setFont(NULL);
+    display.setFont(nullptr);
     display.setTextSize(2);
 
     display.setTextColor(WHITE);
 
     String t = String(oldHour) + ":";
-    if (oldMinute < 10) t += '0';
+    if (oldMinute < 10) {
+      t += '0';
+    }
     t += String(oldMinute);
 
     drawCentreString(t, 200, 2);
@@ -114,7 +128,9 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     display.setTextColor(BLACK);
 
     t = String(oldHour) + ":";
-    if (oldMinute < 10) t += '0';
+    if (oldMinute < 10) {
+      t += '0';
+    }
     t += String(oldMinute);
 
     drawCentreString(t, 200, 2);
@@ -128,26 +144,26 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     display.fillRect(380, 5, 6, 8, WHITE);
     display.fillRect(387, 5, 6, 8, WHITE);
 
-    display.drawBitmap(376, 1, bar_flash, 16, 16, !usb);
+    display.drawBitmap(376, 1, bar_flash, 16, 16, static_cast<int16_t>(!usb));
   }
 
   // Battery
   if (batteryVoltage != oldBatteryVoltage && !usb) {
-    if (batteryVoltage > 3.3f) {
+    if (batteryVoltage > 3.3F) {
       display.fillRect(373, 5, 6, 8, BLACK);
       display.drawRoundRect(371, 3, 24, 12, 2, BLACK);
       display.fillRect(395, 5, 3, 8, BLACK);
     } else {
       display.fillRect(373, 5, 6, 8, WHITE);
-      display.drawRoundRect(371, 3, 24, 12, 2, blinkStatus);
-      display.fillRect(395, 5, 3, 8, blinkStatus);
+      display.drawRoundRect(371, 3, 24, 12, 2, static_cast<int16_t>(blinkStatus));
+      display.fillRect(395, 5, 3, 8, static_cast<int16_t>(blinkStatus));
     }
-    if (batteryVoltage > 3.6f) {
+    if (batteryVoltage > 3.6F) {
       display.fillRect(380, 5, 6, 8, BLACK);
     } else {
       display.fillRect(380, 5, 6, 8, WHITE);
     }
-    if (batteryVoltage > 3.9f) {
+    if (batteryVoltage > 3.9F) {
       display.fillRect(387, 5, 6, 8, BLACK);
     } else {
       display.fillRect(387, 5, 6, 8, WHITE);
@@ -159,7 +175,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   display.refresh();
 }
 
-void Window::initMenu(uint32_t index) {
+void Window::initMenu(int16_t index) {
   clearMainScreen();
 
   display.setFont(&FreeSans9pt7b);
@@ -196,18 +212,18 @@ void Window::initMenu(uint32_t index) {
   display.refresh();
 }
 
-void Window::updateMenu(uint32_t index) {
-  static int oldHighlight = 0;
+void Window::updateMenu(int16_t index) {
+  static int16_t oldHighlight = 0;
 
-  /* Pait over last selcted with white */
+  /* Paint over last selcted with white */
 
-  int xPos = (oldHighlight % 3) * 125 + 36;
-  int yPos = (oldHighlight / 3) * 105 + 31;
+  auto xPos = static_cast<int16_t>((oldHighlight % 3) * 125 + 36);
+  auto yPos = static_cast<int16_t>((oldHighlight / 3) * 105 + 31);
 
   display.drawRoundRect(xPos, yPos, 78, 78, 9, WHITE);
 
-  xPos = (index % 3) * 125 + 36;
-  yPos = (index / 3) * 105 + 31;
+  xPos = static_cast<int16_t>((index % 3) * 125 + 36);
+  yPos = static_cast<int16_t>((index / 3) * 105 + 31);
   display.drawRoundRect(xPos, yPos, 78, 78, 9, BLACK);
 
   display.refresh();
@@ -256,12 +272,14 @@ void Window::initLive() {
   display.print("Disconnected");
 
   display.setTextColor(BLACK);
-  display.setFont(NULL);
+  display.setFont(nullptr);
   display.refresh();
 }
 
-void Window::updateLive(TelemetryInfo *info, uint32_t index) {
-  if (index > 1) return;
+void Window::updateLive(TelemetryInfo *info, int16_t index) {
+  if (index > 1) {
+    return;
+  }
 
   // clear update flag
   info->clear();
@@ -273,8 +291,10 @@ void Window::updateLive(TelemetryInfo *info, uint32_t index) {
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, TelemetryInfo *info, uint32_t index) {
-  if (index > 1) return;
+void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index) {
+  if (index > 1) {
+    return;
+  }
 
   lastTeleData[index] = millis();
 
@@ -296,8 +316,10 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info, uint32_t index
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, uint32_t index) {
-  if (index > 1) return;
+void Window::updateLive(TelemetryData *data, int16_t index) {
+  if (index > 1) {
+    return;
+  }
 
   lastTeleData[index] = millis();
 
@@ -320,79 +342,79 @@ const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST",
 const char *const errorName[] = {"No Config",   "Log Full",         "Filter Error",
                                  "Overheating", "Continuity Error", "Calibration Error"};
 
-void Window::updateLiveData(TelemetryData *data, uint32_t index, uint32_t color) {
-  int xOffset = index * 200;
+void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) {
+  const auto xOffset = static_cast<int16_t>(index * 200);
 
   display.setFont(&FreeSans12pt7b);
   display.setTextSize(1);
   display.setTextColor(color);
 
   if (data->testingMode()) {
-    drawCentreString("TESTING", xOffset + 100, 42);
-    display.fillRect(xOffset + 1, 50, 198, 151, WHITE);
-    display.setCursor(xOffset + 20, 80);
+    drawCentreString("TESTING", static_cast<int16_t>(xOffset + 100), 42);
+    display.fillRect(static_cast<int16_t>(xOffset + 1), 50, 198, 151, WHITE);
+    display.setCursor(static_cast<int16_t>(xOffset + 20), 80);
     display.print("DO NOT FLY!");
     return;
-  } else {
-    drawCentreString(stateName[data->state()], xOffset + 100, 42);
   }
 
-  display.setCursor(xOffset + 35, 70);
+  drawCentreString(stateName[data->state()], static_cast<int16_t>(xOffset + 100), 42);
+
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 70);
   display.print(data->altitude());
   display.print(" m");
 
-  display.setCursor(xOffset + 35, 95);
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 95);
   display.print(data->velocity());
   display.print(" m/s");
 
-  display.setCursor(xOffset + 35, 120);
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 120);
   display.print(data->lat(), 4);
   display.print(" N");
 
-  display.setCursor(xOffset + 35, 145);
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 145);
   display.print(data->lon(), 4);
   display.print(" E");
 
-  display.setCursor(xOffset + 35, 170);
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 170);
   display.print(data->voltage());
   display.print(" V");
 
-  if (data->pyroContinuity() & 0x01) {
-    display.drawBitmap(xOffset + 142, 156, live_checkmark, 16, 16, color);
+  if (static_cast<bool>(data->pyroContinuity() & 0x01U)) {
+    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 156, live_checkmark, 16, 16, color);
   } else {
-    display.drawBitmap(xOffset + 142, 156, live_cross, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 156, live_cross, 16, 16, color);
   }
 
-  if (data->pyroContinuity() & 0x02) {
-    display.drawBitmap(xOffset + 180, 156, live_checkmark, 16, 16, color);
+  if (static_cast<bool>(data->pyroContinuity() & 0x02U)) {
+    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 156, live_checkmark, 16, 16, color);
   } else {
-    display.drawBitmap(xOffset + 180, 156, live_cross, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 156, live_cross, 16, 16, color);
   }
 
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(xOffset + 35, 192);
+  display.setCursor(static_cast<int16_t>(xOffset + 35), 192);
 
-  if (data->errors() & 0x04) {
+  if (static_cast<bool>(data->errors() & 0x04U)) {
     display.print(errorName[2]);
-  } else if (data->errors() & 0x20) {
+  } else if (static_cast<bool>(data->errors() & 0x20U)) {
     display.print(errorName[5]);
-  } else if (data->errors() & 0x10) {
+  } else if (static_cast<bool>(data->errors() & 0x10U)) {
     display.print(errorName[4]);
-  } else if (data->errors() & 0x02) {
+  } else if (static_cast<bool>(data->errors() & 0x02U)) {
     display.print(errorName[1]);
-  } else if (data->errors() & 0x01) {
+  } else if (static_cast<bool>(data->errors() & 0x01U)) {
     display.print(errorName[0]);
-  } else if (data->errors() & 0x08) {
+  } else if (static_cast<bool>(data->errors() & 0x08U)) {
     display.print(errorName[3]);
   }
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
-  display.setTextColor(!color);
+  display.setTextColor(GetNegativeColor(color));
 }
 
-void Window::updateLiveInfo(TelemetryInfo *info, uint32_t index, uint32_t color) {
-  int xOffset = index * 200;
+void Window::updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color) {
+  const auto xOffset = static_cast<int16_t>(index * 200);
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
@@ -401,33 +423,33 @@ void Window::updateLiveInfo(TelemetryInfo *info, uint32_t index, uint32_t color)
   if (dataAge[index] > 4900) {
     if (color == WHITE) {
       connected[index] = false;
-      display.fillRect(xOffset + 0, 202, 199, 240, BLACK);
-      display.setCursor(xOffset + 45, 227);
+      display.fillRect(xOffset, 202, 199, 240, BLACK);
+      display.setCursor(static_cast<int16_t>(xOffset + 45), 227);
       display.print("Disconnected");
       info->lq();
     }
   } else {
-    if (connected[index] == false) {
+    if (!connected[index]) {
       if (color == WHITE) {
-        display.fillRect(xOffset + 0, 202, 199, 240, BLACK);
+        display.fillRect(xOffset, 202, 199, 240, BLACK);
         connected[index] = true;
-        display.setCursor(xOffset + 5, 217);
+        display.setCursor(static_cast<int16_t>(xOffset + 5), 217);
         display.print("AGE");
-        display.setCursor(xOffset + 100, 217);
+        display.setCursor(static_cast<int16_t>(xOffset + 100), 217);
         display.print("SNR");
-        display.setCursor(xOffset + 5, 237);
+        display.setCursor(static_cast<int16_t>(xOffset + 5), 237);
         display.print("LQ");
-        display.setCursor(xOffset + 100, 237);
+        display.setCursor(static_cast<int16_t>(xOffset + 100), 237);
         display.print("RSSI");
       }
     }
-    display.setCursor(xOffset + 50, 217);
-    display.print((float)dataAge[index] / 1000.0f, 1);
-    display.setCursor(xOffset + 145, 217);
+    display.setCursor(static_cast<int16_t>(xOffset + 50), 217);
+    display.print(static_cast<float>(dataAge[index]) / 1000.0F, 1);
+    display.setCursor(static_cast<int16_t>(xOffset + 145), 217);
     display.print(info->snr());
-    display.setCursor(xOffset + 50, 237);
+    display.setCursor(static_cast<int16_t>(xOffset + 50), 237);
     display.print(info->lq());
-    display.setCursor(xOffset + 145, 237);
+    display.setCursor(static_cast<int16_t>(xOffset + 145), 237);
     display.print(info->rssi());
   }
 }
@@ -496,33 +518,37 @@ void Window::updateRecovery(Navigation *navigation) {
 
   display.setFont(&FreeSans9pt7b);
 
-  float radius = 90;
-  float correctionFactor = 0.06;
+  const float radius = 90;
+  const float correctionFactor = 0.06;
 
-  int x = radius * cos(angle - PI_F / 2);
-  int y = radius * sin(angle - PI_F / 2) + 125;
-  drawCentreString("N", x + 300, y + correctionFactor * y);
+  auto x = static_cast<int16_t>(radius * cos(angle - PI_F / 2));
+  auto y = static_cast<int16_t>(radius * sin(angle - PI_F / 2) + 125);
+  drawCentreString("N", static_cast<int16_t>(x + 300),
+                   static_cast<int16_t>(static_cast<float>(y) + correctionFactor * static_cast<float>(y)));
 
-  x = radius * cos(angle);
-  y = radius * sin(angle) + 125;
-  drawCentreString("E", x + 300, y + correctionFactor * y);
+  x = static_cast<int16_t>(radius * cos(angle));
+  y = static_cast<int16_t>(radius * sin(angle) + 125);
+  drawCentreString("E", static_cast<int16_t>(x + 300),
+                   static_cast<int16_t>(static_cast<float>(y) + correctionFactor * static_cast<float>(y)));
 
-  x = radius * cos(angle + PI_F / 2);
-  y = radius * sin(angle + PI_F / 2) + 125;
-  drawCentreString("S", x + 300, y + correctionFactor * y);
+  x = static_cast<int16_t>(radius * cos(angle + PI_F / 2));
+  y = static_cast<int16_t>(radius * sin(angle + PI_F / 2) + 125);
+  drawCentreString("S", static_cast<int16_t>(x + 300),
+                   static_cast<int16_t>(static_cast<float>(y) + correctionFactor * static_cast<float>(y)));
 
-  x = radius * cos(angle + PI_F);
-  y = radius * sin(angle + PI_F) + 125;
-  drawCentreString("W", x + 300, y + correctionFactor * y);
+  x = static_cast<int16_t>(radius * cos(angle + PI_F));
+  y = static_cast<int16_t>(radius * sin(angle + PI_F) + 125);
+  drawCentreString("W", static_cast<int16_t>(x + 300),
+                   static_cast<int16_t>(static_cast<float>(y) + correctionFactor * static_cast<float>(y)));
 
   angle = navigation->getAzimuth() + angle - PI_F / 2;
 
-  x = 70 * cos(angle) + 300;
-  y = 70 * sin(angle) + 125;
-  int x1 = 30 * cos(angle + 0.2F) + 300;
-  int y1 = 30 * sin(angle + 0.2F) + 125;
-  int x2 = 30 * cos(angle - 0.2F) + 300;
-  int y2 = 30 * sin(angle - 0.2F) + 125;
+  x = static_cast<int16_t>(70 * cos(angle) + 300);
+  y = static_cast<int16_t>(70 * sin(angle) + 125);
+  const auto x1 = static_cast<int16_t>(30 * cos(angle + 0.2F) + 300);
+  const auto y1 = static_cast<int16_t>(30 * sin(angle + 0.2F) + 125);
+  const auto x2 = static_cast<int16_t>(30 * cos(angle - 0.2F) + 300);
+  const auto y2 = static_cast<int16_t>(30 * sin(angle - 0.2F) + 125);
 
   display.drawCircle(300, 125, 80, BLACK);
 
@@ -556,7 +582,7 @@ void Window::initBox(const char *text) {
   display.refresh();
 }
 
-void Window::initTestingBox(uint32_t index) {
+void Window::initTestingBox(int16_t index [[maybe_unused]]) {
   display.fillRect(60, 60, 280, 120, WHITE);
   display.drawRect(60, 60, 280, 120, BLACK);
 
@@ -746,10 +772,10 @@ void Window::initTestingReady() {
   drawCentreString(eventName[7], 300, 201);
 }
 
-void Window::updateTesting(uint32_t index) {
-  static uint32_t oldIndex = 0;
-  uint32_t xOffset = 201 * (oldIndex / 4);
-  uint32_t yOffset = 50 * (oldIndex % 4) + 20;
+void Window::updateTesting(int16_t index) {
+  static int16_t oldIndex = 0;
+  auto xOffset = static_cast<int16_t>(201 * (oldIndex / 4));
+  auto yOffset = static_cast<int16_t>(50 * (oldIndex % 4) + 20);
 
   display.fillRect(xOffset, yOffset, 199, 48, WHITE);
 
@@ -757,19 +783,19 @@ void Window::updateTesting(uint32_t index) {
   display.setFont(&FreeSans12pt7b);
   display.setTextColor(BLACK);
 
-  xOffset = 200 * (oldIndex / 4) + 100;
-  yOffset = 50 * (oldIndex % 4) + 51;
+  xOffset = static_cast<int16_t>(200 * (oldIndex / 4) + 100);
+  yOffset = static_cast<int16_t>(50 * (oldIndex % 4) + 51);
 
   drawCentreString(eventName[oldIndex], xOffset, yOffset);
 
-  xOffset = 201 * (index / 4);
-  yOffset = 50 * (index % 4) + 20;
+  xOffset = static_cast<int16_t>(201 * (index / 4));
+  yOffset = static_cast<int16_t>(50 * (index % 4) + 20);
 
   display.fillRect(xOffset, yOffset, 199, 48, BLACK);
 
   display.setTextColor(WHITE);
-  xOffset = 200 * (index / 4) + 100;
-  yOffset = 50 * (index % 4) + 51;
+  xOffset = static_cast<int16_t>(200 * (index / 4) + 100);
+  yOffset = static_cast<int16_t>(50 * (index % 4) + 51);
   drawCentreString(eventName[index], xOffset, yOffset);
 
   oldIndex = index;
@@ -821,10 +847,10 @@ void Window::initSensors() {
 }
 
 void Window::updateSensors(Navigation *navigation) {
-  int xinitOffset = 10;
-  int xOffset = 30;
-  int yinitOffset = 90;
-  int yOffset = 30;
+  int16_t xinitOffset = 10;
+  int16_t xOffset = 30;
+  int16_t yinitOffset = 90;
+  const int16_t yOffset = 30;
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
@@ -832,27 +858,27 @@ void Window::updateSensors(Navigation *navigation) {
 
   display.fillRect(20, 75, 75, 80, WHITE);
 
-  /* Ax, Ay, Az*/
+  /* Ax, Ay, Az */
 
   display.setCursor(xinitOffset, yinitOffset);
   display.print("Ax: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset);
-  display.print((float)navigation->getAX(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), yinitOffset);
+  display.print(navigation->getAX(), 2);
 
-  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.setCursor(xinitOffset, static_cast<int16_t>(yinitOffset + yOffset));
   display.print("Ay: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
-  display.print((float)navigation->getAY(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
+  display.print(navigation->getAY(), 2);
 
-  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
+  display.setCursor(xinitOffset, static_cast<int16_t>(yinitOffset + 2 * yOffset));
   display.print("Az: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset + 2 * yOffset);
-  display.print((float)navigation->getAZ(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), static_cast<int16_t>(yinitOffset + 2 * yOffset));
+  display.print(navigation->getAZ(), 2);
 
-  /* Gx, Gy, Gz*/
+  /* Gx, Gy, Gz */
 
   xinitOffset = 110;
 
@@ -861,20 +887,20 @@ void Window::updateSensors(Navigation *navigation) {
   display.setCursor(xinitOffset, yinitOffset);
   display.print("Gx: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset);
-  display.print((float)navigation->getGX(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), yinitOffset);
+  display.print(navigation->getGX(), 2);
 
-  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.setCursor(xinitOffset, static_cast<int16_t>(yinitOffset + yOffset));
   display.print("Gy: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
-  display.print((float)navigation->getGY(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
+  display.print(navigation->getGY(), 2);
 
-  display.setCursor(xinitOffset, yinitOffset + 2 * yOffset);
+  display.setCursor(xinitOffset, static_cast<int16_t>(yinitOffset + 2 * yOffset));
   display.print("Gz: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset + 2 * yOffset);
-  display.print((float)navigation->getGZ(), 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), static_cast<int16_t>(yinitOffset + 2 * yOffset));
+  display.print(navigation->getGZ(), 2);
 
   /* GNSS */
 
@@ -888,19 +914,19 @@ void Window::updateSensors(Navigation *navigation) {
   display.setCursor(xinitOffset, yinitOffset);
   display.print("Lon: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset);
-  float lon = (float)navigation->getPointA().lon;
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), yinitOffset);
+  const float lon = navigation->getPointA().lon;
   if (lon == 0) {
     display.print("-");
   } else {
     display.print(lon, 5);
   }
 
-  display.setCursor(xinitOffset, yinitOffset + yOffset);
+  display.setCursor(xinitOffset, static_cast<int16_t>(yinitOffset + yOffset));
   display.print("Lat: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset + yOffset);
-  float lat = (float)navigation->getPointA().lat;
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
+  const float lat = navigation->getPointA().lat;
   if (lat == 0) {
     display.print("-");
   } else {
@@ -919,22 +945,22 @@ void Window::updateSensors(Navigation *navigation) {
   display.setCursor(xinitOffset, yinitOffset);
   display.print("Mx: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset);
-  display.print((float)navigation->getMX() / 1000, 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), yinitOffset);
+  display.print(navigation->getMX() / 1000, 2);
 
   xinitOffset = 110;
 
   display.setCursor(xinitOffset, yinitOffset);
   display.print("My: ");
 
-  display.setCursor(xinitOffset + xOffset, yinitOffset);
-  display.print((float)navigation->getMY() / 1000, 2);
+  display.setCursor(static_cast<int16_t>(xinitOffset + xOffset), yinitOffset);
+  display.print(navigation->getMY() / 1000, 2);
 
-  display.setCursor(70, yinitOffset + yOffset);
+  display.setCursor(70, static_cast<int16_t>(yinitOffset + yOffset));
   display.print("Mz: ");
 
-  display.setCursor(70 + xOffset, yinitOffset + yOffset);
-  display.print((float)navigation->getMZ() / 1000, 2);
+  display.setCursor(static_cast<int16_t>(70 + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
+  display.print(navigation->getMZ() / 1000, 2);
 }
 
 void Window::initSensorPrepareCalibrate() {
@@ -998,7 +1024,7 @@ void Window::initSensorCalibrateDone() {
   display.refresh();
 }
 
-void Window::initSettings(uint32_t submenu) {
+void Window::initSettings(int16_t submenu) {
   clearMainScreen();
 
   display.drawLine(0, 49, 400, 49, BLACK);
@@ -1028,8 +1054,8 @@ void Window::initSettings(uint32_t submenu) {
   display.refresh();
 }
 
-void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, bool color) {
-  uint32_t y = 75 + 30 * settingIndex;
+void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color) {
+  auto y = static_cast<int16_t>(75 + 30 * settingIndex);
 
   display.setTextColor(color);
 
@@ -1037,40 +1063,46 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *set
   display.print(setting->name);
 
   if (setting->type == TOGGLE) {
-    bool data = *(bool *)setting->dataPtr;
+    const auto data = *static_cast<bool *>(setting->dataPtr);
     drawCentreString(lookup_tables[setting->config.lookup].values[static_cast<uint16_t>(data)], 305, y);
 
     y -= 23;
-    if (data == false) {
-      display.fillTriangle(386, y + 14, 378, y + 6, 378, y + 22, color);
+    if (!data) {
+      display.fillTriangle(386, static_cast<int16_t>(y + 14), 378, static_cast<int16_t>(y + 6), 378,
+                           static_cast<int16_t>(y + 22), color);
     } else {
-      display.fillTriangle(224, y + 14, 232, y + 6, 232, y + 22, color);
+      display.fillTriangle(224, static_cast<int16_t>(y + 14), 232, static_cast<int16_t>(y + 6), 232,
+                           static_cast<int16_t>(y + 22), color);
     }
   } else if (setting->type == STRING) {
     display.setFont(&FreeMonoBold12pt7b);
-    drawCentreString((const char *)setting->dataPtr, 285, y);
+    drawCentreString(static_cast<const char *>(setting->dataPtr), 285, y);
     display.setFont(&FreeSans12pt7b);
   } else if (setting->type == NUMBER) {
     char buffer[8];
-    snprintf(buffer, 8, "%+d", *(int16_t *)setting->dataPtr);
+    snprintf(buffer, 8, "%+d", *static_cast<int16_t *>(setting->dataPtr));
     drawCentreString(buffer, 305, y);
 
     y -= 23;
-    if (setting->config.minmax.max == *(int16_t *)setting->dataPtr) {
-      display.fillTriangle(386, y + 14, 378, y + 6, 378, y + 22, !color);
+    if (setting->config.minmax.max == *static_cast<int16_t *>(setting->dataPtr)) {
+      display.fillTriangle(386, static_cast<int16_t>(y + 14), 378, static_cast<int16_t>(y + 6), 378,
+                           static_cast<int16_t>(y + 22), GetNegativeColor(color));
     } else {
-      display.fillTriangle(386, y + 14, 378, y + 6, 378, y + 22, color);
+      display.fillTriangle(386, static_cast<int16_t>(y + 14), 378, static_cast<int16_t>(y + 6), 378,
+                           static_cast<int16_t>(y + 22), color);
     }
 
-    if (setting->config.minmax.min == *(int16_t *)setting->dataPtr) {
-      display.fillTriangle(224, y + 14, 232, y + 6, 232, y + 22, !color);
+    if (setting->config.minmax.min == *static_cast<int16_t *>(setting->dataPtr)) {
+      display.fillTriangle(224, static_cast<int16_t>(y + 14), 232, static_cast<int16_t>(y + 6), 232,
+                           static_cast<int16_t>(y + 22), GetNegativeColor(color));
     } else {
-      display.fillTriangle(224, y + 14, 232, y + 6, 232, y + 22, color);
+      display.fillTriangle(224, static_cast<int16_t>(y + 14), 232, static_cast<int16_t>(y + 6), 232,
+                           static_cast<int16_t>(y + 22), color);
     }
   }
 }
 
-void Window::updateSettings(int32_t index) {
+void Window::updateSettings(int16_t index) {
   display.setTextSize(1);
 
   if (oldSettingsIndex >= 0) {
@@ -1078,19 +1110,21 @@ void Window::updateSettings(int32_t index) {
       highlightSetting(oldSettingsIndex, BLACK);
     }
   } else {
-    if (subMenuSettingIndex == 0)
+    if (subMenuSettingIndex == 0) {
       display.fillTriangle(386, 33, 378, 25, 378, 41, BLACK);
-    else
+    } else {
       display.fillTriangle(13, 33, 21, 25, 21, 41, BLACK);
+    }
   }
 
   if (index >= 0) {
     highlightSetting(index, WHITE);
   } else {
-    if (subMenuSettingIndex == 0)
+    if (subMenuSettingIndex == 0) {
       display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
-    else
+    } else {
       display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
+    }
     display.fillRect(0, 178, 400, 62, WHITE);
   }
 
@@ -1098,14 +1132,11 @@ void Window::updateSettings(int32_t index) {
   display.refresh();
 }
 
-void Window::highlightSetting(uint32_t index, bool color) {
+void Window::highlightSetting(int16_t index, uint16_t color) {
   display.setFont(&FreeSans12pt7b);
-  uint32_t yPos = 52 + 30 * index;
-  display.fillRect(0, yPos, 400, 30, !color);
-  if (subMenuSettingIndex == 0)
-    addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
-  else
-    addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
+  const auto yPos = static_cast<int16_t>(52 + 30 * index);
+  display.fillRect(0, yPos, 400, 30, GetNegativeColor(color));
+  addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
 
   display.fillRect(0, 178, 400, 62, WHITE);
   display.setFont(&FreeSans9pt7b);
@@ -1120,7 +1151,7 @@ const uint8_t kNumKeyboardChars = 38;
 const uint32_t kBackspaceCoordX = 330;
 const uint32_t kBackspaceCoordY = 62;
 
-const int keybXY[kNumKeyboardChars][2] = {
+const int16_t keybXY[kNumKeyboardChars][2] = {
     {20, 125},   //'1'
     {60, 125},   //'2'
     {100, 125},  //'3'
@@ -1192,7 +1223,8 @@ void Window::initKeyboard(char *text, uint32_t maxLength) {
   }
 
   if (oldKey != kShiftIdx) {
-    display.drawBitmap(keybXY[kShiftIdx][0] - 4, keybXY[kShiftIdx][1] - 1, shift_keyboard, 16, 16, BLACK);
+    display.drawBitmap(static_cast<int16_t>(keybXY[kShiftIdx][0] - 4), static_cast<int16_t>(keybXY[kShiftIdx][1] - 1),
+                       shift_keyboard, 16, 16, BLACK);
   }
   if (oldKey != -1) {
     display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, BLACK);
@@ -1224,7 +1256,7 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
       if (strlen(text) < keyboardTextMaxLength) {
         updateKeyboardText(text, WHITE);
         if (keyHighlight > 9 && keyHighlight != kUnderscoreIdx) {
-          text[strlen(text)] = keybChar[keyHighlight] + !upperCase * 32;
+          text[strlen(text)] = static_cast<char>(keybChar[keyHighlight] + static_cast<int>(!upperCase) * 32);
         } else {
           text[strlen(text)] = keybChar[keyHighlight];
         }
@@ -1244,26 +1276,27 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
   display.refresh();
 }
 
-void Window::highlightKeyboardKey(int32_t key, bool color) {
+void Window::highlightKeyboardKey(int32_t key, uint16_t color) {
   if (key == -1) {
     display.fillCircle(kBackspaceCoordX + 12, kBackspaceCoordY + 11, 16, color);
-    display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, !color);
+    display.drawBitmap(kBackspaceCoordX, kBackspaceCoordY, backspace_keyboard, 24, 24, GetNegativeColor(color));
   } else {
-    display.fillCircle(keybXY[key][0] + 4, keybXY[key][1] + 7, 16, color);
+    display.fillCircle(static_cast<int16_t>(keybXY[key][0] + 4), static_cast<int16_t>(keybXY[key][1] + 7), 16, color);
   }
 
   if (key == kShiftIdx) {
-    display.drawBitmap(keybXY[kShiftIdx][0] - 4, keybXY[kShiftIdx][1] - 1, shift_keyboard, 16, 16, !color);
+    display.drawBitmap(static_cast<int16_t>(keybXY[kShiftIdx][0] - 4), static_cast<int16_t>(keybXY[kShiftIdx][1] - 1),
+                       shift_keyboard, 16, 16, GetNegativeColor(color));
   } else {
     if (!upperCase && key > 9 && key != kUnderscoreIdx) {
-      display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key] + 32, !color, color, 2);
+      display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key] + 32, GetNegativeColor(color), color, 2);
     } else {
-      display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key], !color, color, 2);
+      display.drawChar(keybXY[key][0], keybXY[key][1], keybChar[key], GetNegativeColor(color), color, 2);
     }
   }
 }
 
-void Window::updateKeyboardText(char *text, bool color) {
+void Window::updateKeyboardText(char *text, uint16_t color) {
   display.setFont(&FreeMonoBold12pt7b);
   display.setTextColor(color);
   display.setCursor(90, 80);

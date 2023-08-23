@@ -1,16 +1,17 @@
 #pragma once
 
-#include <cstdint>
 #include "systemParser.hpp"
 
-typedef enum : bool { SINGLE = 0, DUAL = 1 } ReceiverTelemetryMode_e;
+#include <cstdint>
+
+enum ReceiverTelemetryMode_e : bool { SINGLE = false, DUAL = true };
 
 // Maximum number of characters for link & test phrases
 inline constexpr uint32_t kMaxPhraseLen = 16;
 
 struct systemConfig_t {
   int16_t timeZoneOffset;
-  uint8_t neverStopLogging;
+  bool neverStopLogging;
   ReceiverTelemetryMode_e receiverMode;
   char linkPhrase1[kMaxPhraseLen + 1];
   char linkPhrase2[kMaxPhraseLen + 1];
@@ -20,7 +21,7 @@ struct systemConfig_t {
 
 class Config {
  public:
-  Config() {}
+  Config() = default;
 
   void save();
   void load();
@@ -30,4 +31,5 @@ class Config {
  private:
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern Config systemConfig;

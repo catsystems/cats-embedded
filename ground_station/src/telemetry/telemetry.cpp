@@ -3,14 +3,14 @@
 #include "console.hpp"
 #include "crc.hpp"
 
-#define TASK_TELE_FREQ 100
+constexpr uint8_t TASK_TELE_FREQ = 100;
 
 void Telemetry::begin() {
   serial.begin(115200, SERIAL_8N1, rxPin, txPin);
   parser.init(&data, &info, &location, &time);
   initialized = true;
 
-  xTaskCreate(update, "task_telemetry", 2048, this, 1, NULL);
+  xTaskCreate(update, "task_telemetry", 2048, this, 1, nullptr);
 }
 
 void Telemetry::setLinkPhrase(const char* phrase, uint32_t length) {
@@ -19,7 +19,7 @@ void Telemetry::setLinkPhrase(const char* phrase, uint32_t length) {
   newSetting = true;
 }
 
-void Telemetry::setLinkPhrase(String phrase) { setLinkPhrase(phrase.c_str(), phrase.length()); }
+void Telemetry::setLinkPhrase(const String& phrase) { setLinkPhrase(phrase.c_str(), phrase.length()); }
 
 void Telemetry::setTestingPhrase(const char* phrase, uint32_t length) {
   memset(testingPhrase, 0, kMaxPhraseLen + 1);
@@ -27,7 +27,7 @@ void Telemetry::setTestingPhrase(const char* phrase, uint32_t length) {
   newSetting = true;
 }
 
-void Telemetry::setTestingPhrase(String phrase) { setTestingPhrase(phrase.c_str(), phrase.length()); }
+void Telemetry::setTestingPhrase(const String& phrase) { setTestingPhrase(phrase.c_str(), phrase.length()); }
 
 void Telemetry::setDirection(transmission_direction_e dir) {
   if (dir != transmissionDirection) {
@@ -59,7 +59,8 @@ void Telemetry::initLink() {
   vTaskDelay(100);
 
   if (linkPhrase[0] != 0) {
-    uint32_t phraseCrc = crc32(linkPhrase, strlen((const char*)linkPhrase));
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) uint8 to char is OK
+    const uint32_t phraseCrc = crc32(linkPhrase, strlen(reinterpret_cast<const char*>(linkPhrase)));
     console.error.printf("[TELEMETRY] Sending link phrase: %s (CRC: %lu)\n", linkPhrase, phraseCrc);
     sendLinkPhraseCrc(phraseCrc, 4);
     vTaskDelay(100);
@@ -68,7 +69,8 @@ void Telemetry::initLink() {
   }
 
   if (testingPhrase[0] != 0) {
-    testingCrc = crc32(testingPhrase, strlen((const char*)linkPhrase));
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) uint8 to char is OK
+    testingCrc = crc32(testingPhrase, strlen(reinterpret_cast<const char*>(linkPhrase)));
   }
 }
 
@@ -77,7 +79,8 @@ void Telemetry::exitTesting() {
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 0;
   testingMsg.event = 0;
-  sendTXPayload((uint8_t*)&testingMsg, 15);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  sendTXPayload(reinterpret_cast<uint8_t*>(&testingMsg), 15);
   vTaskDelay(50);
   setMode(BIDIRECTIONAL);
   requestExitTesting = true;
@@ -88,7 +91,8 @@ void Telemetry::enterTesting() {
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 1;
   testingMsg.event = 0;
-  sendTXPayload((uint8_t*)&testingMsg, 15);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  sendTXPayload(reinterpret_cast<uint8_t*>(&testingMsg), 15);
   vTaskDelay(50);
   setMode(BIDIRECTIONAL);
 }
@@ -98,13 +102,14 @@ void Telemetry::triggerEvent(uint8_t event) {
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 1;
   testingMsg.event = event;
-  sendTXPayload((uint8_t*)&testingMsg, 15);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  sendTXPayload(reinterpret_cast<uint8_t*>(&testingMsg), 15);
   triggerAction = true;
   triggerActionStart = xTaskGetTickCount();
 }
 
 void Telemetry::update(void* pvParameter) {
-  Telemetry* ref = (Telemetry*)pvParameter;
+  auto* ref = static_cast<Telemetry*>(pvParameter);
 
   while (ref->initialized) {
     TickType_t task_last_tick = xTaskGetTickCount();
@@ -126,29 +131,32 @@ void Telemetry::update(void* pvParameter) {
       ref->testingMsg.passcode = ref->testingCrc;
       ref->testingMsg.enable_pyros = 1;
       ref->testingMsg.event = 0;
-      ref->sendTXPayload((uint8_t*)&ref->testingMsg, 15);
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+      ref->sendTXPayload(reinterpret_cast<uint8_t*>(&ref->testingMsg), 15);
     }
 
     while (ref->serial.available()) {
       ref->parser.process(ref->serial.read());
     }
 
-    vTaskDelayUntil(&task_last_tick, (const TickType_t)1000 / TASK_TELE_FREQ);
+    vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / TASK_TELE_FREQ);
   }
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendLinkPhraseCrc(uint32_t crc, uint32_t length) {
   console.log.println(crc);
   console.log.println(length);
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
-  out[1] = (uint8_t)length;
+  out[1] = static_cast<uint8_t>(length);
   memcpy(&out[2], &crc, length);
   out[length + 2] = crc8(out, length + 2);
 
   serial.write(out, length + 3);
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendSetting(uint8_t command, uint8_t value) {
   uint8_t out[4];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = command;
@@ -159,6 +167,7 @@ void Telemetry::sendSetting(uint8_t command, uint8_t value) {
   serial.write(out, 4);
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendEnable() {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_ENABLE;
@@ -168,6 +177,7 @@ void Telemetry::sendEnable() {
   serial.write(out, 3);
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendDisable() {
   uint8_t out[3];  // 1 OP + 1 LEN + 1 DATA + 1 CRC
   out[0] = CMD_DISBALE;
@@ -177,10 +187,11 @@ void Telemetry::sendDisable() {
   serial.write(out, 3);
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendTXPayload(uint8_t* payload, uint32_t length) {
   uint8_t out[19];  // 1 OP + 1 LEN + 16 DATA + 1 CRC
   out[0] = CMD_TX;
-  out[1] = (uint8_t)length;
+  out[1] = static_cast<uint8_t>(length);
   memcpy(&out[2], payload, length);
   out[length + 2] = crc8(out, length + 2);
 

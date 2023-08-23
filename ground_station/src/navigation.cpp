@@ -3,29 +3,31 @@
 #include "console.hpp"
 #include "utils.hpp"
 
-#define NAVIGATION_TASK_FREQUENCY 50
+constexpr uint8_t NAVIGATION_TASK_FREQUENCY = 50;
 
 bool Navigation::begin() {
   initialized = true;
 
   compass.init();
-  if (imu.begin(Wire, 0x6A) != 1) console.error.println("IMU init failed!");
+  if (imu.begin(Wire, 0x6A) != 1) {
+    console.error.println("IMU init failed!");
+  }
 
   filter.begin(NAVIGATION_TASK_FREQUENCY);
 
   calibration = CALIB_CONCLUDED;
 
-  xTaskCreate(navigationTask, "task_recorder", 1024, this, 1, NULL);
+  xTaskCreate(navigationTask, "task_recorder", 1024, this, 1, nullptr);
   return true;
 }
 
 void Navigation::initFibonacciSphere() {
-  float golden_angle = PI_F * (3.0F - sqrtf(5.0F));
+  const float golden_angle = PI_F * (3.0F - sqrtf(5.0F));
 
   for (uint32_t i = 0; i < n_points; i++) {
-    float theta = static_cast<float>(i) * golden_angle;
-    float z = (1.0F - 1.0F / n_points) * (1.0F - 2.0F / (n_points - 1.0F) * static_cast<float>(i));
-    float radius = sqrt(1.0F - z * z);
+    const float theta = static_cast<float>(i) * golden_angle;
+    const float z = (1.0F - 1.0F / n_points) * (1.0F - 2.0F / (n_points - 1.0F) * static_cast<float>(i));
+    const float radius = sqrt(1.0F - z * z);
 
     sphere_points[i][0] = radius * cos(theta);
     sphere_points[i][1] = radius * sin(theta);
@@ -33,7 +35,7 @@ void Navigation::initFibonacciSphere() {
   }
 }
 
-void Navigation::calibrate(float *val) {
+void Navigation::calibrate(const float *val) {
   /* Dumb Calibration Approach */
 
   /* Hard Iron */
@@ -69,7 +71,7 @@ void Navigation::calibrate(float *val) {
     avg_scale[i] = (mag_calib_temp.max_vals_scal[i] - mag_calib_temp.min_vals_scal[i]) / 2.0F;
   }
 
-  float avg = (avg_scale[0] + avg_scale[1] + avg_scale[2]) / 3.0F;
+  const float avg = (avg_scale[0] + avg_scale[1] + avg_scale[2]) / 3.0F;
 
   for (uint32_t i = 0; i < 3; i++) {
     mag_calib_temp.scaling[i] = avg / avg_scale[i];
@@ -96,6 +98,7 @@ void Navigation::check_rotation() {
 void Navigation::compute_calibration_status() {
   float counter = 0;
 
+  // NOLINTNEXTLINE(modernize-loop-convert)
   for (uint32_t i = 0; i < n_points; i++) {
     if (sphere_checked[i]) {
       ++counter;
@@ -125,7 +128,7 @@ void Navigation::get_saved_calib() {
   mag_calib.scaling[2] = static_cast<float>(systemConfig.config.mag_calib.mag_scale_z) / 1000.0F;
 }
 
-void Navigation::transform(float *val, float *output) {
+void Navigation::transform(const float *val, float *output) {
   for (uint32_t i = 0; i < 3; i++) {
     output[i] = (val[i] - mag_calib.offset[i]) * mag_calib.scaling[i];
   }
@@ -137,13 +140,14 @@ void Navigation::resetCalib() {
     mag_calib_temp.min_vals[i] = 100;
   }
 
+  // NOLINTNEXTLINE(modernize-loop-convert)
   for (uint32_t i = 0; i < n_points; i++) {
     sphere_checked[i] = false;
   }
 }
 
 void Navigation::navigationTask(void *pvParameter) {
-  Navigation *ref = (Navigation *)pvParameter;
+  auto *ref = static_cast<Navigation *>(pvParameter);
 
   TickType_t task_last_tick = xTaskGetTickCount();
 
@@ -197,18 +201,18 @@ void Navigation::navigationTask(void *pvParameter) {
     }
     count++;
 
-    vTaskDelayUntil(&task_last_tick, (const TickType_t)1000 / NAVIGATION_TASK_FREQUENCY);
+    vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / NAVIGATION_TASK_FREQUENCY);
   }
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }
 
 void Navigation::calculateDistanceDirection() {
-  float dy_dphi = (2 * R * PI_F) / (2 * PI_F);
-  float dx_dtheta = cos(pointA.lat * (PI_F / 180)) * (2 * R * PI_F) / (2 * PI_F);
+  const float dy_dphi = (2 * R * PI_F) / (2 * PI_F);
+  const float dx_dtheta = cos(pointA.lat * (PI_F / 180)) * (2 * R * PI_F) / (2 * PI_F);
 
-  float dy = (pointB.lat - pointA.lat) * (PI_F / 180) * dy_dphi;
-  float dx = (pointB.lon - pointA.lon) * (PI_F / 180) * dx_dtheta;
-  float dz = pointB.alt - pointA.alt;
+  const float dy = (pointB.lat - pointA.lat) * (PI_F / 180) * dy_dphi;
+  const float dx = (pointB.lon - pointA.lon) * (PI_F / 180) * dx_dtheta;
+  const float dz = pointB.alt - pointA.alt;
 
   dist = sqrt(dx * dx + dy * dy + dz * dz);
   azimuth = atan2(dx, dy);
