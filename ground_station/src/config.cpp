@@ -4,8 +4,10 @@
 #include "console.hpp"
 #include "systemParser.hpp"
 
-SystemParser systemParser;
-Config systemConfig;
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+SystemParser systemParser{};
+Config systemConfig{};
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /*
 if(systemParser.loadFile(configFileName))
@@ -35,7 +37,7 @@ void Config::save() {
   systemParser.setTestingPhrase(config.testingPhrase);
   systemParser.setLinkPhrase1(config.linkPhrase1);
   systemParser.setLinkPhrase2(config.linkPhrase2);
-  systemParser.setTelemetryMode(config.receiverMode);
+  systemParser.setTelemetryMode(static_cast<bool>(config.receiverMode));
   systemParser.setNeverStopLoggingFlag(config.neverStopLogging);
   systemParser.setTimeZone(config.timeZoneOffset);
   systemParser.setMagCalib(config.mag_calib);
@@ -45,8 +47,8 @@ void Config::save() {
 void Config::load() {
   systemParser.loadFile("/config.json");
   console.log.println("Load config file");
-  bool mode;
-  bool stop;
+  bool mode{false};
+  bool stop{false};
   if (!systemParser.getTestingPhrase(config.testingPhrase)) {
     strncpy(config.testingPhrase, "", 1);
     console.error.println("Failed");
@@ -68,12 +70,12 @@ void Config::load() {
   if (!systemParser.getTelemetryMode(mode)) {
     mode = false;
   } else {
-    console.log.println(mode);
+    console.log.println(static_cast<uint32_t>(mode));
   }
   if (!systemParser.getNeverStopLoggingFlag(stop)) {
     config.neverStopLogging = false;
   } else {
-    console.log.println(config.neverStopLogging);
+    console.log.println(static_cast<uint32_t>(config.neverStopLogging));
   }
   if (!systemParser.getTimeZone(config.timeZoneOffset)) {
     config.timeZoneOffset = 0;
@@ -92,6 +94,6 @@ void Config::load() {
     console.log.println(config.timeZoneOffset);
   }
 
-  config.neverStopLogging = static_cast<uint8_t>(stop);
+  config.neverStopLogging = stop;
   config.receiverMode = static_cast<ReceiverTelemetryMode_e>(mode);
 }

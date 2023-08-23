@@ -23,9 +23,7 @@ void start_serial();
 template <uint32_t N>
 class Serial {
  public:
-  explicit Serial(UART_HandleTypeDef *handle) : tail(0U), uart(handle), buffer{} {
-    HAL_UART_Receive_DMA(uart, buffer, N);
-  }
+  explicit Serial(UART_HandleTypeDef *handle) : uart(handle) { HAL_UART_Receive_DMA(uart, buffer, N); }
 
   uint32_t available() {
     volatile uint32_t head = N - uart->hdmarx->Instance->CNDTR;
@@ -43,7 +41,7 @@ class Serial {
   }
 
  private:
-  volatile uint32_t tail;
+  volatile uint32_t tail{0};
   UART_HandleTypeDef *uart;
-  uint8_t buffer[N];
+  uint8_t buffer[N]{};
 };

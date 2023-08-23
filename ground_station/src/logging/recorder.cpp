@@ -21,7 +21,7 @@ bool Recorder::begin() {
   } while (fatfs.exists(fileName));
 
   queue = xQueueCreate(64, sizeof(RecorderElement));
-  xTaskCreate(recordTask, "task_recorder", 4096, this, 1, NULL);
+  xTaskCreate(recordTask, "task_recorder", 4096, this, 1, nullptr);
   initialized = true;
   return initialized;
 }
@@ -40,10 +40,10 @@ void Recorder::createFile() {
 }
 
 void Recorder::recordTask(void *pvParameter) {
-  Recorder *ref = (Recorder *)pvParameter;
+  auto *ref = static_cast<Recorder *>(pvParameter);
   char line[128];
   uint32_t count = 0;
-  RecorderElement element;
+  RecorderElement element{};
   while (ref->initialized) {
     if (xQueueReceive(ref->queue, &element, portMAX_DELAY) == pdPASS) {
       if (!ref->fileCreated) {
@@ -51,8 +51,8 @@ void Recorder::recordTask(void *pvParameter) {
       }
       const auto &data = element.data;
       snprintf(line, 128, "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", element.source, data.timestamp, data.state, data.errors,
-               data.lat, data.lon, data.altitude, data.velocity, data.voltage, (bool)(data.pyro_continuity & 0x01),
-               (bool)(data.pyro_continuity & 0x02));
+               data.lat, data.lon, data.altitude, data.velocity, data.voltage,
+               static_cast<bool>(data.pyro_continuity & 0x01), static_cast<bool>(data.pyro_continuity & 0x02));
       ref->file.println(line);
       count++;
 
@@ -62,5 +62,5 @@ void Recorder::recordTask(void *pvParameter) {
       }
     }
   }
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }

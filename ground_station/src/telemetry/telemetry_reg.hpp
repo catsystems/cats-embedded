@@ -18,16 +18,17 @@
 
 #pragma once
 
-typedef enum {
+enum transmission_direction_e {
   TX_DIR = 0,
   RX_DIR = 1,
-} transmission_direction_e;
+};
 
-typedef enum {
+enum transmission_mode_e {
   UNIDIRECTIONAL = 0,
   BIDIRECTIONAL = 1,
-} transmission_mode_e;
+};
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define CMD_DIRECTION   0x10
 #define CMD_PA_GAIN     0x11
 #define CMD_POWER_LEVEL 0x12
@@ -46,3 +47,4 @@ typedef enum {
 #define CMD_GNSS_LOC  0x40
 #define CMD_GNSS_TIME 0x41
 #define CMD_GNSS_INFO 0x42
+// NOLINTEND(cppcoreguidelines-macro-usage)

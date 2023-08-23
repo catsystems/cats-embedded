@@ -10,7 +10,7 @@ struct RecorderElement {
 
 class Recorder {
  public:
-  Recorder(const char* directory) : directory(directory) {}
+  explicit Recorder(const char* directory) : directory(directory) {}
   bool begin();
 
   void enable() { enabled = true; }
@@ -33,8 +33,8 @@ class Recorder {
 
   char fileName[30] = {};
 
-  QueueHandle_t queue;
-  File file;
+  QueueHandle_t queue{nullptr};
+  File file{};
 
   void createFile();
 

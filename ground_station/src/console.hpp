@@ -34,14 +34,21 @@
 #define CONSOLE_H
 
 #include <Arduino.h>
-#include "USB.h"
+#include <USB.h>
 
-#define INTERFACE_UPDATE_RATE 10         // [hz]
-#define QUEUE_BUFFER_LENGTH   (1 << 13)  // [#]    Buffer Size must be power of 2
-#define CONSOLE_ACTIVE_DELAY  3000  // [ms]   Data transmission hold-back delay after console object has been enabled
-#define INTERFACE_ACTIVE_DELAY \
-  1500  // [ms]   Data transmission hold-back delay after physical connection has been established (Terminal opened)
+// [hz]
+inline constexpr uint8_t INTERFACE_UPDATE_RATE = 10;
 
+// [#]  Buffer Size must be power of 2
+inline constexpr uint32_t QUEUE_BUFFER_LENGTH = 1U << 13U;
+
+// [ms] Data transmission hold-back delay after console object has been enabled
+inline constexpr uint32_t CONSOLE_ACTIVE_DELAY = 3000;
+
+// [ms] Data transmission hold-back delay after physical connection has been established (Terminal opened)
+inline constexpr uint32_t INTERFACE_ACTIVE_DELAY = 1500;
+
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define CONSOLE_CLEAR "\033[2J\033[1;1H"
 
 #define CONSOLE_COLOR_BLACK   "\033[0;30"
@@ -73,6 +80,7 @@
 #define CONSOLE_BACKGROUND_CYAN    ";46m"
 #define CONSOLE_BACKGROUND_WHITE   ";47m"
 #define CONSOLE_BACKGROUND_DEFAULT ";49m"
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #define CONSOLE_OK      (CONSOLE_COLOR_GREEN CONSOLE_BACKGROUND_DEFAULT)
 #define CONSOLE_LOG     (CONSOLE_COLOR_DEFAULT CONSOLE_BACKGROUND_DEFAULT)
@@ -103,14 +111,15 @@ class ConsoleStatus : public Stream {
   const char* textColor = CONSOLE_COLOR_DEFAULT;
   const char* backgroundColor = CONSOLE_BACKGROUND_DEFAULT;
 
-  ConsoleStatus(ConsoleType t) : type(t) {}
+  explicit ConsoleStatus(ConsoleType t) : type(t) {}
   inline void ref(Stream* c) { console = c; }
   inline void enable(bool s) { enabled = s; }
-  inline int available(void) { return console->available(); }
-  inline int read(void) { return console->read(); }
-  inline int peek(void) { return console->peek(); }
-  inline size_t write(uint8_t c) { return write((const uint8_t*)&c, 1); }
-  inline size_t write(const char* buffer, size_t size) { return write((uint8_t*)buffer, size); }
+  inline int available() override { return console->available(); }
+  inline int read() override { return console->read(); }
+  inline int peek() override { return console->peek(); }
+  inline size_t write(uint8_t c) override { return write(static_cast<const uint8_t*>(&c), 1); }
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  inline size_t write(const char* buffer, size_t size) { return write(reinterpret_cast<const uint8_t*>(buffer), size); }
   ConsoleStatus& operator[](ConsoleColor color) {
     switch (color) {
       case COLOR_DEFAULT:
@@ -143,8 +152,10 @@ class ConsoleStatus : public Stream {
     }
     return *this;
   }
-  size_t write(const uint8_t* buffer, size_t size) {
-    if (!enabled || type == StatusDummy_t) return 0;
+  size_t write(const uint8_t* buffer, size_t size) override {
+    if (!enabled || type == StatusDummy_t) {
+      return 0;
+    }
     if (colorEnabled) {
       switch (type) {
         case StatusCustom_t:
@@ -165,7 +176,7 @@ class ConsoleStatus : public Stream {
           break;
       }
     }
-    size = console->write((const uint8_t*)buffer, size);
+    size = console->write(buffer, size);
     if (colorEnabled) {
       console->print(CONSOLE_LOG);
     }
@@ -182,35 +193,41 @@ class Console : public Stream {
   volatile bool initialized = false;
   volatile bool enabled = false;       // Indicates if the stream is enabled (e.g. is set after USB MSC setup is done)
   volatile bool streamActive = false;  // Indicates if the console is opened and data is tranmitted
-  volatile char ringBuffer[QUEUE_BUFFER_LENGTH];
+  volatile char ringBuffer[QUEUE_BUFFER_LENGTH]{};
   volatile uint32_t writeIdx = 0, readIdx = 0;
   SemaphoreHandle_t bufferAccessSemaphore = nullptr;
   TaskHandle_t writeTaskHandle = nullptr;
   ConsoleStatus custom = ConsoleStatus(ConsoleStatus::StatusCustom_t);
 
-  bool initialize(void);
-  void printStartupMessage(void);
+  bool initialize();
+  void printStartupMessage();
   static void writeTask(void* pvParameter);
   static void interfaceTask(void* pvParameter);
   static void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-  bool getInterfaceState(void) {
+  bool getInterfaceState() {
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast) dynamic cast is not allowed with -fno-rtti
     if (type == USBCDC_t) {
-      return *(USBCDC*)&stream;
-    } else if (type == HardwareSerial_t) {
-      return *(HardwareSerial*)&stream;
+      return *static_cast<USBCDC*>(&stream);
     }
+    if (type == HardwareSerial_t) {
+      return *static_cast<HardwareSerial*>(&stream);
+    }
+    // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast) dynamic cast is not allowed with -fno-rtti
+
     return true;
   }
 
  public:
   enum ConsoleLevel { LEVEL_LOG = 0, LEVEL_OK = 1, LEVEL_WARNING = 2, LEVEL_ERROR = 3, LEVEL_OFF = 4 };
+  // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
   ConsoleStatus ok = ConsoleStatus(ConsoleStatus::StatusOk_t);
   ConsoleStatus log = ConsoleStatus(ConsoleStatus::StatusLog_t);
   ConsoleStatus error = ConsoleStatus(ConsoleStatus::StatusError_t);
   ConsoleStatus warning = ConsoleStatus(ConsoleStatus::StatusWarning_t);
   ConsoleStatus dummy = ConsoleStatus(ConsoleStatus::StatusDummy_t);
+  // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
-  Console(USBCDC& stream) : stream(stream), type(USBCDC_t) {
+  explicit Console(USBCDC& stream) : stream(stream), type(USBCDC_t) {
     ok.ref(this);
     log.ref(this);
     error.ref(this);
@@ -218,7 +235,7 @@ class Console : public Stream {
     custom.ref(this);
     dummy.ref(this);
   }
-  Console(HardwareSerial& stream) : stream(stream), type(HardwareSerial_t) {
+  explicit Console(HardwareSerial& stream) : stream(stream), type(HardwareSerial_t) {
     ok.ref(this);
     log.ref(this);
     error.ref(this);
@@ -227,13 +244,13 @@ class Console : public Stream {
     dummy.ref(this);
   }
   bool begin();  // Used for USBSerial
-  bool begin(unsigned long baud, uint32_t config = SERIAL_8N1, int8_t rxPin = -1, int8_t txPin = -1,
-             bool invert = false, unsigned long timeout_ms = 20000UL,
+  bool begin(uint32_t baud, uint32_t config = SERIAL_8N1, int8_t rxPin = -1, int8_t txPin = -1, bool invert = false,
+             uint32_t timeout_ms = 20000UL,
              uint8_t rxfifo_full_thrhd = 112);  // Used for HardwareSerial
-  void end(void);
+  void end();
   void enable(bool state) { enabled = state; }
-  void flush(void) { readIdx = writeIdx; }
-  void printTimestamp(void);  // TODO: Add possibillity to add string as parameter
+  void flush() override { readIdx = writeIdx; }
+  void printTimestamp();  // TODO: Add possibillity to add string as parameter
   void enableColors(bool state) {
     ok.colorEnabled = log.colorEnabled = error.colorEnabled = warning.colorEnabled = custom.colorEnabled =
         dummy.colorEnabled = state;
@@ -277,21 +294,22 @@ class Console : public Stream {
     return custom;
   }
 
-  operator bool() const { return streamActive; }
-  inline int available(void) { return stream.available(); }
-  inline int read(void) { return stream.read(); }
-  inline int peek(void) { return stream.peek(); }
-  inline size_t write(uint8_t c) { return write(&c, 1); }
-  inline size_t write(const char* buffer, size_t size) { return write((const uint8_t*)buffer, size); }
-  inline size_t write(const char* s) { return write((const uint8_t*)s, strlen(s)); }
-  inline size_t write(unsigned long n) { return write((uint8_t)n); }
-  inline size_t write(long n) { return write((uint8_t)n); }
-  inline size_t write(unsigned int n) { return write((uint8_t)n); }
-  inline size_t write(int n) { return write((uint8_t)n); }
-  size_t write(const uint8_t* buffer, size_t size);
+  explicit operator bool() const { return streamActive; }
+  inline int available() override { return stream.available(); }
+  inline int read() override { return stream.read(); }
+  inline int peek() override { return stream.peek(); }
+  inline size_t write(uint8_t c) override { return write(&c, 1); }
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  inline size_t write(const char* buffer, size_t size) { return write(reinterpret_cast<const uint8_t*>(buffer), size); }
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  inline size_t write(const char* s) { return write(reinterpret_cast<const uint8_t*>(s), strlen(s)); }
+  inline size_t write(uint32_t n) { return write(static_cast<uint8_t>(n)); }
+  inline size_t write(int32_t n) { return write(static_cast<uint8_t>(n)); }
+  size_t write(const uint8_t* buffer, size_t size) override;
 };
 
 #ifndef USE_CUSTOM_CONSOLE
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern Console console;
 #endif
 

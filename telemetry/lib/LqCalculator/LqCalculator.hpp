@@ -21,16 +21,11 @@
 template <uint8_t N>
 class LqCalculator {
  public:
-  LqCalculator() {
-    reset();
-    // count is reset here only once on construction to start LQ counting
-    // at 100% on first connect, but 0 out of N after a failsafe
-    count = 1;
-  }
-
   /* Set the bit for the current period to true and update the running LQ */
   void add() {
-    if (currentIsSet()) return;
+    if (currentIsSet()) {
+      return;
+    }
     LQArray[index] |= LQmask;
     LQ += 1;
   }
@@ -39,16 +34,16 @@ class LqCalculator {
   void inc() {
     // Increment the counter by shifting one bit higher
     // If we've shifted out all the bits, move to next idx
-    LQmask = LQmask << 1;
+    LQmask = LQmask << 1U;
     if (LQmask == 0) {
-      LQmask = (1 << 0);
+      LQmask = (1U << 0U);
       index += 1;
     }
 
     // At idx N / 32 and bit N % 32, wrap back to idx=0, bit=0
-    if ((index == (N / 32)) && (LQmask & (1 << (N % 32)))) {
+    if ((index == (N / 32)) && static_cast<bool>(LQmask & (1U << (N % 32U)))) {
       index = 0;
-      LQmask = (1 << 0);
+      LQmask = (1U << 0U);
     }
 
     if ((LQArray[index] & LQmask) != 0) {
@@ -56,11 +51,13 @@ class LqCalculator {
       LQ -= 1;
     }
 
-    if (count < N) ++count;
+    if (count < N) {
+      ++count;
+    }
   }
 
   /* Return the current running total of bits set, in percent */
-  uint8_t getLQ() const { return (uint32_t)LQ * 100U / count; }
+  uint8_t getLQ() const { return static_cast<uint32_t>(LQ) * 100U / count; }
 
   /* Return the current running total of bits set, up to N */
   uint8_t getLQRaw() const { return LQ; }
@@ -77,8 +74,8 @@ class LqCalculator {
     // after a failsafe, instead of down from 100
     LQ = 0;
     index = 0;
-    LQmask = (1 << 0);
-    for (uint8_t i = 0; i < (sizeof(LQArray) / sizeof(LQArray[0])); i++) {
+    LQmask = (1U << 0U);
+    for (uint32_t i = 0; i < (sizeof(LQArray) / sizeof(LQArray[0])); i++) {
       LQArray[i] = 0;
     }
   }
@@ -87,9 +84,11 @@ class LqCalculator {
   bool currentIsSet() const { return LQArray[index] & LQmask; }
 
  private:
-  uint8_t LQ;
-  uint8_t index;  // current position in LQArray
-  uint8_t count;
-  uint32_t LQmask;
-  uint32_t LQArray[(N + 31) / 32];
+  uint8_t LQ{0};
+  uint8_t index{0};  // current position in LQArray
+  // count is reset here only once on construction to start LQ counting
+  // at 100% on first connect, but 0 out of N after a failsafe
+  uint8_t count{1};
+  uint32_t LQmask{1U << 0U};
+  uint32_t LQArray[(N + 31) / 32]{};
 };

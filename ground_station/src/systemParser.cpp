@@ -31,12 +31,15 @@
  ******************************************************************************/
 
 #include "systemParser.hpp"
+
 #include "USB.h"
 #include "config.hpp"
 #include "console.hpp"
 #include "utils.hpp"
 
-SystemParser::SystemParser(void) {}
+#include <SdFat.h>
+
+SystemParser::SystemParser() = default;
 
 /**
  * @brief Load a system configuration file
@@ -47,6 +50,7 @@ SystemParser::SystemParser(void) {}
  */
 bool SystemParser::loadFile(const char* path) {
   filePath = path;
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) something is wrong with this 'File' type
   File file = fatfs.open(filePath);
 
   if (!file) {
@@ -65,6 +69,8 @@ bool SystemParser::loadFile(const char* path) {
   return true;
 }
 
+// NOLINTBEGIN(readability-convert-member-functions-to-static,readability-simplify-boolean-expr)
+
 bool SystemParser::setNeverStopLoggingFlag(bool flag) {
   doc["never_stop_logging"] = flag;
   return true;
@@ -81,7 +87,7 @@ bool SystemParser::setTelemetryMode(bool mode) {
 }
 
 bool SystemParser::setLinkPhrase1(const char* phrase) {
-  if (phrase == NULL) {
+  if (phrase == nullptr) {
     return false;
   }
   doc["link_phrase_1"] = phrase;
@@ -89,7 +95,7 @@ bool SystemParser::setLinkPhrase1(const char* phrase) {
 }
 
 bool SystemParser::setLinkPhrase2(const char* phrase) {
-  if (phrase == NULL) {
+  if (phrase == nullptr) {
     return false;
   }
   doc["link_phrase_2"] = phrase;
@@ -97,7 +103,7 @@ bool SystemParser::setLinkPhrase2(const char* phrase) {
 }
 
 bool SystemParser::setTestingPhrase(const char* phrase) {
-  if (phrase == NULL) {
+  if (phrase == nullptr) {
     return false;
   }
   doc["testing_phrase"] = phrase;
@@ -178,6 +184,8 @@ bool SystemParser::getMagCalib(mag_calib_t& calib) {
   return false;
 }
 
+// NOLINTEND(readability-convert-member-functions-to-static,readability-simplify-boolean-expr)
+
 /**
  * @brief Save the current loaded system config as a file
  *
@@ -187,7 +195,7 @@ bool SystemParser::getMagCalib(mag_calib_t& calib) {
  */
 bool SystemParser::saveFile(const char* path) {
   console.log.println("[PARSER] Store file");
-  if (path != NULL) {
+  if (path != nullptr) {
     filePath = path;
   }
   if (fatfs.exists(filePath)) {
@@ -196,6 +204,7 @@ bool SystemParser::saveFile(const char* path) {
       return false;
     }
   }
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) something is wrong with this 'File' type
   File file = fatfs.open(filePath, FILE_WRITE);
   if (!file) {
     console.error.println("[PARSER] Open file failed");

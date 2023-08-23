@@ -1,15 +1,20 @@
 
 #include "hmi.hpp"
-#include <TimeLib.h>
+
 #include "console.hpp"
 #include "navigation.hpp"
 #include "telemetry/telemetry.hpp"
 #include "utils.hpp"
 
+#include <TimeLib.h>
+#include <freertos/task.h>
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern Telemetry link1;
 extern Telemetry link2;
 
 extern Navigation navigation;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 void Hmi::begin() {
   upButton.begin();
@@ -26,7 +31,7 @@ void Hmi::begin() {
 
   window.begin();
   initialized = true;
-  xTaskCreate(update, "task_hmi", 8196, this, 1, NULL);
+  xTaskCreate(update, "task_hmi", 8196, this, 1, nullptr);
 }
 
 void Hmi::fsm() {
@@ -69,7 +74,7 @@ void Hmi::fsm() {
 void Hmi::initMenu() { window.initMenu(menuIndex); }
 
 void Hmi::menu() {
-  uint32_t oldIndex = menuIndex;
+  const uint32_t oldIndex = menuIndex;
   if (rightButton.wasPressed() && (menuIndex % 3) < 2) {
     menuIndex++;
   }
@@ -91,7 +96,7 @@ void Hmi::menu() {
   }
 
   if (okButton.wasPressed() || centerButton.wasPressed()) {
-    state = (State)(menuIndex + 1);
+    state = static_cast<State>(menuIndex + 1);
     if (state == LIVE) {
       initLive();
     } else if (state == RECOVERY) {
@@ -119,7 +124,7 @@ void Hmi::live() {
     // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
     link1Log = (link1.data.state() > 2) && (systemConfig.config.neverStopLogging || link1.data.state() < 7);
     if (link1Log) {
-      recorder.record(&link1.data.rxData, 1);
+      recorder.record(&link1.data.getRxData(), 1);
     }
     window.updateLive(&link1.data, &link1.info, 0);
     updated = true;
@@ -132,7 +137,7 @@ void Hmi::live() {
     // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
     link2Log = (link2.data.state() > 2) && (systemConfig.config.neverStopLogging || link2.data.state() < 7);
     if (link2Log) {
-      recorder.record(&link2.data.rxData, 2);
+      recorder.record(&link2.data.getRxData(), 2);
     }
     window.updateLive(&link2.data, &link2.info, 1);
     updated = true;
@@ -164,13 +169,6 @@ void Hmi::recovery() {
 
   a = navigation.getPointA();
   b = navigation.getPointB();
-  if (a.lat && a.lon && b.lat && b.lon) {
-    // window.updateRecovery(a, b, navigation.getHorizontalDistance(),
-    // navigation.getBearing());
-
-  } else {
-    // window.updateRecovery(a, b);
-  }
 
   if (navigation.isUpdated()) {
     window.updateRecovery(&navigation);
@@ -186,6 +184,7 @@ void Hmi::recovery() {
 
 void Hmi::initTesting() { window.initTesting(); }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Hmi::testing() {
   if (boxWindow) {
     bool exit = false;
@@ -268,14 +267,12 @@ void Hmi::testing() {
       }
     } break;
 
-    case CAN_NOT_START: {
-    } break;
-
-    case FAILED: {
-    } break;
+    case CAN_NOT_START:
+    case FAILED:
+      break;
 
     case STARTED: {
-      uint32_t oldIndex = testingIndex;
+      const uint32_t oldIndex = testingIndex;
       if (upButton.wasPressed() && (testingIndex % 4) > 0) {
         testingIndex--;
       } else if (downButton.wasPressed() && (testingIndex % 4) < 3) {
@@ -389,6 +386,7 @@ void Hmi::initSettings() {
   window.initSettings(settingSubMenu);
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Hmi::settings() {
   static bool keyboardActive = false;
   static bool configChanged = false;
@@ -433,15 +431,11 @@ void Hmi::settings() {
       }
     }
     if (okButton.wasPressed() || okButton.pressedFor(500)) {
-      if (i == Window::kShiftIdx) {  // shift
-        window.updateKeyboard(keyboardString, i, true);
-      } else {
-        window.updateKeyboard(keyboardString, i, true);
-      }
+      window.updateKeyboard(keyboardString, i, true);
     }
 
     if (backButton.wasPressed()) {
-      memcpy((char *)settingsTable[settingSubMenu][settingIndex].dataPtr, keyboardString, kMaxPhraseLen);
+      memcpy(static_cast<char *>(settingsTable[settingSubMenu][settingIndex].dataPtr), keyboardString, kMaxPhraseLen);
       keyboardString[kMaxPhraseLen] = '\0';
       window.initSettings(settingSubMenu);
       configChanged = true;
@@ -461,32 +455,32 @@ void Hmi::settings() {
         window.initSettings(settingSubMenu);
       }
     } else {
+      void *data_ptr = settingsTable[settingSubMenu][settingIndex].dataPtr;
+      const settings_limits_u &cfg = settingsTable[settingSubMenu][settingIndex].config;
       switch (settingsTable[settingSubMenu][settingIndex].type) {
         case NUMBER: {
           if ((rightButton.wasPressed() || rightButton.pressedFor(500)) &&
-              *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr <
-                  settingsTable[settingSubMenu][settingIndex].config.minmax.max) {
-            (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)++;
+              *static_cast<int16_t *>(data_ptr) < cfg.minmax.max) {
+            (*static_cast<int16_t *>(data_ptr))++;
             configChanged = true;
             window.updateSettings(settingIndex);
           }
           if ((leftButton.wasPressed() || leftButton.pressedFor(500)) &&
-              *(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr >
-                  settingsTable[settingSubMenu][settingIndex].config.minmax.min) {
-            (*(int16_t *)settingsTable[settingSubMenu][settingIndex].dataPtr)--;
+              *static_cast<int16_t *>(data_ptr) > cfg.minmax.min) {
+            (*static_cast<int16_t *>(data_ptr))--;
             configChanged = true;
             window.updateSettings(settingIndex);
           }
           break;
         }
         case TOGGLE: {
-          if (rightButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == false) {
-            (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = true;
+          if (rightButton.wasPressed() && !*static_cast<bool *>(data_ptr)) {
+            (*static_cast<bool *>(data_ptr)) = true;
             configChanged = true;
             window.updateSettings(settingIndex);
           }
-          if (leftButton.wasPressed() && *(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr == true) {
-            (*(bool *)settingsTable[settingSubMenu][settingIndex].dataPtr) = false;
+          if (leftButton.wasPressed() && *static_cast<bool *>(data_ptr)) {
+            (*static_cast<bool *>(data_ptr)) = false;
             configChanged = true;
             window.updateSettings(settingIndex);
           }
@@ -494,10 +488,10 @@ void Hmi::settings() {
         }
         case STRING: {
           if (okButton.wasPressed()) {
-            memcpy(keyboardString, (char *)settingsTable[settingSubMenu][settingIndex].dataPtr, kMaxPhraseLen);
+            memcpy(keyboardString, static_cast<char *>(data_ptr), kMaxPhraseLen);
             keyboardString[kMaxPhraseLen] = '\0';
 
-            window.initKeyboard(keyboardString, settingsTable[settingSubMenu][settingIndex].config.stringLength);
+            window.initKeyboard(keyboardString, cfg.stringLength);
             keyboardActive = true;
           }
           break;
@@ -506,11 +500,11 @@ void Hmi::settings() {
           if (okButton.wasPressed()) {
             // If the setting is pointing to the bootloader function, we need to display the bootloader screen
             // first
-            if (settingsTable[settingSubMenu][settingIndex].config.fun_ptr == Utils::startBootloader) {
+            if (cfg.fun_ptr == Utils::startBootloader) {
               window.Bootloader();
             }
-            if (settingsTable[settingSubMenu][settingIndex].config.fun_ptr != nullptr) {
-              settingsTable[settingSubMenu][settingIndex].config.fun_ptr();
+            if (cfg.fun_ptr != nullptr) {
+              cfg.fun_ptr();
             }
           }
           break;
@@ -555,9 +549,7 @@ void Hmi::settings() {
 }
 
 void Hmi::update(void *pvParameter) {
-  Hmi *ref = (Hmi *)pvParameter;
-
-  Utils utils;
+  auto *ref = static_cast<Hmi *>(pvParameter);
 
   ref->window.logo();
 
@@ -580,17 +572,17 @@ void Hmi::update(void *pvParameter) {
 
     if (millis() - barUpdate >= 1000) {
       barUpdate = millis();
-      float voltage = analogRead(18) * 0.00059154929;
+      float voltage = static_cast<float>(analogRead(18)) * 0.00059154929F;
       if (!ref->isLogging) {
-        ref->flashFreeMemory = utils.getFlashMemoryUsage();
+        ref->flashFreeMemory = Utils::getFlashMemoryUsage();
       }
       if (link2.time.isUpdated()) {
         setTime(link2.time.hour(), link2.time.minute(), link2.time.second(), 0, 0, 0);
-        adjustTime(systemConfig.config.timeZoneOffset * 3600);
+        adjustTime(systemConfig.config.timeZoneOffset * 3600L);
         timeValid = true;
       }
-      ref->window.updateBar(voltage, digitalRead(21), ref->isLogging, link2.location.isValid(), timeValid,
-                            ref->flashFreeMemory);
+      ref->window.updateBar(voltage, static_cast<bool>(digitalRead(21)), ref->isLogging, link2.location.isValid(),
+                            timeValid, ref->flashFreeMemory);
     }
 
     ref->upButton.read();
@@ -601,6 +593,6 @@ void Hmi::update(void *pvParameter) {
 
     ref->okButton.read();
     ref->backButton.read();
-    vTaskDelayUntil(&task_last_tick, (const TickType_t)1000 / 50);
+    vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / 50);
   }
 }
