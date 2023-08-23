@@ -34,20 +34,20 @@
 
 #include <ArduinoJson.h>
 
-#define MAX_SYSTEM_FILE_SIZE 1 * 1024
+constexpr uint32_t MAX_SYSTEM_FILE_SIZE = 1 * 1024UL;
 
-typedef struct {
+struct mag_calib_t {
   int32_t mag_offset_x;
   int32_t mag_offset_y;
   int32_t mag_offset_z;
   int32_t mag_scale_x;
   int32_t mag_scale_y;
   int32_t mag_scale_z;
-} mag_calib_t;
+};
 
 class SystemParser {
  public:
-  SystemParser(void);
+  SystemParser();
   bool loadFile(const char* path);
 
   bool setLinkPhrase1(const char* phrase);
@@ -66,9 +66,9 @@ class SystemParser {
   bool getTelemetryMode(bool& mode);
   bool getMagCalib(mag_calib_t& calib);
 
-  bool saveFile(const char* path = NULL);
+  bool saveFile(const char* path = nullptr);
 
  private:
   StaticJsonDocument<MAX_SYSTEM_FILE_SIZE> doc;
-  const char* filePath;
+  const char* filePath{nullptr};
 };

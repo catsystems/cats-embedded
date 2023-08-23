@@ -73,7 +73,7 @@ jobs:
     name: Build + Lint
     # We are running this on windows because the users get binaries compiled on windows.
     # The code should also be tested in a linux build.
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false

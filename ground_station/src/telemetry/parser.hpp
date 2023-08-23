@@ -18,21 +18,20 @@
 
 #pragma once
 
-#include <time.h>
-#include <cstdint>
 #include "telemetryData.hpp"
 #include "telemetry_reg.hpp"
 
-typedef struct {
+#include <cstdint>
+#include <ctime>
+#include <functional>
+
+struct link_info_t {
   uint8_t rssi;
   uint8_t lq;
   int8_t snr;
-} link_info_t;
+};
 
-#define MAX_CMD_BUFFER 20
-
-#define CMD_DEF(identifier, cmd) \
-  { identifier, cmd }
+inline constexpr uint8_t MAX_CMD_BUFFER = 20;
 
 /* The parser is not interrupt safe! */
 
@@ -42,7 +41,7 @@ class Parser {
 
   void parse();
 
-  void init(TelemetryData* d, TelemetryInfo* i, TelemetryLocation* l = NULL, TelemetryTime* t = NULL) {
+  void init(TelemetryData* d, TelemetryInfo* i, TelemetryLocation* l = nullptr, TelemetryTime* t = nullptr) {
     data = d;
     info = i;
     location = l;
@@ -63,26 +62,26 @@ class Parser {
   void cmdGNSSInfo(uint8_t* args, uint32_t length);
 
  private:
-  int32_t getOpCodeIndex(uint8_t opCode);
+  static int32_t getOpCodeIndex(uint8_t opCode);
 
-  TelemetryData* data;
-  TelemetryInfo* info;
-  TelemetryLocation* location;
-  TelemetryTime* time;
+  TelemetryData* data{nullptr};
+  TelemetryInfo* info{nullptr};
+  TelemetryLocation* location{nullptr};
+  TelemetryTime* time{nullptr};
 
-  uint8_t buffer[MAX_CMD_BUFFER];
+  uint8_t buffer[MAX_CMD_BUFFER]{};
   uint32_t dataIndex = 0;
 
   int32_t opCodeIndex = -1;
 
-  link_info_t linkInfo;
+  link_info_t linkInfo{};
 
-  typedef enum {
+  enum state_e {
     STATE_OP,
     STATE_LEN,
     STATE_DATA,
     STATE_CRC,
-  } state_e;
+  };
 
   enum {
     INDEX_OP = 0,
@@ -96,7 +95,7 @@ enum {
   CMD_NUMBER = 5,
 };
 
-typedef void (Parser::*cmd_fn)(uint8_t* args, uint32_t length);
+using cmd_fn = void (Parser::*)(uint8_t* args, uint32_t length);
 
 const cmd_fn commandFunction[] = {&Parser::cmdRX, &Parser::cmdInfo, &Parser::cmdGNSSLoc, &Parser::cmdGNSSTime,
                                   &Parser::cmdGNSSInfo};

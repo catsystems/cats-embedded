@@ -30,7 +30,6 @@
  * SOFTWARE.
  ******************************************************************************/
 
-#include <Arduino.h>
 #include "console.hpp"
 #include "hmi/hmi.hpp"
 #include "logging/recorder.hpp"
@@ -38,6 +37,9 @@
 #include "telemetry/telemetry.hpp"
 #include "utils.hpp"
 
+#include <Arduino.h>
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-interfaces-global-init)
 Utils utils;
 Hmi hmi("/logs");
 
@@ -45,6 +47,7 @@ Telemetry link1(Serial, 8, 9);
 Telemetry link2(Serial1, 11, 12);
 
 Navigation navigation;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-interfaces-global-init)
 
 void setup() {
   pinMode(21, INPUT);
@@ -66,8 +69,8 @@ void setup() {
   hmi.begin();
 }
 
-bool ini = false;
 void loop() {
+  static bool ini{false};
   if (millis() > 5000 && !ini) {
     ini = true;
     if (systemConfig.config.receiverMode == SINGLE) {
@@ -92,8 +95,8 @@ void loop() {
 
   // In single mode, both antennas track the same rocket
   if (systemConfig.config.receiverMode == SINGLE) {
-    bool link1DataValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
-    bool link2DataValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
+    const bool link1DataValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
+    const bool link2DataValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
     // Check if data from link 1 is newer than link 2
     if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
       // Take data from link 1 with higher priority

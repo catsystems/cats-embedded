@@ -40,22 +40,28 @@
 #include "diskio.h"
 #include "ff.h"
 
-#include "esp_private/system_internal.h"
-#include "esp_task_wdt.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <esp_private/system_internal.h>
+#include <esp_task_wdt.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
-static void msc_flush_cb(void);
+constexpr uint8_t BOOT_BUTTON = 0;
+constexpr uint8_t TASK_UTILS_FREQ = 5;        // [Hz]
+constexpr uint16_t MSC_STARTUP_DELAY = 2000;  // [ms]
+
+static void msc_flush_cb();
 static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize);
 static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize);
 static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static volatile bool updated = false;
 static volatile bool connected = false;
-
 Adafruit_USBD_MSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
 FatFileSystem fatfs;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFormat) {
   bool status = true;
@@ -79,8 +85,8 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
   }
   delay(200);
 
-  uint16_t vid = USB_VID;
-  uint16_t pid = USB_PID;
+  const uint16_t vid = USB_VID;
+  const uint16_t pid = USB_PID;
 
   USB.VID(vid);
   USB.PID(pid);
@@ -99,29 +105,29 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
                              // regardless of spi flash page size
   usb_msc.begin();
 
-  xTaskCreate(update, "task_utils", 2048, this, 1, NULL);
+  xTaskCreate(update, "task_utils", 2048, this, 1, nullptr);
   delay(200);  // TODO: Check if delay helps
   return status;
 }
 
-void Utils::startBootloader(void) {
+void Utils::startBootloader() {
   const uint16_t APP_REQUEST_UF2_RESET_HINT = 0x11F2;
   esp_reset_reason();
-  esp_reset_reason_set_hint((esp_reset_reason_t)APP_REQUEST_UF2_RESET_HINT);
+  esp_reset_reason_set_hint(static_cast<esp_reset_reason_t>(APP_REQUEST_UF2_RESET_HINT));
   esp_restart();
 }
 
 void Utils::startWatchdog(uint32_t seconds) {
   esp_task_wdt_init(seconds, true);  // Enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL);            // Add current thread to WDT watch
+  esp_task_wdt_add(nullptr);         // Add current thread to WDT watch
   esp_task_wdt_reset();
   console.log.printf("[SYSTEM] Watchdog started with timeout of %lu s\n", seconds);
 }
 
-void Utils::feedWatchdog(void) { esp_task_wdt_reset(); }
+void Utils::feedWatchdog() { esp_task_wdt_reset(); }
 
 void Utils::update(void *pvParameter) {
-  Utils *ref = (Utils *)pvParameter;
+  auto *ref = static_cast<Utils *>(pvParameter);
 
   TickType_t mscTimer = 0;
   bool connectedOld = false;
@@ -145,18 +151,20 @@ void Utils::update(void *pvParameter) {
     }
     connectedOld = connected;
 
-    vTaskDelayUntil(&task_last_tick, (const TickType_t)1000 / TASK_UTILS_FREQ);
+    vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / TASK_UTILS_FREQ);
   }
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }
 
 bool Utils::isUpdated(bool clearFlag) {
-  bool status = updated;
-  if (clearFlag) updated = false;
+  const bool status = updated;
+  if (clearFlag) {
+    updated = false;
+  }
   return status;
 }
 
-bool Utils::isConnected(void) { return connected; }
+bool Utils::isConnected() { return connected; }
 
 bool Utils::format(const char *labelName) {
   static FATFS elmchanFatfs;
@@ -169,29 +177,30 @@ bool Utils::format(const char *labelName) {
                              buf);  // Partition the flash with 1 partition that takes the entire space.
   if (r != FR_OK) {
     console.error.printf("[UTILS] Error, f_fdisk failed with error code: %d\n", r);
-    return 0;
+    return false;
   }
   console.println("[UTILS] Partitioned flash!");
   console.println(
       "[UTILS] Creating and formatting FAT filesystem (this takes "
       "~60 seconds)...");
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf,
              sizeof(workbuf));  // Make filesystem.
   if (r != FR_OK) {
     console.error.printf("[UTILS] Error, f_mkfs failed with error code: %d\n", r);
-    return 0;
+    return false;
   }
 
   r = f_mount(&elmchanFatfs, "0:", 1);  // mount to set disk label
   if (r != FR_OK) {
     console.error.printf("[UTILS] Error, f_mount failed with error code: %d\n", r);
-    return 0;
+    return false;
   }
   console.log.printf("[UTILS] Setting disk label to: %s\n", labelName);
   r = f_setlabel(labelName);  // Setting label
   if (r != FR_OK) {
     console.error.printf("[UTILS] Error, f_setlabel failed with error code: %d\n", r);
-    return 0;
+    return false;
   }
   f_unmount("0:");     // unmount
   flash.syncBlocks();  // sync to make sure all data is written to flash
@@ -199,23 +208,24 @@ bool Utils::format(const char *labelName) {
   if (!fatfs.begin(&flash))  // Check new filesystem
   {
     console.error.println("[UTILS] Error, failed to mount newly formatted filesystem!");
-    return 0;
+    return false;
   }
   console.ok.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
   yield();
-  return 1;
+  return true;
 }
 
 int32_t Utils::getFlashMemoryUsage() {
-  uint32_t num_clusters = fatfs.clusterCount() - 2;
-  uint32_t available_clusters = fatfs.freeClusterCount();
+  const uint32_t num_clusters = fatfs.clusterCount() - 2;
+  const uint32_t available_clusters = fatfs.freeClusterCount();
 
-  double percentage = (static_cast<double>(available_clusters) / num_clusters) * 100;
+  const double percentage = (static_cast<double>(available_clusters) / static_cast<double>(num_clusters)) * 100.0;
 
   return static_cast<int32_t>(std::ceil(percentage));
 }
 
-void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void usbEventCallback(void *arg [[maybe_unused]], esp_event_base_t event_base, int32_t event_id,
+                      void *event_data [[maybe_unused]]) {
   if (event_base == ARDUINO_USB_EVENTS) {
     // arduino_usb_event_data_t *data = (arduino_usb_event_data_t *)event_data;
     if (event_id == ARDUINO_USB_STARTED_EVENT || event_id == ARDUINO_USB_RESUME_EVENT) {
@@ -231,19 +241,19 @@ void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, 
 // Copy disk's data to buffer (up to bufsize) and
 // return number of copied bytes (must be multiple of block size)
 static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize) {
-  return flash.readBlocks(lba, (uint8_t *)buffer, bufsize / 512) ? bufsize : -1;
+  return flash.readBlocks(lba, static_cast<uint8_t *>(buffer), bufsize / 512) ? static_cast<int32_t>(bufsize) : -1;
 }
 
 // Callback invoked when received WRITE10 command.
 // Process data in buffer to disk's storage and
 // return number of written bytes (must be multiple of block size)
 static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize) {
-  return flash.writeBlocks(lba, buffer, bufsize / 512) ? bufsize : -1;
+  return flash.writeBlocks(lba, buffer, bufsize / 512) ? static_cast<int32_t>(bufsize) : -1;
 }
 
 // Callback invoked when WRITE10 command is completed (status received and
 // accepted by host). Used to flush any pending cache.
-static void msc_flush_cb(void) {
+static void msc_flush_cb() {
   flash.syncBlocks();  // sync with flash
   fatfs.cacheClear();  // clear file system's cache to force refresh
   updated = true;

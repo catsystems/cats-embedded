@@ -7,7 +7,7 @@
 
 class Hmi {
  public:
-  Hmi(const char* dir)
+  explicit Hmi(const char* dir)
       : recorder(dir),
         upButton(3),
         downButton(4),
@@ -50,7 +50,7 @@ class Hmi {
 
   TestingState testingState = DISCLAIMER;
   uint32_t startTestingTime = 0;
-  uint32_t testingIndex = 0;
+  int16_t testingIndex = 0;
 
   CalibrationState calibrationState = IDLE;
 
@@ -58,8 +58,8 @@ class Hmi {
 
   uint16_t oldTimeStamp = 0;
 
-  uint32_t settingSubMenu = 0;
-  int32_t settingIndex = -1;
+  int16_t settingSubMenu = 0;
+  int16_t settingIndex = -1;
   char keyboardString[kMaxPhraseLen + 1] = {};
 
   static void update(void* pvParameter);
@@ -98,7 +98,7 @@ class Hmi {
 
   Window window;
 
-  uint32_t menuIndex = 0;
+  int16_t menuIndex = 0;
 
   uint32_t flashFreeMemory = 100;
 
