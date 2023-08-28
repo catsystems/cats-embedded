@@ -24,6 +24,7 @@
 
 #include <cmath>
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 flight_stats_t global_flight_stats = {
     .max_height = {.val = -INFINITY}, .max_velocity = {.val = -INFINITY}, .max_acceleration = {.val = -INFINITY}};
 
@@ -64,6 +65,7 @@ struct skip_counter_t {
   uint8_t filtered_data;
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static skip_counter_t skip_counter = {};
 
 /**
@@ -105,54 +107,66 @@ static skip_counter_t skip_counter = {};
  */
 inline static bool should_skip(uint8_t *cnt, uint8_t num_reps_per_iter) {
   /* Return right away if everything should be recorded */
-  if (global_cats_config.rec_speed_idx == 0) return false;
-  uint8_t inv_rec_rate = global_cats_config.rec_speed_idx + 1;
+  if (global_cats_config.rec_speed_idx == 0) {
+    return false;
+  }
+  const uint8_t inv_rec_rate = global_cats_config.rec_speed_idx + 1;
   /* Skip the entry if we already recorded all entries from the iteration that should be recorded */
-  bool skip = (*cnt % (inv_rec_rate * num_reps_per_iter)) >= num_reps_per_iter;
+  const bool skip = (*cnt % (inv_rec_rate * num_reps_per_iter)) >= num_reps_per_iter;
   /* Increment the counter and reset it to 0 if the max value is reached */
   *cnt = (*cnt + 1) % (inv_rec_rate * num_reps_per_iter);
   return skip;
 }
 
 void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *const rec_value) {
-  rec_entry_type_e pure_rec_type = get_record_type_without_id(rec_type_with_id);
+  const rec_entry_type_e pure_rec_type = get_record_type_without_id(rec_type_with_id);
 
   if (global_recorder_status >= REC_FILL_QUEUE && should_record(pure_rec_type)) {
     rec_elem_t e = {.ts = ts, .rec_type = rec_type_with_id};
     switch (pure_rec_type) {
       case IMU:
-        if (should_skip(&skip_counter.imu, NUM_IMU)) return;
-        e.u.imu = *((imu_data_t *)rec_value);
+        if (should_skip(&skip_counter.imu, NUM_IMU)) {
+          return;
+        }
+        e.u.imu = *(static_cast<const imu_data_t *>(rec_value));
         break;
       case BARO:
-        if (should_skip(&skip_counter.baro, NUM_BARO)) return;
-        e.u.baro = *((baro_data_t *)rec_value);
+        if (should_skip(&skip_counter.baro, NUM_BARO)) {
+          return;
+        }
+        e.u.baro = *(static_cast<const baro_data_t *>(rec_value));
         break;
       case FLIGHT_INFO:
-        e.u.flight_info = *((flight_info_t *)rec_value);
+        e.u.flight_info = *(static_cast<const flight_info_t *>(rec_value));
         /* Record the flight info stats before deciding whether to record this entry or not. */
         collect_flight_info_stats(ts, e.u.flight_info);
-        if (should_skip(&skip_counter.flight_info, 1)) return;
+        if (should_skip(&skip_counter.flight_info, 1)) {
+          return;
+        }
         break;
       case ORIENTATION_INFO:
-        if (should_skip(&skip_counter.orientation, 1)) return;
-        e.u.orientation_info = *((orientation_info_t *)rec_value);
+        if (should_skip(&skip_counter.orientation, 1)) {
+          return;
+        }
+        e.u.orientation_info = *(static_cast<const orientation_info_t *>(rec_value));
         break;
       case FILTERED_DATA_INFO:
-        if (should_skip(&skip_counter.filtered_data, 1)) return;
-        e.u.filtered_data_info = *((filtered_data_info_t *)rec_value);
+        if (should_skip(&skip_counter.filtered_data, 1)) {
+          return;
+        }
+        e.u.filtered_data_info = *(static_cast<const filtered_data_info_t *>(rec_value));
         break;
       case FLIGHT_STATE:
-        e.u.flight_state = *((flight_fsm_e *)rec_value);
+        e.u.flight_state = *(static_cast<const flight_fsm_e *>(rec_value));
         break;
       case EVENT_INFO:
-        e.u.event_info = *((event_info_t *)rec_value);
+        e.u.event_info = *(static_cast<const event_info_t *>(rec_value));
         break;
       case ERROR_INFO:
-        e.u.error_info = *((error_info_t *)rec_value);
+        e.u.error_info = *(static_cast<const error_info_t *>(rec_value));
         break;
       case GNSS_INFO:
-        e.u.gnss_info = *((gnss_position_t *)rec_value);
+        e.u.gnss_info = *(static_cast<const gnss_position_t *>(rec_value));
         break;
       case VOLTAGE_INFO:
         e.u.voltage_info = *(static_cast<const voltage_info_t *>(rec_value));
@@ -162,7 +176,7 @@ void record(timestamp_t ts, rec_entry_type_e rec_type_with_id, const void *const
         break;
     }
 
-    osStatus_t ret = osMessageQueuePut(rec_queue, &e, 0U, 0U);
+    const osStatus_t ret = osMessageQueuePut(rec_queue, &e, 0U, 0U);
     if (ret != osOK) {
       log_error("Inserting an element to the recorder queue failed! Error: %d", ret);
     }

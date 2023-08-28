@@ -17,8 +17,9 @@
  */
 
 #include "drivers/adc.hpp"
-#include "target.h"
+#include "target.hpp"
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static uint32_t adc_value[ADC_NUM_CHANNELS];
 
 void adc_init() { HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS); }
@@ -30,7 +31,9 @@ uint32_t adc_get(adc_channels_e channel) {
     HAL_ADC_Start_DMA(&ADC_HANDLE, adc_value, ADC_NUM_CHANNELS);
   }
 
-  if ((channel < 0) || (channel > (ADC_NUM_CHANNELS - 1))) return 0;
+  if ((channel < 0) || (channel > (ADC_NUM_CHANNELS - 1))) {
+    return 0;
+  }
 
   return adc_value[channel];
 }

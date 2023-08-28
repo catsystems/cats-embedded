@@ -28,25 +28,25 @@ enum transmission_mode_e {
   BIDIRECTIONAL = 1,
 };
 
-static constexpr uint8_t CMD_DIRECTION{0x10};
-static constexpr uint8_t CMD_PA_GAIN{0x11};
-static constexpr uint8_t CMD_POWER_LEVEL{0x12};
-static constexpr uint8_t CMD_MODE{0x13};
-static constexpr uint8_t CMD_MODE_INDEX{0x14};
+inline constexpr uint8_t CMD_DIRECTION{0x10};
+inline constexpr uint8_t CMD_PA_GAIN{0x11};
+inline constexpr uint8_t CMD_POWER_LEVEL{0x12};
+inline constexpr uint8_t CMD_MODE{0x13};
+inline constexpr uint8_t CMD_MODE_INDEX{0x14};
 
-static constexpr uint8_t CMD_LINK_PHRASE{0x15};
+inline constexpr uint8_t CMD_LINK_PHRASE{0x15};
 
-static constexpr uint8_t CMD_ENABLE{0x20};
-static constexpr uint8_t CMD_DISABLE{0x21};
+inline constexpr uint8_t CMD_ENABLE{0x20};
+inline constexpr uint8_t CMD_DISABLE{0x21};
 
-static constexpr uint8_t CMD_TX{0x30};
-static constexpr uint8_t CMD_RX{0x31};
-static constexpr uint8_t CMD_INFO{0x32};
+inline constexpr uint8_t CMD_TX{0x30};
+inline constexpr uint8_t CMD_RX{0x31};
+inline constexpr uint8_t CMD_INFO{0x32};
 
-static constexpr uint8_t CMD_GNSS_LOC{0x40};
-static constexpr uint8_t CMD_GNSS_TIME{0x41};
-static constexpr uint8_t CMD_GNSS_INFO{0x42};
+inline constexpr uint8_t CMD_GNSS_LOC{0x40};
+inline constexpr uint8_t CMD_GNSS_TIME{0x41};
+inline constexpr uint8_t CMD_GNSS_INFO{0x42};
 
-static constexpr uint8_t CMD_TEMP_INFO{0x50};
+inline constexpr uint8_t CMD_TEMP_INFO{0x50};
 
-static constexpr uint8_t CMD_VERSION_INFO{0x60};
+inline constexpr uint8_t CMD_VERSION_INFO{0x60};

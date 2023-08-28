@@ -51,11 +51,12 @@
 /***** Peripherals config *****/
 // #define USE_CAN
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 /* ADC config */
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
-#define ADC_HANDLE       hadc1
-#define ADC_NUM_CHANNELS 3
+#define ADC_HANDLE hadc1
+inline constexpr uint8_t ADC_NUM_CHANNELS = 3;
 
 /* RTC config */
 extern RTC_HandleTypeDef hrtc;
@@ -77,6 +78,7 @@ extern CAN_HandleTypeDef hcan1;
 /* UART config */
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /***** Device config *****/
 
@@ -95,11 +97,11 @@ extern UART_HandleTypeDef huart2;
 #define BUZZER_TIMER_CHANNEL TIM_CHANNEL_1
 
 /* Sensor config */
-#define NUM_IMU  1
-#define NUM_BARO 1
+inline constexpr uint8_t NUM_IMU = 1;
+inline constexpr uint8_t NUM_BARO = 1;
 
-#define NUM_PYRO         2
-#define NUM_LOW_LEVEL_IO 1
+inline constexpr uint8_t NUM_PYRO = 2;
+inline constexpr uint8_t NUM_LOW_LEVEL_IO = 1;
 
 enum class SensorType : uint32_t {
   kInvalid = 0,
@@ -116,9 +118,11 @@ struct sens_info_t {
   float32_t resolution;
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern sens_info_t acc_info[NUM_IMU];
 extern sens_info_t gyro_info[NUM_IMU];
 extern sens_info_t baro_info[NUM_BARO];
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 #ifdef __cplusplus
 extern "C" {

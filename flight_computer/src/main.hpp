@@ -18,7 +18,9 @@
 
 #pragma once
 
-#include "target.h"
+#include "target.hpp"
+
+#include <cstdint>
 
 /* Random pattern to tell system to jump to bootloader */
-#define BOOTLOADER_MAGIC_PATTERN 0xAA88BB77
+constexpr uint32_t BOOTLOADER_MAGIC_PATTERN = 0xAA88BB77;

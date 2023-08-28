@@ -37,6 +37,7 @@ const char* const action_map[8] = {
 const char* const battery_map[3] = {"LI-ION", "LI-PO", "ALKALINE"};
 
 // Filled later depending on tick frequency
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 char* recorder_speed_map[NUM_REC_SPEEDS] = {};
 
 const char* const on_off_map[2] = {
@@ -46,13 +47,14 @@ const char* const on_off_map[2] = {
 
 void init_recorder_speed_map() {
   for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
-    recorder_speed_map[i] = (char*)pvPortMalloc(14 * sizeof(char));
+    recorder_speed_map[i] = static_cast<char*>(pvPortMalloc(14 * sizeof(char)));
     if (recorder_speed_map[i] == nullptr) {
       log_raw("Could not allocate memory for recorder_speed_map[%lu]!", i);
       return;
     }
 
     memset(recorder_speed_map[i], 0, 14 * sizeof(char));
-    snprintf(recorder_speed_map[i], 14, "%.4gHz", (double)CONTROL_SAMPLING_FREQ / (i + 1));
+    snprintf(recorder_speed_map[i], 14, "%.4gHz",
+             static_cast<double>(CONTROL_SAMPLING_FREQ) / static_cast<double>(i + 1));
   }
 }

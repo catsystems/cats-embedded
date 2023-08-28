@@ -22,7 +22,7 @@ namespace driver {
 
 bool Pwm::SetFrequency(uint32_t frequency) {
   // Calculate the prescaler to get as close to the pwm depth as possible
-  uint32_t psc = SystemCoreClock / (m_depth * frequency);
+  const uint32_t psc = SystemCoreClock / (m_depth * frequency);
 
   // If the frequency requested is too high we can not set the pwm, reduce the PWM depth
   if (psc < 1U) {
@@ -60,9 +60,9 @@ bool Pwm::SetDutyCycleTicks(const uint32_t dutyCycleTicks) {
 
 void Pwm::UpdateDutyCycleTicks() {
   // calculate pulse duration
-  uint32_t pulse = static_cast<uint32_t>((static_cast<float32_t>(m_period) / static_cast<float32_t>(m_depth)) *
-                                         (static_cast<float32_t>(m_duty_cycle_ticks))) -
-                   1U;
+  const uint32_t pulse = static_cast<uint32_t>((static_cast<float32_t>(m_period) / static_cast<float32_t>(m_depth)) *
+                                               (static_cast<float32_t>(m_duty_cycle_ticks))) -
+                         1U;
 
   // Setup pwm channel
   TIM_OC_InitTypeDef sConfigOC;

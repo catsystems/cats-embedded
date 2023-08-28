@@ -18,8 +18,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include "arm_math.h"
+
+#include <cstdint>
 
 float32_t median(float32_t input_array[]);
 float32_t calculate_height(float32_t pressure);

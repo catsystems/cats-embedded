@@ -34,7 +34,7 @@ void Buzzer::Beep(BeepCode code) const {
     osEventFlagsClear(m_buzzer_event_id, id);
     uint32_t duration = 0;
     for (int i = 0; i < s_status_code_length[id]; i++) {
-      char pitch = s_status_codes[id][i];
+      const char pitch = s_status_codes[id][i];
       if (pitch >= 'A' && pitch <= 'H') {
         m_buzzer.SetFrequency(s_frequency_lookup[pitch - 'A']);
         duration = static_cast<uint32_t>(Duration::kLongBeep);

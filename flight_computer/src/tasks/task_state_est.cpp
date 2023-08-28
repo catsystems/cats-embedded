@@ -22,13 +22,14 @@
 
 namespace task {
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 StateEstimation* global_state_estimation = nullptr;
 
 void StateEstimation::GetEstimationInputData() {
   /* After apogee we assume that the linear acceleration is zero. This assumption is true if the parachute has been
    * ejected. If this assumption is not done, the linear acceleration will be bad because of movement of the rocket
    * due to parachute forces. */
-  state_estimation_input_t input = m_task_preprocessing.GetEstimationInput();
+  const state_estimation_input_t input = m_task_preprocessing.GetEstimationInput();
 
   if (m_fsm_enum < DROGUE) {
     m_filter.measured_acceleration = input.acceleration_z;
@@ -91,14 +92,15 @@ estimation_output_t StateEstimation::GetEstimationOutput() const noexcept {
     /* Do a Kalman Step */
     kalman_step(&m_filter, m_fsm_enum);
 
-    orientation_info_t orientation_info;
+    orientation_info_t orientation_info{};
     /*
     log_raw("[%lu] KF: q0: %ld; q1: %ld; q2: %ld; q3: %ld", tick_count, (int32_t)(orientation_filter.estimate_data[0] *
     1000), (int32_t)(orientation_filter.estimate_data[1] * 1000), (int32_t)(orientation_filter.estimate_data[2] * 1000),
               (int32_t)(orientation_filter.estimate_data[3] * 1000));
     */
     for (uint8_t i = 0; i < 4; i++) {
-      orientation_info.estimated_orientation[i] = (int16_t)(m_orientation_filter.estimate_data[i] * 10000.0f);
+      orientation_info.estimated_orientation[i] =
+          static_cast<int16_t>(m_orientation_filter.estimate_data[i] * 10000.0F);
     }
 
     record(tick_count, ORIENTATION_INFO, &orientation_info);

@@ -28,7 +28,7 @@
 
 /** Private Constants **/
 
-#define REC_BUFFER_LEN 256
+constexpr uint16_t REC_BUFFER_LEN = 256;
 
 /** Private Function Declarations **/
 
@@ -46,6 +46,7 @@ void create_stats_and_cfg_log();
 
 namespace task {
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-function-cognitive-complexity)
 [[noreturn]] void Recorder::Run() noexcept {
   uint8_t rec_buffer[REC_BUFFER_LEN] = {};
 
@@ -71,11 +72,11 @@ namespace task {
         log_error("Invalid command value!");
         break;
       case REC_CMD_FILL_Q: {
-        rec_elem_t dummy_log_elem;
+        rec_elem_t dummy_log_elem{};
         uint32_t cmd_check_counter = 0;
         log_info("Started filling pre recording queue");
         while (true) {
-          uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
+          const uint32_t curr_elem_count = osMessageQueueGetCount(rec_queue);
           if (curr_elem_count > REC_QUEUE_PRE_THRUSTING_LIMIT) {
             /* If the number of elements goes over REC_QUEUE_PRE_THRUSTING_LIMIT we start to empty it. When thrusting is
              * detected we will have around REC_QUEUE_PRE_THRUSTING_LIMIT elements in the queue and in the next loop
@@ -119,7 +120,7 @@ namespace task {
         log_info("Creating log file %lu...", flight_counter);
         lfs_file_open(&lfs, &current_flight_file, current_flight_filename, LFS_O_WRONLY | LFS_O_CREAT);
         lfs_file_write(&lfs, &current_flight_file, code_version, strlen(code_version) + 1);  // including '\0'
-        rec_elem_t curr_log_elem;
+        rec_elem_t curr_log_elem{};
         uint32_t sync_counter = 0;
         log_info("Started writing to flash");
         while (true) {
@@ -144,7 +145,8 @@ namespace task {
             }
           }
 
-          const int32_t sz = lfs_file_write(&lfs, &current_flight_file, rec_buffer, (lfs_size_t)REC_BUFFER_LEN);
+          const int32_t sz =
+              lfs_file_write(&lfs, &current_flight_file, rec_buffer, static_cast<lfs_size_t>(REC_BUFFER_LEN));
 
           /* Writing less than REC_BUFFER_LEN bytes indicates that there is not enough space left on the flash chip. */
           if ((sz > 0) && (static_cast<uint32_t>(sz) < static_cast<lfs_size_t>(REC_BUFFER_LEN))) {
@@ -168,7 +170,9 @@ namespace task {
           }
 
           if (rec_buffer_idx > 0) {
-            memcpy(rec_buffer, (uint8_t *)(&curr_log_elem) + curr_log_elem_size - bytes_remaining, bytes_remaining);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+            memcpy(rec_buffer, reinterpret_cast<uint8_t *>(&curr_log_elem) + curr_log_elem_size - bytes_remaining,
+                   bytes_remaining);
           }
           /* Check for a new command */
           if (osMessageQueueGetCount(rec_cmd_queue) > 0) {
@@ -264,10 +268,10 @@ void create_cfg_file() {
   snprintf(current_stats_filename, MAX_FILENAME_SIZE, "configs/flight_%05lu.cfg", flight_counter);
 
   log_info("Creating flights_%05lu.cfg...", flight_counter);
-  int err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
+  int32_t err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
 
   if (err != LFS_ERR_OK) {
-    log_error("Creating config file %lu failed with %d", flight_counter, err);
+    log_error("Creating config file %lu failed with %ld", flight_counter, err);
   } else {
     log_info("Created config file %lu.", flight_counter);
   }
@@ -275,7 +279,7 @@ void create_cfg_file() {
   err = lfs_file_write(&lfs, &current_stats_file, &global_flight_stats.config, sizeof(global_flight_stats.config));
 
   if (err < 0) {
-    log_error("Writing to config file failed with %d", err);
+    log_error("Writing to config file failed with %ld", err);
   } else if (auto err_u = static_cast<uint32_t>(err); err_u < sizeof(global_flight_stats.config)) {
     log_error("Written less bytes to config file than expected: %lu vs %u", err_u, sizeof(global_flight_stats.config));
   }
@@ -283,7 +287,7 @@ void create_cfg_file() {
   err = lfs_file_close(&lfs, &current_stats_file);
 
   if (err != LFS_ERR_OK) {
-    log_error("Closing config file failed with %d", err);
+    log_error("Closing config file failed with %ld", err);
   }
 }
 
@@ -297,21 +301,22 @@ void create_stats_file() {
   auto *string_buf = static_cast<char *>(pvPortMalloc(kStringBufSz * sizeof(char)));
 
   log_info("Creating stats file %lu...", flight_counter);
-  int err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
+  int32_t err = lfs_file_open(&lfs, &current_stats_file, current_stats_filename, LFS_O_WRONLY | LFS_O_CREAT);
 
   if (err != LFS_ERR_OK) {
-    log_error("Creating stats file %lu failed with %d", flight_counter, err);
+    log_error("Creating stats file %lu failed with %ld", flight_counter, err);
     vPortFree(string_buf);
     return;
-  } else {
-    log_info("Created stats file %lu.", flight_counter);
   }
+
+  log_info("Created stats file %lu.", flight_counter);
 
   auto write_line = [&](const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
     va_list va;
     va_start(va, fmt);
     vsnprintf(string_buf, kStringBufSz, fmt, va);
     va_end(va);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     err |= lfs_file_write(&lfs, &current_stats_file, string_buf, strlen(string_buf));
   };
 
@@ -344,13 +349,13 @@ void create_stats_file() {
   write_line("========================\r\n");
 
   if (err < 0) {
-    log_error("Writing to stats file failed with %d", err);
+    log_error("Writing to stats file failed with %ld", err);
   }
 
   err = lfs_file_close(&lfs, &current_stats_file);
 
   if (err != LFS_ERR_OK) {
-    log_error("Closing stats file failed with %d", err);
+    log_error("Closing stats file failed with %ld", err);
   }
 
   vPortFree(string_buf);

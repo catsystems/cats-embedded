@@ -22,11 +22,12 @@
 #include "comm/stream.hpp"
 
 /** USB STREAM GROUP **/
-#define USB_OUT_BUF_SIZE 512
-#define USB_IN_BUF_SIZE  1024
+constexpr uint16_t USB_OUT_BUF_SIZE = 512;
+constexpr uint16_t USB_IN_BUF_SIZE = 1024;
 
-#define USB_TIMEOUT_MSEC 10
+constexpr uint8_t USB_TIMEOUT_MSEC = 10;
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static uint8_t usb_fifo_out_buf[USB_OUT_BUF_SIZE];
 static uint8_t usb_fifo_in_buf[USB_IN_BUF_SIZE];
 
@@ -39,3 +40,4 @@ static stream_t usb_stream_in = {.fifo = &usb_fifo_in, .timeout_msec = USB_TIMEO
 static stream_t usb_stream_out = {.fifo = &usb_fifo_out, .timeout_msec = USB_TIMEOUT_MSEC};
 
 const stream_group_t USB_SG = {.in = &usb_stream_in, .out = &usb_stream_out};
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

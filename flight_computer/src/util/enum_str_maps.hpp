@@ -26,6 +26,7 @@ extern const char *const action_map[8];
 extern const char *const on_off_map[2];
 extern const char *const battery_map[3];
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern char *recorder_speed_map[NUM_REC_SPEEDS];
 
 void init_recorder_speed_map();

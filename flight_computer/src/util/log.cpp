@@ -27,6 +27,7 @@
 
 #define CATS_RAINBOW_LOG
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static struct {
   int level;
   log_mode_e log_mode;
@@ -37,9 +38,10 @@ static const char *level_strings[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR",
 static const char *level_colors[] = {"\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"};
 #endif
 
-#define PRINT_BUFFER_LEN 420
+constexpr uint16_t PRINT_BUFFER_LEN = 420;
 static char print_buffer[PRINT_BUFFER_LEN];
 #endif
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 void log_set_mode(log_mode_e mode) {
 #ifdef CATS_DEBUG
@@ -89,7 +91,7 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
     buf_ts[snprintf(buf_ts, sizeof(buf_ts), "%lu", osKernelGetTickCount())] = '\0';
     static char buf_loc[30];
     buf_loc[snprintf(buf_loc, sizeof(buf_loc), "%s:%d:", file, line)] = '\0';
-    int len;
+    int len = 0;
 #ifdef CATS_RAINBOW_LOG
     len = snprintf(print_buffer, PRINT_BUFFER_LEN, "%6s %s%5s\x1b[0m \x1b[90m%30s\x1b[0m ", buf_ts, level_colors[level],
                    level_strings[level], buf_loc);
@@ -101,7 +103,8 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
     len += vsnprintf(print_buffer + len, PRINT_BUFFER_LEN, format, argptr);
     va_end(argptr);
     len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
-    stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    stream_write(USB_SG.out, reinterpret_cast<uint8_t *>(print_buffer), len);
   }
 #endif
 }
@@ -113,7 +116,8 @@ void log_raw(const char *format, ...) {
   int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
   va_end(argptr);
   len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
-  stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  stream_write(USB_SG.out, reinterpret_cast<uint8_t *>(print_buffer), len);
 #endif
 }
 
@@ -125,7 +129,8 @@ void log_sim(const char *format, ...) {
     int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
     va_end(argptr);
     len += snprintf(print_buffer + len, PRINT_BUFFER_LEN, "\n");
-    stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    stream_write(USB_SG.out, reinterpret_cast<uint8_t *>(print_buffer), len);
   }
 #endif
 }
@@ -134,8 +139,9 @@ void log_rawr(const char *format, ...) {
 #ifdef CATS_DEBUG
   va_list argptr;
   va_start(argptr, format);
-  int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
+  const int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
   va_end(argptr);
-  stream_write(USB_SG.out, (uint8_t *)print_buffer, len);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  stream_write(USB_SG.out, reinterpret_cast<uint8_t *>(print_buffer), len);
 #endif
 }

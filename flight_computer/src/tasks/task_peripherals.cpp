@@ -35,8 +35,9 @@ namespace task {
  * @param argument: Not used
  * @retval None
  */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[noreturn]] void Peripherals::Run() noexcept {
-  cats_event_e curr_event;
+  cats_event_e curr_event{EV_CALIBRATE};
   while (true) {
     if (osMessageQueueGet(event_queue, &curr_event, nullptr, osWaitForever) == osOK) {
       /* Start Timer if the Config says so */
@@ -58,9 +59,9 @@ namespace task {
       }
 
       peripheral_act_t* action_list = event_action_map[curr_event].action_list;
-      uint8_t num_actions = event_action_map[curr_event].num_actions;
+      const uint8_t num_actions = event_action_map[curr_event].num_actions;
       for (uint32_t i = 0; i < num_actions; ++i) {
-        timestamp_t curr_ts = osKernelGetTickCount();
+        const timestamp_t curr_ts = osKernelGetTickCount();
         /* get the actuator function */
         peripheral_act_fp curr_fp = action_table[action_list[i].action];
         if (curr_fp != nullptr) {
@@ -74,7 +75,7 @@ namespace task {
       }
       if (num_actions == 0) {
         log_error("EXECUTING EVENT: %s, ACTION: %s", event_map[curr_event], action_map[action_list[0].action]);
-        timestamp_t curr_ts = osKernelGetTickCount();
+        const timestamp_t curr_ts = osKernelGetTickCount();
         event_info_t event_info = {.event = curr_event, .action = {ACT_NO_OP}};
         record(curr_ts, EVENT_INFO, &event_info);
       }

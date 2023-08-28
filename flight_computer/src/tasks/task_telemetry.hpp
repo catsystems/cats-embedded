@@ -84,7 +84,7 @@ class Telemetry final : public Task<Telemetry, 1024> {
   static void SendEnable() noexcept;
   static void SendDisable() noexcept;
   static void SendTxPayload(uint8_t* payload, uint32_t length) noexcept;
-  [[nodiscard]] bool CheckValidOpCode(uint8_t op_code) const noexcept;
+  [[nodiscard]] static bool CheckValidOpCode(uint8_t op_code) noexcept;
   static void RequestVersionNum() noexcept;
 
   const StateEstimation* m_task_state_estimation = nullptr;

@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-#define NUM_ACTION_FUNCTIONS 8
+inline constexpr uint8_t NUM_ACTION_FUNCTIONS = 8;
 
 using peripheral_act_fp = bool (*)(int16_t);
 

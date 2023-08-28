@@ -19,7 +19,7 @@
 #include "tasks/task_simulator.hpp"
 #include "cli/cli.hpp"
 #include "config/globals.hpp"
-#include "target.h"
+#include "target.hpp"
 #include "util/log.h"
 #include "util/task_util.hpp"
 
@@ -132,7 +132,7 @@ void Simulator::ComputeSimValues(float32_t time) {
 [[noreturn]] void Simulator::Run() noexcept {
   imu_data_t sim_imu_data[NUM_IMU] = {};
 
-  log_mode_e prev_log_mode = log_get_mode();
+  const log_mode_e prev_log_mode = log_get_mode();
   log_set_mode(LOG_MODE_SIM);
 
   /* RNG Init with known seed */
@@ -144,7 +144,7 @@ void Simulator::ComputeSimValues(float32_t time) {
   constexpr uint32_t tick_update = sysGetTickFreq() / CONTROL_SAMPLING_FREQ;
 
   /* initialise time */
-  timestamp_t sim_start = osKernelGetTickCount();
+  const timestamp_t sim_start = osKernelGetTickCount();
   float32_t time_to_liftoff = 0.0F;  // This is in seconds
 
   while (true) {
@@ -191,6 +191,7 @@ void Simulator::ComputeSimValues(float32_t time) {
     }
 
     /* Write into global pressure sim variable */
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (int i = 0; i < NUM_BARO; i++) {
       global_baro_sim[i].pressure =
           static_cast<int32_t>(static_cast<float32_t>(m_current_press) + rand_bounds(-m_press_noise, m_press_noise));
@@ -213,7 +214,7 @@ void Simulator::ComputeSimValues(float32_t time) {
 /** Private Function Definitions **/
 
 float32_t rand_bounds(float32_t lower_b, float32_t upper_b) {
-  float32_t var = (static_cast<float32_t>(rand() % 1000)) / 1000;
+  const float32_t var = (static_cast<float32_t>(rand() % 1000)) / 1000;
   return var * (upper_b - lower_b) - lower_b;
 }
 
@@ -261,5 +262,6 @@ void start_simulation(char *args) {
   simulation_started = true;
   log_info("Starting Simulation");
 
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) linter is confused
   task::Simulator::Start(sim_config);
 }

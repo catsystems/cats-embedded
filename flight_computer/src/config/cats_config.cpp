@@ -17,12 +17,14 @@
  */
 
 #include "config/cats_config.hpp"
-#include <cstring>
+
 #include "flash/lfs_custom.hpp"
 #include "lfs.h"
 #include "util/actions.hpp"
 #include "util/enum_str_maps.hpp"
 #include "util/error_handler.hpp"
+
+#include <cstring>
 
 const cats_config_t DEFAULT_CONFIG = {
     .config_version = CONFIG_VERSION,
@@ -64,9 +66,11 @@ const cats_config_t DEFAULT_CONFIG = {
     /* Assume that when the user starts the board for the first time the default config will be considered theirs. */
     .is_set_by_user = true};
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 cats_config_t global_cats_config = {};
 
 lfs_file_t config_file;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /** cats config initialization **/
 
@@ -125,7 +129,7 @@ bool cc_save() {
   const bool ret =
       lfs_file_write(&lfs, &config_file, &global_cats_config, sizeof(global_cats_config)) == sizeof(global_cats_config);
   lfs_file_close(&lfs, &config_file);
-  if (ret == false) {
+  if (!ret) {
     log_error("Error while saving configuration file!");
   }
   return ret;
@@ -137,9 +141,11 @@ bool cc_save() {
  * @return number of actions mapped to event
  */
 uint16_t cc_get_num_actions(cats_event_e event) {
-  uint16_t i = 0;
-  uint16_t nr_actions;
-  if (event > (NUM_EVENTS - 1)) return 0;
+  uint16_t i{0};
+  uint16_t nr_actions{0};
+  if (event > (NUM_EVENTS - 1)) {
+    return 0;
+  }
   // Count the number of entries
   while ((global_cats_config.action_array[event][i] != 0) && (i < 16)) {
     i += 2;
@@ -156,10 +162,13 @@ uint16_t cc_get_num_actions(cats_event_e event) {
  * @return
  */
 bool cc_get_action(cats_event_e event, uint16_t act_idx, config_action_t* action) {
-  if ((action == nullptr) || (cc_get_num_actions(event) < (act_idx + 1))) return false;
+  if ((action == nullptr) || (cc_get_num_actions(event) < (act_idx + 1))) {
+    return false;
+  }
 
-  int16_t idx = global_cats_config.action_array[event][act_idx * 2];
-  int16_t arg = global_cats_config.action_array[event][act_idx * 2 + 1];
+  // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+  const int16_t idx = global_cats_config.action_array[event][act_idx * 2];
+  const int16_t arg = global_cats_config.action_array[event][act_idx * 2 + 1];
 
   if (idx > 0 && idx <= NUM_ACTION_FUNCTIONS) {
     action->action_idx = idx;

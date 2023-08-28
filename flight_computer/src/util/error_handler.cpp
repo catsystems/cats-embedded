@@ -20,6 +20,7 @@
 #include "flash/recorder.hpp"
 #include "util/log.h"
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static uint32_t errors = 0;
 
 void add_error(cats_error_e err) {
@@ -29,17 +30,17 @@ void add_error(cats_error_e err) {
 
       errors |= err;
 
-      error_info_t error_info = {.error = (cats_error_e)(errors)};
+      error_info_t error_info = {.error = static_cast<cats_error_e>(errors)};
       record(osKernelGetTickCount(), ERROR_INFO, &error_info);
     }
   }
 }
 
 void clear_error(cats_error_e err) {
-  if (errors & err) {
+  if ((errors & err) != 0) {
     errors &= ~err;
 
-    error_info_t error_info = {.error = (cats_error_e)(errors)};
+    error_info_t error_info = {.error = static_cast<cats_error_e>(errors)};
     record(osKernelGetTickCount(), ERROR_INFO, &error_info);
   }
 }
@@ -48,8 +49,10 @@ void clear_error(cats_error_e err) {
 uint32_t get_error_count() {
   uint32_t count = 0;
   const uint32_t mask = 0x00000001;
-  for (int i = 0; i < 32; i++) {
-    if (errors & (mask << i)) count++;
+  for (uint32_t i = 0; i < 32; i++) {
+    if ((errors & (mask << i)) != 0) {
+      count++;
+    }
   }
   return count;
 }
@@ -57,21 +60,18 @@ uint32_t get_error_count() {
 cats_error_e get_error_by_priority(uint32_t id) {
   uint32_t count = 0;
   const uint32_t mask = 0x00000001;
-  for (int i = 31; i >= 0; i--) {
-    if (errors & (mask << i)) {
+  for (int32_t i = 31; i >= 0; i--) {
+    if ((errors & (mask << static_cast<uint32_t>(i))) != 0) {
       count++;
     }
-    if (count == (id + 1)) return (cats_error_e)(mask << i);
+    if (count == (id + 1)) {
+      return static_cast<cats_error_e>(mask << static_cast<uint32_t>(i));
+    }
   }
   return CATS_ERR_OK;
 }
 
 bool get_error_by_tag(cats_error_e err) {
-  if ((errors & err) != 0) {
-    /* return true if error is present */
-    return true;
-  } else {
-    /* return false if error is not present */
-    return false;
-  }
+  /* returns true if error is present */
+  return (errors & err) != 0;
 }
