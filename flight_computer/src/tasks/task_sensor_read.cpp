@@ -49,7 +49,7 @@ imu_data_t SensorRead::GetImu(uint8_t index) const noexcept { return m_imu_data[
   /* This task is sampled with 2 times the control sampling frequency to maximize speed of the barometer. In one
    * timestep the Baro pressure is read out and then the Baro Temperature. The other sensors are only read out one in
    * two times. */
-  constexpr uint32_t tick_update = sysGetTickFreq() / (2 * CONTROL_SAMPLING_FREQ);
+  constexpr uint32_t tick_update = sysGetTickFreq() / static_cast<uint32_t>(2 * CONTROL_SAMPLING_FREQ);
   while (true) {
     // Readout the baro register
     m_barometer->Read();
@@ -81,8 +81,10 @@ imu_data_t SensorRead::GetImu(uint8_t index) const noexcept { return m_imu_data[
           m_imu_data[i].acc = global_imu_sim[i].acc;
         } else {
           if (imu_initialized[i]) {
+            // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
             m_imu->ReadGyroRaw(reinterpret_cast<int16_t *>(&m_imu_data[i].gyro));
             m_imu->ReadAccelRaw(reinterpret_cast<int16_t *>(&m_imu_data[i].acc));
+            // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
           }
         }
         record(tick_count, add_id_to_record_type(IMU, i), &(m_imu_data[i]));

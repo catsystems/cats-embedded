@@ -23,8 +23,7 @@
  *
  */
 
-#ifndef _TUSB_CONFIG_H_
-#define _TUSB_CONFIG_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,5 +118,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _TUSB_CONFIG_H_ */

@@ -27,16 +27,17 @@
 
 namespace task {
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[noreturn]] void Cdc::Run() noexcept {
   uint8_t buf[512]{};
   while (true) {
-    while (tud_cdc_available()) {
+    while (tud_cdc_available() > 0) {
       global_usb_detection = true;
-      uint32_t count = tud_cdc_read(buf, sizeof(buf));
+      const uint32_t count = tud_cdc_read(buf, sizeof(buf));
       stream_write(USB_SG.in, buf, count);
     }
 
-    uint32_t len = stream_length(USB_SG.out);
+    const uint32_t len = stream_length(USB_SG.out);
     if (len > 0 && stream_read(USB_SG.out, buf, len)) {
       tud_cdc_write(buf, len);
       tud_cdc_write_flush();

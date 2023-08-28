@@ -28,9 +28,10 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
 static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block);
 static int w25q_lfs_sync(const struct lfs_config *c);
 
-#define LFS_CACHE_SIZE     512
-#define LFS_LOOKAHEAD_SIZE 512
+constexpr uint16_t LFS_CACHE_SIZE = 512;
+constexpr uint16_t LFS_LOOKAHEAD_SIZE = 512;
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 /* LFS Static Buffers */
 static uint8_t read_buffer[LFS_CACHE_SIZE] = {};
 static uint8_t prog_buffer[LFS_CACHE_SIZE] = {};
@@ -77,28 +78,29 @@ uint32_t flight_counter = 0;
 // static uint8_t fc_file_cfg_buffer[LFS_CACHE_SIZE] = {};
 // struct lfs_file_config fc_file_cfg = {.buffer = fc_file_cfg_buffer, .attr_count = 1};
 lfs_file_t fc_file /* = {.cfg = &fc_file_cfg} */;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 int8_t lfs_obj_type(const char *path) {
-  struct lfs_info info;
-  int32_t stat_err = lfs_stat(&lfs, path, &info);
+  struct lfs_info info {};
+  const int32_t stat_err = lfs_stat(&lfs, path, &info);
   if (stat_err < 0) {
     // cli_print_linef("lfs_stat failed with error: %ld", stat_err);
     return -1;
   }
   /* casting here is fine because info.type should be 0x1 (LFS_TYPE_REG) or 0x2 (LFS_TYPE_FILE) */
-  return (int8_t)info.type;
+  return static_cast<int8_t>(info.type);
 }
 
 int lfs_ls(const char *path) {
   lfs_dir_t dir;
   int err = lfs_dir_open(&lfs, &dir, path);
-  if (err) {
+  if (err != 0) {
     return err;
   }
 
-  struct lfs_info info;
+  struct lfs_info info {};
   while (true) {
-    int res = lfs_dir_read(&lfs, &dir, &info);
+    const int res = lfs_dir_read(&lfs, &dir, &info);
     if (res < 0) {
       return res;
     }
@@ -122,8 +124,8 @@ int lfs_ls(const char *path) {
     static const char *prefixes[] = {"", "K", "M", "G"};
     if (info.type == LFS_TYPE_REG) {
       for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--) {
-        if (info.size >= (1U << 10 * i) - 1) {
-          cli_printf("%*lu%sB ", 4 - (i != 0), info.size >> 10 * i, prefixes[i]);
+        if (info.size >= (1U << 10U * i) - 1) {
+          cli_printf("%*lu%sB ", 4 - static_cast<int>(i != 0), info.size >> 10U * i, prefixes[i]);
           break;
         }
       }
@@ -135,7 +137,7 @@ int lfs_ls(const char *path) {
   }
 
   err = lfs_dir_close(&lfs, &dir);
-  if (err) {
+  if (err != 0) {
     return err;
   }
 
@@ -151,14 +153,14 @@ extern "C" int32_t lfs_cnt(const char *path, enum lfs_type type) {
 
   lfs_dir_t dir;
   int err = lfs_dir_open(&lfs, &dir, path);
-  if (err) {
+  if (err != 0) {
     return err;
   }
 
-  struct lfs_info info;
+  struct lfs_info info {};
   /* Iterate over all the files in the current directory */
   while (true) {
-    int32_t res = lfs_dir_read(&lfs, &dir, &info);
+    const int32_t res = lfs_dir_read(&lfs, &dir, &info);
     if (res < 0) {
       return res;
     }
@@ -174,23 +176,25 @@ extern "C" int32_t lfs_cnt(const char *path, enum lfs_type type) {
   }
 
   err = lfs_dir_close(&lfs, &dir);
-  if (err) {
+  if (err != 0) {
     return err;
   }
 
   return cnt;
 }
 
-static int w25q_lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
-  if (w25q_read_sector((uint8_t *)buffer, block, off, size) == W25Q_OK) {
+static int w25q_lfs_read(const struct lfs_config *c [[maybe_unused]], lfs_block_t block, lfs_off_t off, void *buffer,
+                         lfs_size_t size) {
+  if (w25q_read_sector(static_cast<uint8_t *>(buffer), block, off, size) == W25Q_OK) {
     return 0;
   }
   return LFS_ERR_CORRUPT;
 }
-static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
-                         lfs_size_t size) {
+static int w25q_lfs_prog(const struct lfs_config *c [[maybe_unused]], lfs_block_t block, lfs_off_t off,
+                         const void *buffer, lfs_size_t size) {
   static uint32_t sync_counter = 0;
   static uint32_t sync_counter_err = 0;
+  // NOLINTNEXTLINE(google-readability-casting)
   if (w25q_write_sector((uint8_t *)buffer, block, off, size) == W25Q_OK) {
     if (sync_counter % 32 == 0) {
       /* Flash the LED at certain intervals */
@@ -206,10 +210,10 @@ static int w25q_lfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_
   ++sync_counter_err;
   return LFS_ERR_CORRUPT;
 }
-static int w25q_lfs_erase(const struct lfs_config *c, lfs_block_t block) {
+static int w25q_lfs_erase(const struct lfs_config *c [[maybe_unused]], lfs_block_t block) {
   if (w25q_sector_erase(block) == W25Q_OK) {
     return 0;
   }
   return LFS_ERR_CORRUPT;
 }
-static int w25q_lfs_sync(const struct lfs_config *c) { return 0; }
+static int w25q_lfs_sync(const struct lfs_config *c [[maybe_unused]]) { return 0; }

@@ -47,7 +47,7 @@ void quaternion_mat(const arm_matrix_instance_f32* input1, const arm_matrix_inst
 
 /* Extends a vector to R4 */
 void extendR3(const float32_t* input, float32_t* output) {
-  float32_t abs_value = 1.0f - input[0] * input[0] - input[1] * input[1] - input[2] * input[2];
+  const float32_t abs_value = 1.0F - input[0] * input[0] - input[1] * input[1] - input[2] * input[2];
   float32_t q0 = 0;
   arm_sqrt_f32(abs_value, &q0);
   output[0] = q0;
@@ -58,7 +58,7 @@ void extendR3(const float32_t* input, float32_t* output) {
 
 /* Normalized the quaternion such that abs(q) = 1 */
 void normalize_q(float32_t* input) {
-  float32_t abs_value_sq = input[0] * input[0] + input[1] * input[1] + input[2] * input[2] + input[3] * input[3];
+  const float32_t abs_value_sq = input[0] * input[0] + input[1] * input[1] + input[2] * input[2] + input[3] * input[3];
   float32_t abs_value = 0;
   arm_sqrt_f32(abs_value_sq, &abs_value);
   input[0] /= abs_value;

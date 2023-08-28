@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "target.h"
+#include "target.hpp"
 
 enum w25q_id_e {
   W25QINVALID = 0,
@@ -42,20 +42,20 @@ enum w25q_id_e {
   W25Q512,
 };
 
-#define W25Q_PAGE_SIZE_BYTES   256
-#define W25Q_SECTOR_SIZE_BYTES 4096  // 4kB
+inline constexpr uint16_t W25Q_PAGE_SIZE_BYTES = 256;
+inline constexpr uint16_t W25Q_SECTOR_SIZE_BYTES = 4096;  // 4kB
 
 struct w25q_t {
   const uint16_t page_size{W25Q_PAGE_SIZE_BYTES};
   const uint32_t sector_size{W25Q_SECTOR_SIZE_BYTES};
-  w25q_id_e id;
-  uint32_t page_count;
-  uint32_t sector_count;
-  uint32_t block_size;
-  uint32_t block_count;
-  uint32_t capacity_in_kilobytes;
-  bool needs_4_byte_addressing;
-  uint8_t lock;
+  w25q_id_e id{W25QINVALID};
+  uint32_t page_count{0};
+  uint32_t sector_count{0};
+  uint32_t block_size{0};
+  uint32_t block_count{0};
+  uint32_t capacity_in_kilobytes{0};
+  bool needs_4_byte_addressing{false};
+  uint8_t lock{0};
   bool initialized{false};
 };
 
@@ -75,14 +75,14 @@ enum w25q_status_e {
  *
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_init(void);
+w25q_status_e w25q_init();
 
 /**
  * Sends the reset command.
  *
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_reset(void);
+w25q_status_e w25q_reset();
 
 /**
  * Reads the JEDEC ID of the flash chip.
@@ -121,7 +121,7 @@ w25q_status_e w25q_block_erase_64k(uint32_t block_idx);
  *
  * @return W25Q_OK if successful, W25Q_ERR_* otherwise
  */
-w25q_status_e w25q_chip_erase(void);
+w25q_status_e w25q_chip_erase();
 
 /**
  * Write up to one page to the flash.
@@ -162,9 +162,9 @@ w25q_status_e w25q_read_buffer(uint8_t *buf, uint32_t read_addr, uint32_t num_by
  */
 w25q_status_e w25q_read_status_reg(uint8_t status_reg_num, uint8_t *status_reg_val);
 
-uint32_t w25q_sector_to_page(uint32_t sector_num);
+uint32_t w25q_sector_to_page(uint32_t sector_idx);
 
-uint32_t w25q_block_to_page(uint32_t block_num);
+uint32_t w25q_block_to_page(uint32_t block_idx);
 
 /**
  * Check whether a given sector is empty.
@@ -186,4 +186,5 @@ w25q_status_e w25qxx_write_page(uint8_t *buf, uint32_t page_num, uint32_t offset
 w25q_status_e w25qxx_read_page(uint8_t *buf, uint32_t page_num, uint32_t offset_in_bytes,
                                uint32_t NumByteToRead_up_to_PageSize);
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern w25q_t w25q;

@@ -40,7 +40,7 @@ void init_lfs() {
       log_error("LFS mounting failed with error %d!", err);
       log_error("Trying LFS format");
       lfs_format(&lfs, get_lfs_cfg());
-      int err2 = lfs_mount(&lfs, get_lfs_cfg());
+      const int err2 = lfs_mount(&lfs, get_lfs_cfg());
       if (err2 != 0) {
         log_error("LFS mounting failed again with error %d!", err2);
       }

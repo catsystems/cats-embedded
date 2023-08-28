@@ -17,11 +17,14 @@
  */
 
 #include "control/kalman_filter.hpp"
+
+#include "util/error_handler.hpp"
+
+#include "cmsis_os.h"
+
 #include <arm_neon.h>
 #include <cmath>
 #include <cstring>
-#include "cmsis_os.h"
-#include "util/error_handler.hpp"
 
 void init_filter_struct(kalman_filter_t *const filter) {
   arm_mat_init_f32(&filter->Ad, 3, 3, filter->Ad_data);
@@ -99,11 +102,11 @@ void initialize_matrices(kalman_filter_t *const filter) {
   arm_matrix_instance_f32 K_mat;
   arm_mat_init_f32(&K_mat, 3, 1, K);
 
-  float32_t P_hat[9] = {0.1f, 0, 0, 0, 0.1f, 0, 0, 0, 0.1f};
+  float32_t P_hat[9] = {0.1F, 0, 0, 0, 0.1F, 0, 0, 0, 0.1F};
   arm_matrix_instance_f32 P_hat_mat;
   arm_mat_init_f32(&P_hat_mat, 3, 3, P_hat);
 
-  float32_t P_bar[9] = {0.1f, 0, 0, 0, 0.1f, 0, 0, 0, 0.1f};
+  float32_t P_bar[9] = {0.1F, 0, 0, 0, 0.1F, 0, 0, 0, 0.1F};
   arm_matrix_instance_f32 P_bar_mat;
   arm_mat_init_f32(&P_bar_mat, 3, 3, P_bar);
 
@@ -123,8 +126,8 @@ void initialize_matrices(kalman_filter_t *const filter) {
 
 void reset_kalman(kalman_filter_t *filter) {
   log_debug("Resetting Kalman Filter...");
-  float32_t x_dash[3] = {0.0f, 10.0f, 0.0f};
-  float32_t P_dash[9] = {0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f};
+  float32_t x_dash[3] = {0.0F, 10.0F, 0.0F};
+  float32_t P_dash[9] = {0.1F, 0.0F, 0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.1F};
 
   memcpy(filter->x_bar_data, x_dash, sizeof(x_dash));
   memcpy(filter->x_bar_data, x_dash, sizeof(x_dash));
@@ -134,7 +137,7 @@ void reset_kalman(kalman_filter_t *filter) {
 
 void soft_reset_kalman(kalman_filter_t *filter) {
   log_debug("Resetting Kalman Filter...");
-  float32_t P_dash[9] = {0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f};
+  float32_t P_dash[9] = {0.1F, 0.0F, 0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.1F};
 
   memcpy(filter->P_hat_data, P_dash, sizeof(P_dash));
   memcpy(filter->P_bar_data, P_dash, sizeof(P_dash));
@@ -196,7 +199,7 @@ void kalman_update(kalman_filter_t *filter) {
   holder_single[0] += filter->R;
 
   arm_mat_mult_f32(&filter->P_hat, &filter->H_T, &holder2_vec);
-  arm_mat_scale_f32(&holder2_vec, 1.0f / holder_single[0], &filter->K);
+  arm_mat_scale_f32(&holder2_vec, 1.0F / holder_single[0], &filter->K);
 
   /* Calculate x_bar = x_hat+K*(y-Hx_hat); */
 
@@ -224,28 +227,26 @@ void kalman_update(kalman_filter_t *filter) {
 
 float32_t R_interpolation(float32_t velocity) {
   /* Todo: Can be optimized */
-  float32_t lower_bound = 20.0F;
-  float32_t upper_bound = 100.0F;
-  float32_t f_lower_bound = 0.3981F;
-  float32_t f_upper_bound = 1.0F;
+  const float32_t lower_bound = 20.0F;
+  const float32_t upper_bound = 100.0F;
+  const float32_t f_lower_bound = 0.3981F;
+  const float32_t f_upper_bound = 1.0F;
 
-  float32_t m = (f_lower_bound - f_upper_bound) / (lower_bound - upper_bound);
-  float32_t b = f_upper_bound - m * upper_bound;
+  const float32_t m = (f_lower_bound - f_upper_bound) / (lower_bound - upper_bound);
+  const float32_t b = f_upper_bound - m * upper_bound;
   if (velocity < lower_bound) {
     return powf(f_lower_bound, 5.0F);
-  } else if (velocity < upper_bound) {
-    return powf(m * velocity + b, 5.0F);
-  } else {
-    return f_upper_bound;
   }
+  if (velocity < upper_bound) {
+    return powf(m * velocity + b, 5.0F);
+  }
+  return f_upper_bound;
 }
 
 void kalman_step(kalman_filter_t *filter, flight_fsm_e flight_state) {
   /* Update IMU trust value based on flight phase */
   switch (flight_state) {
     case READY:
-      filter->R = STD_NOISE_BARO_INITIAL;
-      break;
     case CALIBRATING:
       filter->R = STD_NOISE_BARO_INITIAL;
       break;

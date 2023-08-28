@@ -17,18 +17,20 @@
  */
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <typeinfo>
-#include <utility>
 #include "config/globals.hpp"
 #include "util/types.hpp"
 
 #include "cmsis_os.h"
 
+#include <array>
+#include <cstdint>
+#include <typeinfo>
+#include <utility>
+
 namespace task {
 
 template <typename T, uint32_t STACK_SZ>
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions) not sure about the destructor
 class Task {
  public:
   /* Deleted move constructor & move assignment operator */
@@ -63,6 +65,7 @@ class Task {
   /* Protected constructor */
   Task() = default;
 
+  // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
   flight_fsm_e m_fsm_enum = INVALID;
 
   /* Update FSM enum */
@@ -82,6 +85,7 @@ class Task {
     return true;
   }
 
+  // NOLINTNEXTLINE(misc-misplaced-const)
   void SetThreadId(const osThreadId_t thread_id) { m_thread_id = thread_id; }
 
  private:

@@ -19,7 +19,7 @@
 #pragma once
 
 #include "drivers/pwm.hpp"
-#include "target.h"
+#include "target.hpp"
 
 namespace driver {
 

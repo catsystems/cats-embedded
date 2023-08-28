@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
+#include "main.hpp"
 #include "cmsis_os.h"
-#include "target.h"
+#include "target.hpp"
 
 #include "drivers/adc.hpp"
 
@@ -45,8 +45,10 @@
 #include "tasks/task_state_est.hpp"
 #include "tasks/task_telemetry.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 static void init_logging() {
   log_set_level(LOG_TRACE);
@@ -57,7 +59,7 @@ static void init_logging() {
  * @brief  The application entry point.
  * @retval int
  */
-int main(void) {
+int main() {
   /* MCU Configuration--------------------------------------------------------*/
   target_pre_init();
 
@@ -76,8 +78,8 @@ int main(void) {
   // Build digital io
   static driver::OutputPin imu_cs(GPIOB, 0U);
   static driver::OutputPin barometer_cs(GPIOB, 1U);
-  static driver::OutputPin status_led(GPIOC, 14U);
-  static driver::InputPin test_button(GPIOB, 13U);
+  const static driver::OutputPin status_led(GPIOC, 14U);
+  const static driver::InputPin test_button(GPIOB, 13U);
 
   // Build the SPI driver
   static driver::Spi spi1(&hspi1);
@@ -96,8 +98,10 @@ int main(void) {
   static driver::Buzzer buzzer(pwm_buzzer);
 
   // Build the sensors
+  // NOLINTBEGIN(misc-const-correctness) linter is confused
   static sensor::Lsm6dso32 imu(spi1, imu_cs);
   static sensor::Ms5607 barometer(spi1, barometer_cs);
+  // NOLINTEND(misc-const-correctness)
 
   global_servo1 = &servo1;
   global_servo2 = &servo2;
@@ -155,6 +159,7 @@ int main(void) {
 
   task::Peripherals::Start();
 
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) linter is confused
   task::HealthMonitor::Start(task_buzzer);
 
   static const task::StateEstimation* task_state_estimation_ptr = nullptr;
@@ -167,6 +172,7 @@ int main(void) {
 
     static const task::Preprocessing& task_preprocessing = task::Preprocessing::Start(task_sensor_read);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables,cppcoreguidelines-avoid-non-const-global-variables)
     static task::StateEstimation& task_state_estimation = task::StateEstimation::Start(task_preprocessing);
 
     task::FlightFsm::Start(task_preprocessing, task_state_estimation);

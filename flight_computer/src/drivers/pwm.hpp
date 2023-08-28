@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "target.h"
+#include "target.hpp"
 
 namespace driver {
 
@@ -29,8 +29,7 @@ class Pwm {
    * @param timer Reference to the HAL timer @injected
    * @param channel Channel number
    */
-  Pwm(TIM_HandleTypeDef& timer, uint32_t channel)
-      : m_timer(timer), m_channel(channel), m_period(0U), m_duty_cycle_ticks(0U), m_started(false), m_depth(10000U) {}
+  Pwm(TIM_HandleTypeDef& timer, uint32_t channel) : m_timer(timer), m_channel(channel) {}
 
   /** Set the frequency of the pwm generator
    *
@@ -44,7 +43,7 @@ class Pwm {
    *
    * @param depth pwm depth in ticks
    */
-  void SetPwmDepth(const uint16_t depth);
+  void SetPwmDepth(uint16_t depth);
 
   /** Get the pwm depth, the number of possible positions
    *
@@ -57,7 +56,7 @@ class Pwm {
    * @param dutyCycleTicks duty cycle in pwm ticks
    * @return true on success
    */
-  bool SetDutyCycleTicks(const uint32_t dutyCycleTicks);
+  bool SetDutyCycleTicks(uint32_t dutyCycleTicks);
 
   /** Start the pwm generation
    */
@@ -83,13 +82,13 @@ class Pwm {
   /// Timer channel number
   uint32_t m_channel;
   /// Timer period
-  uint32_t m_period;
+  uint32_t m_period{0U};
   /// Timer duty cycle in ticks
-  uint32_t m_duty_cycle_ticks;
+  uint32_t m_duty_cycle_ticks{0U};
   /// Started flag
-  bool m_started;
+  bool m_started{false};
   /// Duty cycle depth
-  uint16_t m_depth;
+  uint16_t m_depth{10000U};
 };
 
 }  // namespace driver

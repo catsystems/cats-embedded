@@ -23,13 +23,13 @@
 #include "cli/settings.hpp"
 #include "comm/fifo.hpp"
 
-void cli_process(void);
+void cli_process();
 void cli_enter();
 
 void cli_print(const char *str);
 void cli_printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
-void cli_print_linefeed(void);
+void cli_print_linefeed();
 void cli_print_line(const char *str);
 
 void cli_print_linef(const char *format, ...) __attribute__((format(printf, 1, 2)));

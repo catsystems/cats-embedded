@@ -82,7 +82,7 @@ uint32_t crc32(const uint8_t *buf, uint32_t size) {
   uint32_t crc = ~0U;
 
   for (uint32_t i = 0; i < size; i++) {
-    crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+    crc = crc32_tab[(crc ^ *p++) & 0xFFU] ^ (crc >> 8U);
   }
   return crc ^ ~0U;
 }

@@ -20,10 +20,9 @@
 
 #include "comm/fifo.hpp"
 #include "drivers/spi.hpp"
-#include "target.h"
+#include "target.hpp"
 
-/** Protocol Handles **/
-
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 /** Device Handles **/
 
 // We need these for now, but will eventually get rid of them by replacing the actions with a class
@@ -56,3 +55,4 @@ volatile recorder_status_e global_recorder_status = REC_OFF;
 event_action_map_elem_t* event_action_map = nullptr;
 
 char telemetry_code_version[20] = {};
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

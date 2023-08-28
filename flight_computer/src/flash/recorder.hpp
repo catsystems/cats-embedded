@@ -28,36 +28,37 @@
 
 /** Exported Defines **/
 
-#define REC_QUEUE_SIZE 512
+inline constexpr uint16_t REC_QUEUE_SIZE = 512;
 
-#define REC_CMD_QUEUE_SIZE 16
+inline constexpr uint8_t REC_CMD_QUEUE_SIZE = 16;
 
-#define MAX_FILENAME_SIZE 32
+inline constexpr uint16_t MAX_FILENAME_SIZE = 32;
 
-#define REC_QUEUE_PRE_THRUSTING_FILL_RATIO 0.75f
-#define REC_QUEUE_PRE_THRUSTING_LIMIT      (uint32_t)(REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE)
+inline constexpr float REC_QUEUE_PRE_THRUSTING_FILL_RATIO = 0.75F;
+inline constexpr auto REC_QUEUE_PRE_THRUSTING_LIMIT =
+    static_cast<uint32_t>(REC_QUEUE_PRE_THRUSTING_FILL_RATIO * REC_QUEUE_SIZE);
 
 /**
  * A bit mask that specifies where the IDs are located. The IDs occupy the first four bits of the rec_entry_type_e enum.
  */
-#define REC_ID_MASK 0x0000000F
+inline constexpr uint32_t REC_ID_MASK = 0x0000000F;
 
 /** Exported Types **/
 
 // clang-format off
  enum rec_entry_type_e: uint32_t {
   // Periodic recorder types, their recording speed is affected by global_cats_config.rec_speed_idx
-  IMU                = 1 << 4,   // 0x20
-  BARO               = 1 << 5,   // 0x40
-  FLIGHT_INFO        = 1 << 6,   // 0x80
-  ORIENTATION_INFO   = 1 << 7,   // 0x100
-  FILTERED_DATA_INFO = 1 << 8,   // 0x200
+  IMU                = 1U << 4U,   // 0x20
+  BARO               = 1U << 5U,   // 0x40
+  FLIGHT_INFO        = 1U << 6U,   // 0x80
+  ORIENTATION_INFO   = 1U << 7U,   // 0x100
+  FILTERED_DATA_INFO = 1U << 8U,   // 0x200
 // Sporadic recorder types, they will always be logged
-  FLIGHT_STATE       = 1 << 9,   // 0x400
-  EVENT_INFO         = 1 << 10,  // 0x800
-  ERROR_INFO         = 1 << 11,  // 0x1000
-  GNSS_INFO          = 1 << 12,  // 0x2000
-  VOLTAGE_INFO       = 1 << 13,  // 0x4000
+  FLIGHT_STATE       = 1U << 9U,   // 0x400
+  EVENT_INFO         = 1U << 10U,  // 0x800
+  ERROR_INFO         = 1U << 11U,  // 0x1000
+  GNSS_INFO          = 1U << 12U,  // 0x2000
+  VOLTAGE_INFO       = 1U << 13U,  // 0x4000
 };
 // clang-format on
 
@@ -113,29 +114,30 @@ struct rec_elem_t {
 /* Flight Statistics */
 
 struct flight_stats_t {
-  cats_config_t config;
+  cats_config_t config{};
   struct {
     timestamp_t ts;
     float32_t val;
-  } max_height;
-
-  struct {
-    timestamp_t ts;
-    float32_t val;
-  } max_velocity;
+  } max_height{};
 
   struct {
     timestamp_t ts;
     float32_t val;
-  } max_acceleration;
+  } max_velocity{};
 
-  calibration_data_t calibration_data;
-  float32_t height_0;
+  struct {
+    timestamp_t ts;
+    float32_t val;
+  } max_acceleration{};
 
-  gnss_time_t liftoff_time;
+  calibration_data_t calibration_data{};
+  float32_t height_0{};
+
+  gnss_time_t liftoff_time{};
 };
 
 /** Exported Variables **/
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern flight_stats_t global_flight_stats;
 
 /** Exported Functions **/
@@ -158,7 +160,7 @@ inline void init_global_flight_stats() {
  * @return record type without ID
  */
 constexpr rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type) {
-  return (rec_entry_type_e)(rec_type & ~REC_ID_MASK);
+  return static_cast<rec_entry_type_e>(rec_type & ~REC_ID_MASK);
 }
 
 /**
@@ -169,7 +171,7 @@ constexpr rec_entry_type_e get_record_type_without_id(rec_entry_type_e rec_type)
  * @return record type with ID
  */
 constexpr rec_entry_type_e add_id_to_record_type(rec_entry_type_e rec_type, uint8_t id) {
-  return (rec_entry_type_e)(rec_type | (id & REC_ID_MASK));
+  return static_cast<rec_entry_type_e>(rec_type | (id & REC_ID_MASK));
 }
 
 /**

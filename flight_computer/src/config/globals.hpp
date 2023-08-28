@@ -23,14 +23,14 @@
 #include "drivers/spi.hpp"
 #include "flash/recorder.hpp"
 
-#include "target.h"
+#include "target.hpp"
 #include "util/types.hpp"
 
 /** Sampling Frequencies **/
-#define CONTROL_SAMPLING_FREQ   100  // in Hz
-#define TELEMETRY_SAMPLING_FREQ 10   // in Hz
+inline constexpr uint16_t CONTROL_SAMPLING_FREQ = 100;   // in Hz
+inline constexpr uint16_t TELEMETRY_SAMPLING_FREQ = 10;  // in Hz
 
-/** Device Handles **/
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 
 /** State Estimation **/
 
@@ -59,9 +59,11 @@ extern volatile recorder_status_e global_recorder_status;
 extern event_action_map_elem_t* event_action_map;
 
 #ifdef CATS_DEBUG
-static constexpr const char* code_version = FIRMWARE_VERSION "-dev";
+inline constexpr const char* code_version = FIRMWARE_VERSION "-dev";
 #else
-static constexpr const char* code_version = FIRMWARE_VERSION;
+inline constexpr const char* code_version = FIRMWARE_VERSION;
 #endif
-static constexpr const char* board_name = "CATS Vega";
+inline constexpr const char* board_name = "CATS Vega";
 extern char telemetry_code_version[20];
+
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

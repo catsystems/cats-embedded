@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "target.h"
+#include "target.hpp"
 
 #include "config/globals.hpp"
 #include "control/calibration.hpp"
@@ -25,7 +25,7 @@
 
 #include "util/task_util.hpp"
 
-#define MAX_NUM_SAME_VALUE 7
+constexpr uint8_t MAX_NUM_SAME_VALUE = 7;
 
 namespace task {
 
@@ -114,62 +114,61 @@ SI_data_t Preprocessing::GetSIData() const noexcept { return m_si_data; }
 
 void Preprocessing::AvgToSi() noexcept {
   float32_t counter = 0;
-#if NUM_IMU > 0
-  /* Reset SI data */
-  m_si_data.acc.x = 0;
-  m_si_data.acc.y = 0;
-  m_si_data.acc.z = 0;
-  m_si_data.gyro.x = 0;
-  m_si_data.gyro.y = 0;
-  m_si_data.gyro.z = 0;
+  if constexpr (NUM_IMU > 0) {
+    /* Reset SI data */
+    m_si_data.acc.x = 0;
+    m_si_data.acc.y = 0;
+    m_si_data.acc.z = 0;
+    m_si_data.gyro.x = 0;
+    m_si_data.gyro.y = 0;
+    m_si_data.gyro.z = 0;
 
-  /* Sum up all non-eliminated IMUs and transform to SI */
-  for (int i = 0; i < NUM_IMU; i++) {
-    if (m_sensor_elimination.faulty_imu[i] == 0) {
-      counter++;
-      m_si_data.acc.x += (float32_t)m_imu_data[i].acc.x * acc_info[i].conversion_to_SI;
-      m_si_data.acc.y += (float32_t)m_imu_data[i].acc.y * acc_info[i].conversion_to_SI;
-      m_si_data.acc.z += (float32_t)m_imu_data[i].acc.z * acc_info[i].conversion_to_SI;
-      m_si_data.gyro.x += (float32_t)m_imu_data[i].gyro.x * gyro_info[i].conversion_to_SI;
-      m_si_data.gyro.y += (float32_t)m_imu_data[i].gyro.y * gyro_info[i].conversion_to_SI;
-      m_si_data.gyro.z += (float32_t)m_imu_data[i].gyro.z * gyro_info[i].conversion_to_SI;
+    /* Sum up all non-eliminated IMUs and transform to SI */
+    for (int i = 0; i < NUM_IMU; i++) {
+      if (m_sensor_elimination.faulty_imu[i] == 0) {
+        counter++;
+        m_si_data.acc.x += static_cast<float32_t>(m_imu_data[i].acc.x) * acc_info[i].conversion_to_SI;
+        m_si_data.acc.y += static_cast<float32_t>(m_imu_data[i].acc.y) * acc_info[i].conversion_to_SI;
+        m_si_data.acc.z += static_cast<float32_t>(m_imu_data[i].acc.z) * acc_info[i].conversion_to_SI;
+        m_si_data.gyro.x += static_cast<float32_t>(m_imu_data[i].gyro.x) * gyro_info[i].conversion_to_SI;
+        m_si_data.gyro.y += static_cast<float32_t>(m_imu_data[i].gyro.y) * gyro_info[i].conversion_to_SI;
+        m_si_data.gyro.z += static_cast<float32_t>(m_imu_data[i].gyro.z) * gyro_info[i].conversion_to_SI;
+      }
+    }
+
+    /* average for SI data */
+    if (counter > 0) {
+      m_si_data.acc.x /= counter;
+      m_si_data.acc.y /= counter;
+      m_si_data.acc.z /= counter;
+      m_si_data.gyro.x /= counter;
+      m_si_data.gyro.y /= counter;
+      m_si_data.gyro.z /= counter;
+      clear_error(CATS_ERR_FILTER_ACC);
+    } else {
+      m_si_data.acc = m_si_data_old.acc;
+      m_si_data.gyro = m_si_data_old.gyro;
+      add_error(CATS_ERR_FILTER_ACC);
     }
   }
 
-  /* average for SI data */
-  if (counter > 0) {
-    m_si_data.acc.x /= counter;
-    m_si_data.acc.y /= counter;
-    m_si_data.acc.z /= counter;
-    m_si_data.gyro.x /= counter;
-    m_si_data.gyro.y /= counter;
-    m_si_data.gyro.z /= counter;
-    clear_error(CATS_ERR_FILTER_ACC);
-  } else {
-    m_si_data.acc = m_si_data_old.acc;
-    m_si_data.gyro = m_si_data_old.gyro;
-    add_error(CATS_ERR_FILTER_ACC);
-  }
-
-#endif
-
-#if NUM_BARO > 0
-  counter = 0;
-  m_si_data.pressure = 0;
-  for (int i = 0; i < NUM_BARO; i++) {
-    if (m_sensor_elimination.faulty_baro[i] == 0) {
-      counter++;
-      m_si_data.pressure += (float32_t)m_baro_data[i].pressure * baro_info[i].conversion_to_SI;
+  if constexpr (NUM_BARO > 0) {
+    counter = 0;
+    m_si_data.pressure = 0;
+    for (int i = 0; i < NUM_BARO; i++) {
+      if (m_sensor_elimination.faulty_baro[i] == 0) {
+        counter++;
+        m_si_data.pressure += static_cast<float32_t>(m_baro_data[i].pressure) * baro_info[i].conversion_to_SI;
+      }
+    }
+    if (counter > 0) {
+      m_si_data.pressure /= counter;
+      clear_error(CATS_ERR_FILTER_HEIGHT);
+    } else {
+      m_si_data.pressure = m_si_data_old.pressure;
+      add_error(CATS_ERR_FILTER_HEIGHT);
     }
   }
-  if (counter > 0) {
-    m_si_data.pressure /= counter;
-    clear_error(CATS_ERR_FILTER_HEIGHT);
-  } else {
-    m_si_data.pressure = m_si_data_old.pressure;
-    add_error(CATS_ERR_FILTER_HEIGHT);
-  }
-#endif
 }
 
 void Preprocessing::MedianFilter() noexcept {
@@ -213,11 +212,11 @@ void Preprocessing::CheckSensors() noexcept {
 
   /* IMU */
   for (uint8_t i = 0; i < NUM_IMU; i++) {
-    status = (cats_error_e)(CheckSensorBounds(i, &acc_info[i]) | CheckSensorFreezing(i, &acc_info[i]));
+    status = static_cast<cats_error_e>(CheckSensorBounds(i, &acc_info[i]) | CheckSensorFreezing(i, &acc_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       m_sensor_elimination.faulty_imu[i] = 0;
-      clear_error((cats_error_e)(CATS_ERR_IMU_0 << i));
+      clear_error(static_cast<cats_error_e>(CATS_ERR_IMU_0 << i));
     } else {
       add_error(status);
     }
@@ -225,11 +224,11 @@ void Preprocessing::CheckSensors() noexcept {
 
   /* Barometer */
   for (uint8_t i = 0; i < NUM_BARO; i++) {
-    status = (cats_error_e)(CheckSensorBounds(i, &baro_info[i]) | CheckSensorFreezing(i, &baro_info[i]));
+    status = static_cast<cats_error_e>(CheckSensorBounds(i, &baro_info[i]) | CheckSensorFreezing(i, &baro_info[i]));
     /* Check if accel is not faulty anymore */
     if (status == CATS_ERR_OK) {
       m_sensor_elimination.faulty_baro[i] = 0;
-      clear_error((cats_error_e)(CATS_ERR_BARO_0 << i));
+      clear_error(static_cast<cats_error_e>(CATS_ERR_BARO_0 << i));
     } else {
       add_error(status);
     }
@@ -241,17 +240,19 @@ cats_error_e Preprocessing::CheckSensorBounds(uint8_t index, const sens_info_t *
 
   switch (sens_info->sens_type) {
     case SensorType::kBaro:
-      if ((((float32_t)m_baro_data[index].pressure * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
-          (((float32_t)m_baro_data[index].pressure * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+      if (((static_cast<float32_t>(m_baro_data[index].pressure) * sens_info->conversion_to_SI) >
+           sens_info->upper_limit) ||
+          ((static_cast<float32_t>(m_baro_data[index].pressure) * sens_info->conversion_to_SI) <
+           sens_info->lower_limit)) {
         m_sensor_elimination.faulty_baro[index] = 1;
-        status = (cats_error_e)(CATS_ERR_BARO_0 << index);
+        status = static_cast<cats_error_e>(CATS_ERR_BARO_0 << index);
       }
       break;
     case SensorType::kAcc:
-      if ((((float32_t)m_imu_data[index].acc.x * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
-          (((float32_t)m_imu_data[index].acc.x * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
+      if (((static_cast<float32_t>(m_imu_data[index].acc.x) * sens_info->conversion_to_SI) > sens_info->upper_limit) ||
+          ((static_cast<float32_t>(m_imu_data[index].acc.x) * sens_info->conversion_to_SI) < sens_info->lower_limit)) {
         m_sensor_elimination.faulty_imu[index] = 1;
-        status = (cats_error_e)(CATS_ERR_IMU_0 << index);
+        status = static_cast<cats_error_e>(CATS_ERR_IMU_0 << index);
       }
       break;
     default:
@@ -270,7 +271,7 @@ cats_error_e Preprocessing::CheckSensorFreezing(uint8_t index, const sens_info_t
         m_sensor_elimination.freeze_counter_baro[index]++;
         if (m_sensor_elimination.freeze_counter_baro[index] > MAX_NUM_SAME_VALUE) {
           m_sensor_elimination.faulty_baro[index] = 1;
-          status = (cats_error_e)(CATS_ERR_BARO_0 << index);
+          status = static_cast<cats_error_e>(CATS_ERR_BARO_0 << index);
         }
       } else {
         m_sensor_elimination.last_value_baro[index] = m_baro_data[index].pressure;
@@ -282,7 +283,7 @@ cats_error_e Preprocessing::CheckSensorFreezing(uint8_t index, const sens_info_t
         m_sensor_elimination.freeze_counter_imu[index]++;
         if (m_sensor_elimination.freeze_counter_imu[index] > MAX_NUM_SAME_VALUE) {
           m_sensor_elimination.faulty_imu[index] = 1;
-          status = (cats_error_e)(CATS_ERR_IMU_0 << index);
+          status = static_cast<cats_error_e>(CATS_ERR_IMU_0 << index);
         }
       } else {
         m_sensor_elimination.last_value_imu[index] = m_imu_data[index].acc.x;

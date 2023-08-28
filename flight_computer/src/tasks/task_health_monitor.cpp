@@ -31,7 +31,7 @@
 #include "tasks/task_simulator.hpp"
 #include "tasks/task_usb_device.hpp"
 
-#include "target.h"
+#include "target.hpp"
 
 /** Private Constants **/
 
@@ -41,6 +41,7 @@ namespace task {
 
 static void init_usb();
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static bool cli_task_started = false;
 /** Exported Function Definitions **/
 
@@ -69,23 +70,23 @@ static bool cli_task_started = false;
     /* Get new FSM enum */
     bool fsm_updated = GetNewFsmEnum();
 
-    if (global_usb_detection == true && cli_task_started == false) {
+    if (global_usb_detection && !cli_task_started) {
       cli_task_started = true;
       Cli::Start();
     }
 
-    if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin) && usb_communication_complete == false) {
+    if ((HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin) > 0) && !usb_communication_complete) {
       init_usb();
     }
 
-    if (usb_device_initialized == false) {
-      if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
+    if (!usb_device_initialized) {
+      if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin) > 0) {
         usb_device_initialized = true;
       }
     }
     // Check battery level
-    battery_level_e level = battery_level();
-    bool level_changed = (old_level != level);
+    const battery_level_e level = battery_level();
+    const bool level_changed = (old_level != level);
 
     if ((level == BATTERY_CRIT) && level_changed) {
       clear_error(CATS_ERR_BAT_LOW);
@@ -149,13 +150,13 @@ static bool cli_task_started = false;
 void HealthMonitor::DeterminePyroCheck() {
   // Loop over all events
   for (int ev_idx = 0; ev_idx < NUM_EVENTS; ev_idx++) {
-    uint16_t nr_actions = cc_get_num_actions((cats_event_e)ev_idx);
+    const uint16_t nr_actions = cc_get_num_actions(static_cast<cats_event_e>(ev_idx));
     // If an action is mapped to the event
     if (nr_actions > 0) {
       // Loop over all actions
       for (uint16_t act_idx = 0; act_idx < nr_actions; act_idx++) {
         config_action_t action{};
-        if (cc_get_action((cats_event_e)ev_idx, act_idx, &action) == true) {
+        if (cc_get_action(static_cast<cats_event_e>(ev_idx), act_idx, &action)) {
           switch (action.action_idx) {
             case ACT_HIGH_CURRENT_ONE:
               m_check_pyro_1 = true;

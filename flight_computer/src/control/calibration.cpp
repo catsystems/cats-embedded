@@ -35,23 +35,31 @@ void calibrate_imu(const vf32_t *accel_data, calibration_data_t *calibration) {
     }
   }
 
-  /* Then get the angle (or here the cos(angle)) between vector and gravity for
-   * further use */
+  /* Then get the angle (or here the cos(angle)) between vector and gravity for further use */
   switch (calibration->axis) {
     case 0:
       calibration->angle = accel_data->x / GRAVITY;
-      if (fabsf(calibration->angle) < 0.3f) calibration->angle = 0.3f;
-      log_info("Calibration chose X Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
+      if (fabsf(calibration->angle) < 0.3F) {
+        calibration->angle = 0.3F;
+      }
+      log_info("Calibration chose X Axis with invcos(alpha)*1000 = %ld",
+               static_cast<int32_t>(1000 * calibration->angle));
       break;
     case 1:
       calibration->angle = accel_data->y / GRAVITY;
-      if (fabsf(calibration->angle) < 0.3f) calibration->angle = 0.3f;
-      log_info("Calibration chose Y Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
+      if (fabsf(calibration->angle) < 0.3F) {
+        calibration->angle = 0.3F;
+      }
+      log_info("Calibration chose Y Axis with invcos(alpha)*1000 = %ld",
+               static_cast<int32_t>(1000 * calibration->angle));
       break;
     case 2:
       calibration->angle = accel_data->z / GRAVITY;
-      if (fabsf(calibration->angle) < 0.3f) calibration->angle = 0.3f;
-      log_info("Calibration chose Z Axis with invcos(alpha)*1000 = %ld", (int32_t)(1000 * calibration->angle));
+      if (fabsf(calibration->angle) < 0.3F) {
+        calibration->angle = 0.3F;
+      }
+      log_info("Calibration chose Z Axis with invcos(alpha)*1000 = %ld",
+               static_cast<int32_t>(1000 * calibration->angle));
       break;
     default:
       break;
@@ -64,10 +72,9 @@ bool compute_gyro_calibration(const vf32_t *gyro_data, calibration_data_t *calib
   static vf32_t averaged_gyro_data = {.x = 0, .y = 0, .z = 0};
 
   /* compute gyro error */
-  vf32_t vector_error;
-  vector_error.x = fabsf(first_gyro_data.x - gyro_data->x);
-  vector_error.y = fabsf(first_gyro_data.y - gyro_data->y);
-  vector_error.z = fabsf(first_gyro_data.z - gyro_data->z);
+  const vf32_t vector_error{.x = fabsf(first_gyro_data.x - gyro_data->x),
+                            .y = fabsf(first_gyro_data.y - gyro_data->y),
+                            .z = fabsf(first_gyro_data.z - gyro_data->z)};
 
   /* check if the gyro error is inside the bounds
    * if yes, increase counter and compute averaged gyro data
@@ -76,9 +83,9 @@ bool compute_gyro_calibration(const vf32_t *gyro_data, calibration_data_t *calib
   if ((vector_error.x < GYRO_ALLOWED_ERROR_SI) && (vector_error.y < GYRO_ALLOWED_ERROR_SI) &&
       (vector_error.z < GYRO_ALLOWED_ERROR_SI)) {
     calibration_counter++;
-    averaged_gyro_data.x += gyro_data->x / (float)GYRO_NUM_SAME_VALUE;
-    averaged_gyro_data.y += gyro_data->y / (float)GYRO_NUM_SAME_VALUE;
-    averaged_gyro_data.z += gyro_data->z / (float)GYRO_NUM_SAME_VALUE;
+    averaged_gyro_data.x += gyro_data->x / static_cast<float>(GYRO_NUM_SAME_VALUE);
+    averaged_gyro_data.y += gyro_data->y / static_cast<float>(GYRO_NUM_SAME_VALUE);
+    averaged_gyro_data.z += gyro_data->z / static_cast<float>(GYRO_NUM_SAME_VALUE);
   } else {
     calibration_counter = 0;
     averaged_gyro_data.x = 0;
