@@ -23,6 +23,7 @@ namespace driver {
 void Buzzer::SetVolume(uint16_t volume) {
   const uint16_t pwm_depth = m_pwm_channel.GetPwmDepth();
   // 100% volume = 50% pwm
+  // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
   const uint32_t pwm_ticks = (pwm_depth / 200U) * volume;
   m_pwm_channel.SetDutyCycleTicks(pwm_ticks);
 }

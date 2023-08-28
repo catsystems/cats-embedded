@@ -16,8 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "target.h"
+#include "target.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 RTC_HandleTypeDef hrtc;
 
 ADC_HandleTypeDef hadc1;
@@ -50,13 +51,14 @@ sens_info_t baro_info[NUM_BARO] = {{.sens_type = SensorType::kBaro,
                                     .resolution = 1.0F}};
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /**
  * @brief RTC Initialization Function
  * @param None
  * @retval None
  */
-static void RTC_Init(void) {
+static void RTC_Init() {
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -73,7 +75,7 @@ static void RTC_Init(void) {
  * @brief System Clock Configuration
  * @retval None
  */
-void SystemClock_Config(void) {
+void SystemClock_Config() {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
@@ -120,7 +122,7 @@ void SystemClock_Config(void) {
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void) {
+static void MX_ADC1_Init() {
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
@@ -169,7 +171,7 @@ static void MX_ADC1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SPI1_Init(void) {
+static void MX_SPI1_Init() {
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -193,7 +195,7 @@ static void MX_SPI1_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SPI2_Init(void) {
+static void MX_SPI2_Init() {
   /* SPI2 parameter configuration*/
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
@@ -217,7 +219,7 @@ static void MX_SPI2_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_TIM3_Init(void) {
+static void MX_TIM3_Init() {
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -254,7 +256,7 @@ static void MX_TIM3_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_TIM4_Init(void) {
+static void MX_TIM4_Init() {
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -288,7 +290,7 @@ static void MX_TIM4_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_USART1_UART_Init(void) {
+static void MX_USART1_UART_Init() {
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -307,7 +309,7 @@ static void MX_USART1_UART_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_USART2_UART_Init(void) {
+static void MX_USART2_UART_Init() {
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -327,7 +329,7 @@ static void MX_USART2_UART_Init(void) {
  * @retval None
  */
 
-void MX_USB_OTG_FS_PCD_Init(void) {
+void MX_USB_OTG_FS_PCD_Init() {
   hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
   hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
   hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
@@ -346,7 +348,7 @@ void MX_USB_OTG_FS_PCD_Init(void) {
 /**
  * Enable DMA controller clock
  */
-static void MX_DMA_Init(void) {
+static void MX_DMA_Init() {
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
 
@@ -361,7 +363,7 @@ static void MX_DMA_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_GPIO_Init(void) {
+static void MX_GPIO_Init() {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
@@ -371,9 +373,11 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   HAL_GPIO_WritePin(GPIOC, LED1_Pin | LED2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   HAL_GPIO_WritePin(GPIOB, CS_BARO1_Pin | CS_IMU1_Pin | PYRO_EN_Pin | FLASH_CS_Pin | IO1_Pin | PYRO1_Pin | PYRO2_Pin,
                     GPIO_PIN_RESET);
 
@@ -386,6 +390,7 @@ static void MX_GPIO_Init(void) {
 
   /*Configure GPIO pins : CS_BARO1_Pin CS_IMU1_Pin PYRO_EN_Pin FLASH_CS_Pin
                            IO1_Pin PYRO1_Pin PYRO2_Pin */
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   GPIO_InitStruct.Pin = CS_BARO1_Pin | CS_IMU1_Pin | PYRO_EN_Pin | FLASH_CS_Pin | IO1_Pin | PYRO1_Pin | PYRO2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -409,7 +414,7 @@ static void MX_GPIO_Init(void) {
  * @brief  This function is executed in case of error occurrence.
  * @retval None
  */
-void Error_Handler(void) {
+void Error_Handler() {
   __disable_irq();
   while (true) {
   }
@@ -438,8 +443,5 @@ bool target_init() {
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  if (HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin)) {
-    return true;
-  }
-  return false;
+  return static_cast<bool>(HAL_GPIO_ReadPin(USB_DET_GPIO_Port, USB_DET_Pin));
 }

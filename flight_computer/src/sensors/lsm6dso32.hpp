@@ -18,12 +18,13 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstring>
-#include <vector>
 #include "drivers/gpio.hpp"
 #include "drivers/spi.hpp"
 #include "util/log.h"
+
+#include <cstdint>
+#include <cstring>
+#include <vector>
 
 namespace sensor {
 
@@ -106,7 +107,8 @@ class Lsm6dso32 {
    */
   void WriteRegister(const uint8_t reg, const uint8_t* data, const size_t length) {
     // Concatenate the register and the data
-    std::vector<uint8_t> concatenated;
+    // NOLINTNEXTLINE(cppcoreguidelines-init-variables) linter is confused
+    std::vector<uint8_t> concatenated{};
     concatenated.push_back(reg);
     concatenated.insert(concatenated.end(), data, data + length);
     // Transfer the data

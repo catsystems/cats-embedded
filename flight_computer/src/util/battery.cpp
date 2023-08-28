@@ -21,11 +21,12 @@
 
 #include <cmath>
 
-#define ADC_LINFIT_A 0.00826849f
-#define ADC_LINFIT_B 0.169868f
+constexpr float ADC_LINFIT_A = 0.00826849F;
+constexpr float ADC_LINFIT_B = 0.169868F;
 
-#define BATTERY_VOLTAGE_HYSTERESIS 0.2f
+constexpr float BATTERY_VOLTAGE_HYSTERESIS = 0.2F;
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static uint32_t cell_count = 1;
 
 /* Supported batteries and their voltages
@@ -43,6 +44,7 @@ const float32_t voltage_lookup[3][3] = {{3.2F, 3.4F, 4.3F},
 // clang-format on
 enum battery_level_index_e { BAT_IDX_CRIT = 0, BAT_IDX_LOW, BAT_IDX_OK };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static battery_type_e battery_type;
 
 /* Automatically check how many cells are connected */
@@ -52,7 +54,7 @@ void battery_monitor_init(battery_type_e type) {
     return;
   }
   uint32_t i = 1;
-  float32_t voltage = battery_voltage();
+  const float32_t voltage = battery_voltage();
   while ((static_cast<float32_t>(i) * voltage_lookup[battery_type][BAT_IDX_OK]) < voltage) {
     i++;
   }
@@ -81,7 +83,7 @@ float32_t battery_cell_voltage() { return battery_voltage() / static_cast<float3
 
 battery_level_e battery_level() {
   static battery_level_e level = BATTERY_OK;
-  float32_t voltage = battery_cell_voltage();
+  const float32_t voltage = battery_cell_voltage();
 
   /* Battery level can only go back up when voltage + hysteresis voltage is reached */
   switch (level) {

@@ -19,13 +19,17 @@
 
 #include "cli/cli_commands.hpp"
 
+#ifdef CATS_DEBUG
+#include "tasks/task_simulator.hpp"
+#endif
+
 #include "cli/cli.hpp"
 #include "config/cats_config.hpp"
 #include "config/globals.hpp"
 #include "drivers/w25q.hpp"
 #include "flash/lfs_custom.hpp"
 #include "flash/reader.hpp"
-#include "main.h"
+#include "main.hpp"
 #include "tasks/task_state_est.hpp"
 #include "util/actions.hpp"
 #include "util/battery.hpp"
@@ -33,11 +37,9 @@
 #include "util/log.h"
 
 #include <strings.h>
+
 #include <cstdlib>
 #include <cstring>
-#ifdef CATS_DEBUG
-#include "tasks/task_simulator.hpp"
-#endif
 
 /** CLI command function declarations **/
 static void cli_cmd_help(const char *cmd_name, char *args);
@@ -129,12 +131,13 @@ static void fill_buf(uint8_t *buf, size_t buf_sz);
 static void cli_cmd_help(const char *cmd_name, char *args) {
   bool any_matches = false;
 
+  // NOLINTNEXTLINE(modernize-loop-convert)
   for (uint32_t i = 0; i < ARRAYLEN(cmd_table); i++) {
     bool print_entry = false;
     if (is_empty(args)) {
       print_entry = true;
     } else {
-      if (strstr(cmd_table[i].name, args) || strstr(cmd_table[i].description, args)) {
+      if ((strstr(cmd_table[i].name, args) != nullptr) || (strstr(cmd_table[i].description, args) != nullptr)) {
         print_entry = true;
       }
     }
@@ -142,10 +145,10 @@ static void cli_cmd_help(const char *cmd_name, char *args) {
     if (print_entry) {
       any_matches = true;
       cli_print(cmd_table[i].name);
-      if (cmd_table[i].description) {
+      if (cmd_table[i].description != nullptr) {
         cli_printf(" - %s", cmd_table[i].description);
       }
-      if (cmd_table[i].args) {
+      if (cmd_table[i].args != nullptr) {
         cli_printf("\r\n\t%s", cmd_table[i].args);
       }
       cli_print_linefeed();
@@ -156,15 +159,15 @@ static void cli_cmd_help(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_reboot(const char *cmd_name, char *args) { NVIC_SystemReset(); }
+static void cli_cmd_reboot(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) { NVIC_SystemReset(); }
 
-static void cli_cmd_bl(const char *cmd_name, char *args) {
+static void cli_cmd_bl(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, BOOTLOADER_MAGIC_PATTERN);
   __disable_irq();
   NVIC_SystemReset();
 }
 
-static void cli_cmd_save(const char *cmd_name, char *args) {
+static void cli_cmd_save(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   if (!cc_save()) {
     cli_print_line("Saving unsuccessful, trying force save...");
     if (!cc_format_save()) {
@@ -176,11 +179,11 @@ static void cli_cmd_save(const char *cmd_name, char *args) {
 }
 
 static void cli_cmd_get(const char *cmd_name, char *args) {
-  const cli_value_t *val;
+  const cli_value_t *val{nullptr};
   int matched_commands = 0;
 
   for (uint32_t i = 0; i < value_table_entry_count; i++) {
-    if (strstr(value_table[i].name, args)) {
+    if (strstr(value_table[i].name, args) != nullptr) {
       val = &value_table[i];
       if (matched_commands > 0) {
         cli_print_linefeed();
@@ -195,11 +198,12 @@ static void cli_cmd_get(const char *cmd_name, char *args) {
     }
   }
 
-  if (!matched_commands) {
+  if (matched_commands == 0) {
     cli_print_error_linef(cmd_name, "INVALID NAME");
   }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void cli_cmd_set(const char *cmd_name, char *args) {
   const uint32_t arg_len = strlen(args);
   char *eqptr = nullptr;
@@ -208,9 +212,9 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
     cli_print_line("Current settings: ");
 
     // when arg_len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-    print_cats_config(cmd_name, &global_cats_config, arg_len);
+    print_cats_config(cmd_name, &global_cats_config, arg_len > 0);
 
-  } else if ((eqptr = strstr(args, "=")) != nullptr) {
+  } else if ((eqptr = strstr(args, "=")) != nullptr) {  // NOLINT(bugprone-assignment-in-if-condition)
     // has equals
 
     const uint8_t variable_name_length = get_word_length(args, eqptr);
@@ -238,7 +242,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
             value_changed = true;
           }
         } else {
-          int value = atoi(eqptr);
+          const int value = atoi(eqptr);
 
           int min = 0;
           int max = 0;
@@ -285,13 +289,14 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
           // process substring starting at valPtr
           // note: no need to copy substrings for atoi()
           //       it stops at the first character that cannot be converted...
+          // NOLINTBEGIN(google-readability-casting)
           switch (val->type & VALUE_TYPE_MASK) {
             default:
             case VAR_UINT8: {
               // fetch data pointer
               uint8_t *data = (uint8_t *)var_ptr + i;
               // store value
-              *data = (uint8_t)atoi((const char *)valPtr);
+              *data = static_cast<uint8_t>(atoi(static_cast<const char *>(valPtr)));
             }
 
             break;
@@ -299,7 +304,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
               // fetch data pointer
               int8_t *data = (int8_t *)var_ptr + i;
               // store value
-              *data = (int8_t)atoi((const char *)valPtr);
+              *data = static_cast<int8_t>(atoi(static_cast<const char *>(valPtr)));
             }
 
             break;
@@ -307,7 +312,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
               // fetch data pointer
               uint16_t *data = (uint16_t *)var_ptr + i;
               // store value
-              *data = (uint16_t)atoi((const char *)valPtr);
+              *data = static_cast<uint16_t>(atoi(static_cast<const char *>(valPtr)));
             }
 
             break;
@@ -315,7 +320,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
               // fetch data pointer
               int16_t *data = (int16_t *)var_ptr + i;
               // store value
-              *data = (int16_t)atoi((const char *)valPtr);
+              *data = static_cast<int16_t>(atoi(static_cast<const char *>(valPtr)));
             }
 
             break;
@@ -323,11 +328,12 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
               // fetch data pointer
               uint32_t *data = (uint32_t *)var_ptr + i;
               // store value
-              *data = (uint32_t)strtoul((const char *)valPtr, nullptr, 10);
+              *data = static_cast<uint32_t>(strtoul(static_cast<const char *>(valPtr), nullptr, 10));
             }
 
             break;
           }
+          // NOLINTEND(google-readability-casting)
 
           // find next comma (or end of string)
           valPtr = strchr(valPtr, ',') + 1;
@@ -342,7 +348,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
       case MODE_STRING: {
         char *val_ptr = eqptr;
         val_ptr = skip_space(val_ptr);
-        char *var_ptr = (char *)get_cats_config_member_ptr(&global_cats_config, val);
+        char *var_ptr = static_cast<char *>(get_cats_config_member_ptr(&global_cats_config, val));
         const unsigned int len = strlen(val_ptr);
         const uint8_t min = val->config.string.min_length;
         const uint8_t max = val->config.string.max_length;
@@ -351,7 +357,7 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
 
         if (updatable && len > 0 && len <= max) {
           memset(var_ptr, 0, max);
-          if (len >= min && strncmp(val_ptr, emptyName, len)) {
+          if ((len >= min) && (strncmp(val_ptr, emptyName, len) != 0)) {
             strncpy(var_ptr, val_ptr, len);
           }
           value_changed = true;
@@ -380,15 +386,15 @@ static void cli_cmd_set(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_config(const char *cmd_name, char *args) {
+static void cli_cmd_config(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   print_control_config();
   print_action_config();
   print_timer_config();
 }
 
-static void cli_cmd_defaults(const char *cmd_name, char *args) {
+static void cli_cmd_defaults(const char *cmd_name [[maybe_unused]], char *args) {
   bool use_default_outputs = true;
-  if (!strcmp(args, "--no-outputs")) {
+  if (strcmp(args, "--no-outputs") == 0) {
     use_default_outputs = false;
   }
   cc_defaults(use_default_outputs, true);
@@ -399,25 +405,26 @@ static void cli_cmd_dump(const char *cmd_name, char *args) {
   const uint32_t len = strlen(args);
   cli_print_linef("#Configuration dump");
 
-  print_cats_config(cmd_name, &global_cats_config, len);
+  print_cats_config(cmd_name, &global_cats_config, len > 0);
 
   cli_printf("#End of configuration dump");
 }
 
-static void cli_cmd_status(const char *cmd_name, char *args) {
+static void cli_cmd_status(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_printf("System time: %lu ticks\n", osKernelGetTickCount());
   auto new_enum = static_cast<flight_fsm_e>(osEventFlagsWait(fsm_flag_id, 0xFF, osFlagsNoClear, 0));
   if (new_enum > TOUCHDOWN || new_enum < CALIBRATING) {
     new_enum = INVALID;
   }
   cli_printf("State:       %s\n", GetStr(new_enum, fsm_map));
-  cli_printf("Voltage:     %.2fV\n", (double)battery_voltage());
-  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2", (double)task::global_state_estimation->GetEstimationOutput().height,
-             (double)task::global_state_estimation->GetEstimationOutput().velocity,
-             (double)task::global_state_estimation->GetEstimationOutput().acceleration);
+  cli_printf("Voltage:     %.2fV\n", static_cast<double>(battery_voltage()));
+  cli_printf("h: %.2fm, v: %.2fm/s, a: %.2fm/s^2",
+             static_cast<double>(task::global_state_estimation->GetEstimationOutput().height),
+             static_cast<double>(task::global_state_estimation->GetEstimationOutput().velocity),
+             static_cast<double>(task::global_state_estimation->GetEstimationOutput().acceleration));
 
 #ifdef CATS_DEBUG
-  if (!strcmp(args, "--heap")) {
+  if (strcmp(args, "--heap") == 0) {
     HeapStats_t heap_stats = {};
     vPortGetHeapStats(&heap_stats);
     cli_print_linef("\nHeap stats");
@@ -433,24 +440,24 @@ static void cli_cmd_status(const char *cmd_name, char *args) {
 #endif
 }
 
-static void cli_cmd_version(const char *cmd_name, char *args) {
+static void cli_cmd_version(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_printf("Board: %s\n", board_name);
   cli_printf("Code version: %s\n", code_version);
   cli_printf("Telemetry Code version: %s\n", telemetry_code_version);
 }
 
-static void cli_cmd_log_enable(const char *cmd_name, char *args) { log_enable(); }
+static void cli_cmd_log_enable(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) { log_enable(); }
 
-static void cli_cmd_ls(const char *cmd_name, char *args) {
+static void cli_cmd_ls(const char *cmd_name [[maybe_unused]], char *args) {
   if (args == nullptr) {
     lfs_ls(cwd);
   } else {
-    uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+    const uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
     if (full_path_len > LFS_NAME_MAX) {
       cli_print_line("File path too long!");
       return;
     }
-    char *full_path = (char *)(pvPortMalloc(full_path_len + 1));
+    char *full_path = static_cast<char *>(pvPortMalloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
@@ -459,7 +466,7 @@ static void cli_cmd_ls(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_cd(const char *cmd_name, char *args) {
+static void cli_cmd_cd(const char *cmd_name [[maybe_unused]], char *args) {
   /* TODO - check if a directory actually exists */
   if (args == nullptr || strcmp(args, "/") == 0) {
     strncpy(cwd, "/", sizeof(cwd));
@@ -467,18 +474,18 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
     /* Return one lvl back by clearing everything after the last path separator. */
     const char *last_path_sep = strrchr(cwd, '/');
     if (last_path_sep != nullptr) {
-      uint32_t last_path_sep_loc = last_path_sep - cwd;
+      const uint32_t last_path_sep_loc = last_path_sep - cwd;
       cwd[last_path_sep_loc + 1] = '\0';
     }
   } else if (strcmp(args, ".") != 0) {
     if (args[0] == '/') {
       /* absolute path */
-      uint32_t full_path_len = strlen(args);
+      const uint32_t full_path_len = strlen(args);
       if (full_path_len > LFS_NAME_MAX) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = (char *)(pvPortMalloc(full_path_len + 1));
+      char *tmp_path = static_cast<char *>(pvPortMalloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
@@ -489,12 +496,12 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
       vPortFree(tmp_path);
     } else {
       /* relative path */
-      uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+      const uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
       if (full_path_len > LFS_NAME_MAX) {
         cli_print_line("Path too long!");
         return;
       }
-      char *tmp_path = (char *)(pvPortMalloc(full_path_len + 1));
+      char *tmp_path = static_cast<char *>(pvPortMalloc(full_path_len + 1));
       strcpy(tmp_path, args);
       if (lfs_obj_type(tmp_path) != LFS_TYPE_DIR) {
         cli_print_linef("Cannot go to '%s': not a directory!", tmp_path);
@@ -507,16 +514,16 @@ static void cli_cmd_cd(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_rm(const char *cmd_name, char *args) {
+static void cli_cmd_rm(const char *cmd_name [[maybe_unused]], char *args) {
   if (args != nullptr) {
     /* +1 for the path separator (/) */
-    uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
+    const uint32_t full_path_len = strlen(cwd) + 1 + strlen(args);
     if (full_path_len > LFS_NAME_MAX) {
       cli_print_line("File path too long!");
       return;
     }
     /* +1 for the null terminator */
-    char *full_path = (char *)(pvPortMalloc(full_path_len + 1));
+    char *full_path = static_cast<char *>(pvPortMalloc(full_path_len + 1));
     strcpy(full_path, cwd);
     strcat(full_path, "/");
     strcat(full_path, args);
@@ -527,7 +534,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
       return;
     }
 
-    int32_t rm_err = lfs_remove(&lfs, full_path);
+    const int32_t rm_err = lfs_remove(&lfs, full_path);
     if (rm_err < 0) {
       cli_print_linef("Removal of file '%s' failed with %ld", full_path, rm_err);
     }
@@ -538,7 +545,7 @@ static void cli_cmd_rm(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_rec_info(const char *cmd_name, char *args) {
+static void cli_cmd_rec_info(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   const lfs_ssize_t curr_sz_blocks = lfs_fs_size(&lfs);
   const int32_t num_flights = lfs_cnt("/flights", LFS_TYPE_REG);
   const int32_t num_stats = lfs_cnt("/stats", LFS_TYPE_REG);
@@ -551,7 +558,8 @@ static void cli_cmd_rec_info(const char *cmd_name, char *args) {
   const lfs_size_t block_size_kb = get_lfs_cfg()->block_size / 1024;
   const lfs_size_t curr_sz_kb = curr_sz_blocks * block_size_kb;
   const lfs_size_t total_sz_kb = block_size_kb * get_lfs_cfg()->block_count;
-  const double percentage_used = (double)curr_sz_kb / total_sz_kb * 100;
+  const double percentage_used =
+      static_cast<double>(curr_sz_kb) / static_cast<double>(static_cast<lfs_ssize_t>(total_sz_kb) * 100);
   cli_print_linef("Space:\n  Total: %lu KB\n   Used: %lu KB (%.2f%%)\n   Free: %lu KB (%.2f%%)", total_sz_kb,
                   curr_sz_kb, percentage_used, total_sz_kb - curr_sz_kb, 100 - percentage_used);
 
@@ -599,11 +607,11 @@ static int32_t get_flight_idx(const char *log_idx_arg) {
     return -1;
   }
 
-  return flight_idx;
+  return static_cast<int32_t>(flight_idx);
 }
 
-static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
-  int32_t flight_idx_or_err = get_flight_idx(args);
+static void cli_cmd_dump_flight(const char *cmd_name [[maybe_unused]], char *args) {
+  const int32_t flight_idx_or_err = get_flight_idx(args);
 
   if (flight_idx_or_err > 0) {
     cli_print_linefeed();
@@ -612,10 +620,10 @@ static void cli_cmd_dump_flight(const char *cmd_name, char *args) {
 }
 
 /* flight_parse <flight_idx> [--filter <RECORDER TYPE>...] */
-static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
+static void cli_cmd_parse_flight(const char *cmd_name [[maybe_unused]], char *args) {
   char *ptr = strtok(args, " ");
 
-  int32_t flight_idx_or_err = get_flight_idx(ptr);
+  const int32_t flight_idx_or_err = get_flight_idx(ptr);
   auto filter_mask = static_cast<rec_entry_type_e>(0);
 
   if (flight_idx_or_err < 0) {
@@ -625,33 +633,53 @@ static void cli_cmd_parse_flight(const char *cmd_name, char *args) {
   /* Read filter command */
   ptr = strtok(nullptr, " ");
   if (ptr != nullptr) {
-    if (!strcmp(ptr, "--filter")) {
+    if (strcmp(ptr, "--filter") == 0) {
       /*Read filter types */
       while (ptr != nullptr) {
-        if (!strcmp(ptr, "IMU")) filter_mask = (rec_entry_type_e)(filter_mask | IMU);
-        if (!strcmp(ptr, "BARO")) filter_mask = (rec_entry_type_e)(filter_mask | BARO);
-        if (!strcmp(ptr, "FLIGHT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_INFO);
-        if (!strcmp(ptr, "ORIENTATION_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ORIENTATION_INFO);
-        if (!strcmp(ptr, "FILTERED_DATA_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | FILTERED_DATA_INFO);
-        if (!strcmp(ptr, "FLIGHT_STATE")) filter_mask = (rec_entry_type_e)(filter_mask | FLIGHT_STATE);
-        if (!strcmp(ptr, "EVENT_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | EVENT_INFO);
-        if (!strcmp(ptr, "ERROR_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | ERROR_INFO);
-        if (!strcmp(ptr, "GNSS_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | GNSS_INFO);
-        if (!strcmp(ptr, "VOLTAGE_INFO")) filter_mask = (rec_entry_type_e)(filter_mask | VOLTAGE_INFO);
+        if (strcmp(ptr, "IMU") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | IMU);
+        }
+        if (strcmp(ptr, "BARO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | BARO);
+        }
+        if (strcmp(ptr, "FLIGHT_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | FLIGHT_INFO);
+        }
+        if (strcmp(ptr, "ORIENTATION_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | ORIENTATION_INFO);
+        }
+        if (strcmp(ptr, "FILTERED_DATA_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | FILTERED_DATA_INFO);
+        }
+        if (strcmp(ptr, "FLIGHT_STATE") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | FLIGHT_STATE);
+        }
+        if (strcmp(ptr, "EVENT_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | EVENT_INFO);
+        }
+        if (strcmp(ptr, "ERROR_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | ERROR_INFO);
+        }
+        if (strcmp(ptr, "GNSS_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | GNSS_INFO);
+        }
+        if (strcmp(ptr, "VOLTAGE_INFO") == 0) {
+          filter_mask = static_cast<rec_entry_type_e>(filter_mask | VOLTAGE_INFO);
+        }
         ptr = strtok(nullptr, " ");
       }
     } else {
       cli_print_linef("\nBad option: %s!", ptr);
     }
   } else {
-    filter_mask = (rec_entry_type_e)(UINT32_MAX);
+    filter_mask = static_cast<rec_entry_type_e>(UINT32_MAX);
   }
 
   reader::parse_recording(flight_idx_or_err, filter_mask);
 }
 
-static void cli_cmd_print_stats(const char *cmd_name, char *args) {
-  int32_t flight_idx_or_err = get_flight_idx(args);
+static void cli_cmd_print_stats(const char *cmd_name [[maybe_unused]], char *args) {
+  const int32_t flight_idx_or_err = get_flight_idx(args);
 
   if (flight_idx_or_err > 0) {
     cli_print_linefeed();
@@ -659,7 +687,7 @@ static void cli_cmd_print_stats(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
+static void cli_cmd_lfs_format(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_print_line("\nTrying LFS format");
   lfs_format(&lfs, get_lfs_cfg());
   const int err = lfs_mount(&lfs, get_lfs_cfg());
@@ -677,7 +705,7 @@ static void cli_cmd_lfs_format(const char *cmd_name, char *args) {
   }
 }
 
-static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
+static void cli_cmd_erase_flash(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_print_line("\nErasing the flash, this might take a while...");
   w25q_chip_erase();
   cli_print_line("Flash erased!");
@@ -706,28 +734,29 @@ static void cli_cmd_erase_flash(const char *cmd_name, char *args) {
   strncpy(cwd, "/", sizeof(cwd));
 }
 
-static void cli_cmd_flash_write(const char *cmd_name, char *args) {
+static void cli_cmd_flash_write(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_print_line("\nSetting recorder state to REC_WRITE_TO_FLASH");
   set_recorder_state(REC_WRITE_TO_FLASH);
 }
 
-static void cli_cmd_flash_stop(const char *cmd_name, char *args) {
+static void cli_cmd_flash_stop(const char *cmd_name [[maybe_unused]], char *args [[maybe_unused]]) {
   cli_print_line("\nSetting recorder state to REC_FILL_QUEUE");
   set_recorder_state(REC_FILL_QUEUE);
 }
 
-static void cli_cmd_flash_test(const char *cmd_name, char *args) {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+static void cli_cmd_flash_test(const char *cmd_name [[maybe_unused]], char *args) {
   uint8_t write_buf[256] = {};
   uint8_t read_buf[256] = {};
   fill_buf(write_buf, 256);
   // w25q_chip_erase();
-  if (!strcmp(args, "full")) {
+  if (strcmp(args, "full") == 0) {
     cli_print_line("\nStep 1: Erasing the chip sector by sector...");
     for (uint32_t i = 0; i < w25q.sector_count; ++i) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
       }
-      w25q_status_e sector_erase_status = w25q_sector_erase(i);
+      const w25q_status_e sector_erase_status = w25q_sector_erase(i);
       if (sector_erase_status != W25Q_OK) {
         cli_print_linef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
         osDelay(5000);
@@ -739,7 +768,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu pages written...", i, w25q.page_count);
       }
-      w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
+      const w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
       if (write_status != W25Q_OK) {
         cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
         osDelay(5000);
@@ -752,7 +781,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu pages read...", i, w25q.page_count);
       }
-      w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
+      const w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
       if (read_status != W25Q_OK) {
         cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
         osDelay(1);
@@ -768,7 +797,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
       if (i % 100 == 0) {
         cli_print_linef("%lu / %lu sectors erased...", i, w25q.sector_count);
       }
-      w25q_status_e sector_erase_status = w25q_sector_erase(i);
+      const w25q_status_e sector_erase_status = w25q_sector_erase(i);
       if (sector_erase_status != W25Q_OK) {
         cli_print_linef("Sector erase error encountered at sector %lu; status %d", i, sector_erase_status);
         osDelay(5000);
@@ -776,7 +805,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
     }
   } else {
     char *endptr = nullptr;
-    uint32_t sector_idx = strtoul(args, &endptr, 10);
+    const uint32_t sector_idx = strtoul(args, &endptr, 10);
     if (args != endptr) {
       if (sector_idx >= w25q.sector_count) {
         cli_print_linef("Sector %lu not found!", sector_idx);
@@ -798,7 +827,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
         if (i % 4 == 0) {
           cli_print_linef("%lu / %lu pages written...", i - start_page_idx, pages_per_sector);
         }
-        w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
+        const w25q_status_e write_status = w25qxx_write_page(write_buf, i, 0, 256);
         if (write_status != W25Q_OK) {
           cli_print_linef("Write error encountered at page %lu; status %d", i, write_status);
           osDelay(5000);
@@ -811,7 +840,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
         if (i % 4 == 0) {
           cli_print_linef("%lu / %lu pages read...", i - start_page_idx, pages_per_sector);
         }
-        w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
+        const w25q_status_e read_status = w25qxx_read_page(read_buf, i, 0, 256);
         if (read_status != W25Q_OK) {
           cli_print_linef("Read error encountered at page %lu; status %d", i, read_status);
           osDelay(1);
@@ -834,7 +863,7 @@ static void cli_cmd_flash_test(const char *cmd_name, char *args) {
 }
 
 #ifdef CATS_DEBUG
-static void cli_cmd_start_simulation(const char *cmd_name, char *args) { start_simulation(args); }
+static void cli_cmd_start_simulation(const char *cmd_name [[maybe_unused]], char *args) { start_simulation(args); }
 #endif
 
 /**  Helper function definitions **/
@@ -851,7 +880,7 @@ static void print_action_config() {
   const EnumToStrMap &p_action_table = lookup_tables[TABLE_ACTIONS];
 
   cli_printf("\n * ACTION CONFIGURATION *\n");
-  config_action_t action;
+  config_action_t action{};
   for (int i = 0; i < NUM_EVENTS; i++) {
     const auto ev = static_cast<cats_event_e>(i);
     int nr_actions = cc_get_num_actions(ev);
@@ -882,6 +911,10 @@ static void print_timer_config() {
   }
 }
 
+// TODO: The casts in this function can be fixed with:
+// *(reinterpret_cast<uint8_t*>(const_cast<void*>(ptr))) = static_cast<uint8_t>(value);
+// But it should be tested.
+// NOLINTBEGIN(google-readability-casting)
 static void cli_set_var(const cli_value_t *var, const uint32_t value) {
   const void *ptr = get_cats_config_member_ptr(&global_cats_config, var);
 
@@ -891,8 +924,8 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
   if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
     switch (var->type & VALUE_TYPE_MASK) {
       case VAR_UINT8:
-        mask = (1 << var->config.bitpos) & 0xff;
-        if (value) {
+        mask = (1U << var->config.bitpos) & 0xffU;
+        if (value > 0) {
           work_value = *(uint8_t *)ptr | mask;
         } else {
           work_value = *(uint8_t *)ptr & ~mask;
@@ -901,8 +934,8 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
         break;
 
       case VAR_UINT16:
-        mask = (1 << var->config.bitpos) & 0xffff;
-        if (value) {
+        mask = (1U << var->config.bitpos) & 0xffffU;
+        if (value > 0) {
           work_value = *(uint16_t *)ptr | mask;
         } else {
           work_value = *(uint16_t *)ptr & ~mask;
@@ -911,8 +944,8 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
         break;
 
       case VAR_UINT32:
-        mask = 1 << var->config.bitpos;
-        if (value) {
+        mask = 1U << var->config.bitpos;
+        if (value > 0) {
           work_value = *(uint32_t *)ptr | mask;
         } else {
           work_value = *(uint32_t *)ptr & ~mask;
@@ -927,6 +960,7 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
         break;
 
       case VAR_INT8:
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions)
         *(int8_t *)ptr = value;
         break;
 
@@ -935,6 +969,7 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
         break;
 
       case VAR_INT16:
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions)
         *(int16_t *)ptr = value;
         break;
 
@@ -944,6 +979,7 @@ static void cli_set_var(const cli_value_t *var, const uint32_t value) {
     }
   }
 }
+// NOLINTEND(google-readability-casting)
 
 static void fill_buf(uint8_t *buf, size_t buf_sz) {
   for (uint32_t i = 0; i < buf_sz / 2; ++i) {

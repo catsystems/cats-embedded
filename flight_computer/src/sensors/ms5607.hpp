@@ -18,10 +18,11 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
 #include "drivers/gpio.hpp"
 #include "drivers/spi.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace sensor {
 
@@ -38,10 +39,7 @@ class Ms5607 {
    * @param spi reference the the SPI interface @injected
    * @param cs reference the the chip select output pin @injected
    */
-  Ms5607(driver::Spi &spi, driver::OutputPin &cs)
-      : m_spi{spi}, m_cs{cs}, m_last_request{Request::kPressure}, m_pressure{}, m_temperature{}, m_coefficients{} {
-    m_cs.SetHigh();
-  }
+  Ms5607(driver::Spi &spi, driver::OutputPin &cs) : m_spi{spi}, m_cs{cs} { m_cs.SetHigh(); }
 
   /** Initialize the sensor
    *
@@ -59,6 +57,7 @@ class Ms5607 {
     }
     // Check if we received invalid data
     if ((m_coefficients[0] == 0U) || (m_coefficients[0] == UINT16_MAX)) {
+      // NOLINTNEXTLINE(readability-simplify-boolean-expr)
       return false;
     }
     return true;
@@ -93,10 +92,11 @@ class Ms5607 {
   void GetMeasurement(int32_t &pressure, int32_t &temperature) {
     const uint32_t d1 = (static_cast<uint32_t>(m_pressure[0]) << 16U) + (static_cast<uint32_t>(m_pressure[1]) << 8U) +
                         static_cast<uint32_t>(m_pressure[2]);
-    const int32_t d2 =
+    const auto d2 =
         static_cast<int32_t>((static_cast<uint32_t>(m_temperature[0]) << 16U) +
                              (static_cast<uint32_t>(m_temperature[1]) << 8U) + static_cast<uint32_t>(m_temperature[2]));
 
+    // NOLINTBEGIN(hicpp-signed-bitwise)
     // Calculate compensated temperature
     const int64_t dT = d2 - static_cast<int32_t>(static_cast<uint32_t>(m_coefficients[4]) << 8U);
     temperature = static_cast<int32_t>(2000) + ((dT * static_cast<int64_t>(m_coefficients[5])) >> 23U);
@@ -106,8 +106,9 @@ class Ms5607 {
                         (static_cast<int64_t>(m_coefficients[3] * static_cast<int64_t>(dT)) >> 6U);
     const int64_t sens = (static_cast<int64_t>(m_coefficients[0]) << 16U) +
                          (static_cast<int64_t>(m_coefficients[2] * static_cast<int64_t>(dT)) >> 7U);
+    // NOLINTEND(hicpp-signed-bitwise)
 
-    pressure = ((((d1 * sens) >> 21U) - off) >> 15U);
+    pressure = static_cast<int32_t>((((d1 * sens) >> 21U) - off) >> 15U);
   }
 
  private:
@@ -159,13 +160,13 @@ class Ms5607 {
   /// Reference to the chip select pin
   driver::OutputPin &m_cs;
   /// The last measurement request
-  Request m_last_request;
+  Request m_last_request{Request::kPressure};
   /// The raw pressure data
-  uint8_t m_pressure[3];
+  uint8_t m_pressure[3]{};
   /// The raw temperature data
-  uint8_t m_temperature[3];
+  uint8_t m_temperature[3]{};
   /// The barometer calibration coefficients
-  uint16_t m_coefficients[6];
+  uint16_t m_coefficients[6]{};
 };
 
 }  // namespace sensor

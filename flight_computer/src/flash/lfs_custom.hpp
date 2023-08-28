@@ -20,9 +20,6 @@
 
 #include "lfs.h"
 
-/* TODO: Wrap lfs functions where you always pass this lfs variable instead of making it visible globally */
-extern lfs_t lfs;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,11 +28,16 @@ const struct lfs_config *get_lfs_cfg();
 }
 #endif
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+/* TODO: Wrap lfs functions where you always pass this lfs variable instead of making it visible globally */
+extern lfs_t lfs;
+
 extern lfs_file_t fc_file;
 
 extern char cwd[LFS_NAME_MAX];
 
 extern uint32_t flight_counter;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /**
  * List the contents of the directory.

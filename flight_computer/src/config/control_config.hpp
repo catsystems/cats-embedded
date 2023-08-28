@@ -18,11 +18,13 @@
 
 #pragma once
 
-#define USE_MEDIAN_FILTER
-#define MEDIAN_FILTER_SIZE 9
+#include <cstdint>
 
-static const float P_INITIAL = 101250.0f;                   // hPa
-static const float GRAVITY = 9.81f;                         // m/s^2
-static const float TEMPERATURE_0 = 15.0f;                   // °C
-static const float BARO_LIFTOFF_MOV_AVG_SIZE = 500.0f;      // samples -> 5 seconds
-static const float BARO_LIFTOFF_FAST_MOV_AVG_SIZE = 10.0f;  // samples -> 5 seconds
+#define USE_MEDIAN_FILTER
+inline constexpr uint8_t MEDIAN_FILTER_SIZE = 9;
+
+inline constexpr float P_INITIAL = 101250.0F;                   // hPa
+inline constexpr float GRAVITY = 9.81F;                         // m/s^2
+inline constexpr float TEMPERATURE_0 = 15.0F;                   // °C
+inline constexpr float BARO_LIFTOFF_MOV_AVG_SIZE = 500.0F;      // samples -> 5 seconds
+inline constexpr float BARO_LIFTOFF_FAST_MOV_AVG_SIZE = 10.0F;  // samples -> 5 seconds

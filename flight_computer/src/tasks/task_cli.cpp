@@ -25,6 +25,7 @@
 
 namespace task {
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[noreturn]] void Cli::Run() noexcept {
   log_raw("USB config started");
   log_raw("CATS is now ready to receive commands...");

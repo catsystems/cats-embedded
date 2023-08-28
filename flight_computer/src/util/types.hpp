@@ -18,18 +18,20 @@
 
 #pragma once
 
-#include <cstdint>
-#include "target.h"
-
-#include "arm_math.h"
-#include "cmsis_os2.h"
 #include "config/control_config.hpp"
 #include "util/actions.hpp"
 
-/** DEFINES **/
+#include "target.hpp"
 
-#define NUM_EVENTS 9
-#define NUM_TIMERS 4
+#include "arm_math.h"
+#include "cmsis_os2.h"
+
+#include <cstdint>
+
+/** CONSTANTS **/
+
+inline constexpr uint8_t NUM_EVENTS = 9;
+inline constexpr uint8_t NUM_TIMERS = 4;
 
 /** BASIC TYPES **/
 
@@ -173,9 +175,9 @@ struct config_telemetry_t {
   /* +1 for null terminator */
   char link_phrase[kMaxConnPhraseChars + 1]{};
   char test_phrase[kMaxConnPhraseChars + 1]{};
-  uint8_t power_level;
-  bool enable_telemetry;
-  adaptive_power_e adaptive_power;
+  uint8_t power_level{0};
+  bool enable_telemetry{false};
+  adaptive_power_e adaptive_power{OFF};
 };
 
 struct peripheral_act_t {
@@ -222,10 +224,3 @@ struct cats_timer_t {
 };
 
 enum battery_type_e : uint8_t { LI_ION = 0, LI_PO, ALKALINE };
-
-/** CONVERSION FUNCTIONS **/
-
-inline uint16_t uint8_to_uint16(uint8_t src_high, uint8_t src_low) { return (src_high << 8 | src_low); }
-
-/* TODO: is this really the same? It's taken from the macros.. */
-inline int16_t uint8_to_int16(uint8_t src_high, uint8_t src_low) { return (int16_t)uint8_to_uint16(src_high, src_low); }

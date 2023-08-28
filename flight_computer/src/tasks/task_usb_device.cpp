@@ -22,6 +22,7 @@
 
 namespace task {
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[noreturn]] void UsbDevice::Run() noexcept {
   tud_init(0);
   while (true) {

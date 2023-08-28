@@ -26,15 +26,15 @@
  * Hence, the noise matrices are changed over time. At liftoff, the offset is large and close to apogee
  * it is close to zero. The noise matrices here are therefore not agreeing to the data analysis. */
 // Tuned by simulations
-#define STD_NOISE_BARO 900.0f
+inline constexpr float STD_NOISE_BARO = 900.0F;
 
 // From data analysis: 2.6f m - but in practice this value makes the barometer too trustworthy
-#define STD_NOISE_BARO_INITIAL 9.0f
+inline constexpr float STD_NOISE_BARO_INITIAL = 9.0F;
 
 // From data analysis: 0.004f m/s^2
-#define STD_NOISE_IMU 0.004f
+inline constexpr float STD_NOISE_IMU = 0.004F;
 
-#define STD_NOISE_OFFSET 0.000001f
+inline constexpr float STD_NOISE_OFFSET = 0.000001F;
 
 void init_filter_struct(kalman_filter_t *filter);
 

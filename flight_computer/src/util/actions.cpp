@@ -22,10 +22,12 @@
 #include "config/globals.hpp"
 #include "drivers/servo.hpp"
 #include "flash/lfs_custom.hpp"
-#include "target.h"
+#include "target.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern driver::Servo* global_servo1;
 extern driver::Servo* global_servo2;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 bool no_action_function(__attribute__((unused)) int16_t bummer);
 
@@ -36,8 +38,8 @@ bool high_current_channel_two(int16_t state);
 
 bool low_level_channel_one(int16_t state);
 
-bool servo_channel_one(int16_t angle);
-bool servo_channel_two(int16_t angle);
+bool servo_channel_one(int16_t position);
+bool servo_channel_two(int16_t position);
 
 const peripheral_act_fp action_table[NUM_ACTION_FUNCTIONS] = {
     no_action_function,    os_delay,          high_current_channel_one, high_current_channel_two,
@@ -68,34 +70,34 @@ bool os_delay(int16_t ticks) {
 
 // High current outputs for pyros, valves etc.
 bool high_current_channel_one(int16_t state) {
-#if NUM_PYRO > 0
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO1_GPIO_Port, PYRO1_Pin, (GPIO_PinState)state);
-    return true;
+  if constexpr (NUM_PYRO > 0) {
+    if (state == 0 || state == 1) {
+      HAL_GPIO_WritePin(PYRO1_GPIO_Port, PYRO1_Pin, static_cast<GPIO_PinState>(state));
+      return true;
+    }
   }
-#endif
   return false;
 }
 
 bool high_current_channel_two(int16_t state) {
-#if NUM_PYRO > 1
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(PYRO2_GPIO_Port, PYRO2_Pin, (GPIO_PinState)state);
-    return true;
+  if constexpr (NUM_PYRO > 1) {
+    if (state == 0 || state == 1) {
+      HAL_GPIO_WritePin(PYRO2_GPIO_Port, PYRO2_Pin, static_cast<GPIO_PinState>(state));
+      return true;
+    }
   }
-#endif
   return false;
 }
 
 // Low level (3.3V) outputs
 
 bool low_level_channel_one(int16_t state) {
-#if NUM_LOW_LEVEL_IO > 0
-  if (state == 0 || state == 1) {
-    HAL_GPIO_WritePin(IO1_GPIO_Port, IO1_Pin, (GPIO_PinState)state);
-    return true;
+  if constexpr (NUM_LOW_LEVEL_IO > 0) {
+    if (state == 0 || state == 1) {
+      HAL_GPIO_WritePin(IO1_GPIO_Port, IO1_Pin, static_cast<GPIO_PinState>(state));
+      return true;
+    }
   }
-#endif
   return false;
 }
 
@@ -125,7 +127,7 @@ bool servo_channel_two(int16_t position) {
 
 /* TODO check if mutex should be used here */
 bool set_recorder_state(int16_t state) {
-  volatile recorder_status_e new_rec_state = (recorder_status_e)state;
+  volatile auto new_rec_state = static_cast<recorder_status_e>(state);
   if (new_rec_state < REC_OFF || new_rec_state > REC_WRITE_TO_FLASH) {
     return false;
   }
@@ -151,7 +153,7 @@ bool set_recorder_state(int16_t state) {
     case REC_WRITE_TO_FLASH:
       if ((new_rec_state == REC_OFF) || (new_rec_state == REC_FILL_QUEUE)) {
         rec_cmd = REC_CMD_WRITE_STOP;
-        osStatus_t ret = osMessageQueuePut(rec_cmd_queue, &rec_cmd, 0U, 10U);
+        const osStatus_t ret = osMessageQueuePut(rec_cmd_queue, &rec_cmd, 0U, 10U);
         if (ret != osOK) {
           log_error("Inserting an element to the recorder command queue failed! Error: %d", ret);
         }
@@ -169,7 +171,7 @@ bool set_recorder_state(int16_t state) {
   global_recorder_status = new_rec_state;
 
   if (rec_cmd != REC_CMD_INVALID) {
-    osStatus_t ret = osMessageQueuePut(rec_cmd_queue, &rec_cmd, 0U, 10U);
+    const osStatus_t ret = osMessageQueuePut(rec_cmd_queue, &rec_cmd, 0U, 10U);
     if (ret != osOK) {
       log_error("Inserting an element to the recorder command queue failed! Error: %d", ret);
     }

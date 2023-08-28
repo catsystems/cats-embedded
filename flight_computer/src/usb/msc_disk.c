@@ -27,6 +27,9 @@
 #include "usb/msc/emfat.h"
 #include "usb/msc/emfat_file.h"
 
+#include <string.h>
+
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern emfat_t emfat;
 
 #define CFG_TUD_MSC 1
@@ -34,6 +37,7 @@ extern emfat_t emfat;
 #if CFG_TUD_MSC
 
 // whether host does safe-eject
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static bool ejected = false;
 
 // Invoked when received SCSI_CMD_INQUIRY
@@ -45,6 +49,7 @@ void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16
   const char pid[] = "Mass Storage";
   const char rev[] = "1.0";
 
+  // NOLINTNEXTLINE(clang-diagnostic-implicit-function-declaration) linter is confused
   memcpy(vendor_id, vid, strlen(vid));
   memcpy(product_id, pid, strlen(pid));
   memcpy(product_rev, rev, strlen(rev));
@@ -74,12 +79,13 @@ bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, boo
   (void)power_condition;
 
   if (load_eject) {
-    if (start) {
-      // load disk storage
-    } else {
+    if (!start) {
       // unload disk storage
       ejected = true;
     }
+    // else {
+    //  // load disk storage
+    // }
   }
 
   return true;
@@ -121,6 +127,7 @@ void tud_msc_write10_complete_cb(uint8_t lun) {}
 int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize) {
   // read10 & write10 has their own callback and MUST not be handled here
 
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) linter is confused
   void const* response = NULL;
   int32_t resplen = 0;
 
@@ -143,9 +150,10 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, u
   if (response && (resplen > 0)) {
     if (in_xfer) {
       memcpy(buffer, response, (size_t)resplen);
-    } else {
-      // SCSI output
     }
+    // else {
+    //   // SCSI output
+    // }
   }
 
   return (int32_t)resplen;

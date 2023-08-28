@@ -18,8 +18,9 @@
 
 #include "util/task_util.hpp"
 
-#include "target.h"
+#include "target.hpp"
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 volatile bool rtos_started = false;
 
 void sysDelay(uint32_t delay) {

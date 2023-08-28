@@ -20,7 +20,7 @@
 
 #include "cmsis_os.h"
 #include "drivers/pwm.hpp"
-#include "target.h"
+#include "target.hpp"
 
 namespace driver {
 

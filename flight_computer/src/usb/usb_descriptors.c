@@ -214,7 +214,7 @@ uint8_t const* tud_descriptor_configuration_cb(uint8_t index) {
 //--------------------------------------------------------------------+
 
 // array of pointer to string descriptors
-char const* string_desc_arr[] = {
+const char* const string_desc_arr[] = {
     (const char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
     "TinyUSB",                   // 1: Manufacturer
     "TinyUSB Device",            // 2: Product
@@ -223,7 +223,8 @@ char const* string_desc_arr[] = {
     "TinyUSB MSC",               // 5: MSC Interface
 };
 
-static uint16_t _desc_str[32];
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+static uint16_t desc_str[32];
 
 // Invoked when received GET STRING DESCRIPTOR request
 // Application return pointer to descriptor, whose contents must exist long enough for transfer to complete
@@ -233,7 +234,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
   uint8_t chr_count;
 
   if (index == 0) {
-    memcpy(&_desc_str[1], string_desc_arr[0], 2);
+    memcpy(&desc_str[1], string_desc_arr[0], 2);
     chr_count = 1;
   } else {
     // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
@@ -249,12 +250,12 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 
     // Convert ASCII string into UTF-16
     for (uint8_t i = 0; i < chr_count; i++) {
-      _desc_str[1 + i] = str[i];
+      desc_str[1 + i] = str[i];
     }
   }
 
   // first byte is length (including header), second byte is string type
-  _desc_str[0] = (TUSB_DESC_STRING << 8) | (2 * chr_count + 2);
+  desc_str[0] = (TUSB_DESC_STRING << 8) | (2 * chr_count + 2);
 
-  return _desc_str;
+  return desc_str;
 }

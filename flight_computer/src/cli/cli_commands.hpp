@@ -30,6 +30,7 @@ struct clicmd_t {
   cli_command_fn *cli_command;
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define CLI_COMMAND_DEF(name, description, args, cli_command) \
   { name, description, args, cli_command }
 

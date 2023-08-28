@@ -37,7 +37,7 @@ bool stream_read_byte(const stream_t *stream, uint8_t *byte_ptr) {
 
   do {
     ret |= fifo_read_byte(stream->fifo, byte_ptr);
-    if (ret == true) {
+    if (ret) {
       break;
     }
     sysDelay(1);
@@ -51,7 +51,7 @@ bool stream_write_byte(const stream_t *stream, uint8_t byte) {
 
   do {
     ret |= fifo_write_byte(stream->fifo, byte);
-    if (ret == true) {
+    if (ret) {
       break;
     }
     sysDelay(1);
@@ -63,11 +63,13 @@ bool stream_read(const stream_t *stream, uint8_t *data, uint32_t len) {
   bool ret = false;
   uint32_t timeout = 0;
 
-  if (len == 0) return true;
+  if (len == 0) {
+    return true;
+  }
 
   do {
     ret |= fifo_read(stream->fifo, data, len);
-    if (ret == true) {
+    if (ret) {
       break;
     }
     sysDelay(1);
@@ -79,11 +81,13 @@ bool stream_write(const stream_t *stream, const uint8_t *data, uint32_t len) {
   bool ret = false;
   uint32_t timeout = 0;
 
-  if (len == 0) return true;
+  if (len == 0) {
+    return true;
+  }
 
   do {
     ret |= fifo_write(stream->fifo, data, len);
-    if (ret == true) {
+    if (ret) {
       break;
     }
     sysDelay(1);

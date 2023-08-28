@@ -18,11 +18,11 @@
 
 #include "cmsis_os.h"
 #include "log.h"
-#include "target.h"
+#include "target.hpp"
 
 #include <cstdio>
 
-#define STACK_OVERFLOW_PRINT_BUF_SZ 100
+constexpr uint16_t STACK_OVERFLOW_PRINT_BUF_SZ = 100;
 
 #ifdef CATS_DEBUG
 /**
@@ -31,13 +31,13 @@
  *
  * The function will loop forever.
  */
-void vApplicationStackOverflowHook(TaskHandle_t task_handle, char *task_name) {
+void vApplicationStackOverflowHook(TaskHandle_t xTask [[maybe_unused]], char* pcTaskName) {
   while (true) {
     /* Toggle the red LED. */
     HAL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin);
 
     /* Todo: Fix this log_raw, it doesn't work */
-    log_raw("Stack overflow detected in %s...\n", task_name);
+    log_raw("Stack overflow detected in %s...\n", pcTaskName);
 
     /* osDelay doesn't work here because this is an interrupt. */
     HAL_Delay(1000);

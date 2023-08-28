@@ -139,6 +139,7 @@ const cli_value_t value_table[] = {
 const uint16_t value_table_entry_count = ARRAYLEN(value_table);
 
 void *get_cats_config_member_ptr(const cats_config_t *cfg, const cli_value_t *var) {
+  // NOLINTNEXTLINE(google-readability-casting)
   return ((uint8_t *)cfg) + var->member_offset;
 }
 
@@ -148,6 +149,7 @@ void print_cats_config(const char *cmd_name, const cats_config_t *cfg, bool prin
     prefix = "set ";
   }
 
+  // NOLINTNEXTLINE(modernize-loop-convert)
   for (uint32_t i = 0; i < value_table_entry_count; i++) {
     const cli_value_t *val = &value_table[i];
     cli_printf("%s%s = ", prefix, value_table[i].name);

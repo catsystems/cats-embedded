@@ -33,7 +33,7 @@ static void change_state_to(flight_fsm_e new_state, cats_event_e event_to_trigge
 void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data, estimation_output_t state_data,
                         const control_settings_t *settings) {
   /* Save old FSM State */
-  flight_fsm_t old_fsm_state = *fsm_state;
+  const flight_fsm_t old_fsm_state = *fsm_state;
 
   /* Check FSM State */
   switch (fsm_state->flight_state) {
@@ -56,16 +56,11 @@ void check_flight_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_da
       check_main_phase(fsm_state, state_data);
       break;
     case TOUCHDOWN:
-      break;
     default:
       break;
   }
 
-  if (old_fsm_state.flight_state != fsm_state->flight_state) {
-    fsm_state->state_changed = true;
-  } else {
-    fsm_state->state_changed = false;
-  }
+  fsm_state->state_changed = old_fsm_state.flight_state != fsm_state->flight_state;
 }
 
 static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf32_t gyro_data) {
@@ -95,10 +90,10 @@ static void check_calibrating_phase(flight_fsm_t *fsm_state, vf32_t acc_data, vf
 static void check_ready_phase(flight_fsm_t *fsm_state, vf32_t acc_data, const control_settings_t *settings) {
   /* Check if we move from READY To THRUSTING */
   /* The absolute value of the acceleration is used here to make sure that we detect liftoff */
-  float32_t accel_x = acc_data.x * acc_data.x;
-  float32_t accel_y = acc_data.y * acc_data.y;
-  float32_t accel_z = acc_data.z * acc_data.z;
-  float32_t acceleration = accel_x + accel_y + accel_z;
+  const float32_t accel_x = acc_data.x * acc_data.x;
+  const float32_t accel_y = acc_data.y * acc_data.y;
+  const float32_t accel_z = acc_data.z * acc_data.z;
+  const float32_t acceleration = accel_x + accel_y + accel_z;
 
   if (acceleration > (static_cast<float32_t>(settings->liftoff_acc_threshold) *
                       static_cast<float32_t>(settings->liftoff_acc_threshold))) {

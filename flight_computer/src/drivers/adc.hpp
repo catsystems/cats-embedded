@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "target.h"
+#include "target.hpp"
 
 enum adc_channels_e { ADC_BATTERY = 0, ADC_PYRO2, ADC_PYRO1 };
 

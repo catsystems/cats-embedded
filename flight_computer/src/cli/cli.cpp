@@ -19,24 +19,27 @@
 
 #include "cli/cli.hpp"
 
-#include <strings.h>
-#include <cctype>
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-
 #include "cli/cli_commands.hpp"
 #include "comm/stream_group.hpp"
 #include "flash/lfs_custom.hpp"
 #include "util/log.h"
 
-#define CLI_IN_BUFFER_SIZE  128
-#define CLI_OUT_BUFFER_SIZE 256
+#include <strings.h>
 
+#include <cctype>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+
+constexpr uint16_t CLI_IN_BUFFER_SIZE = 128;
+constexpr uint16_t CLI_OUT_BUFFER_SIZE = 256;
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static uint32_t buffer_index = 0;
 
 static char cli_buffer[CLI_IN_BUFFER_SIZE];
 static char old_cli_buffer[CLI_IN_BUFFER_SIZE];
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 static void cli_print_error_va(const char *cmdName, const char *format, va_list va);
 static void cli_print_error(const char *cmdName, const char *format, ...) __attribute__((format(printf, 2, 3)));
@@ -59,7 +62,8 @@ void get_min_max(const cli_value_t *var, int *min, int *max) {
   }
 }
 
-void cli_print(const char *str) { stream_write(USB_SG.out, (uint8_t *)str, strlen(str)); }
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+void cli_print(const char *str) { stream_write(USB_SG.out, reinterpret_cast<const uint8_t *>(str), strlen(str)); }
 
 static void cli_prompt() { cli_printf("\r\n^._.^:%s> ", cwd); }
 
@@ -126,17 +130,18 @@ char *skip_space(char *buffer) {
   return buffer;
 }
 
+// NOLINTBEGIN(readability-implicit-bool-conversion,bugprone-narrowing-conversions)
 static char *check_command(char *cmdline, const char *command) {
-  if (!strncasecmp(cmdline, command, strlen(command))  // command names match
-      && (isspace((unsigned)cmdline[strlen(command)]) || cmdline[strlen(command)] == 0)) {
+  if ((strncasecmp(cmdline, command, strlen(command)) == 0)  // command names match
+      && (isspace(static_cast<uint32_t>(cmdline[strlen(command)])) || cmdline[strlen(command)] == 0)) {
     return skip_space(cmdline + strlen(command) + 1);
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
+// NOLINTEND(readability-implicit-bool-conversion,bugprone-narrowing-conversions)
 
 static void process_character(const char c) {
-  if (buffer_index && (c == '\n' || c == '\r')) {
+  if ((buffer_index > 0) && (c == '\n' || c == '\r')) {
     // enter pressed
     cli_print_linefeed();
 
@@ -144,7 +149,7 @@ static void process_character(const char c) {
     char *p = cli_buffer;
     p = strchr(p, '#');
     if (nullptr != p) {
-      buffer_index = (uint32_t)(p - cli_buffer);
+      buffer_index = static_cast<uint32_t>(p - cli_buffer);
     }
     // Strip trailing whitespace
     while (buffer_index > 0 && cli_buffer[buffer_index - 1] == ' ') {
@@ -155,11 +160,13 @@ static void process_character(const char c) {
     if (buffer_index > 0) {
       cli_buffer[buffer_index] = 0;  // null terminate
 
-      const clicmd_t *cmd;
+      const clicmd_t *cmd{nullptr};
       char *options = nullptr;
       for (cmd = cmd_table; cmd < cmd_table + NUM_CLI_COMMANDS; cmd++) {
         options = check_command(cli_buffer, cmd->name);
-        if (options) break;
+        if (options != nullptr) {
+          break;
+        }
       }
       if (cmd < cmd_table + NUM_CLI_COMMANDS) {
         cmd->cli_command(cmd->name, options);
@@ -175,36 +182,43 @@ static void process_character(const char c) {
     // 'exit' will reset this flag, so we don't need to print prompt again
 
   } else if (buffer_index < sizeof(cli_buffer) && c >= 32 && c <= 126) {
-    if (!buffer_index && c == ' ') return;  // Ignore leading spaces
+    if ((buffer_index == 0) && (c == ' ')) {
+      return;  // Ignore leading spaces
+    }
     cli_buffer[buffer_index++] = c;
     cli_write(c);
   }
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void process_character_interactive(const char c) {
   // We ignore a few characters, this is only used for the up arrow
   static uint16_t ignore = 0;
-  if (ignore) {
+  if (ignore > 0) {
     ignore--;
     return;
   }
   if (c == '\t' || c == '?') {
     // do tab completion
-    const clicmd_t *cmd, *pstart = nullptr, *pend = nullptr;
+    const clicmd_t *cmd{nullptr};
+    const clicmd_t *pstart{nullptr};
+    const clicmd_t *pend{nullptr};
     uint32_t i = buffer_index;
     for (cmd = cmd_table; cmd < cmd_table + NUM_CLI_COMMANDS; cmd++) {
-      if (buffer_index && (strncasecmp(cli_buffer, cmd->name, buffer_index) != 0)) {
+      if ((buffer_index != 0) && (strncasecmp(cli_buffer, cmd->name, buffer_index) != 0)) {
         continue;
       }
-      if (!pstart) {
+      if (pstart == nullptr) {
         pstart = cmd;
       }
       pend = cmd;
     }
-    if (pstart) { /* Buffer matches one or more commands */
+    if (pstart != nullptr) { /* Buffer matches one or more commands */
       for (;; buffer_index++) {
-        if (pstart->name[buffer_index] != pend->name[buffer_index]) break;
-        if (!pstart->name[buffer_index] && buffer_index < sizeof(cli_buffer) - 2) {
+        if (pstart->name[buffer_index] != pend->name[buffer_index]) {
+          break;
+        }
+        if ((pstart->name[buffer_index] == '\0') && (buffer_index < sizeof(cli_buffer) - 2)) {
           /* Unambiguous -- append a space */
           cli_buffer[buffer_index++] = ' ';
           cli_buffer[buffer_index] = '\0';
@@ -213,7 +227,7 @@ static void process_character_interactive(const char c) {
         cli_buffer[buffer_index] = pstart->name[buffer_index];
       }
     }
-    if (!buffer_index || pstart != pend) {
+    if ((buffer_index == 0) || (pstart != pend)) {
       /* Print list of ambiguous matches */
       cli_print("\r\n\033[K");
       for (cmd = pstart; cmd <= pend && cmd != nullptr; cmd++) {
@@ -223,7 +237,9 @@ static void process_character_interactive(const char c) {
       cli_prompt();
       i = 0; /* Redraw prompt */
     }
-    for (; i < buffer_index; i++) cli_write(cli_buffer[i]);
+    for (; i < buffer_index; i++) {
+      cli_write(cli_buffer[i]);
+    }
   } else if (c == 4) {
     // CTRL-D - clear screen
     cli_print("\033[2J\033[1;1H");
@@ -237,18 +253,21 @@ static void process_character_interactive(const char c) {
     }
   } else if (c == '\b') {
     // backspace
-    if (buffer_index) {
+    if (buffer_index > 0) {
       cli_buffer[--buffer_index] = 0;
       cli_print("\010 \010");
     }
   } else if (c == 27) {  // ESC character is called from the up arrow, we only look at the first of 3 characters
     // up arrow
-    while (buffer_index) {
+    while (buffer_index > 0) {
       cli_buffer[--buffer_index] = 0;
       cli_print("\010 \010");
     }
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (uint32_t i = 0; i < sizeof(old_cli_buffer); i++) {
-      if (old_cli_buffer[i] == 0) break;
+      if (old_cli_buffer[i] == 0) {
+        break;
+      }
       process_character(old_cli_buffer[i]);
     }
     // Ignore the following characters
@@ -258,11 +277,11 @@ static void process_character_interactive(const char c) {
   }
 }
 
-void cli_process(void) {
+void cli_process() {
   while (stream_length(USB_SG.in) > 0) {
     uint8_t ch = 0;
     if (stream_read_byte(USB_SG.in, &ch)) {
-      process_character_interactive(ch);
+      process_character_interactive(static_cast<char>(ch));
     }
   }
 }
@@ -276,27 +295,27 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
         default:
         case VAR_UINT8:
           // uint8_t array
-          cli_printf("%d", ((uint8_t *)valuePointer)[i]);
+          cli_printf("%d", static_cast<const uint8_t *>(valuePointer)[i]);
           break;
 
         case VAR_INT8:
           // int8_t array
-          cli_printf("%d", ((int8_t *)valuePointer)[i]);
+          cli_printf("%d", static_cast<const int8_t *>(valuePointer)[i]);
           break;
 
         case VAR_UINT16:
           // uin16_t array
-          cli_printf("%d", ((uint16_t *)valuePointer)[i]);
+          cli_printf("%d", static_cast<const uint16_t *>(valuePointer)[i]);
           break;
 
         case VAR_INT16:
           // int16_t array
-          cli_printf("%d", ((int16_t *)valuePointer)[i]);
+          cli_printf("%d", static_cast<const int16_t *>(valuePointer)[i]);
           break;
 
         case VAR_UINT32:
           // uin32_t array
-          cli_printf("%lu", ((uint32_t *)valuePointer)[i]);
+          cli_printf("%lu", static_cast<const uint32_t *>(valuePointer)[i]);
           break;
       }
 
@@ -309,23 +328,25 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
 
     switch (var->type & VALUE_TYPE_MASK) {
       case VAR_UINT8:
-        value = *(uint8_t *)valuePointer;
+        value = *static_cast<const uint8_t *>(valuePointer);
 
         break;
       case VAR_INT8:
-        value = *(int8_t *)valuePointer;
+        // NOLINTNEXTLINE(bugprone-signed-char-misuse)
+        value = *static_cast<const int8_t *>(valuePointer);
 
         break;
       case VAR_UINT16:
-        value = *(uint16_t *)valuePointer;
+        value = *static_cast<const uint16_t *>(valuePointer);
 
         break;
       case VAR_INT16:
-        value = *(int16_t *)valuePointer;
+        value = *static_cast<const int16_t *>(valuePointer);
 
         break;
       case VAR_UINT32:
-        value = *(uint32_t *)valuePointer;
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions)
+        value = *static_cast<const uint32_t *>(valuePointer);
 
         break;
     }
@@ -334,15 +355,15 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
     switch (var->type & VALUE_MODE_MASK) {
       case MODE_DIRECT:
         if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-          cli_printf("%lu", (uint32_t)value);
-          if ((uint32_t)value > var->config.u32_max) {
+          cli_printf("%lu", static_cast<uint32_t>(value));
+          if (static_cast<uint32_t>(value) > var->config.u32_max) {
             value_is_corrupted = true;
           } else if (full) {
             cli_printf(" 0 %lu", var->config.u32_max);
           }
         } else {
-          int min;
-          int max;
+          int min{0};
+          int max{0};
           get_min_max(var, &min, &max);
 
           cli_printf("%d", value);
@@ -361,14 +382,16 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
         }
         break;
       case MODE_BITSET:
-        if (value & 1 << var->config.bitpos) {
+        if (static_cast<bool>((static_cast<uint32_t>(value) & 1U) << var->config.bitpos)) {
           cli_printf("ON");
         } else {
           cli_printf("OFF");
         }
         break;
       case MODE_STRING:
-        cli_printf("%s", (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer);
+        cli_printf("%s", (strlen(static_cast<const char *>(valuePointer)) == 0)
+                             ? "-"
+                             : static_cast<const char *>(valuePointer));
         break;
     }
 
@@ -407,7 +430,7 @@ uint16_t cli_get_setting_index(char *name, uint8_t length) {
 
 const char *next_arg(const char *current_arg) {
   const char *ptr = strchr(current_arg, ' ');
-  while (ptr && *ptr == ' ') {
+  while (ptr != nullptr && *ptr == ' ') {
     ptr++;
   }
   return ptr;

@@ -18,21 +18,21 @@
 
 #pragma once
 
-#include <atomic>
-#include "task.hpp"
-
 #include "control/kalman_filter.hpp"
 #include "control/orientation_filter.hpp"
+#include "task.hpp"
+#include "task_preprocessing.hpp"
 #include "tasks/task_preprocessing.hpp"
 #include "util/error_handler.hpp"
 #include "util/log.h"
 #include "util/types.hpp"
 
-#include "task_preprocessing.hpp"
+#include <atomic>
 
 namespace task {
 
 class StateEstimation;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern StateEstimation* global_state_estimation;
 
 class StateEstimation final : public Task<StateEstimation, 512> {

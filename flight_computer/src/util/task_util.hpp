@@ -23,6 +23,7 @@
 #include "FreeRTOSConfig.h"
 #include "cmsis_os.h"
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern volatile bool rtos_started;
 
 void sysDelay(uint32_t delay);

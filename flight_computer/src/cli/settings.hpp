@@ -24,33 +24,34 @@
 #include "config/cats_config.hpp"
 #include "util/enum_str_maps.hpp"
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
 enum lookup_table_index_e { TABLE_EVENTS = 0, TABLE_ACTIONS, TABLE_POWER, TABLE_SPEEDS, TABLE_BATTERY };
 
-#define VALUE_TYPE_OFFSET    0
-#define VALUE_SECTION_OFFSET 3
-#define VALUE_MODE_OFFSET    5
+inline constexpr uint8_t VALUE_TYPE_OFFSET = 0;
+inline constexpr uint8_t VALUE_SECTION_OFFSET = 3;
+inline constexpr uint8_t VALUE_MODE_OFFSET = 5;
 
 enum cli_value_flag_e {
   // value type, bits 0-2
-  VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
-  VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
-  VAR_UINT16 = (2 << VALUE_TYPE_OFFSET),
-  VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
-  VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
+  VAR_UINT8 = (0U << VALUE_TYPE_OFFSET),
+  VAR_INT8 = (1U << VALUE_TYPE_OFFSET),
+  VAR_UINT16 = (2U << VALUE_TYPE_OFFSET),
+  VAR_INT16 = (3U << VALUE_TYPE_OFFSET),
+  VAR_UINT32 = (4U << VALUE_TYPE_OFFSET),
 
   // value mode, bits 5-7
-  MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
-  MODE_LOOKUP = (1 << VALUE_MODE_OFFSET),
-  MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
-  MODE_BITSET = (3 << VALUE_MODE_OFFSET),
-  MODE_STRING = (4 << VALUE_MODE_OFFSET),
+  MODE_DIRECT = (0U << VALUE_MODE_OFFSET),
+  MODE_LOOKUP = (1U << VALUE_MODE_OFFSET),
+  MODE_ARRAY = (2U << VALUE_MODE_OFFSET),
+  MODE_BITSET = (3U << VALUE_MODE_OFFSET),
+  MODE_STRING = (4U << VALUE_MODE_OFFSET),
 };
 
-#define VALUE_TYPE_MASK    (0x07)
-#define VALUE_SECTION_MASK (0x18)
-#define VALUE_MODE_MASK    (0xE0)
+inline constexpr uint32_t VALUE_TYPE_MASK = 0x07;
+inline constexpr uint32_t VALUE_SECTION_MASK = 0x18;
+inline constexpr uint32_t VALUE_MODE_MASK = 0xE0;
 
 struct cli_minmax_config_t {
   const int16_t min;
@@ -76,8 +77,8 @@ struct cli_string_length_config_t {
   const uint8_t flags;
 };
 
-#define STRING_FLAGS_NONE      (0)
-#define STRING_FLAGS_WRITEONCE (1 << 0)
+inline constexpr uint32_t STRING_FLAGS_NONE = 0;
+inline constexpr uint32_t STRING_FLAGS_WRITEONCE = 1U << 0U;
 
 union cli_value_config_u {
   cli_lookup_table_config_t lookup;              // used for MODE_LOOKUP excl. VAR_UINT32
