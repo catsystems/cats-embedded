@@ -42,17 +42,17 @@ jobs:
 
           echo "$filtered_array"
           echo "matrix=$filtered_array" >> "$GITHUB_OUTPUT"
-    
+
     outputs:
       matrix: ${{ steps.changed-files-filtered.outputs.matrix }}
-  
+
   format_check:
     if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     name: Format Check
     needs: generate_matrix
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         project: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     runs-on: ubuntu-latest
 
@@ -67,42 +67,123 @@ jobs:
         check-path: '${{ matrix.project }}/src'
         exclude-regex: '(lib|telemetry/src/st|ground_station/src/format)'
 
-  build:
+  build_lint:
     if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     needs: [generate_matrix, format_check]
-    name: Build + Lint
-    # We are running this on windows because the users get binaries compiled on windows.
-    # The code should also be tested in a linux build.
+    name: '[Ubuntu] Build + Lint'
+    # We are linting on Ubuntu because the linter seems to work better on Linux
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         project: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-  
+
       - name: Check cache
         uses: actions/cache@v3
         with:
           path: ~/.platformio/.cache
           # Add OS to key if testing with multiple OSes
           key: ${{ matrix.project }}-pio
-  
+
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.9'
           cache: 'pip'
-  
+
       - name: Install dependencies
         run: pip install --upgrade platformio
-      
+
       - name: Install PlatformIO Libraries
         run: pio pkg install --global
-  
+
+      - name: Build
+        shell: bash
+        run: |
+          if [[ "${{ matrix.project }}" == "flight_computer" ]]; then
+            platformio run -d ${{ matrix.project }} --environment debug
+          else
+            platformio run -d ${{ matrix.project }}
+          fi
+
+      - name: Generate compile_commands.json
+        run: |
+          if [[ "${{ matrix.project }}" == "flight_computer" ]]; then
+            platformio run -d ${{ matrix.project }} --target compiledb --environment debug
+          else
+            platformio run -d ${{ matrix.project }} --target compiledb
+          fi
+
+      - name: Lint
+        working-directory: ./${{ matrix.project }}
+        run: |
+          if [[ "${{ matrix.project }}" == "flight_computer" ]]; then
+            output=$(platformio check --environment debug)
+          else
+            output=$(platformio check)
+          fi
+          
+          echo "$output"
+
+          echo "Note: Warnings 'clang-diagnostic-c++17-extensions' and 'clang-analyzer-valist.Uninitialized' are excluded from checking since they seem to be false-positives. Fix everything else!"
+
+          # filter the output to exclude false positives
+          filtered_output=$(echo "$output" | grep -vE 'clang-diagnostic-c\+\+17-extensions|clang-analyzer-valist.Uninitialized')
+
+          if echo "$filtered_output" | grep -q "warning"; then
+            echo "clang-tidy check failed!"
+            exit 1
+          fi
+
+      - name: Upload Compile Commands
+        uses: actions/upload-artifact@v3
+        with:
+          name: ubuntu_compile_commands
+          path: |
+            ./${{ matrix.project }}/.pio/build/**/compile_commands.json
+          if-no-files-found: error
+          retention-days: 90
+
+  build_upload:
+    if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    needs: [generate_matrix, format_check]
+    name: '[Windows] Build + Upload'
+    # We are running this on windows because the users get binaries compiled on windows.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio/.cache
+          # Add OS to key if testing with multiple OSes
+          key: ${{ matrix.project }}-pio
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install --upgrade platformio
+
+      - name: Install PlatformIO Libraries
+        run: pio pkg install --global
+
       - name: Build
         shell: bash
         run: |
@@ -113,11 +194,7 @@ jobs:
 
       - name: Generate compile_commands.json
         run: platformio run -d ${{ matrix.project }} --target compiledb
-  
-      - name: Lint
-        working-directory: ./${{ matrix.project }}
-        run: platformio check
-      
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
