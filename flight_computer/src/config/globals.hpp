@@ -58,11 +58,23 @@ extern volatile recorder_status_e global_recorder_status;
 
 extern event_action_map_elem_t* event_action_map;
 
-#ifdef CATS_DEBUG
-inline constexpr const char* code_version = FIRMWARE_VERSION "-dev";
+// clang-format off
+// __PLATFORMIO_BUILD_DEBUG__ adds '-dbg', CATS_DEBUG adds '-dev'
+#ifdef __PLATFORMIO_BUILD_DEBUG__
+    #ifdef CATS_DEBUG
+        inline constexpr const char* code_version = FIRMWARE_VERSION "-dbg-dev";
+    #else
+        inline constexpr const char* code_version = FIRMWARE_VERSION "-dbg";
+    #endif
 #else
-inline constexpr const char* code_version = FIRMWARE_VERSION;
+    #ifdef CATS_DEBUG
+        inline constexpr const char* code_version = FIRMWARE_VERSION "-dev";
+    #else
+        inline constexpr const char* code_version = FIRMWARE_VERSION;
+    #endif
 #endif
+// clang-format on
+
 inline constexpr const char* board_name = "CATS Vega";
 extern char telemetry_code_version[20];
 
