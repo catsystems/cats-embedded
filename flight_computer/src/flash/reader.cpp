@@ -18,9 +18,11 @@
 
 #include "reader.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdio>
 
+#include "cli/cli.hpp"
 #include "cli/settings.hpp"
 #include "config/globals.hpp"
 #include "flash/lfs_custom.hpp"
@@ -39,7 +41,7 @@ namespace {
  */
 void print_stats(uint16_t flight_num) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
-    log_raw("The recorder is currently active, stop it first!");
+    cli_print_line("The recorder is currently active, stop it first!");
     return;
   }
 
@@ -61,14 +63,14 @@ void print_stats(uint16_t flight_num) {
 
         lfs_file_read(&lfs, &curr_file, read_buf, bytes_read);
 
-        log_rawr("%.*s", static_cast<int>(bytes_read), reinterpret_cast<const char *>(read_buf));
+        cli_printf("%.*s", static_cast<int>(bytes_read), reinterpret_cast<const char *>(read_buf));
       }
 
       vPortFree(read_buf);
     }
     lfs_file_close(&lfs, &curr_file);
   } else {
-    log_raw("Stats %d not found!", flight_num);
+    cli_print_linef("Stats %d not found!", flight_num);
   }
 }
 
@@ -78,7 +80,7 @@ void print_stats(uint16_t flight_num) {
  */
 void print_cfg(uint16_t flight_num) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
-    log_raw("The recorder is currently active, stop it first!");
+    cli_print_line("The recorder is currently active, stop it first!");
     return;
   }
 
@@ -93,7 +95,7 @@ void print_cfg(uint16_t flight_num) {
     auto *local_config = static_cast<cats_config_t *>(pvPortMalloc(sizeof(cats_config_t)));
 
     if (local_config == nullptr) {
-      log_raw("Could not allocate enough memory for flight config readout.");
+      cli_print_linef("Could not allocate enough memory for flight config readout.");
       lfs_file_close(&lfs, &curr_file);
       return;
     }
@@ -101,18 +103,19 @@ void print_cfg(uint16_t flight_num) {
       if (local_config->config_version == CONFIG_VERSION) {
         print_cats_config("cli", local_config, false);
       } else {
-        log_raw("Config versions do not match, cannot print -- version in config file: %lu, current config version: %u",
-                local_config->config_version, CONFIG_VERSION);
+        cli_print_linef(
+            "Config versions do not match, cannot print -- version in config file: %lu, current config version: %u",
+            local_config->config_version, CONFIG_VERSION);
       }
 
     } else {
-      log_raw("Error while reading flight config %d", flight_num);
+      cli_print_linef("Error while reading flight config %d", flight_num);
     }
 
     vPortFree(local_config);
     lfs_file_close(&lfs, &curr_file);
   } else {
-    log_raw("Flight config %d not found!", flight_num);
+    cli_print_linef("Flight config %d not found!", flight_num);
   }
 }
 
@@ -122,7 +125,7 @@ namespace reader {
 
 void dump_recording(uint16_t flight_num) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
-    log_raw("The recorder is currently active, stop it first!");
+    cli_print_line("The recorder is currently active, stop it first!");
     return;
   }
 
@@ -131,7 +134,7 @@ void dump_recording(uint16_t flight_num) {
   uint8_t *read_buf = (uint8_t *)(pvPortMalloc(READ_BUF_SZ * sizeof(uint8_t)));
 
   if (string_buffer1 == nullptr || string_buffer2 == nullptr || read_buf == nullptr) {
-    log_raw("Cannot allocate enough memory for flight dumping!");
+    cli_print_line("Cannot allocate enough memory for flight dumping!");
     return;
   }
 
@@ -157,12 +160,12 @@ void dump_recording(uint16_t flight_num) {
         for (uint32_t j = 0; j < READ_BUF_SZ / 2; ++j) {
           write_idx += sprintf(string_buffer1 + write_idx, "%02x ", read_buf[j]);
         }
-        log_rawr("%s", string_buffer1);
+        cli_printf("%s", string_buffer1);
         write_idx = 0;
         for (uint32_t j = READ_BUF_SZ / 2; j < READ_BUF_SZ; ++j) {
           write_idx += sprintf(string_buffer2 + write_idx, "%02x ", read_buf[j]);
         }
-        log_rawr("%s\n", string_buffer2);
+        cli_printf("%s\n", string_buffer2);
 
         memset(string_buffer1, 0, STRING_BUF_SZ);
         memset(string_buffer2, 0, STRING_BUF_SZ);
@@ -181,7 +184,7 @@ void dump_recording(uint16_t flight_num) {
 
 void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
   if (global_recorder_status == REC_WRITE_TO_FLASH) {
-    log_raw("The recorder is currently active, stop it first!");
+    cli_print_line("The recorder is currently active, stop it first!");
     return;
   }
 
@@ -195,19 +198,24 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
     rec_elem_t rec_elem;
     lfs_ssize_t file_size = lfs_file_size(&lfs, &curr_file);
     if (file_size < 0) {
-      log_raw("Invalid file size %ld!", file_size);
+      cli_print_linef("Invalid file size %ld!", file_size);
       return;
     }
 
     // First bytes represent the code version
+    const std::size_t kMaxCodeVersionStrLen = 20;
+    std::array<char, kMaxCodeVersionStrLen> code_version{};
+    std::size_t char_idx = 0;
     char tmp_char = '\0';
     while (lfs_file_read(&lfs, &curr_file, &tmp_char, 1) > 0) {
-      log_raw("read char: %hu", tmp_char);
       // Read until we encounter the NULL terminator
       if (tmp_char == 0) {
         break;
       }
+      code_version[char_idx++] = tmp_char;
     }
+    cli_print_linef("Code version: %.*s", static_cast<int>(std::min(kMaxCodeVersionStrLen, char_idx)),
+                    code_version.data());
 
     while (lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem, 8) > 0) {
       const rec_entry_type_e rec_type = rec_elem.rec_type;
@@ -217,52 +225,52 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
           size_t elem_sz = sizeof(rec_elem.u.imu);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.ts, get_id_from_record_type(rec_type),
-                    rec_elem.u.imu.acc.x, rec_elem.u.imu.acc.y, rec_elem.u.imu.acc.z, rec_elem.u.imu.gyro.x,
-                    rec_elem.u.imu.gyro.y, rec_elem.u.imu.gyro.z);
+            cli_print_linef("%lu|IMU%hu|%d|%d|%d|%d|%d|%d", rec_elem.ts, get_id_from_record_type(rec_type),
+                            rec_elem.u.imu.acc.x, rec_elem.u.imu.acc.y, rec_elem.u.imu.acc.z, rec_elem.u.imu.gyro.x,
+                            rec_elem.u.imu.gyro.y, rec_elem.u.imu.gyro.z);
           }
         } break;
         case BARO: {
           size_t elem_sz = sizeof(rec_elem.u.baro);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|BARO%hu|%ld|%ld", rec_elem.ts, get_id_from_record_type(rec_type), rec_elem.u.baro.pressure,
-                    rec_elem.u.baro.temperature);
+            cli_print_linef("%lu|BARO%hu|%ld|%ld", rec_elem.ts, get_id_from_record_type(rec_type),
+                            rec_elem.u.baro.pressure, rec_elem.u.baro.temperature);
           }
         } break;
         case FLIGHT_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.flight_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.flight_info.acceleration,
-                    (double)rec_elem.u.flight_info.height, (double)rec_elem.u.flight_info.velocity);
+            cli_print_linef("%lu|FLIGHT_INFO|%f|%f|%f", rec_elem.ts, (double)rec_elem.u.flight_info.acceleration,
+                            (double)rec_elem.u.flight_info.height, (double)rec_elem.u.flight_info.velocity);
           }
         } break;
         case ORIENTATION_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.orientation_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.ts,
-                    rec_elem.u.orientation_info.estimated_orientation[0],
-                    rec_elem.u.orientation_info.estimated_orientation[1],
-                    rec_elem.u.orientation_info.estimated_orientation[2],
-                    rec_elem.u.orientation_info.estimated_orientation[3]);
+            cli_print_linef("%lu|ORIENTATION_INFO|%d|%d|%d|%d", rec_elem.ts,
+                            rec_elem.u.orientation_info.estimated_orientation[0],
+                            rec_elem.u.orientation_info.estimated_orientation[1],
+                            rec_elem.u.orientation_info.estimated_orientation[2],
+                            rec_elem.u.orientation_info.estimated_orientation[3]);
           }
         } break;
         case FILTERED_DATA_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.filtered_data_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.ts,
-                    (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
-                    (double)rec_elem.u.filtered_data_info.filtered_acceleration);
+            cli_print_linef("%lu|FILTERED_DATA_INFO|%f|%f", rec_elem.ts,
+                            (double)rec_elem.u.filtered_data_info.filtered_altitude_AGL,
+                            (double)rec_elem.u.filtered_data_info.filtered_acceleration);
           }
         } break;
         case FLIGHT_STATE: {
           size_t elem_sz = sizeof(rec_elem.u.flight_state);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|FLIGHT_STATE|%s", rec_elem.ts, fsm_map[rec_elem.u.flight_state]);
+            cli_print_linef("%lu|FLIGHT_STATE|%s", rec_elem.ts, fsm_map[rec_elem.u.flight_state]);
           }
         } break;
         case EVENT_INFO: {
@@ -270,23 +278,23 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             peripheral_act_t action = rec_elem.u.event_info.action;
-            log_raw("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, event_map[rec_elem.u.event_info.event],
-                    action_map[rec_elem.u.event_info.action.action], action.action_arg);
+            cli_print_linef("%lu|EVENT_INFO|%s|%s|%d", rec_elem.ts, event_map[rec_elem.u.event_info.event],
+                            action_map[rec_elem.u.event_info.action.action], action.action_arg);
           }
         } break;
         case ERROR_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.error_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|ERROR_INFO|%lu", rec_elem.ts, rec_elem.u.error_info.error);
+            cli_print_linef("%lu|ERROR_INFO|%lu", rec_elem.ts, rec_elem.u.error_info.error);
           }
         } break;
         case GNSS_INFO: {
           size_t elem_sz = sizeof(rec_elem.u.gnss_info);
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
-            log_raw("%lu|GNSS_INFO|%f|%f|%hu", rec_elem.ts, (double)rec_elem.u.gnss_info.lat,
-                    (double)rec_elem.u.gnss_info.lon, rec_elem.u.gnss_info.sats);
+            cli_print_linef("%lu|GNSS_INFO|%f|%f|%hu", rec_elem.ts, (double)rec_elem.u.gnss_info.lat,
+                            (double)rec_elem.u.gnss_info.lon, rec_elem.u.gnss_info.sats);
           }
         } break;
         case VOLTAGE_INFO: {
@@ -294,17 +302,17 @@ void parse_recording(uint16_t flight_num, rec_entry_type_e filter_mask) {
           lfs_file_read(&lfs, &curr_file, (uint8_t *)&rec_elem.u.imu, elem_sz);
           if ((rec_type_without_id & filter_mask) > 0) {
             /* Convert mV to V by dividing with 1000. */
-            log_raw("%lu|VOLTAGE_INFO|%.3f", rec_elem.ts, static_cast<double>(rec_elem.u.voltage_info) / 1000);
+            cli_print_linef("%lu|VOLTAGE_INFO|%.3f", rec_elem.ts, static_cast<double>(rec_elem.u.voltage_info) / 1000);
           }
         } break;
         default:
-          log_raw("Impossible recorder entry type: %lu!", rec_type_without_id);
+          cli_print_linef("Impossible recorder entry type: %lu!", rec_type_without_id);
           break;
       }
     }
     lfs_file_close(&lfs, &curr_file);
   } else {
-    log_raw("Flight %d not found!", flight_num);
+    cli_print_linef("Flight %d not found!", flight_num);
   }
 }
 
