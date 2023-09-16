@@ -25,9 +25,10 @@
 
 #include "tusb.h"
 #include "usb/msc/emfat.h"
-#include "usb/msc/emfat_file.h"
 
 #include <string.h>
+
+extern bool emfat_init_files();
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern emfat_t emfat;

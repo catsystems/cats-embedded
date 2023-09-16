@@ -25,6 +25,7 @@
 #include <cstdio>
 
 // Filled later depending on tick frequency
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::array<char*, NUM_REC_SPEEDS> recorder_speed_map = {};
 
 void init_recorder_speed_map() {

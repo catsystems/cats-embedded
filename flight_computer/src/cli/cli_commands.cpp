@@ -883,7 +883,7 @@ static void print_action_config() {
   config_action_t action{};
   for (int i = 0; i < NUM_EVENTS; i++) {
     const auto ev = static_cast<cats_event_e>(i);
-    int nr_actions = cc_get_num_actions(ev);
+    const int nr_actions = cc_get_num_actions(ev);
     if (nr_actions > 0) {
       cli_printf("\n%s\n", GetStr(ev, p_event_table));
       cli_printf("   Number of Actions: %d\n", nr_actions);

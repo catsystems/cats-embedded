@@ -62,6 +62,7 @@ inline constexpr std::array<const char *, 2> on_off_map{
 
 inline constexpr std::array<const char *, 3> battery_map{"LI-ION", "LI-PO", "ALKALINE"};
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern std::array<char *, NUM_REC_SPEEDS> recorder_speed_map;
 
 void init_recorder_speed_map();

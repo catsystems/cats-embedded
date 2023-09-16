@@ -91,7 +91,7 @@ void emfat_read(emfat_t *emfat, uint8_t *data, uint32_t sector, int num_sectors)
 void emfat_write(emfat_t *emfat, const uint8_t *data, uint32_t sector, int num_sectors);
 
 #define EMFAT_ENCODE_CMA_TIME(D, M, Y, h, m, s) \
-  ((((((Y)-1980) << 9) | ((M) << 5) | (D)) << 16) | (((h) << 11) | ((m) << 5) | ((s) >> 1)))
+  ((((((Y)-1980U) << 9U) | ((M) << 5U) | (D)) << 16U) | (((h) << 11U) | ((m) << 5U) | ((s) >> 1U)))
 
 static inline uint32_t emfat_encode_cma_time(int D, int M, int Y, int h, int m, int s) {
   return EMFAT_ENCODE_CMA_TIME(D, M, Y, h, m, s);
