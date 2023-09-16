@@ -36,7 +36,7 @@
 #include "flash/lfs_custom.hpp"
 #include "util/log.h"
 
-#define CMA_TIME EMFAT_ENCODE_CMA_TIME(1, 1, 2023, 13, 0, 0)
+#define CMA_TIME EMFAT_ENCODE_CMA_TIME(1U, 1U, 2023U, 13U, 0U, 0U)
 #define CMA \
   { CMA_TIME, CMA_TIME, CMA_TIME }
 
@@ -54,31 +54,31 @@ static void lfs_read_file(uint8_t *dest, int size, uint32_t offset, emfat_entry_
     }
 
     // Assume the files starting with 'f' are flight logs; all others are considered to be stats files.
-    const bool flight_log = entry->name != NULL && entry->name[0] == 'f';
+    const bool flight_log = entry->name != nullptr && entry->name[0] == 'f';
     snprintf(filename, 32, flight_log ? "/flights/flight_%05hu" : "/stats/stats_%05hu.txt", entry->lfs_flight_idx);
-    int err = lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY);
-    if (err) {
+    const int err = lfs_file_open(&lfs, &curr_file, filename, LFS_O_RDONLY);
+    if (err < 0) {
       return;
     }
     file_open = true;
   }
-  lfs_file_seek(&lfs, &curr_file, (int32_t)offset, LFS_SEEK_SET);
+  lfs_file_seek(&lfs, &curr_file, static_cast<int32_t>(offset), LFS_SEEK_SET);
   lfs_file_read(&lfs, &curr_file, dest, size);
 }
 
 static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry) {
-  int len = 0;
+  int32_t len = 0;
   if (offset > entry->curr_size) {
     return;
   }
 
   if (offset + size > entry->curr_size) {
-    len = entry->curr_size - offset;
+    len = static_cast<int32_t>(entry->curr_size - offset);
   } else {
     len = size;
   }
-
-  memcpy(dest, &((char *)entry->user_data)[offset], len);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  memcpy(dest, &(reinterpret_cast<char *>(entry->user_data))[offset], len);
 }
 
 static const char readme_file[] =
@@ -89,8 +89,8 @@ static const char readme_file[] =
     "The number of logs exposed via Mass Storage Controller is limited to 50 flight log files and 50 stats files.\r\n";
 #define README_SIZE_BYTES (sizeof(readme_file) - 1)
 
-#define PREDEFINED_ENTRY_COUNT 2
-#define README_FILE_IDX        1
+constexpr uint8_t PREDEFINED_ENTRY_COUNT = 2;
+constexpr uint8_t README_FILE_IDX = 1;
 
 // We are limited to 50 flight logs & 50 stats files due to RAM memory limits
 // TODO: It seems the number has to be 1 more than the actual limit, this should be investigated
@@ -100,41 +100,46 @@ static_assert(kMaxNumVisibleLogs > 0 && kMaxNumVisibleLogs % 2 == 0,
 
 #define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + kMaxNumVisibleLogs)
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static char logNames[EMFAT_MAX_ENTRY][8 + 1 + 3 + 1] = {"", "readme.txt"};
 
-static const emfat_entry_t entriesPredefined[] = {{
-                                                      logNames[0],  // name
-                                                      true,         // dir
-                                                      ATTR_DIR,     // attr
-                                                      0,            // level
-                                                      0,            // offset
-                                                      0,            // number
-                                                      0,            // curr_size
-                                                      0,            // max_size
-                                                      0,            // user_data
-                                                      CMA,          // cma_time[3]
-                                                      NULL,         // readcb
-                                                      NULL          // writecb
-                                                  },
-                                                  {
-                                                      logNames[1],        // name
-                                                      false,              // dir
-                                                      ATTR_READ,          // attr
-                                                      1,                  // level
-                                                      0,                  // offset
-                                                      0,                  // number
-                                                      README_SIZE_BYTES,  // curr_size
-                                                      README_SIZE_BYTES,  // max_siize
-                                                      (long)readme_file,  // user_data
-                                                      CMA,                // cma_time[3]
-                                                      memory_read_proc,   // readcb
-                                                      NULL                // writecb
-                                                  }};
+static const emfat_entry_t entriesPredefined[] = {
+    {
+        logNames[0],  // name
+        true,         // dir
+        ATTR_DIR,     // attr
+        0,            // level
+        0,            // offset
+        0,            // number
+        0,            // curr_size
+        0,            // max_size
+        0,            // user_data
+        CMA,          // cma_time[3]
+        nullptr,      // readcb
+        nullptr       // writecb
+    },
+    {
+        logNames[1],        // name
+        false,              // dir
+        ATTR_READ,          // attr
+        1,                  // level
+        0,                  // offset
+        0,                  // number
+        README_SIZE_BYTES,  // curr_size
+        README_SIZE_BYTES,  // max_size
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,google-runtime-int)
+        reinterpret_cast<long>(readme_file),  // user_data
+        CMA,                                  // cma_time[3]
+        memory_read_proc,                     // readcb
+        nullptr                               // writecb
+    }};
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static emfat_entry_t entries[EMFAT_MAX_ENTRY]{};
-
 emfat_t emfat;
-static uint32_t cmaTime = CMA_TIME;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+
+constexpr uint32_t cmaTime = CMA_TIME;
 
 static void emfat_set_entry_cma(emfat_entry_t *entry) {
   // Set file creation/modification/access times to be the same, either the default date or that from the RTC
@@ -144,29 +149,29 @@ static void emfat_set_entry_cma(emfat_entry_t *entry) {
   entry->cma_time[2] = cmaTime;
 }
 
-typedef enum { FLIGHT_LOG, STATS_LOG } log_type_e;
+enum log_type_e { FLIGHT_LOG, STATS_LOG };
 
 static void emfat_add_log(emfat_entry_t *entry, uint32_t size, const char *name, log_type_e log_type) {
   const uint64_t entry_idx = entry - entries;
 
   uint16_t lfs_flight_idx = 0;
-  int idx_start = log_type == FLIGHT_LOG ? 7 : 6;
+  const int idx_start = log_type == FLIGHT_LOG ? 7 : 6;
 
   // flight_000xx, stats_000xx.txt
   if (sscanf(&name[idx_start], "%hu", &lfs_flight_idx) > 0) {
     log_error("Reading lfs_flight_idx failed: %hu", lfs_flight_idx);
   }
 
-  snprintf(logNames[entry_idx], 12, "%s%03d.%s", log_type == FLIGHT_LOG ? "fl" : "st", (uint8_t)lfs_flight_idx,
-           log_type == FLIGHT_LOG ? "cfl" : "txt");
+  snprintf(logNames[entry_idx], 12, "%s%03d.%s", log_type == FLIGHT_LOG ? "fl" : "st",
+           static_cast<uint8_t>(lfs_flight_idx), log_type == FLIGHT_LOG ? "cfl" : "txt");
   entry->name = logNames[entry_idx];
   entry->level = 1;
-  entry->number = entry_idx;
+  entry->number = static_cast<int32_t>(entry_idx);
   entry->lfs_flight_idx = lfs_flight_idx;
   entry->curr_size = size;
   entry->max_size = entry->curr_size;
   entry->readcb = lfs_read_file;
-  entry->writecb = NULL;
+  entry->writecb = nullptr;
   emfat_set_entry_cma(entry);
 }
 
@@ -174,9 +179,9 @@ static void emfat_add_log(emfat_entry_t *entry, uint32_t size, const char *name,
  * @brief Add file from path, returns 0 on success.
  */
 static void add_logs_from_path(emfat_entry_t **entry, const char *path, log_type_e log_type, uint32_t max_logs_to_add) {
-  struct lfs_info info;
+  struct lfs_info info {};
   lfs_dir_t dir;
-  int err = lfs_dir_open(&lfs, &dir, path);
+  const int err = lfs_dir_open(&lfs, &dir, path);
   if (err < 0) {
     return;
   }
@@ -196,8 +201,6 @@ static void add_logs_from_path(emfat_entry_t **entry, const char *path, log_type
   }
 
   lfs_dir_close(&lfs, &dir);
-
-  return;
 }
 
 static void emfat_find_logs(emfat_entry_t *entry) {
