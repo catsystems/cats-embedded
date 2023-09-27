@@ -147,8 +147,6 @@ extern "C" int32_t lfs_cnt(const char *path, enum lfs_type type) {
     return -1;
   }
 
-  //  log_raw("%lu, lfs_cnt...", osKernelGetTickCount());
-
   int32_t cnt = 0;
 
   lfs_dir_t dir;

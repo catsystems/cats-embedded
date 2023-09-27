@@ -24,4 +24,12 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bool emfat_init_files();
+
+#ifdef __cplusplus
+}
+#endif
