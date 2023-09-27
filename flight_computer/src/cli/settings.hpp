@@ -19,16 +19,14 @@
 
 #pragma once
 
+#include <array>
+
 #include "config/cats_config.hpp"
+#include "util/enum_str_maps.hpp"
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
 enum lookup_table_index_e { TABLE_EVENTS = 0, TABLE_ACTIONS, TABLE_POWER, TABLE_SPEEDS, TABLE_BATTERY };
-
-struct lookup_table_entry_t {
-  const char *const *values;
-  const uint8_t value_count;
-};
 
 #define VALUE_TYPE_OFFSET    0
 #define VALUE_SECTION_OFFSET 3
@@ -102,7 +100,9 @@ struct cli_value_t {
   callback_f cb;
 } __attribute__((packed));
 
-extern const lookup_table_entry_t lookup_tables[];
+inline constexpr std::array<EnumToStrMap, 5> lookup_tables{event_map, action_map, on_off_map, recorder_speed_map,
+                                                           battery_map};
+
 extern const uint16_t value_table_entry_count;
 
 extern const cli_value_t value_table[];

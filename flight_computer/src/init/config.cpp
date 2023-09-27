@@ -85,8 +85,8 @@ static void init_timers() {
   /* Init timers */
   for (uint32_t i = 0; i < NUM_TIMERS; i++) {
     if (global_cats_config.timers[i].duration > 0) {
-      ev_timers[i].timer_init_event = (cats_event_e)global_cats_config.timers[i].start_event;
-      ev_timers[i].execute_event = (cats_event_e)global_cats_config.timers[i].trigger_event;
+      ev_timers[i].timer_init_event = static_cast<cats_event_e>(global_cats_config.timers[i].start_event);
+      ev_timers[i].execute_event = static_cast<cats_event_e>(global_cats_config.timers[i].trigger_event);
       ev_timers[i].timer_duration_ticks = global_cats_config.timers[i].duration;
     }
   }

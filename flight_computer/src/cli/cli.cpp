@@ -354,8 +354,8 @@ static void print_value_pointer(const char *cmdName, const cli_value_t *var, con
         }
         break;
       case MODE_LOOKUP:
-        if (value < lookup_tables[var->config.lookup.table_index].value_count) {
-          cli_print(lookup_tables[var->config.lookup.table_index].values[value]);
+        if (static_cast<size_t>(value) < lookup_tables[var->config.lookup.table_index].size()) {
+          cli_print(lookup_tables[var->config.lookup.table_index][value]);
         } else {
           value_is_corrupted = true;
         }
@@ -430,15 +430,15 @@ void cli_print_var_range(const cli_value_t *var) {
       }
     } break;
     case (MODE_LOOKUP): {
-      const lookup_table_entry_t *tableEntry = &lookup_tables[var->config.lookup.table_index];
+      const EnumToStrMap &tableEntry = lookup_tables[var->config.lookup.table_index];
       cli_print("Allowed values: ");
       bool first_entry = true;
-      for (uint32_t i = 0; i < tableEntry->value_count; i++) {
-        if (tableEntry->values[i]) {
+      for (uint32_t i = 0; i < tableEntry.size(); i++) {
+        if (tableEntry[i]) {
           if (!first_entry) {
             cli_print(", ");
           }
-          cli_printf("%s", tableEntry->values[i]);
+          cli_printf("%s", tableEntry[i]);
           first_entry = false;
         }
       }

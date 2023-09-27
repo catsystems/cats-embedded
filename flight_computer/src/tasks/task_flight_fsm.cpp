@@ -46,8 +46,8 @@ namespace task {
                        m_task_state_estimation.GetEstimationOutput(), &settings);
 
     if (flight_state.state_changed) {
-      log_info("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
-      log_sim("State Changed FlightFSM to %s", fsm_map[flight_state.flight_state]);
+      log_info("State Changed FlightFSM to %s", GetStr(flight_state.flight_state, fsm_map));
+      log_sim("State Changed FlightFSM to %s", GetStr(flight_state.flight_state, fsm_map));
       record(tick_count, FLIGHT_STATE, &flight_state.flight_state);
     }
 

@@ -21,28 +21,11 @@
 #include "config/globals.hpp"
 #include "util/log.h"
 
+#include <array>
 #include <cstdio>
 
-const char* const fsm_map[8] = {"INVALID",  "CALIBRATING", "READY", "THRUSTING",
-                                "COASTING", "DROGUE",      "MAIN",  "TOUCHDOWN"};
-
-const char* const event_map[9] = {
-    "CALIBRATE", "READY", "LIFTOFF", "MAX_V", "APOGEE", "MAIN_DEPLOYMENT", "TOUCHDOWN", "CUSTOM_1", "CUSTOM_2",
-};
-
-const char* const action_map[8] = {
-    "NONE", "DELAY", "HC_ONE", "HC_TWO", "LL_ONE", "SERVO_ONE", "SERVO_TWO", "RECORDER",
-};
-
-const char* const battery_map[3] = {"LI-ION", "LI-PO", "ALKALINE"};
-
 // Filled later depending on tick frequency
-char* recorder_speed_map[NUM_REC_SPEEDS] = {};
-
-const char* const on_off_map[2] = {
-    "OFF",
-    "ON",
-};
+std::array<char*, NUM_REC_SPEEDS> recorder_speed_map = {};
 
 void init_recorder_speed_map() {
   for (uint32_t i = 0; i < NUM_REC_SPEEDS; ++i) {
