@@ -99,4 +99,9 @@ class Hmi {
   Window window;
 
   uint32_t menuIndex = 0;
+
+  uint32_t flashFreeMemory = 100;
+
+  bool link1Log = false;
+  bool link2Log = false;
 };

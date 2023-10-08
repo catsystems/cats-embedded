@@ -59,9 +59,7 @@ void Window::initBar() {
 void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, int32_t free_memory) {
   static int32_t oldHour = 0;
   static int32_t oldMinute = 0;
-  static float oldBatteryVoltage = 0;
   static bool oldUsbStatus = false;
-  static bool oldLocationStatus = false;
   static bool oldLoggingStatus = false;
   static int32_t oldFreeMemory = 0;
 
@@ -69,14 +67,15 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
 
   // Logging
   if (logging != oldLoggingStatus) {
-    display.drawBitmap(65, 1, bar_download, 16, 16, !logging);
+    display.drawBitmap(75, 1, bar_download, 16, 16, !logging);
+    oldLoggingStatus = logging;
   }
   if (logging) {
-    display.drawBitmap(65, 1, bar_download, 16, 16, blinkStatus);
+    display.drawBitmap(75, 1, bar_download, 16, 16, blinkStatus);
   }
 
   // Location
-  if (location != oldLocationStatus) {
+  if (location) {
     display.drawBitmap(329, 1, bar_location, 16, 16, !location);
   }
 
@@ -132,7 +131,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   // Battery
-  if (batteryVoltage != oldBatteryVoltage && !usb) {
+  if (batteryVoltage && !usb) {
     if (batteryVoltage > 3.3f) {
       display.fillRect(373, 5, 6, 8, BLACK);
       display.drawRoundRect(371, 3, 24, 12, 2, BLACK);

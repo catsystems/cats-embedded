@@ -15,7 +15,7 @@ bool Navigation::begin() {
 
   calibration = CALIB_CONCLUDED;
 
-  xTaskCreate(navigationTask, "task_recorder", 1024, this, 1, NULL);
+  xTaskCreate(navigationTask, "task_navigation", 1024, this, 1, NULL);
   return true;
 }
 
