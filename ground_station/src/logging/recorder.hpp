@@ -3,6 +3,11 @@
 #include "telemetry/telemetryData.hpp"
 #include "utils.hpp"
 
+struct RecorderElement {
+  packedRXMessage data;
+  uint8_t source;  // Link 1 or Link 2
+};
+
 class Recorder {
  public:
   Recorder(const char* directory) : directory(directory) {}
@@ -12,9 +17,10 @@ class Recorder {
 
   void disable() { enabled = false; }
 
-  void record(packedRXMessage* data) {
+  void record(packedRXMessage* data, uint8_t link_source) {
     if (enabled) {
-      xQueueSend(queue, data, 0);
+      RecorderElement rec_elem = {*data, link_source};
+      xQueueSend(queue, &rec_elem, 0);
     }
   }
 

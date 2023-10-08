@@ -115,8 +115,12 @@ void Hmi::initLive() { window.initLive(); }
 void Hmi::live() {
   bool updated = false;
 
-  /* Dual Mode */
   if (link1.data.isUpdated() && link1.info.isUpdated()) {
+    // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
+    link1Log = (link1.data.state() > 2) && (systemConfig.config.neverStopLogging || link1.data.state() < 7);
+    if (link1Log) {
+      recorder.record(&link1.data.rxData, 1);
+    }
     window.updateLive(&link1.data, &link1.info, 0);
     updated = true;
   } else if (link1.info.isUpdated()) {
@@ -125,11 +129,10 @@ void Hmi::live() {
   }
 
   if (link2.data.isUpdated() && link2.info.isUpdated()) {
-    if (link2.data.state() > 2) {
-      recorder.record(&link2.data.rxData);
-      isLogging = true;
-    } else {
-      isLogging = false;
+    // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
+    link2Log = (link2.data.state() > 2) && (systemConfig.config.neverStopLogging || link2.data.state() < 7);
+    if (link2Log) {
+      recorder.record(&link2.data.rxData, 2);
     }
     window.updateLive(&link2.data, &link2.info, 1);
     updated = true;
@@ -138,12 +141,15 @@ void Hmi::live() {
     updated = true;
   }
 
+  isLogging = link1Log || link2Log;
+
   if (updated) {
     window.refresh();
   }
 
   if (backButton.wasPressed()) {
     state = MENU;
+    isLogging = false;
     window.initMenu(menuIndex);
   }
 }
@@ -575,13 +581,16 @@ void Hmi::update(void *pvParameter) {
     if (millis() - barUpdate >= 1000) {
       barUpdate = millis();
       float voltage = analogRead(18) * 0.00059154929;
-      int32_t free_memory = utils.getFlashMemoryUsage();
+      if (!ref->isLogging) {
+        ref->flashFreeMemory = utils.getFlashMemoryUsage();
+      }
       if (link2.time.isUpdated()) {
         setTime(link2.time.hour(), link2.time.minute(), link2.time.second(), 0, 0, 0);
         adjustTime(systemConfig.config.timeZoneOffset * 3600);
         timeValid = true;
       }
-      ref->window.updateBar(voltage, digitalRead(21), ref->isLogging, link2.location.isValid(), timeValid, free_memory);
+      ref->window.updateBar(voltage, digitalRead(21), ref->isLogging, link2.location.isValid(), timeValid,
+                            ref->flashFreeMemory);
     }
 
     ref->upButton.read();

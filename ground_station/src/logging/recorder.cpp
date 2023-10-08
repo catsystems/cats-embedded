@@ -20,7 +20,7 @@ bool Recorder::begin() {
     number++;
   } while (fatfs.exists(fileName));
 
-  queue = xQueueCreate(10, sizeof(packedRXMessage));
+  queue = xQueueCreate(64, sizeof(RecorderElement));
   xTaskCreate(recordTask, "task_recorder", 4096, this, 1, NULL);
   initialized = true;
   return initialized;
@@ -34,22 +34,25 @@ void Recorder::createFile() {
     return;
   }
   fileCreated = true;
-  file.println("ts,state,errors,lat,lon,altitude,velocity,battery,pyro1,pyro2");
+  file.println(
+      "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/"
+      "s],battery[decivolts],pyro1,pyro2");
 }
 
 void Recorder::recordTask(void *pvParameter) {
   Recorder *ref = (Recorder *)pvParameter;
   char line[128];
   uint32_t count = 0;
-  packedRXMessage element;
+  RecorderElement element;
   while (ref->initialized) {
     if (xQueueReceive(ref->queue, &element, portMAX_DELAY) == pdPASS) {
       if (!ref->fileCreated) {
         ref->createFile();
       }
-      snprintf(line, 128, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", element.timestamp, element.state, element.errors,
-               element.lat, element.lon, element.altitude, element.velocity, element.voltage,
-               (bool)(element.pyro_continuity & 0x01), (bool)(element.pyro_continuity & 0x02));
+      const auto &data = element.data;
+      snprintf(line, 128, "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", element.source, data.timestamp, data.state, data.errors,
+               data.lat, data.lon, data.altitude, data.velocity, data.voltage, (bool)(data.pyro_continuity & 0x01),
+               (bool)(data.pyro_continuity & 0x02));
       ref->file.println(line);
       count++;
 
