@@ -68,7 +68,7 @@ void Telemetry::initLink() {
   }
 
   if (testingPhrase[0] != 0) {
-    testingCrc = crc32(testingPhrase, strlen((const char*)linkPhrase));
+    testingCrc = crc32(testingPhrase, strlen((const char*)testingPhrase));
   }
 }
 
