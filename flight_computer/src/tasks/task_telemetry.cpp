@@ -54,6 +54,7 @@ enum state_e {
 #define INDEX_OP       0
 #define INDEX_LEN      1
 #define TELE_MAX_POWER 30
+static constexpr uint32_t kDefaultPaGain = 34;
 
 void Telemetry::PackTxMessage(uint32_t ts, gnss_data_t* gnss, packed_tx_msg_t* tx_payload,
                               estimation_output_t estimation_data) const noexcept {
@@ -294,9 +295,15 @@ void Telemetry::ParseRxMessage(packed_rx_msg_t* rx_payload) noexcept {
     if (global_cats_config.telemetry_settings.adaptive_power == ON) {
       if (fsm_updated && (m_fsm_enum == THRUSTING)) {
         SendSettings(CMD_POWER_LEVEL, TELE_MAX_POWER);
+        // Send PA gain to update power level; 34 is already the default value on telemetry chip
+        // NOTE: This line has to stay here forever as telemetry code can't be updated for all boards
+        SendSettings(CMD_PA_GAIN, kDefaultPaGain);
       }
       if (fsm_updated && (m_fsm_enum == TOUCHDOWN)) {
         SendSettings(CMD_POWER_LEVEL, global_cats_config.telemetry_settings.power_level);
+        // Send PA gain to update power level; 34 is already the default value on telemetry chip
+        // NOTE: This line has to stay here forever as telemetry code can't be updated for all boards
+        SendSettings(CMD_PA_GAIN, kDefaultPaGain);
       }
     }
 
