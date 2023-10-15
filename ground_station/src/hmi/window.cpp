@@ -68,26 +68,26 @@ void Window::initBar() {
   display.drawLine(0, 18, 400, 18, BLACK);
 }
 
-void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, int32_t free_memory) {
+void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, uint32_t free_memory) {
   static int32_t oldHour = 0;
   static int32_t oldMinute = 0;
   static bool oldUsbStatus = false;
   static bool oldLoggingStatus = false;
-  static int32_t oldFreeMemory = 0;
+  static uint32_t oldFreeMemory = 0;
   static bool blinkStatus = false;
 
   // Logging
   if (logging != oldLoggingStatus) {
-    display.drawBitmap(75, 1, bar_download, 16, 16, !logging);
+    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(!logging));
     oldLoggingStatus = logging;
   }
   if (logging) {
-    display.drawBitmap(75, 1, bar_download, 16, 16, blinkStatus);
+    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(blinkStatus));
   }
 
   // Location
   if (location) {
-    display.drawBitmap(329, 1, bar_location, 16, 16, !location);
+    display.drawBitmap(329, 1, bar_location, 16, 16, static_cast<uint16_t>(!location));
   }
 
   // Memory Usage

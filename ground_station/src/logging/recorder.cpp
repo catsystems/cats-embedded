@@ -50,9 +50,11 @@ void Recorder::recordTask(void *pvParameter) {
         ref->createFile();
       }
       const auto &data = element.data;
-      snprintf(line, 128, "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", element.source, data.timestamp, data.state, data.errors,
-               data.lat, data.lon, data.altitude, data.velocity, data.voltage,
-               static_cast<bool>(data.pyro_continuity & 0x01), static_cast<bool>(data.pyro_continuity & 0x02));
+      const auto pyro1_continuity = static_cast<bool>(data.pyro_continuity & 0x01U);
+      const auto pyro2_continuity = static_cast<bool>(data.pyro_continuity & 0x02U);
+      snprintf(line, 128, "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%hu,%hu", element.source, data.timestamp, data.state,
+               data.errors, data.lat, data.lon, data.altitude, data.velocity, data.voltage,
+               static_cast<uint8_t>(pyro1_continuity), static_cast<uint8_t>(pyro2_continuity));
       ref->file.println(line);
       count++;
 
