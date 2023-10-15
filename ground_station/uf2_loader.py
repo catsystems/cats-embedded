@@ -294,7 +294,7 @@ class UF2Loader:
 # If this script is called directly, it converts the .bin binary into the .UF2 binary
 if __name__ == "__main__":
     loader = UF2Loader("ESP32S2", 0)
-    binary_path = ".pio/build/esp32-s2-saola-1/firmware"
+    binary_path = ".pio/build/ground_station/firmware"
     # if an argument is passed to the script, use it as the path to the binary
     if len(sys.argv) > 1:
         binary_path = sys.argv[1]

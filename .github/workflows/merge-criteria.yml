@@ -189,7 +189,7 @@ jobs:
         run: |
           platformio run -d ${{ matrix.project }}
           if [[ "${{ matrix.project }}" == "ground_station" ]]; then
-            python ${{ matrix.project }}/uf2_loader.py ${{ matrix.project }}/.pio/build/esp32-s2-saola-1/firmware
+            python ${{ matrix.project }}/uf2_loader.py ${{ matrix.project }}/.pio/build/ground_station/firmware
           fi
 
       - name: Generate compile_commands.json
