@@ -31,7 +31,7 @@ class Window {
 
   void initBar();
   void updateBar(float batteryVoltage, bool usb = false, bool logging = false, bool location = false, bool time = false,
-                 int32_t free_memory = 100);
+                 uint32_t free_memory = 100);
 
   void initMenu(int16_t index);
   void updateMenu(int16_t index);

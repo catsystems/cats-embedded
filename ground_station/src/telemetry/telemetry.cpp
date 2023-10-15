@@ -69,6 +69,7 @@ void Telemetry::initLink() {
   }
 
   if (testingPhrase[0] != 0) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) uint8 to char is OK
     testingCrc = crc32(testingPhrase, strlen(reinterpret_cast<const char*>(testingPhrase)));
   }
 }
