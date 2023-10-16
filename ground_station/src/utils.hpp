@@ -34,8 +34,6 @@
 #include <Arduino.h>
 #include <SdFat.h>
 
-inline constexpr const char *DEFAULT_CONFIG_FILE_NAME = "system.json";
-
 constexpr float PI_F = static_cast<float>(PI);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
@@ -43,7 +41,7 @@ extern FatFileSystem fatfs;
 
 class Utils {
  public:
-  explicit Utils(const char *systemConfigFilename = DEFAULT_CONFIG_FILE_NAME) : configFileName(systemConfigFilename) {}
+  explicit Utils() = default;
   bool begin(uint32_t watchdogTimeout = 0, const char *labelName = "DRIVE", bool forceFormat = false);
   static void startBootloader();
   static void startWatchdog(uint32_t seconds);
@@ -57,7 +55,6 @@ class Utils {
   explicit operator bool() const { return mscReady; }
 
  private:
-  const char *configFileName;
   const char *serial = "0";
   volatile bool mscReady = false;
 
