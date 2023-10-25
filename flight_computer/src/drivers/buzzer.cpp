@@ -22,9 +22,10 @@ namespace driver {
 
 void Buzzer::SetVolume(uint16_t volume) {
   const uint16_t pwm_depth = m_pwm_channel.GetPwmDepth();
+  // Limit volume to 100%
+  volume = std::min<uint16_t>(100U, volume);
   // 100% volume = 50% pwm
-  // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-  const uint32_t pwm_ticks = (pwm_depth / 200U) * volume;
+  const uint32_t pwm_ticks = (static_cast<uint32_t>(pwm_depth) / 200U) * volume;
   m_pwm_channel.SetDutyCycleTicks(pwm_ticks);
 }
 
