@@ -1207,6 +1207,7 @@ void Window::initKeyboard(char *text, uint32_t maxLength) {
   }
   clearMainScreen();
 
+  display.setTextSize(1);
   updateKeyboardText(text, BLACK);
 
   display.setFont();
