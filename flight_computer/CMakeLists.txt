@@ -1,3 +1,7 @@
+# Copyright (C) 2020, 2024 Control and Telemetry Systems GmbH
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # This file is not used by platformio but is kept here as a reference for future generations
 
 set(CMAKE_SYSTEM_NAME Generic)
