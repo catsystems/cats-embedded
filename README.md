@@ -5,7 +5,7 @@
 </p>
 <p align="center">Always land on your paws</p>
 
-Control and Telemetry Systems (CATS) builds open source hard- and software flight computers for sounding rockets. Our portfolio includes the flight computer and a ground station which can be connected to the flight computer through telemetry. The flight computer can easily be configured through our configurator, a desktop application. The system allows the user to configure up to 8 action per flight transition, giving full control.
+Control and Telemetry Systems (CATS) builds open source (hardware and software) flight computers for sounding rockets. Our portfolio includes the _CATS Vega_ flight computer and a ground station that can be connected to the flight computer over telemetry. The flight computer can easily be configured through our configurator, a desktop application. The system allows the user to configure up to 8 actions per flight transition, giving full control.
 
 ## Features
 * Kalman filter altitude and velocity estimation
@@ -16,7 +16,7 @@ Control and Telemetry Systems (CATS) builds open source hard- and software fligh
 * GNSS logging and transmission to the ground station
 * Accelerometric liftoff detection
 * Fully open source
-* Configuration is one over our application, no need to work with a CLI
+* Configuration is done over our application, no need to work with a CLI
 
 ## Important Links
 * [Website](https://www.catsystems.io)
@@ -26,7 +26,7 @@ Control and Telemetry Systems (CATS) builds open source hard- and software fligh
 * [Hardware Repository](https://github.com/catsystems/cats-hardware)
 
 ## Configuration Tool
-The configuration tool just had its beta release. Further features will be released in the near future. It can be downloaded [here](https://github.com/catsystems/cats-configurator/releases). A description of the configurator can be found in the [manual](https://github.com/catsystems/cats-embedded/raw/main/CATS%20User%20Manual.pdf).
+The configuration tool just had its beta release. More features will be released in the near future. It can be downloaded [here](https://github.com/catsystems/cats-configurator/releases). A description of the configurator can be found in the [manual](https://github.com/catsystems/cats-embedded/raw/main/CATS%20User%20Manual.pdf).
 
 ## Quick Start
 Include the one Pager Here.
