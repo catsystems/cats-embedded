@@ -1,30 +1,10 @@
-/**
-  ******************************************************************************
-  * @file      startup_stm32f411xe.s
-  * @author    MCD Application Team
-  * @brief     STM32F411xExx Devices vector table for GCC based toolchains. 
-  *            This module performs:
-  *                - Set the initial SP
-  *                - Set the initial PC == Reset_Handler,
-  *                - Set the vector table entries with the exceptions ISR address
-  *                - Branches to main in the C library (which eventually
-  *                  calls main()).
-  *            After Reset the Cortex-M4 processor is in Thread mode,
-  *            priority is Privileged, and the Stack is set to Main.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
-    
+/* Copyright (C) 2020, 2024 Control and Telemetry Systems GmbH
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * Additional notice:
+ * This file was adapted from STMicroelectronics, released under BSD 3-Clause license. */
+
   .syntax unified
   .cpu cortex-m4
   .fpu softvfp
