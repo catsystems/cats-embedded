@@ -63,7 +63,7 @@ jobs:
     - name: Run clang-format
       uses: jidicula/clang-format-action@v4.9.0
       with:
-        clang-format-version: '13'
+        clang-format-version: '17'
         check-path: '${{ matrix.project }}/src'
         exclude-regex: '(lib|telemetry/src/st|ground_station/src/format)'
 
