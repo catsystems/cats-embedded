@@ -13,9 +13,8 @@ bool Navigation::begin() {
   initialized = true;
 
   compass.init();
-  if (imu.begin(Wire, 0x6A) != 1) {
-    console.error.println("IMU init failed!");
-  }
+
+  imu.begin(Wire, 0x6A);
 
   filter.begin(NAVIGATION_TASK_FREQUENCY);
 
@@ -172,12 +171,6 @@ void Navigation::navigationTask(void *pvParameter) {
     ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[0], ref->m[1], -ref->m[2]);
 
     ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
-
-    // console.log.print(ref->ax);
-    // console.log.print("; ");
-    // console.log.print(ref->ay);
-    // console.log.print("; ");
-    // console.log.println(ref->az);
 
     if (ref->calibration == CALIB_ONGOING) {
       ref->calibrate(ref->raw_m);
