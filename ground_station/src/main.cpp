@@ -26,9 +26,7 @@ void setup() {
 
   console.begin();
 
-  if (!utils.begin(0, "DRIVE")) {
-    console.error.println("[MAIN] Could not initialize utilities");
-  }
+  utils.begin(0, "DRIVE");
 
   systemConfig.load();
 
@@ -43,6 +41,9 @@ void setup() {
 
 void loop() {
   static bool ini{false};
+  static uint16_t link1LastTs{0};
+  static uint16_t link2LastTs{0};
+
   if (millis() > 5000 && !ini) {
     ini = true;
     if (systemConfig.config.receiverMode == SINGLE) {
@@ -67,29 +68,51 @@ void loop() {
 
   // In single mode, both antennas track the same rocket
   if (systemConfig.config.receiverMode == SINGLE) {
-    const bool link1DataValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
-    const bool link2DataValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
+    const bool link1GPSValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
+    const bool link2GPSValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
     // Check if data from link 1 is newer than link 2
     if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
+      // Stream data from Link 1
+      if (link1LastTs != link1.data.ts()) {
+        Utils::streamUsb(&link1, 1);
+      }
+
       // Take data from link 1 with higher priority
-      if (link1DataValid) {
+      if (link1GPSValid) {
         navigation.setPointB(link1.data.lat(), link1.data.lon());
-      } else if (link2DataValid) {
+      } else if (link2GPSValid) {
         navigation.setPointB(link2.data.lat(), link2.data.lon());
       }
     } else {
+      // Stream data from Link 2
+      if (link2LastTs != link2.data.ts()) {
+        Utils::streamUsb(&link2, 2);
+      }
+
       // Take data from link 2 with higher priority
-      if (link2DataValid) {
+      if (link2GPSValid) {
         navigation.setPointB(link2.data.lat(), link2.data.lon());
-      } else if (link1DataValid) {
+      } else if (link1GPSValid) {
         navigation.setPointB(link1.data.lat(), link1.data.lon());
       }
     }
   } else {
+    // Stream both Links as they track different FC's
+    if (link1LastTs != link1.data.ts()) {
+      Utils::streamUsb(&link1, 1);
+    }
+    if (link2LastTs != link2.data.ts()) {
+      Utils::streamUsb(&link2, 2);
+    }
+
     if (link1.data.lat() != 0 && link1.data.lon() != 0) {
       navigation.setPointB(link1.data.lat(), link1.data.lon());
     }
   }
+
+  // Update last timestamp from the link
+  link1LastTs = link1.data.ts();
+  link2LastTs = link2.data.ts();
 
   delay(100);
 }

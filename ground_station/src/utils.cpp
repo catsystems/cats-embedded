@@ -50,14 +50,11 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
   }
 
   if (!flash.begin()) {
-    console.error.println("[UTILS] Could not initialize SPI Flash");
     status = false;
   }
   if (!fatfs.begin(&flash) || forceFormat)  // Check if disk must be formated
   {
-    console.log.println("[UTILS] SPI Flash needs to be formatted");
     if (!format(labelName)) {
-      console.error.println("[UTILS] Could not format SPI Flash");
       status = false;
     }
   }
@@ -99,7 +96,6 @@ void Utils::startWatchdog(uint32_t seconds) {
   esp_task_wdt_init(seconds, true);  // Enable panic so ESP32 restarts
   esp_task_wdt_add(nullptr);         // Add current thread to WDT watch
   esp_task_wdt_reset();
-  console.log.printf("[SYSTEM] Watchdog started with timeout of %lu s\n", seconds);
 }
 
 void Utils::feedWatchdog() { esp_task_wdt_reset(); }
@@ -148,47 +144,35 @@ bool Utils::format(const char *labelName) {
   static FATFS elmchanFatfs;
   static uint8_t workbuf[4096];  // Working buffer for f_fdisk function.
 
-  console.log.println("[UTILS] Partitioning flash with 1 primary partition...");
   static DWORD plist[] = {100, 0, 0, 0};  // 1 primary partition with 100% of space.
   static uint8_t buf[512] = {0};          // Working buffer for f_fdisk function.
   static FRESULT r = f_fdisk(0, plist,
                              buf);  // Partition the flash with 1 partition that takes the entire space.
   if (r != FR_OK) {
-    console.error.printf("[UTILS] Error, f_fdisk failed with error code: %d\n", r);
     return false;
   }
-  console.println("[UTILS] Partitioned flash!");
-  console.println(
-      "[UTILS] Creating and formatting FAT filesystem (this takes "
-      "~60 seconds)...");
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf,
              sizeof(workbuf));  // Make filesystem.
   if (r != FR_OK) {
-    console.error.printf("[UTILS] Error, f_mkfs failed with error code: %d\n", r);
     return false;
   }
 
   r = f_mount(&elmchanFatfs, "0:", 1);  // mount to set disk label
   if (r != FR_OK) {
-    console.error.printf("[UTILS] Error, f_mount failed with error code: %d\n", r);
     return false;
   }
-  console.log.printf("[UTILS] Setting disk label to: %s\n", labelName);
+
   r = f_setlabel(labelName);  // Setting label
   if (r != FR_OK) {
-    console.error.printf("[UTILS] Error, f_setlabel failed with error code: %d\n", r);
     return false;
   }
-  f_unmount("0:");     // unmount
-  flash.syncBlocks();  // sync to make sure all data is written to flash
-  console.ok.println("[UTILS] Formatted flash!");
+  f_unmount("0:");           // unmount
+  flash.syncBlocks();        // sync to make sure all data is written to flash
   if (!fatfs.begin(&flash))  // Check new filesystem
   {
-    console.error.println("[UTILS] Error, failed to mount newly formatted filesystem!");
     return false;
   }
-  console.ok.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
   yield();
   return true;
 }
@@ -200,6 +184,28 @@ int32_t Utils::getFlashMemoryUsage() {
   const double percentage = (static_cast<double>(available_clusters) / static_cast<double>(num_clusters)) * 100.0;
 
   return static_cast<int32_t>(std::ceil(percentage));
+}
+
+void Utils::streamUsb(Telemetry *link, uint8_t link_idx) {
+  char print_char[150];
+
+  const int32_t time_int = link->data.ts() / 10;
+  const int32_t time_prec = link->data.ts() - time_int * 10;
+
+  const auto lat_int = static_cast<int32_t>(link->data.lat());
+  const auto lat_prec = static_cast<int32_t>((link->data.lat() - static_cast<float>(lat_int)) * 100000.0F);
+
+  const auto lon_int = static_cast<int32_t>(link->data.lon());
+  const auto lon_prec = static_cast<int32_t>((link->data.lon() - static_cast<float>(lon_int)) * 100000.0F);
+
+  const auto voltage_int = static_cast<int32_t>(link->data.voltage());
+  const auto voltage_prec = static_cast<int32_t>((link->data.voltage() - static_cast<float>(voltage_int)) * 10.0F);
+
+  std::snprintf(print_char, 150,
+                "Link %d: Ts: %ld.%ld, State: %d, Lat: %ld.%05ld, Lon: %ld.%05ld, Alt: %ld, Vel: %d, V: %ld.%ld",
+                link_idx, time_int, time_prec, link->data.state(), lat_int, lat_prec, lon_int, lon_prec,
+                link->data.altitude(), link->data.velocity(), voltage_int, voltage_prec);
+  console.log.println(print_char);
 }
 
 void usbEventCallback(void *arg [[maybe_unused]], esp_event_base_t event_base, int32_t event_id,
