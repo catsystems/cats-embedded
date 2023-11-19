@@ -481,11 +481,19 @@ void Hmi::settings() {
             (*static_cast<bool *>(data_ptr)) = true;
             configChanged = true;
             window.updateSettings(settingIndex);
+
+            if (&systemConfig.config.receiverMode == data_ptr) {
+              console.log.println("telemetry mode changed");
+            }
           }
           if (leftButton.wasPressed() && *static_cast<bool *>(data_ptr)) {
             (*static_cast<bool *>(data_ptr)) = false;
             configChanged = true;
             window.updateSettings(settingIndex);
+
+            if (&systemConfig.config.receiverMode == data_ptr) {
+              console.log.println("telemetry mode changed");
+            }
           }
           break;
         }
@@ -530,21 +538,36 @@ void Hmi::settings() {
 
     if (backButton.wasPressed()) {
       state = MENU;
+      bool closeCurrentFile = false;
       if (configChanged) {
-        configChanged = false;
-        if (systemConfig.config.receiverMode == SINGLE) {
+        if (systemConfig.config.receiverMode == ReceiverTelemetryMode::kSingle) {
+          if (strcmp(link1.getLinkPhrase(), systemConfig.config.linkPhrase1) != 0) {
+            closeCurrentFile = true;
+          }
+
           // Set both link phrases to the same
           link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
           link2.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
         } else {
+          if ((strcmp(link1.getLinkPhrase(), systemConfig.config.linkPhrase1) != 0) ||
+              (strcmp(link2.getLinkPhrase(), systemConfig.config.linkPhrase2) != 0)) {
+            closeCurrentFile = true;
+          }
+
           // Use two different link phrases
           link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
           link2.setLinkPhrase(systemConfig.config.linkPhrase2, kMaxPhraseLen);
         }
 
         link1.setTestingPhrase(systemConfig.config.testingPhrase, kMaxPhraseLen);
+
+        if (closeCurrentFile) {
+          recorder.closeCurrentFile();
+        }
+
         systemConfig.save();
         console.log.println("Save config");
+        configChanged = false;
       }
       window.initMenu(menuIndex);
     }

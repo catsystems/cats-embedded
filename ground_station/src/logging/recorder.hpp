@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <FatLib/FatFile.h>
+
 #include "telemetry/telemetryData.hpp"
 #include "utils.hpp"
 
@@ -14,33 +16,34 @@ struct RecorderElement {
 
 class Recorder {
  public:
-  explicit Recorder(const char* directory) : directory(directory) {}
+  explicit Recorder(const char* directory) : m_directory(directory) {}
   bool begin();
 
-  void enable() { enabled = true; }
+  void enable() { m_enabled = true; }
 
-  void disable() { enabled = false; }
+  void closeCurrentFile();
 
   void record(packedRXMessage* data, uint8_t link_source) {
-    if (enabled) {
+    if (m_enabled) {
       RecorderElement rec_elem = {*data, link_source};
-      xQueueSend(queue, &rec_elem, 0);
+      xQueueSend(m_queue, &rec_elem, 0);
     }
   }
 
  private:
-  bool initialized = false;
-  bool enabled = false;
-  bool fileCreated = false;
+  bool m_initialized = false;
+  bool m_enabled = false;
+  bool m_fileCreated = false;
 
-  const char* directory;
+  const char* m_directory{nullptr};
 
-  char fileName[30] = {};
+  char m_fileName[60] = {};
 
-  QueueHandle_t queue{nullptr};
-  File file{};
+  QueueHandle_t m_queue{nullptr};
+  File32 m_file{};
 
   void createFile();
+  void setNewFileName();
 
   static void recordTask(void* pvParameter);
 };

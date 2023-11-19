@@ -75,5 +75,5 @@ void Config::load() {
   }
 
   config.neverStopLogging = stop;
-  config.receiverMode = static_cast<ReceiverTelemetryMode_e>(mode);
+  config.receiverMode = static_cast<ReceiverTelemetryMode>(mode);
 }
