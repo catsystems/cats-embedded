@@ -17,6 +17,8 @@ class Telemetry {
   void setLinkPhrase(const char* phrase, uint32_t length);
   void setLinkPhrase(const String& phrase);
 
+  const char* getLinkPhrase();
+
   void setTestingPhrase(const char* phrase, uint32_t length);
   void setTestingPhrase(const String& phrase);
 
