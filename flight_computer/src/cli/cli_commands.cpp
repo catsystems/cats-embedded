@@ -8,7 +8,7 @@
 
 #include "cli/cli_commands.hpp"
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 #include "tasks/task_simulator.hpp"
 #endif
 
@@ -64,7 +64,7 @@ static void cli_cmd_flash_write(const char *cmd_name, char *args);
 static void cli_cmd_flash_stop(const char *cmd_name, char *args);
 static void cli_cmd_flash_test(const char *cmd_name, char *args);
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 static void cli_cmd_start_simulation(const char *cmd_name, char *args);
 #endif
 
@@ -91,7 +91,7 @@ const clicmd_t cmd_table[] = {
     CLI_COMMAND_DEF("rm", "remove a file", "<file_name>", cli_cmd_rm),
     CLI_COMMAND_DEF("save", "save configuration", nullptr, cli_cmd_save),
     CLI_COMMAND_DEF("set", "change setting", "[<cmd_name>=<value>]", cli_cmd_set),
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
     CLI_COMMAND_DEF("sim", "start a simulation flight", "<sim_tag>", cli_cmd_start_simulation),
 #endif
     CLI_COMMAND_DEF("stats", "print flight stats", "<flight_number>", cli_cmd_print_stats),
@@ -412,7 +412,7 @@ static void cli_cmd_status(const char *cmd_name [[maybe_unused]], char *args [[m
              static_cast<double>(task::global_state_estimation->GetEstimationOutput().velocity),
              static_cast<double>(task::global_state_estimation->GetEstimationOutput().acceleration));
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   if (strcmp(args, "--heap") == 0) {
     HeapStats_t heap_stats = {};
     vPortGetHeapStats(&heap_stats);
@@ -851,7 +851,7 @@ static void cli_cmd_flash_test(const char *cmd_name [[maybe_unused]], char *args
   cli_print_line("Test complete!");
 }
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 static void cli_cmd_start_simulation(const char *cmd_name [[maybe_unused]], char *args) { start_simulation(args); }
 #endif
 

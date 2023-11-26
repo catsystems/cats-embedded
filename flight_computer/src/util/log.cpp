@@ -8,7 +8,7 @@
 #include "comm/stream_group.hpp"
 #include "util/log.h"
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 #include "cmsis_os.h"
 
 #define CATS_RAINBOW_LOG
@@ -30,12 +30,12 @@ static char print_buffer[PRINT_BUFFER_LEN];
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 void log_set_mode(log_mode_e mode) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   L.log_mode = mode;
 #endif
 }
 log_mode_e log_get_mode() {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   return L.log_mode;
 #else
   return LOG_MODE_NONE;
@@ -44,25 +44,25 @@ log_mode_e log_get_mode() {
 
 // Only has impact on LOG_MODE_DEFAULT
 void log_set_level(int level) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   L.level = level;
 #endif
 }
 
 void log_enable() {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   L.log_mode = LOG_MODE_DEFAULT;
 #endif
 }
 
 void log_disable() {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   L.log_mode = LOG_MODE_NONE;
 #endif
 }
 
 bool log_is_enabled() {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   return L.log_mode == LOG_MODE_DEFAULT;
 #else
   return false;
@@ -70,7 +70,7 @@ bool log_is_enabled() {
 }
 
 void log_log(int level, const char *file, int line, const char *format, ...) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   if ((L.log_mode == LOG_MODE_DEFAULT) && level >= L.level) {
     /* fill buffer with metadata */
     static char buf_ts[16];
@@ -96,7 +96,7 @@ void log_log(int level, const char *file, int line, const char *format, ...) {
 }
 
 void log_raw(const char *format, ...) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   va_list argptr;
   va_start(argptr, format);
   int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);
@@ -108,7 +108,7 @@ void log_raw(const char *format, ...) {
 }
 
 void log_sim(const char *format, ...) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   if (L.log_mode == LOG_MODE_SIM) {
     va_list argptr;
     va_start(argptr, format);
@@ -122,7 +122,7 @@ void log_sim(const char *format, ...) {
 }
 
 void log_rawr(const char *format, ...) {
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
   va_list argptr;
   va_start(argptr, format);
   const int len = vsnprintf(print_buffer, PRINT_BUFFER_LEN, format, argptr);

@@ -10,7 +10,7 @@
 
 constexpr uint16_t STACK_OVERFLOW_PRINT_BUF_SZ = 100;
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 /**
  * This function is called when a stack overflow is detected by FreeRTOS. The CATS implementation of this function just
  * prints the name of the task which generated the overflow via USB (if available) and blinks the red LED.
