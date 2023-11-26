@@ -27,14 +27,17 @@ jobs:
         id: changed-files-filtered
         # The build pipeline is triggered only for the project in which the changes happened.
         # For example if a change was made in flight_computer/src/main.cpp, a pipeline will
-        # run only for the flight_computer project.
-        # Additionally, if changes happened at the root of the repository, or in .github/,
-        # the pipeline will run for all three projects.
+        # run only for the 'flight_computer' project.
+        #
+        # If changes happened at the root of the repository, or in .github/, the pipeline will
+        # run for all three projects.
+        # Additionally, the pipeline will also run for all three projects if it is triggered
+        # when pushing to main.
         run: |
           contains_dot=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".")) | length')
           contains_dotgithub=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".github")) | length')
 
-          if [[ $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
+          if [[ "${GITHUB_REF}" == "refs/heads/main" || $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
             filtered_array='["flight_computer","ground_station","telemetry"]'
           else
             filtered_array='${{ steps.changed-files.outputs.all_changed_files }}'
@@ -65,7 +68,7 @@ jobs:
       with:
         clang-format-version: '17'
         check-path: '${{ matrix.project }}/src'
-        exclude-regex: '(lib|telemetry/src/st|ground_station/src/format)'
+        exclude-regex: '(lib|telemetry/src/st)'
 
   build_lint:
     if: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
