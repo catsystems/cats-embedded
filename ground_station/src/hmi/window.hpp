@@ -42,8 +42,8 @@ class Window {
 
   void initLive();
   void updateLive(TelemetryInfo *info, int16_t index);
-  void updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index);
-  void updateLive(TelemetryData *data, int16_t index);
+  void updateLive(TelemetryData *data, TelemetryInfo *info, char *linkPhrase, int16_t index);
+  void updateLive(TelemetryData *data, char *linkPhrase, int16_t index);
 
   void initRecovery();
   void updateRecovery(Navigation *navigation);
@@ -80,7 +80,7 @@ class Window {
   static constexpr uint8_t kUnderscoreIdx = 37;
 
  private:
-  void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
+  void updateLiveData(TelemetryData *data, char *linkPhrase, int16_t index, uint16_t color);
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);

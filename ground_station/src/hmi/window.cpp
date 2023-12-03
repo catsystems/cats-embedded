@@ -293,7 +293,7 @@ void Window::updateLive(TelemetryInfo *info, int16_t index) {
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index) {
+void Window::updateLive(TelemetryData *data, TelemetryInfo *info, char *linkPhrase, int16_t index) {
   if (index > 1) {
     return;
   }
@@ -304,7 +304,8 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index)
   data->clear();
   info->clear();
 
-  updateLiveData(&teleData[index], index, WHITE);
+
+  updateLiveData(&teleData[index], linkPhrase, index, WHITE);
   updateLiveInfo(&infoData[index], index, BLACK);
 
   // display.fillRect(10,19,190,200, WHITE);
@@ -314,11 +315,11 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index)
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveData(&teleData[index], linkPhrase, index, BLACK);
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, int16_t index) {
+void Window::updateLive(TelemetryData *data, char *linkPhrase, int16_t index) {
   if (index > 1) {
     return;
   }
@@ -328,7 +329,7 @@ void Window::updateLive(TelemetryData *data, int16_t index) {
   // Clear update flag
   data->clear();
 
-  updateLiveData(&teleData[index], index, WHITE);
+  updateLiveData(&teleData[index], linkPhrase, index, WHITE);
 
   // display.fillRect(10,19,190,200, WHITE);
 
@@ -336,7 +337,7 @@ void Window::updateLive(TelemetryData *data, int16_t index) {
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveData(&teleData[index], linkPhrase, index, BLACK);
 }
 
 const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST", "DROGUE", "MAIN", "DOWN"};
@@ -344,7 +345,7 @@ const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST",
 const char *const errorName[] = {"No Config",   "Log Full",         "Filter Error",
                                  "Overheating", "Continuity Error", "Calibration Error"};
 
-void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) {
+void Window::updateLiveData(TelemetryData *data, char *linkPhrase, int16_t index, uint16_t color) {
   const auto xOffset = static_cast<int16_t>(index * 200);
 
   display.setFont(&FreeSans12pt7b);
@@ -396,6 +397,7 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   display.setFont(&FreeSans9pt7b);
   display.setCursor(static_cast<int16_t>(xOffset + 35), 192);
 
+  /* The order of the if defines the priority of the errors */
   if (static_cast<bool>(data->errors() & 0x04U)) {
     display.print(errorName[2]);
   } else if (static_cast<bool>(data->errors() & 0x20U)) {
@@ -408,6 +410,8 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
     display.print(errorName[0]);
   } else if (static_cast<bool>(data->errors() & 0x08U)) {
     display.print(errorName[3]);
+  } else {
+    display.print(linkPhrase);
   }
 
   display.setFont(&FreeSans9pt7b);

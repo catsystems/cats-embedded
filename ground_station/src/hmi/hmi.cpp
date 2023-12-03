@@ -129,7 +129,7 @@ void Hmi::live() {
     if (link1Log) {
       recorder.record(&link1.data.getRxData(), 1);
     }
-    window.updateLive(&link1.data, &link1.info, 0);
+    window.updateLive(&link1.data, &link1.info, systemConfig.config.linkPhrase1, 0);
     updated = true;
   } else if (link1.info.isUpdated()) {
     window.updateLive(&link1.info, 0);
@@ -142,7 +142,7 @@ void Hmi::live() {
     if (link2Log) {
       recorder.record(&link2.data.getRxData(), 2);
     }
-    window.updateLive(&link2.data, &link2.info, 1);
+    window.updateLive(&link2.data, &link2.info, systemConfig.config.linkPhrase2, 1);
     updated = true;
   } else if (link2.info.isUpdated()) {
     window.updateLive(&link2.info, 1);
