@@ -26,7 +26,7 @@ void setup() {
 
   console.begin();
 
-  if (!utils.begin(0, "DRIVE")) {
+  if (!utils.begin()) {
     console.error.println("[MAIN] Could not initialize utilities");
   }
 
@@ -45,7 +45,7 @@ void loop() {
   static bool ini{false};
   if (millis() > 5000 && !ini) {
     ini = true;
-    if (systemConfig.config.receiverMode == SINGLE) {
+    if (systemConfig.config.receiverMode == ReceiverTelemetryMode::kSingle) {
       // Set both link phrases to the same
       link1.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
       link2.setLinkPhrase(systemConfig.config.linkPhrase1, kMaxPhraseLen);
@@ -66,7 +66,7 @@ void loop() {
   }
 
   // In single mode, both antennas track the same rocket
-  if (systemConfig.config.receiverMode == SINGLE) {
+  if (systemConfig.config.receiverMode == ReceiverTelemetryMode::kSingle) {
     const bool link1DataValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
     const bool link2DataValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
     // Check if data from link 1 is newer than link 2
