@@ -38,7 +38,7 @@ void log_rawr(const char *format, ...) __attribute__((format(printf, 1, 2)));
 }
 #endif
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 
 #if defined(_WIN32)
 #define PATH_SEPARATOR '\\'

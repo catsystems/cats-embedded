@@ -45,15 +45,15 @@ extern volatile recorder_status_e global_recorder_status;
 extern event_action_map_elem_t* event_action_map;
 
 // clang-format off
-// __PLATFORMIO_BUILD_DEBUG__ adds '-dbg', CATS_DEBUG adds '-dev'
+// __PLATFORMIO_BUILD_DEBUG__ adds '-dbg', CATS_DEV adds '-dev'
 #ifdef __PLATFORMIO_BUILD_DEBUG__
-    #ifdef CATS_DEBUG
+    #ifdef CATS_DEV
         inline constexpr const char* code_version = FIRMWARE_VERSION "-dbg-dev";
     #else
         inline constexpr const char* code_version = FIRMWARE_VERSION "-dbg";
     #endif
 #else
-    #ifdef CATS_DEBUG
+    #ifdef CATS_DEV
         inline constexpr const char* code_version = FIRMWARE_VERSION "-dev";
     #else
         inline constexpr const char* code_version = FIRMWARE_VERSION;

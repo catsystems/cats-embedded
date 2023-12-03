@@ -74,7 +74,7 @@ extern uint32_t SystemCoreClock;
 #define configGENERATE_RUN_TIME_STATS        0
 #define configUSE_STATS_FORMATTING_FUNCTIONS 0
 
-#ifdef CATS_DEBUG
+#ifdef CATS_DEV
 #define configCHECK_FOR_STACK_OVERFLOW 2
 #else
 #define configCHECK_FOR_STACK_OVERFLOW 0
