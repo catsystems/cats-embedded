@@ -82,5 +82,5 @@ void Parser::cmdGNSSTime(uint8_t *args, uint32_t length) {
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static) function ptr doesn't work if it's static
 void Parser::cmdGNSSInfo(uint8_t *args [[maybe_unused]], uint32_t length [[maybe_unused]]) {
-  // To Do: Do Something
+  // TODO: Do Something
 }
