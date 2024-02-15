@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "telemetry/telemetry.hpp"
+
 #include <Arduino.h>
 #include <SdFat.h>
 
@@ -26,6 +28,7 @@ class Utils {
   static bool isUpdated(bool clearFlag = true);
   static bool isConnected();
   static int32_t getFlashMemoryUsage();
+  static void streamUsb(Telemetry *link, uint8_t link_idx);
   static bool format(const char *labelName);
   inline const char *getSerialNumber() { return serial; }
 

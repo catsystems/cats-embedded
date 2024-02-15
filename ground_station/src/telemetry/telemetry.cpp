@@ -65,11 +65,9 @@ void Telemetry::initLink() {
   if (linkPhrase[0] != 0) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) uint8 to char is OK
     const uint32_t phraseCrc = crc32(linkPhrase, strlen(reinterpret_cast<const char*>(linkPhrase)));
-    console.error.printf("[TELEMETRY] Sending link phrase: %s (CRC: %lu)\n", linkPhrase, phraseCrc);
     sendLinkPhraseCrc(phraseCrc, 4);
     vTaskDelay(100);
     sendEnable();
-    console.warning.println("[TELEMETRY] Link Enabled");
   }
 
   if (testingPhrase[0] != 0) {
@@ -149,8 +147,6 @@ void Telemetry::update(void* pvParameter) {
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial
 void Telemetry::sendLinkPhraseCrc(uint32_t crc, uint32_t length) {
-  console.log.println(crc);
-  console.log.println(length);
   uint8_t out[7];  // 1 OP + 1 LEN + 4 DATA + 1 CRC
   out[0] = CMD_LINK_PHRASE;
   out[1] = static_cast<uint8_t>(length);
