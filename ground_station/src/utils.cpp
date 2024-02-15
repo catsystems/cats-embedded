@@ -50,11 +50,13 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
   }
 
   if (!flash.begin()) {
+    console.warning.println("[UTILS] Could not initialize SPI Flash");
     status = false;
   }
   if (!fatfs.begin(&flash) || forceFormat)  // Check if disk must be formated
   {
     if (!format(labelName)) {
+      console.warning.println("[UTILS] Could not format SPI Flash");
       status = false;
     }
   }
@@ -149,28 +151,33 @@ bool Utils::format(const char *labelName) {
   static FRESULT r = f_fdisk(0, plist,
                              buf);  // Partition the flash with 1 partition that takes the entire space.
   if (r != FR_OK) {
+    console.warning.printf("[UTILS] Error, f_fdisk failed with error code: %d\n", r);
     return false;
   }
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf,
              sizeof(workbuf));  // Make filesystem.
   if (r != FR_OK) {
+    console.warning.printf("[UTILS] Error, f_mkfs failed with error code: %d\n", r);
     return false;
   }
 
   r = f_mount(&elmchanFatfs, "0:", 1);  // mount to set disk label
   if (r != FR_OK) {
+    console.warning.printf("[UTILS] Error, f_mount failed with error code: %d\n", r);
     return false;
   }
 
   r = f_setlabel(labelName);  // Setting label
   if (r != FR_OK) {
+    console.warning.printf("[UTILS] Error, f_setlabel failed with error code: %d\n", r);
     return false;
   }
   f_unmount("0:");           // unmount
   flash.syncBlocks();        // sync to make sure all data is written to flash
   if (!fatfs.begin(&flash))  // Check new filesystem
   {
+    console.warning.println("[UTILS] Error, failed to mount newly formatted filesystem!");
     return false;
   }
   yield();

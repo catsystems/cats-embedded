@@ -25,8 +25,15 @@ void setup() {
   pinMode(21, INPUT);
 
   console.begin();
+#ifdef CATS_DEBUG
+  console.setLevel(Console::ConsoleLevel::LEVEL_OK);
+#else
+  console.setLevel(Console::ConsoleLevel::LEVEL_LOG);
+#endif
 
-  utils.begin(0, "DRIVE");
+  if (!utils.begin(0, "DRIVE")) {
+    console.warning.println("[MAIN] Could not initialize utilities");
+  }
 
   systemConfig.load();
 
@@ -68,8 +75,8 @@ void loop() {
 
   // In single mode, both antennas track the same rocket
   if (systemConfig.config.receiverMode == SINGLE) {
-    const bool link1GPSValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
-    const bool link2GPSValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
+    const bool link1GpsValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
+    const bool link2GpsValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
     // Check if data from link 1 is newer than link 2
     if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
       // Stream data from Link 1
@@ -78,9 +85,9 @@ void loop() {
       }
 
       // Take data from link 1 with higher priority
-      if (link1GPSValid) {
+      if (link1GpsValid) {
         navigation.setPointB(link1.data.lat(), link1.data.lon());
-      } else if (link2GPSValid) {
+      } else if (link2GpsValid) {
         navigation.setPointB(link2.data.lat(), link2.data.lon());
       }
     } else {
@@ -90,9 +97,9 @@ void loop() {
       }
 
       // Take data from link 2 with higher priority
-      if (link2GPSValid) {
+      if (link2GpsValid) {
         navigation.setPointB(link2.data.lat(), link2.data.lon());
-      } else if (link1GPSValid) {
+      } else if (link1GpsValid) {
         navigation.setPointB(link1.data.lat(), link1.data.lon());
       }
     }

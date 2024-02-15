@@ -8,8 +8,11 @@ bool Recorder::begin() {
   int32_t number = 0;
 
   if (!fatfs.chdir(directory)) {
+    console.warning.print("[REC] Open directory failed");
+    console.warning.println(directory);
     fatfs.mkdir(&directory[1]);
     if (!fatfs.chdir(directory)) {
+      console.warning.println("[REC] Open directory failed");
       return false;
     }
   }
@@ -28,6 +31,7 @@ bool Recorder::begin() {
 void Recorder::createFile() {
   file = fatfs.open(fileName, FILE_WRITE);
   if (!file) {
+    console.warning.println("[REC] Open file failed");
     return;
   }
   fileCreated = true;

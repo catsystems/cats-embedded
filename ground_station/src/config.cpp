@@ -31,26 +31,32 @@ void Config::load() {
   bool stop{false};
   if (!systemParser.getTestingPhrase(config.testingPhrase)) {
     strncpy(config.testingPhrase, "", 1);
+    console.warning.println("Testing phrase loading failed");
   }
 
   if (!systemParser.getLinkPhrase1(config.linkPhrase1)) {
     strncpy(config.linkPhrase1, "", 1);
+    console.warning.println("Link phrase 1 loading failed");
   }
 
   if (!systemParser.getLinkPhrase2(config.linkPhrase2)) {
     strncpy(config.linkPhrase2, "", 1);
+    console.warning.println("Link phrase 2 loading failed");
   }
 
   if (!systemParser.getTelemetryMode(mode)) {
     mode = false;
+    console.warning.println("Telemetry mode loading failed");
   }
 
   if (!systemParser.getNeverStopLoggingFlag(stop)) {
     config.neverStopLogging = false;
+    console.warning.println("Logging flag loading failed");
   }
 
   if (!systemParser.getTimeZone(config.timeZoneOffset)) {
     config.timeZoneOffset = 0;
+    console.warning.println("Timezone loading failed");
   }
 
   if (!systemParser.getMagCalib(config.mag_calib)) {
@@ -61,6 +67,7 @@ void Config::load() {
     config.mag_calib.mag_scale_x = 1000;
     config.mag_calib.mag_scale_y = 1000;
     config.mag_calib.mag_scale_z = 1000;
+    console.warning.println("Mag Calibration loading failed");
   }
   if (!systemParser.getUnitSystem(config.unitSystem)) {
     config.unitSystem = UnitSystem::kMetric;

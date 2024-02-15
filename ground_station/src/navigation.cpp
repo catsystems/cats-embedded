@@ -14,7 +14,9 @@ bool Navigation::begin() {
 
   compass.init();
 
-  imu.begin(Wire, 0x6A);
+  if (imu.begin(Wire, 0x6A) != 1) {
+    console.warning.println("IMU init failed!");
+  }
 
   filter.begin(NAVIGATION_TASK_FREQUENCY);
 
