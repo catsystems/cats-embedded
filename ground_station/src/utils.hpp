@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "telemetry/telemetry.hpp"
-
 #include <Arduino.h>
 #include <SdFat.h>
+
+class Telemetry;
 
 constexpr float PI_F = static_cast<float>(PI);
 

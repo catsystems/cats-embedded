@@ -14,6 +14,7 @@
 #include "SPI.h"
 #include "console.hpp"
 #include "systemParser.hpp"
+#include "telemetry/telemetry.hpp"
 
 #include "diskio.h"
 #include "ff.h"
