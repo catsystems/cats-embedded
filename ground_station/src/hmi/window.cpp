@@ -4,6 +4,8 @@
 
 #include "window.hpp"
 #include "bmp.hpp"
+#include "config.hpp"
+#include "utils.hpp"
 
 #include <Fonts/FreeMonoBold12pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
@@ -362,12 +364,25 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   drawCentreString(stateName[data->state()], static_cast<int16_t>(xOffset + 100), 42);
 
   display.setCursor(static_cast<int16_t>(xOffset + 35), 70);
-  display.print(data->altitude());
-  display.print(" m");
+  const int32_t altitude_m = data->altitude();
+  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    display.print(altitude_m);
+    display.print(" m");
+  } else {
+    display.print(Utils::MetersToFeet(altitude_m));
+    display.print(" ft");
+  }
 
   display.setCursor(static_cast<int16_t>(xOffset + 35), 95);
-  display.print(data->velocity());
-  display.print(" m/s");
+
+  const int16_t velocity_m_s = data->velocity();
+  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    display.print(velocity_m_s);
+    display.print(" m/s");
+  } else {
+    display.print(Utils::MetersToFeet(velocity_m_s));
+    display.print(" ft/s");
+  }
 
   display.setCursor(static_cast<int16_t>(xOffset + 35), 120);
   display.print(data->lat(), 4);
@@ -515,8 +530,14 @@ void Window::updateRecovery(Navigation *navigation) {
   }
 
   display.setCursor(70, 170);
-  display.print(navigation->getDistance());
-  display.print("m");
+  const float distance_m = navigation->getDistance();
+  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    display.print(distance_m);
+    display.print(" m");
+  } else {
+    display.print(Utils::MetersToFeet(distance_m));
+    display.print(" ft");
+  }
 
   display.setFont(&FreeSans9pt7b);
 
@@ -1026,7 +1047,7 @@ void Window::initSensorCalibrateDone() {
   display.refresh();
 }
 
-void Window::initSettings(int16_t submenu) {
+void Window::initSettings(int16_t submenuIdx) {
   clearMainScreen();
 
   display.drawLine(0, 49, 400, 49, BLACK);
@@ -1036,21 +1057,17 @@ void Window::initSettings(int16_t submenu) {
   display.setTextColor(WHITE);
 
   display.fillRect(0, 19, 400, 30, BLACK);
-  drawCentreString(settingPageName[submenu], 200, 42);
+  drawCentreString(settingPageName[submenuIdx], 200, 42);
 
   display.setTextColor(BLACK);
-  for (int i = 0; i < settingsTableValueCount[submenu]; i++) {
-    addSettingEntry(i, &settingsTable[submenu][i]);
+  for (int i = 0; i < settingsTableValueCount[submenuIdx]; i++) {
+    addSettingEntry(i, &settingsTable[submenuIdx][i]);
   }
 
-  if (submenu == 0) {
-    display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
-  } else {
-    display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
-  }
+  drawSettingsTriangles(submenuIdx, WHITE);
 
   oldSettingsIndex = -1;
-  subMenuSettingIndex = submenu;
+  subMenuSettingIndex = submenuIdx;
 
   display.drawLine(0, 177, 400, 177, BLACK);
   display.refresh();
@@ -1112,26 +1129,29 @@ void Window::updateSettings(int16_t index) {
       highlightSetting(oldSettingsIndex, BLACK);
     }
   } else {
-    if (subMenuSettingIndex == 0) {
-      display.fillTriangle(386, 33, 378, 25, 378, 41, BLACK);
-    } else {
-      display.fillTriangle(13, 33, 21, 25, 21, 41, BLACK);
-    }
+    drawSettingsTriangles(subMenuSettingIndex, BLACK);
   }
 
   if (index >= 0) {
     highlightSetting(index, WHITE);
   } else {
-    if (subMenuSettingIndex == 0) {
-      display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
-    } else {
-      display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
-    }
+    drawSettingsTriangles(subMenuSettingIndex, WHITE);
     display.fillRect(0, 178, 400, 62, WHITE);
   }
 
   oldSettingsIndex = index;
   display.refresh();
+}
+
+void Window::drawSettingsTriangles(int16_t submenuIdx, int16_t color) {
+  if (submenuIdx == 0) {  // first page
+    display.fillTriangle(386, 33, 378, 25, 378, 41, color);
+  } else if (submenuIdx == kSettingPages - 1) {  // last page
+    display.fillTriangle(13, 33, 21, 25, 21, 41, color);
+  } else {  // other pages
+    display.fillTriangle(386, 33, 378, 25, 378, 41, color);
+    display.fillTriangle(13, 33, 21, 25, 21, 41, color);
+  }
 }
 
 void Window::highlightSetting(int16_t index, uint16_t color) {

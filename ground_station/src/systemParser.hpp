@@ -6,16 +6,9 @@
 
 #include <ArduinoJson.h>
 
-constexpr uint32_t MAX_SYSTEM_FILE_SIZE = 1 * 1024UL;
+#include "config.hpp"
 
-struct mag_calib_t {
-  int32_t mag_offset_x;
-  int32_t mag_offset_y;
-  int32_t mag_offset_z;
-  int32_t mag_scale_x;
-  int32_t mag_scale_y;
-  int32_t mag_scale_z;
-};
+constexpr uint32_t MAX_SYSTEM_FILE_SIZE = 1 * 1024UL;
 
 class SystemParser {
  public:
@@ -29,6 +22,7 @@ class SystemParser {
   bool setTimeZone(int16_t timezone);
   bool setTelemetryMode(bool mode);
   bool setMagCalib(mag_calib_t calib);
+  bool setUnitSystem(UnitSystem unit_system);
 
   bool getLinkPhrase1(char* phrase);
   bool getLinkPhrase2(char* phrase);
@@ -37,6 +31,7 @@ class SystemParser {
   bool getTimeZone(int16_t& timezone);
   bool getTelemetryMode(bool& mode);
   bool getMagCalib(mag_calib_t& calib);
+  bool getUnitSystem(UnitSystem& unit_system);
 
   bool saveFile(const char* path = nullptr);
 

@@ -31,6 +31,11 @@ class Utils {
 
   explicit operator bool() const { return mscReady; }
 
+  template <typename T>
+  [[nodiscard]] constexpr static T MetersToFeet(T meters) {
+    return static_cast<T>(meters * 3.28084);
+  }
+
  private:
   const char *serial = "0";
   volatile bool mscReady = false;
