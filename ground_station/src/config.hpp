@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-enum ReceiverTelemetryMode_e : bool { SINGLE = false, DUAL = true };
+enum class ReceiverTelemetryMode : bool { kSingle = false, kDual = true };
 
 // Maximum number of characters for link & test phrases
 inline constexpr uint32_t kMaxPhraseLen = 16;
@@ -16,7 +16,7 @@ inline constexpr uint32_t kMaxPhraseLen = 16;
 struct systemConfig_t {
   int16_t timeZoneOffset;
   bool neverStopLogging;
-  ReceiverTelemetryMode_e receiverMode;
+  ReceiverTelemetryMode receiverMode;
   char linkPhrase1[kMaxPhraseLen + 1];
   char linkPhrase2[kMaxPhraseLen + 1];
   char testingPhrase[kMaxPhraseLen + 1];
