@@ -1,12 +1,13 @@
 # CATS Embedded Software
 
-<img src="https://github.com/catsystems/cats-docs/blob/main/logo/PNG/logo_with_smile.png" alt = "CATS Logo" width="300" height="300">
+<p align="center">
+<img src="https://github.com/catsystems/cats-docs/blob/main/logo/PNG/logo_with_smile.png" alt = "CATS Logo" width="200" height="200">
+</p>
 
-*Always land on your paws*
+<p align="center"><i>Always land on your paws</i></p>
 
 ## Features
 * Kalman filter altitude and velocity estimation
-* Triple sensor redundancy
 * Highly configurable events
 * Backup timers
 * High speed logging
@@ -24,13 +25,11 @@ Contributions are welcome and encouraged. You can contribute in many ways:
 The best way to get started is to join our [Discord](https://discord.gg/H9Caj8XeBj) server.
 
 ## Open Source
-All CATS code is open source and can be used free of charge without warranty. 
+All CATS code is open source and available for free use under the GPL-3.0 license. Please note that it is provided without any warranty.
 
 The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betaflight), so thanks goes to all the contributors of Cleanflight and Betaflight. 
 
-## Pushing to Remote Repository
-In order to ensure consistency and easier diff review between commits,
-*clang-format* is used to format all modified C/C++ files.
+## Overview
+Here is a quick overview of our system, in the form of a poster that we presented at the [26th ESA PAC Symposium](https://atpi.eventsair.com/26th-esa-pac-symposium/).
 
-To download `clang-format` visit this [page](https://releases.llvm.org/download.html).
-
+<img src="https://github.com/catsystems/cats-docs/blob/main/Poster/cats_poster_26th_esa_pac_symposium.png" alt = "CATS Poster" width="900">
