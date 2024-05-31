@@ -4,9 +4,9 @@
 <img src="https://github.com/catsystems/cats-docs/blob/main/logo/PNG/logo_with_smile.png" alt = "CATS Logo" width="200" height="200">
 </p>
 
-<p align="center"><i>Always land on your paws</i></p>
+<p align="center"><i>🐈Always land on your paws!🐈‍⬛</i></p>
 
-Control and Telemetry Systems (CATS) builds open source (hardware and software) flight computers for sounding rockets. Our portfolio includes the _CATS Vega_ flight computer and the _CATS Ground Station_ that can be connected to the flight computer over telemetry. The flight computer can easily be configured through the _CATS Configurator_, a desktop application. The system allows the user to configure up to 8 actions per flight transition, giving full control over the flight and recovery of your rocket.
+Control and Telemetry Systems (CATS) builds open source (hardware and software) flight computers for sounding rockets. Our portfolio includes the _CATS Vega_ flight computer and the _CATS Ground Station_ that can be connected to the flight computer over telemetry. The flight computer can easily be configured through the _CATS Configurator_, a desktop application. The system allows the user to configure up to 8 actions per flight transition, giving full control over the flight and a safe recovery of your rocket.
 
 ## Features
 * Kalman filter altitude and velocity estimation
@@ -24,7 +24,7 @@ The CATS Configurator is in beta. More features will be released in the near fut
  
 
 ## Open Source
-All CATS code is open source and available for free use under the GPL-3.0 license. Please note that it is provided without any warranty.
+All CATS code is open source and available for free use under the [GPL-3.0 License](https://github.com/catsystems/cats-embedded/blob/main/LICENSE.md). Please note that it is provided without any warranty.
 
 The CATS CLI is forked from [Betaflight](https://github.com/betaflight/betaflight), so thanks goes to all the contributors of Cleanflight and Betaflight. 
 
