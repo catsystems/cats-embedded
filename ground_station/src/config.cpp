@@ -19,6 +19,7 @@ void Config::save() {
   systemParser.setLinkPhrase2(config.linkPhrase2);
   systemParser.setTelemetryMode(static_cast<bool>(config.receiverMode));
   systemParser.setNeverStopLoggingFlag(config.neverStopLogging);
+  systemParser.setUnitSystem(config.unitSystem);
   systemParser.setTimeZone(config.timeZoneOffset);
   systemParser.setMagCalib(config.mag_calib);
   systemParser.saveFile("/config.json");
@@ -72,6 +73,11 @@ void Config::load() {
     config.mag_calib.mag_scale_z = 1000;
   } else {
     console.log.println(config.timeZoneOffset);
+  }
+  if (!systemParser.getUnitSystem(config.unitSystem)) {
+    config.unitSystem = UnitSystem::kMetric;
+  } else {
+    console.log.println(unit_map[static_cast<uint8_t>(config.unitSystem)]);
   }
 
   config.neverStopLogging = stop;

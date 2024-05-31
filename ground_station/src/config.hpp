@@ -4,11 +4,22 @@
 
 #pragma once
 
-#include "systemParser.hpp"
-
 #include <cstdint>
 
+#include "hmi/settings.hpp"
+
 enum ReceiverTelemetryMode_e : bool { SINGLE = false, DUAL = true };
+
+enum class UnitSystem : uint8_t { kMetric = 0, kImperial = 1 };
+
+struct mag_calib_t {
+  int32_t mag_offset_x;
+  int32_t mag_offset_y;
+  int32_t mag_offset_z;
+  int32_t mag_scale_x;
+  int32_t mag_scale_y;
+  int32_t mag_scale_z;
+};
 
 // Maximum number of characters for link & test phrases
 inline constexpr uint32_t kMaxPhraseLen = 16;
@@ -21,6 +32,7 @@ struct systemConfig_t {
   char linkPhrase2[kMaxPhraseLen + 1];
   char testingPhrase[kMaxPhraseLen + 1];
   mag_calib_t mag_calib;
+  UnitSystem unitSystem;
 };
 
 class Config {

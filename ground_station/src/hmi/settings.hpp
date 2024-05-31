@@ -52,7 +52,7 @@ const char* const mode_map[2] = {
 
 const char* const unit_map[2] = {
     "METRIC",
-    "RETARDED",
+    "IMPERIAL",
 };
 
 const char* const logging_map[2] = {
@@ -76,69 +76,11 @@ const lookup_table_entry_t lookup_tables[] = {
 };
 
 enum {
-  kSettingPages = 2,
+  kSettingPages = 3,
 };
 
-const char* const settingPageName[kSettingPages] = {"General", "Telemetry"};
+const char* const settingPageName[kSettingPages] = {"General", "Telemetry", "Location"};
 
-// NOLINTNEXTLINE(cppcoreguidelines-interfaces-global-init)
-const device_settings_t settingsTable[][4] = {
-    {
-        {"Time Zone",
-         "Set the time offset",
-         "",
-         NUMBER,
-         {.minmax = {.min = -12, .max = 12}},
-         &systemConfig.config.timeZoneOffset},
-        {"Stop Logging",
-         "Down: Stop the log at touchdown",
-         "Never: Never stop logging after liftoff",
-         TOGGLE,
-         {.lookup = TABLE_LOGGING},
-         &systemConfig.config.neverStopLogging},
-        {
-            "Version",
-            "Firmware Version: " FIRMWARE_VERSION,
-            "",
-            BUTTON,
-            {.fun_ptr = nullptr},
-            nullptr,
-        },
-        {
-            "Start Bootloader",
-            "Press A to start the bootloader",
-            "Make sure you are connected to a computer",
-            BUTTON,
-            {.fun_ptr = Utils::startBootloader},
-            nullptr,
-        },
-    },
-    {
-        {"Mode",
-         "Single: Use both receiver to track one rocket",
-         "Dual: Use both receivers individually",
-         TOGGLE,
-         {.lookup = TABLE_MODE},
-         &systemConfig.config.receiverMode},
-        {"Link Phrase 1",
-         "Single Mode: Set phrase for both receivers",
-         "Dual Mode: Set phrase for the left receiver",
-         STRING,
-         {.stringLength = kMaxPhraseLen},
-         systemConfig.config.linkPhrase1},
-        {"Link Phrase 2",
-         "Single Mode: No functionality",
-         "Dual Mode: Set phrase for the right receiver",
-         STRING,
-         {.stringLength = kMaxPhraseLen},
-         systemConfig.config.linkPhrase2},
-        {"Testing Phrase",
-         "Set the phrase for the testing mode",
-         "",
-         STRING,
-         {.stringLength = kMaxPhraseLen},
-         systemConfig.config.testingPhrase},
-    },
-};
+extern const device_settings_t settingsTable[][4];
 
-const uint16_t settingsTableValueCount[kSettingPages] = {4, 4};
+const uint16_t settingsTableValueCount[kSettingPages] = {3, 4, 2};

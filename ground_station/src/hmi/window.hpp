@@ -66,8 +66,9 @@ class Window {
   void initSensorCalibrateDone();
   void updateSensors(Navigation *navigation);
 
-  void initSettings(int16_t submenu);
+  void initSettings(int16_t submenuIdx);
   void updateSettings(int16_t index);
+  void drawSettingsTriangles(int16_t submenuIdx, int16_t color);
 
   void initBox(const char *text);
 

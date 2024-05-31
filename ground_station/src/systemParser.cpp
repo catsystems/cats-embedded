@@ -4,12 +4,14 @@
 
 #include "systemParser.hpp"
 
+#include <cstdint>
+
+#include <SdFat.h>
+
 #include "USB.h"
 #include "config.hpp"
 #include "console.hpp"
 #include "utils.hpp"
-
-#include <SdFat.h>
 
 SystemParser::SystemParser() = default;
 
@@ -94,6 +96,11 @@ bool SystemParser::setMagCalib(mag_calib_t calib) {
   return true;
 }
 
+bool SystemParser::setUnitSystem(UnitSystem unit_system) {
+  doc["unit_system"] = unit_map[static_cast<uint8_t>(unit_system)];
+  return true;
+}
+
 bool SystemParser::getLinkPhrase1(char* phrase) {
   if (doc.containsKey("link_phrase_1") && phrase != nullptr) {
     strncpy(phrase, doc["link_phrase_1"].as<const char*>(), kMaxPhraseLen + 1);
@@ -151,6 +158,19 @@ bool SystemParser::getMagCalib(mag_calib_t& calib) {
     calib.mag_scale_x = doc["mag_s_x"].as<int32_t>();
     calib.mag_scale_y = doc["mag_s_y"].as<int32_t>();
     calib.mag_scale_z = doc["mag_s_z"].as<int32_t>();
+    return true;
+  }
+  return false;
+}
+
+bool SystemParser::getUnitSystem(UnitSystem& unit_system) {
+  if (doc.containsKey("unit_system")) {
+    if (doc["unit_system"].as<const char*>() ==
+        std::string_view{unit_map[static_cast<uint8_t>(UnitSystem::kImperial)]}) {
+      unit_system = UnitSystem::kImperial;
+    } else {
+      unit_system = UnitSystem::kMetric;
+    }
     return true;
   }
   return false;
