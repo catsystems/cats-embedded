@@ -1264,9 +1264,7 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
   display.setTextColor(BLACK);
 
   if (keyPressed) {
-    console.error.println("[KEYBOARD] Key pressed");
     if (keyHighlight == kShiftIdx) {  // SHIFT
-      console.error.println("[KEYBOARD] Shift");
       upperCase = !upperCase;
       initKeyboard(text);
     } else if (keyHighlight == -1) {  // BACKSPACE

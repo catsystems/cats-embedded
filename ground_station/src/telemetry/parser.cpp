@@ -56,7 +56,6 @@ void Parser::process(uint8_t ch) {
       if (crc == ch) {
         parse();
       } else {
-        console.error.println("[PARSER] CRC Failed");
         reset();
       }
     } break;
@@ -83,5 +82,5 @@ void Parser::cmdGNSSTime(uint8_t *args, uint32_t length) {
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static) function ptr doesn't work if it's static
 void Parser::cmdGNSSInfo(uint8_t *args [[maybe_unused]], uint32_t length [[maybe_unused]]) {
-  console.log.println("GNSS Info Received");
+  // TODO: Do Something
 }

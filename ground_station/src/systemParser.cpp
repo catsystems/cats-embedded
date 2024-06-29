@@ -28,14 +28,14 @@ bool SystemParser::loadFile(const char* path) {
   File file = fatfs.open(filePath);
 
   if (!file) {
-    console.error.println("[PARSER] Open file failed");
+    console.warning.println("[PARSER] Open file failed");
     return false;
   }
 
   DeserializationError error = deserializeJson(doc, file);
   if (error) {
     file.close();
-    console.error.printf("[PARSER] Failed to read file, using default configuration: %s\n", error.c_str());
+    console.warning.printf("[PARSER] Failed to read file, using default configuration: %s\n", error.c_str());
     return false;
   }
 
@@ -186,25 +186,24 @@ bool SystemParser::getUnitSystem(UnitSystem& unit_system) {
  * @return false on error
  */
 bool SystemParser::saveFile(const char* path) {
-  console.log.println("[PARSER] Store file");
   if (path != nullptr) {
     filePath = path;
   }
   if (fatfs.exists(filePath)) {
     if (!fatfs.remove(filePath)) {
-      console.error.println("[PARSER] Could not remove file");
+      console.warning.println("[PARSER] Could not remove file");
       return false;
     }
   }
   // NOLINTNEXTLINE(cppcoreguidelines-init-variables) something is wrong with this 'File' type
   File file = fatfs.open(filePath, FILE_WRITE);
   if (!file) {
-    console.error.println("[PARSER] Open file failed");
+    console.warning.println("[PARSER] Open file failed");
     return false;
   }
   if (serializeJson(doc, file) == 0) {
     file.close();
-    console.error.println("[PARSER] Failed to write to file");
+    console.warning.println("[PARSER] Failed to write to file");
     return false;
   }
   file.close();

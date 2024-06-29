@@ -544,7 +544,6 @@ void Hmi::settings() {
 
         link1.setTestingPhrase(systemConfig.config.testingPhrase, kMaxPhraseLen);
         systemConfig.save();
-        console.log.println("Save config");
       }
       window.initMenu(menuIndex);
     }

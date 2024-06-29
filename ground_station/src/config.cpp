@@ -27,42 +27,38 @@ void Config::save() {
 
 void Config::load() {
   systemParser.loadFile("/config.json");
-  console.log.println("Load config file");
   bool mode{false};
   bool stop{false};
   if (!systemParser.getTestingPhrase(config.testingPhrase)) {
     strncpy(config.testingPhrase, "", 1);
-    console.error.println("Failed");
-  } else {
-    console.log.println(config.testingPhrase);
+    console.warning.println("Testing phrase loading failed");
   }
+
   if (!systemParser.getLinkPhrase1(config.linkPhrase1)) {
     strncpy(config.linkPhrase1, "", 1);
-    console.error.println("Failed");
-  } else {
-    console.log.println(config.linkPhrase1);
+    console.warning.println("Link phrase 1 loading failed");
   }
+
   if (!systemParser.getLinkPhrase2(config.linkPhrase2)) {
     strncpy(config.linkPhrase2, "", 1);
-    console.error.println("Failed");
-  } else {
-    console.log.println(config.linkPhrase2);
+    console.warning.println("Link phrase 2 loading failed");
   }
+
   if (!systemParser.getTelemetryMode(mode)) {
     mode = false;
-  } else {
-    console.log.println(static_cast<uint32_t>(mode));
+    console.warning.println("Telemetry mode loading failed");
   }
+
   if (!systemParser.getNeverStopLoggingFlag(stop)) {
     config.neverStopLogging = false;
-  } else {
-    console.log.println(static_cast<uint32_t>(config.neverStopLogging));
+    console.warning.println("Logging flag loading failed");
   }
+
   if (!systemParser.getTimeZone(config.timeZoneOffset)) {
     config.timeZoneOffset = 0;
-  } else {
-    console.log.println(config.timeZoneOffset);
+    console.warning.println("Timezone loading failed");
   }
+
   if (!systemParser.getMagCalib(config.mag_calib)) {
     config.mag_calib.mag_offset_x = 0;
     config.mag_calib.mag_offset_y = 0;
@@ -71,8 +67,7 @@ void Config::load() {
     config.mag_calib.mag_scale_x = 1000;
     config.mag_calib.mag_scale_y = 1000;
     config.mag_calib.mag_scale_z = 1000;
-  } else {
-    console.log.println(config.timeZoneOffset);
+    console.warning.println("Mag Calibration loading failed");
   }
   if (!systemParser.getUnitSystem(config.unitSystem)) {
     config.unitSystem = UnitSystem::kMetric;
