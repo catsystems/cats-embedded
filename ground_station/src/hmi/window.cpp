@@ -984,6 +984,8 @@ void Window::updateSensors(Navigation *navigation) {
 
   display.setCursor(static_cast<int16_t>(70 + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
   display.print(navigation->getMZ() / 1000, 2);
+
+  display.refresh();
 }
 
 void Window::initSensorPrepareCalibrate() {
