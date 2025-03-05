@@ -335,6 +335,7 @@ void Hmi::sensors() {
     case IDLE:
 
       window.updateSensors(&navigation);
+      delay(50);
 
       if (okButton.wasPressed()) {
         window.initSensorPrepareCalibrate();
