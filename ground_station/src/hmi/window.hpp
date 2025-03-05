@@ -39,6 +39,8 @@ class Window {
 
   void initMenu(int16_t index);
   void updateMenu(int16_t index);
+  void drawMenuBitmap(int16_t index, uint16_t color);
+  void drawMenuHighlight(int16_t index, bool highlight);
 
   void initLive();
   void updateLive(TelemetryInfo *info, int16_t index);

@@ -194,23 +194,10 @@ void Window::initMenu(int16_t index) {
   drawCentreString("Sensors", 200, 233);
   drawCentreString("Settings", 325, 233);
 
-  display.drawBitmap(43, 38, menu_live, 64, 64, BLACK);
-  display.drawRoundRect(35, 30, 80, 80, 9, BLACK);
-
-  display.drawBitmap(43, 143, menu_data, 64, 64, BLACK);
-  display.drawRoundRect(35, 135, 80, 80, 9, BLACK);
-
-  display.drawBitmap(168, 38, menu_recover, 64, 64, BLACK);
-  display.drawRoundRect(160, 30, 80, 80, 10, BLACK);
-
-  display.drawBitmap(168, 143, menu_sensors, 64, 64, BLACK);
-  display.drawRoundRect(160, 135, 80, 80, 10, BLACK);
-
-  display.drawBitmap(293, 38, menu_testing, 64, 64, BLACK);
-  display.drawRoundRect(285, 30, 80, 80, 10, BLACK);
-
-  display.drawBitmap(293, 143, menu_settings, 64, 64, BLACK);
-  display.drawRoundRect(285, 135, 80, 80, 10, BLACK);
+  for (int i = 0; i < 6; i++) {
+    drawMenuHighlight(i, false);
+    drawMenuBitmap(i, BLACK);
+  }
   updateMenu(index);
 
   display.refresh();
@@ -219,20 +206,50 @@ void Window::initMenu(int16_t index) {
 void Window::updateMenu(int16_t index) {
   static int16_t oldHighlight = 0;
 
-  /* Paint over last selcted with white */
+  drawMenuHighlight(oldHighlight, false);
+  drawMenuBitmap(oldHighlight, BLACK);
 
-  auto xPos = static_cast<int16_t>((oldHighlight % 3) * 125 + 36);
-  auto yPos = static_cast<int16_t>((oldHighlight / 3) * 105 + 31);
-
-  display.drawRoundRect(xPos, yPos, 78, 78, 9, WHITE);
-
-  xPos = static_cast<int16_t>((index % 3) * 125 + 36);
-  yPos = static_cast<int16_t>((index / 3) * 105 + 31);
-  display.drawRoundRect(xPos, yPos, 78, 78, 9, BLACK);
+  drawMenuHighlight(index, true);
+  drawMenuBitmap(index, WHITE);
 
   display.refresh();
-
   oldHighlight = index;
+}
+
+void Window::drawMenuBitmap(int16_t index, uint16_t color) {
+  switch (index) {
+    case 0:
+      display.drawBitmap(43, 38, menu_live, 64, 64, color);
+      break;
+    case 1:
+      display.drawBitmap(168, 38, menu_recover, 64, 64, color);
+      break;
+    case 2:
+      display.drawBitmap(293, 38, menu_testing, 64, 64, color);
+      break;
+    case 3:
+      display.drawBitmap(43, 143, menu_data, 64, 64, color);
+      break;
+    case 4:
+      display.drawBitmap(168, 143, menu_sensors, 64, 64, color);
+      break;
+    case 5:
+      display.drawBitmap(293, 143, menu_settings, 64, 64, color);
+      break;
+    default:
+      break;
+  }
+}
+
+void Window::drawMenuHighlight(int16_t index, bool highlight) {
+  auto xPos = static_cast<int16_t>((index % 3) * 125 + 36);
+  auto yPos = static_cast<int16_t>((index / 3) * 105 + 31);
+  if (highlight) {
+    display.fillRoundRect(xPos, yPos, 78, 78, 9, BLACK);
+  } else {
+    display.fillRoundRect(xPos, yPos, 78, 78, 9, WHITE);
+    display.drawRoundRect(xPos, yPos, 78, 78, 9, BLACK);
+  }
 }
 
 void Window::initLive() {
