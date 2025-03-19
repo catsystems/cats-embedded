@@ -153,9 +153,9 @@ jobs:
           fi
 
       - name: Upload Compile Commands
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ubuntu_compile_commands
+          name: ubuntu_compile_commands_${{ matrix.project }}
           path: |
             ./${{ matrix.project }}/.pio/build/**/compile_commands.json
           if-no-files-found: error
@@ -208,9 +208,9 @@ jobs:
         run: platformio run -d ${{ matrix.project }} --target compiledb
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts_${{ matrix.project }}
           path: |
             ./${{ matrix.project }}/.pio/build/**/firmware.UF2
             ./${{ matrix.project }}/.pio/build/**/firmware.bin
