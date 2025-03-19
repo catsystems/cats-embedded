@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
 
       - name: Get changed directories
         id: changed-files
-        uses: tj-actions/changed-files@v37
+        uses: tj-actions/changed-files@v46
         with:
           dir_names: 'true'
           dir_names_max_depth: '1'
@@ -70,10 +70,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Run clang-format
-      uses: jidicula/clang-format-action@v4.9.0
+      uses: jidicula/clang-format-action@v4.14.0
       with:
         clang-format-version: '17'
         check-path: '${{ matrix.project }}/src'
@@ -93,17 +93,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.platformio/.cache
           # Add OS to key if testing with multiple OSes
           key: ${{ matrix.project }}-pio
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -175,17 +175,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.platformio/.cache
           # Add OS to key if testing with multiple OSes
           key: ${{ matrix.project }}-pio
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
