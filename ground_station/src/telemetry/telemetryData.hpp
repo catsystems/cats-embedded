@@ -42,7 +42,12 @@ class TelemetryData {
 
   int16_t velocity() {
     updated = false;
-    return rxData.velocity;
+    int16_t adjusted_velocity = rxData.velocity;
+    // When velocity overflows and we are not at apogee yet, add offset
+    if ((adjusted_velocity < -100) && rxData.state < 5U) {
+      adjusted_velocity += 1024;
+    }
+    return adjusted_velocity;
   }
 
   int32_t altitude() {
