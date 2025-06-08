@@ -877,7 +877,7 @@ void Window::initSensors() {
   display.setCursor(215, 200);
   display.print("Press A to calibrate");
   display.setCursor(220, 225);
-  display.print("the magnetometer");
+  display.print("the compass");
 
   display.refresh();
 }
@@ -1005,7 +1005,7 @@ void Window::initSensorPrepareCalibrate() {
   display.fillRect(0, 19, 400, 222, WHITE);
   display.setTextSize(1);
   display.setFont(&FreeSansBold9pt7b);
-  drawCentreString("Ready To Calibrate Magnetometer", 200, 90);
+  drawCentreString("Ready To Calibrate Compass", 200, 90);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(70, 130);
   display.print("Rotate the Ground Station slowly");
@@ -1021,7 +1021,7 @@ void Window::initSensorCalibrate() {
   display.fillRect(0, 19, 400, 222, WHITE);
   display.setTextSize(1);
   display.setFont(&FreeSansBold9pt7b);
-  drawCentreString("Calibrating Magnetometer...", 200, 60);
+  drawCentreString("Calibrating Compass...", 200, 60);
   drawCentreString("Progress: 0.00%", 200, 160);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(82, 100);
@@ -1054,7 +1054,7 @@ void Window::initSensorCalibrateDone() {
   display.fillRect(0, 19, 400, 222, WHITE);
   display.setTextSize(1);
   display.setFont(&FreeSansBold9pt7b);
-  drawCentreString("Calibrating Magnetometer was successful.", 200, 100);
+  drawCentreString("Compass Calibration Successful!", 200, 100);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(130, 160);
   display.print("Press A to continue.");

@@ -12,7 +12,9 @@ constexpr uint8_t NAVIGATION_TASK_FREQUENCY = 50;
 bool Navigation::begin() {
   initialized = true;
 
-  compass.init();
+  compass = CreateCompass::createSensor();
+
+  compass->init();
 
   if (imu.begin(Wire, 0x6A) != 1) {
     console.warning.println("IMU init failed!");
@@ -162,9 +164,9 @@ void Navigation::navigationTask(void *pvParameter) {
   ref->initFibonacciSphere();
 
   while (ref->initialized) {
-    ref->compass.read();
+    ref->compass->read();
 
-    ref->compass.readRaw(ref->raw_m);
+    ref->compass->readRaw(ref->raw_m);
     ref->transform(ref->raw_m, ref->m);
 
     ref->imu.readAcceleration(ref->ax, ref->ay, ref->az);
