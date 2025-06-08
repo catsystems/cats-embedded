@@ -643,7 +643,7 @@ void Hmi::update(void *pvParameter) {
 
     if (millis() - barUpdate >= 1000) {
       barUpdate = millis();
-      const float voltage = static_cast<float>(analogRead(18)) * 0.00059154929F;
+      const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
       if (!ref->isLogging) {
         ref->flashFreeMemory = Utils::getFlashMemoryUsage();
       }
