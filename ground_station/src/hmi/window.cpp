@@ -151,27 +151,18 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     display.drawBitmap(376, 1, bar_flash, 16, 16, static_cast<int16_t>(!usb));
   }
 
-  // Battery
   if (batteryVoltage != 0.0F && !usb) {
-    if (batteryVoltage > 3.3F) {
-      display.fillRect(373, 5, 6, 8, BLACK);
-      display.drawRoundRect(371, 3, 24, 12, 2, BLACK);
-      display.fillRect(395, 5, 3, 8, BLACK);
-    } else {
-      display.fillRect(373, 5, 6, 8, WHITE);
-      display.drawRoundRect(371, 3, 24, 12, 2, static_cast<int16_t>(blinkStatus));
-      display.fillRect(395, 5, 3, 8, static_cast<int16_t>(blinkStatus));
-    }
-    if (batteryVoltage > 3.6F) {
-      display.fillRect(380, 5, 6, 8, BLACK);
-    } else {
-      display.fillRect(380, 5, 6, 8, WHITE);
-    }
-    if (batteryVoltage > 3.9F) {
-      display.fillRect(387, 5, 6, 8, BLACK);
-    } else {
-      display.fillRect(387, 5, 6, 8, WHITE);
-    }
+    const bool veryLow = batteryVoltage <= 3.3F;
+    display.fillRect(373, 5, 6, 8, veryLow ? WHITE : BLACK);
+    display.drawRoundRect(371, 3, 24, 12, 2, veryLow ? static_cast<uint16_t>(blinkStatus) : BLACK);
+    display.fillRect(395, 5, 3, 8, veryLow ? static_cast<uint16_t>(blinkStatus) : BLACK);
+
+    // Bar 1: > 3.5 V
+    display.fillRect(373, 5, 6, 8, batteryVoltage > 3.5F ? BLACK : WHITE);
+    // Bar 2: > 3.7 V
+    display.fillRect(380, 5, 6, 8, batteryVoltage > 3.7F ? BLACK : WHITE);
+    // Bar 3: > 3.9 V
+    display.fillRect(387, 5, 6, 8, batteryVoltage > 3.9F ? BLACK : WHITE);
   }
 
   blinkStatus = !blinkStatus;
