@@ -7,12 +7,15 @@
 #include "console.hpp"
 #include "utils.hpp"
 
+// clang-format off
 #include <LSM6DS3.h>
 #include <MadgwickAHRS.h>
-#include <QMC5883LCompass.h>
+#include <QMC5883Compass.hpp>
 #include <Wire.h>
+// clang-format on
 
 #include <cmath>
+#include <memory>
 
 constexpr float R = 6378100.0F;   // Earth radius in m (zero tide radius IAU)
 constexpr float C = 40075017.0F;  // Earth circumference in m
@@ -143,7 +146,7 @@ class Navigation {
   EarthPoint3D pointA;
   EarthPoint3D pointB;
 
-  QMC5883LCompass compass;
+  std::unique_ptr<QMC5883Compass> compass;
   LSM6DS3Class imu;
 
   Madgwick filter;
