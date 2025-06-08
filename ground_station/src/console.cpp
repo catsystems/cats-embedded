@@ -157,7 +157,7 @@ void Console::printStartupMessage() {
   stream.print(CONSOLE_CLEAR);
   stream.print(CONSOLE_COLOR_BOLD_CYAN CONSOLE_BACKGROUND_DEFAULT);
   stream.println("****************************************************");
-  stream.println("*                CATS Groundstation                *");
+  stream.println("*                CATS Ground Station               *");
   stream.println("****************************************************");
   stream.println(CONSOLE_LOG);
 }
