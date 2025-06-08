@@ -1017,7 +1017,7 @@ void Window::initSensorPrepareCalibrate() {
   drawCentreString("Ready To Calibrate Magnetometer", 200, 90);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(70, 130);
-  display.print("Rotate the Groundstation slowly");
+  display.print("Rotate the Ground Station slowly");
   display.setCursor(49, 150);
   display.print("in all directions, covering every angle.");
   display.setCursor(45, 180);
@@ -1034,7 +1034,7 @@ void Window::initSensorCalibrate() {
   drawCentreString("Progress: 0.00%", 200, 160);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(82, 100);
-  display.print("Rotate the Groundstation until");
+  display.print("Rotate the Ground Station until");
   display.setCursor(95, 120);
   display.print("the progress shows 100%.");
   display.setCursor(130, 200);
