@@ -14,6 +14,8 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <TimeLib.h>
 
+#include <cmath>
+
 uint16_t GetNegativeColor(uint16_t color) {
   if (color == BLACK) {
     return WHITE;
@@ -251,23 +253,35 @@ void Window::initLive() {
 
   display.drawLine(0, 49, 400, 49, BLACK);
 
-  display.drawBitmap(5, 50, live_altitude, 24, 24, BLACK);
-  display.drawBitmap(5, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(5, 100, live_lat, 24, 24, BLACK);
-  display.drawBitmap(5, 125, live_lon, 24, 24, BLACK);
-  display.drawBitmap(3, 150, live_battery, 24, 24, BLACK);
+  display.drawBitmap(3, 50, live_altitude, 24, 24, BLACK);
+  display.drawBitmap(3, 75, data_speed, 24, 24, BLACK);
+  display.drawBitmap(3, 100, live_lat, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(3, 125, live_lon, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(158, 100, right_arrow, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(158, 125, right_arrow, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(1, 150, live_battery, 24, 24, BLACK);
 
-  display.drawBitmap(120, 149, live_one, 24, 24, BLACK);
-  display.drawBitmap(158, 149, live_two, 24, 24, BLACK);
+  display.drawBitmap(120, 148, live_one, 24, 24, BLACK);
+  display.drawBitmap(158, 148, live_two, 24, 24, BLACK);
 
-  display.drawBitmap(320, 149, live_one, 24, 24, BLACK);
-  display.drawBitmap(358, 149, live_two, 24, 24, BLACK);
+  display.drawBitmap(320, 148, live_one, 24, 24, BLACK);
+  display.drawBitmap(358, 148, live_two, 24, 24, BLACK);
 
-  display.drawBitmap(205, 50, live_altitude, 24, 24, BLACK);
-  display.drawBitmap(205, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(205, 100, live_lat, 24, 24, BLACK);
-  display.drawBitmap(205, 125, live_lon, 24, 24, BLACK);
-  display.drawBitmap(203, 150, live_battery, 24, 24, BLACK);
+  display.drawBitmap(203, 50, live_altitude, 24, 24, BLACK);
+  display.drawBitmap(203, 75, data_speed, 24, 24, BLACK);
+  display.drawBitmap(203, 100, live_lat, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(203, 125, live_lon, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(358, 100, right_arrow, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(358, 125, right_arrow, 24, 24,
+                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
+  display.drawBitmap(201, 150, live_battery, 24, 24, BLACK);
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
@@ -288,6 +302,120 @@ void Window::initLive() {
   display.refresh();
 }
 
+void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state) {
+  if (livestate == state) {
+    return;
+  }
+
+  livestate = state;
+  const auto xOffset1 = static_cast<int16_t>(0 * 200);
+  const auto xOffset2 = static_cast<int16_t>(1 * 200);
+  const int32_t first_row_offset = 28;
+
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  if (livestate == LiveState::kShowGnss) {
+    // Set Downrange text of FC 1 to white
+    auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
+    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 120);
+    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+      display.print(old_downrange[0]);
+      display.print(" m");
+    } else {
+      display.print(Utils::MetersToFeet(old_downrange[0]));
+      display.print(" ft");
+    }
+    old_downrange[0] = downrange_m;
+
+    float bearing = navigation->computeBearing();
+
+    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
+    display.print(old_bearing[0]);
+    display.print(" deg");
+    old_bearing[0] = bearing;
+
+    // Set Downrange text of FC 2 to white
+    downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
+    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 120);
+    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+      display.print(old_downrange[1]);
+      display.print(" m");
+    } else {
+      display.print(Utils::MetersToFeet(old_downrange[1]));
+      display.print(" ft");
+    }
+    old_downrange[1] = downrange_m;
+
+    bearing = navigation->computeBearing();
+
+    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
+    display.print(old_bearing[1]);
+    display.print(" deg");
+    old_bearing[1] = bearing;
+
+    // Set DownRange to white
+    display.drawBitmap(3, 100, down_range, 24, 24, WHITE);
+    display.drawBitmap(3, 125, compass, 24, 24, WHITE);
+    display.drawBitmap(203, 100, down_range, 24, 24, WHITE);
+    display.drawBitmap(203, 125, compass, 24, 24, WHITE);
+    display.drawBitmap(158, 100, left_arrow, 24, 24, WHITE);
+    display.drawBitmap(158, 125, left_arrow, 24, 24, WHITE);
+    display.drawBitmap(358, 100, left_arrow, 24, 24, WHITE);
+    display.drawBitmap(358, 125, left_arrow, 24, 24, WHITE);
+
+    // Set GNSS to black
+    display.drawBitmap(3, 100, live_lat, 24, 24, BLACK);
+    display.drawBitmap(3, 125, live_lon, 24, 24, BLACK);
+    display.drawBitmap(203, 100, live_lat, 24, 24, BLACK);
+    display.drawBitmap(203, 125, live_lon, 24, 24, BLACK);
+    display.drawBitmap(158, 100, right_arrow, 24, 24, BLACK);
+    display.drawBitmap(158, 125, right_arrow, 24, 24, BLACK);
+    display.drawBitmap(358, 100, right_arrow, 24, 24, BLACK);
+    display.drawBitmap(358, 125, right_arrow, 24, 24, BLACK);
+  } else {
+    // Set GNSS text to white
+    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 120);
+    display.print(data1->lat(), 4);
+    display.print(" N");
+
+    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
+    display.print(data1->lon(), 4);
+    display.print(" E");
+
+    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 120);
+    display.print(data2->lat(), 4);
+    display.print(" N");
+
+    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
+    display.print(data2->lon(), 4);
+    display.print(" E");
+
+    // Set GNSS to white
+    display.drawBitmap(3, 100, live_lat, 24, 24, WHITE);
+    display.drawBitmap(3, 125, live_lon, 24, 24, WHITE);
+    display.drawBitmap(203, 100, live_lat, 24, 24, WHITE);
+    display.drawBitmap(203, 125, live_lon, 24, 24, WHITE);
+    display.drawBitmap(158, 100, right_arrow, 24, 24, WHITE);
+    display.drawBitmap(158, 125, right_arrow, 24, 24, WHITE);
+    display.drawBitmap(358, 100, right_arrow, 24, 24, WHITE);
+    display.drawBitmap(358, 125, right_arrow, 24, 24, WHITE);
+
+    // Set DownRange to black
+    display.drawBitmap(3, 100, down_range, 24, 24, BLACK);
+    display.drawBitmap(3, 125, compass, 24, 24, BLACK);
+    display.drawBitmap(203, 100, down_range, 24, 24, BLACK);
+    display.drawBitmap(203, 125, compass, 24, 24, BLACK);
+    display.drawBitmap(158, 100, left_arrow, 24, 24, BLACK);
+    display.drawBitmap(158, 125, left_arrow, 24, 24, BLACK);
+    display.drawBitmap(358, 100, left_arrow, 24, 24, BLACK);
+    display.drawBitmap(358, 125, left_arrow, 24, 24, BLACK);
+  }
+
+  display.refresh();
+}
+
 void Window::updateLive(TelemetryInfo *info, int16_t index) {
   if (index > 1) {
     return;
@@ -303,7 +431,7 @@ void Window::updateLive(TelemetryInfo *info, int16_t index) {
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index) {
+void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index) {
   if (index > 1) {
     return;
   }
@@ -314,7 +442,7 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index)
   data->clear();
   info->clear();
 
-  updateLiveData(&teleData[index], index, WHITE);
+  updateLiveData(&teleData[index], navigation, index, WHITE);
   updateLiveInfo(&infoData[index], index, BLACK);
 
   // display.fillRect(10,19,190,200, WHITE);
@@ -324,11 +452,11 @@ void Window::updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index)
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveData(&teleData[index], navigation, index, BLACK);
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
-void Window::updateLive(TelemetryData *data, int16_t index) {
+void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t index) {
   if (index > 1) {
     return;
   }
@@ -338,7 +466,7 @@ void Window::updateLive(TelemetryData *data, int16_t index) {
   // Clear update flag
   data->clear();
 
-  updateLiveData(&teleData[index], index, WHITE);
+  updateLiveData(&teleData[index], navigation, index, WHITE);
 
   // display.fillRect(10,19,190,200, WHITE);
 
@@ -346,7 +474,7 @@ void Window::updateLive(TelemetryData *data, int16_t index) {
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveData(&teleData[index], navigation, index, BLACK);
 }
 
 const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST", "DROGUE", "MAIN", "DOWN"};
@@ -354,7 +482,7 @@ const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST",
 const char *const errorName[] = {"No Config",   "Log Full",         "Filter Error",
                                  "Overheating", "Continuity Error", "Calibration Error"};
 
-void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) {
+void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t index, uint16_t color) {
   const auto xOffset = static_cast<int16_t>(index * 200);
 
   display.setFont(&FreeSans12pt7b);
@@ -371,7 +499,9 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
 
   drawCentreString(stateName[data->state()], static_cast<int16_t>(xOffset + 100), 42);
 
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 70);
+  const int32_t first_row_offset = 28;
+
+  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 70);
   const int32_t altitude_m = data->altitude();
   if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
     display.print(altitude_m);
@@ -381,7 +511,7 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
     display.print(" ft");
   }
 
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 95);
+  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 95);
 
   const int16_t velocity_m_s = data->velocity();
   if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
@@ -392,32 +522,67 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
     display.print(" ft/s");
   }
 
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 120);
-  display.print(data->lat(), 4);
-  display.print(" N");
+  if (livestate == LiveState::kShowGnss) {
+    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
+    display.print(data->lat(), 4);
+    display.print(" N");
 
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 145);
-  display.print(data->lon(), 4);
-  display.print(" E");
+    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
+    display.print(data->lon(), 4);
+    display.print(" E");
+  } else {
+    const auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
+    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
+    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+      display.setTextColor(WHITE);
+      display.print(old_downrange[index]);
+      display.print(" m");
+      display.setTextColor(color);
+      display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
+      display.print(downrange_m);
+      display.print(" m");
+    } else {
+      display.setTextColor(WHITE);
+      display.print(Utils::MetersToFeet(old_downrange[index]));
+      display.print(" ft");
+      display.setTextColor(color);
+      display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
+      display.print(Utils::MetersToFeet(downrange_m));
+      display.print(" ft");
+    }
+    old_downrange[index] = downrange_m;
 
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 170);
+    const float bearing = navigation->computeBearing();
+
+    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
+    display.setTextColor(WHITE);
+    display.print(old_bearing[index]);
+    display.print(" deg");
+    display.setTextColor(color);
+    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
+    display.print(bearing);
+    display.print(" deg");
+    old_bearing[index] = bearing;
+  }
+
+  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 170);
   display.print(data->voltage());
   display.print(" V");
 
   if (static_cast<bool>(data->pyroContinuity() & 0x01U)) {
-    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 156, live_checkmark, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 154, live_checkmark, 16, 16, color);
   } else {
-    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 156, live_cross, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 142), 154, live_cross, 16, 16, color);
   }
 
   if (static_cast<bool>(data->pyroContinuity() & 0x02U)) {
-    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 156, live_checkmark, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 154, live_checkmark, 16, 16, color);
   } else {
-    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 156, live_cross, 16, 16, color);
+    display.drawBitmap(static_cast<int16_t>(xOffset + 180), 154, live_cross, 16, 16, color);
   }
 
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(static_cast<int16_t>(xOffset + 35), 192);
+  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 192);
 
   if (static_cast<bool>(data->errors() & 0x04U)) {
     display.print(errorName[2]);
