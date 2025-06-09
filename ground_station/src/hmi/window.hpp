@@ -30,6 +30,9 @@ struct topBarData {
 class Window {
  public:
   Window() : display(SHARP_SCK, SHARP_MOSI, SHARP_SS, 400, 240) {}
+
+  enum class LiveState { kShowGnss, kShowDownRange };
+
   void begin();
   void logo();
   void Bootloader();
@@ -45,8 +48,9 @@ class Window {
 
   void initLive();
   void updateLive(TelemetryInfo *info, int16_t index);
-  void updateLive(TelemetryData *data, TelemetryInfo *info, int16_t index);
-  void updateLive(TelemetryData *data, int16_t index);
+  void updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index);
+  void updateLive(TelemetryData *data, Navigation *navigation, int16_t index);
+  void UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state);
 
   void initRecovery();
   void updateRecovery(Navigation *navigation);
@@ -88,7 +92,7 @@ class Window {
   static constexpr uint8_t kUnderscoreIdx = 37;
 
  private:
-  void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
+  void updateLiveData(TelemetryData *data, Navigation *navigation, int16_t index, uint16_t color);
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);
@@ -111,6 +115,9 @@ class Window {
   topBarData barData{};
   TelemetryData teleData[2]{};
   TelemetryInfo infoData[2]{};
+  LiveState livestate{LiveState::kShowGnss};
+  float old_bearing[2] = {0.0F, 0.0F};
+  int32_t old_downrange[2] = {0, 0};
 
   int16_t oldSettingsIndex{0};
   int16_t subMenuSettingIndex{0};
