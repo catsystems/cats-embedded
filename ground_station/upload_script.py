@@ -85,11 +85,16 @@ def on_upload(source, target, env):
 
     availableDrives = loader.get_drives()
     if not availableDrives:
-        devices = dfu.listDeviced()
+        devices = dfu.listDevices()
+        filtered_devices = []
         for d in devices:
-            if(d['ser'] == "0000000000000001"):
-                devices.remove(d)
+            if d['ser'] == "0000000000000001":
                 print("Removed fake device: ['0000000000000001']")
+            elif d['ser'] is None:
+                print("Removed 'None' device")
+            else:
+                filtered_devices.append(d)
+        devices = filtered_devices
         if not devices:
             return ['No devices found for entering bootloader, check if "libusb-win32" driver has been installed for "TinyUSB DFU_RT (Interface 1)"']
         if(compare_Serial):
@@ -111,6 +116,10 @@ def on_upload(source, target, env):
     t = time.time()
     print("Start Download:", end = '')
     while(time.time() - t < TIMEOUT):
+        if uploadCount > 0:
+            # Stop polling after flashing once
+            print("\nSuccessfully flashed one or more devices. Skipping further polling.")
+            break
         drives = loader.get_drives()
         if(drives):
             print("\nFlashing %s (%s)" % (drives[0], loader.board_id(drives[0])), end = "")
