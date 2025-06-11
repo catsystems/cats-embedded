@@ -51,7 +51,7 @@ void loop() {
   static uint16_t link1LastTs{0};
   static uint16_t link2LastTs{0};
 
-  if (millis() > 5000 && !ini) {
+  if (!ini && millis() > 5000) {
     ini = true;
     if (systemConfig.config.receiverMode == SINGLE) {
       // Set both link phrases to the same

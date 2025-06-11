@@ -17,7 +17,6 @@ class Hmi {
         downButton(4),
         leftButton(2),
         rightButton(5),
-        centerButton(1),
         okButton(7),
         backButton(6) {}
 
@@ -95,7 +94,6 @@ class Hmi {
   Button downButton;
   Button leftButton;
   Button rightButton;
-  Button centerButton;
 
   Button okButton;
   Button backButton;
