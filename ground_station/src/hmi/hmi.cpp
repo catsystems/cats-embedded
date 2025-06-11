@@ -81,6 +81,7 @@ void Hmi::initMenu() { window.initMenu(menuIndex); }
 void Hmi::menu() {
   const uint32_t oldIndex = menuIndex;
   if (rightButton.wasPressed() && (menuIndex % 3) < 2) {
+    console.error.printf("right check\n");
     menuIndex++;
   }
 
@@ -642,6 +643,8 @@ void Hmi::update(void *pvParameter) {
   while (ref->initialized) {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    uint32_t curr_ms = millis();
+
     ref->upButton.read();
     ref->downButton.read();
     ref->leftButton.read();
@@ -655,8 +658,8 @@ void Hmi::update(void *pvParameter) {
       // ref->window.updateBar(link1.data.ts());
     }
 
-    if (millis() - barUpdate >= 1000) {
-      barUpdate = millis();
+    if (curr_ms - barUpdate >= 1000) {
+      barUpdate = curr_ms;
       const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
       if (!ref->isLogging) {
         ref->flashFreeMemory = Utils::getFlashMemoryUsage();
@@ -669,6 +672,9 @@ void Hmi::update(void *pvParameter) {
       ref->window.updateBar(voltage, static_cast<bool>(digitalRead(21)), ref->isLogging, link2.location.isValid(),
                             timeValid, ref->flashFreeMemory);
     }
+
+    uint32_t end = millis();
+    console.warning.printf("%lu..%lu = %lu ... %lu\n", curr_ms, end, end - curr_ms, ref->rightButton.lastChange());
 
     vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / 50);
   }
