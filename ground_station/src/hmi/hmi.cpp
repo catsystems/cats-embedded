@@ -27,7 +27,6 @@ void Hmi::begin() {
   downButton.begin();
   leftButton.begin();
   rightButton.begin();
-  centerButton.begin();
 
   okButton.begin();
   backButton.begin();
@@ -101,7 +100,7 @@ void Hmi::menu() {
     window.updateMenu(menuIndex);
   }
 
-  if (okButton.wasPressed() || centerButton.wasPressed()) {
+  if (okButton.wasPressed()) {
     state = static_cast<State>(menuIndex + 1);
     if (state == LIVE) {
       initLive();
@@ -643,6 +642,13 @@ void Hmi::update(void *pvParameter) {
   while (ref->initialized) {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    ref->upButton.read();
+    ref->downButton.read();
+    ref->leftButton.read();
+    ref->rightButton.read();
+    ref->okButton.read();
+    ref->backButton.read();
+
     ref->fsm();
 
     if (link1.data.isUpdated()) {
@@ -664,14 +670,6 @@ void Hmi::update(void *pvParameter) {
                             timeValid, ref->flashFreeMemory);
     }
 
-    ref->upButton.read();
-    ref->downButton.read();
-    ref->leftButton.read();
-    ref->rightButton.read();
-    ref->centerButton.read();
-
-    ref->okButton.read();
-    ref->backButton.read();
     vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / 50);
   }
 }
