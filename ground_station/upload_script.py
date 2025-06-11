@@ -85,7 +85,7 @@ def on_upload(source, target, env):
 
     availableDrives = loader.get_drives()
     if not availableDrives:
-        devices = dfu.listDeviced()
+        devices = dfu.listDevices()
         for d in devices:
             if(d['ser'] == "0000000000000001"):
                 devices.remove(d)
@@ -111,6 +111,10 @@ def on_upload(source, target, env):
     t = time.time()
     print("Start Download:", end = '')
     while(time.time() - t < TIMEOUT):
+        if uploadCount > 0:
+            # Stop polling after flashing once
+            print("\nSuccessfully flashed one or more devices. Skipping further polling.")
+            break
         drives = loader.get_drives()
         if(drives):
             print("\nFlashing %s (%s)" % (drives[0], loader.board_id(drives[0])), end = "")

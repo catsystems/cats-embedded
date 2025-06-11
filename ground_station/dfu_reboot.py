@@ -23,24 +23,29 @@ class DFU_Reboot:
     def __init__(self):
         pass
     
-    def listDeviced(self):
+    def listDevices(self):
         deviceList = []
-        busses = usb.busses()
-        for bus in busses:
-            devices = bus.devices
-            for dev in devices:
-                if dev != None:
-                    try:
-                        deviceInfo = {"dev":dev.dev,
-                                      "vid":dev.idVendor,
-                                      "pid":dev.idProduct,
-                                      "ser":dev.dev.serial_number,
-                                      "manufacturer":dev.dev.manufacturer,
-                                      "product":dev.dev.product}
-                        deviceList.append(deviceInfo)
-                    except:
-                        pass
-        deviceList = sorted(deviceList, key=lambda x: x['ser'])   # Sort list by increasing Serial number
+        backend = usb.backend.libusb1.get_backend()
+        if backend is None:
+            raise RuntimeError("libusb backend not found")
+
+        devices = usb.core.find(find_all=True, backend=backend)
+        for dev in devices:
+            if dev is not None:
+                try:
+                    deviceInfo = {
+                        "dev": dev,
+                        "vid": dev.idVendor,
+                        "pid": dev.idProduct,
+                        "ser": usb.util.get_string(dev, dev.iSerialNumber) if dev.iSerialNumber else None,
+                        "manufacturer": usb.util.get_string(dev, dev.iManufacturer) if dev.iManufacturer else None,
+                        "product": usb.util.get_string(dev, dev.iProduct) if dev.iProduct else None,
+                    }
+                    deviceList.append(deviceInfo)
+                except Exception:
+                    pass
+
+        deviceList = sorted(deviceList, key=lambda x: x['ser'] or "")
         return deviceList
 
     def reboot(self, devices):
@@ -68,6 +73,7 @@ class DFU_Reboot:
 
 if __name__ == "__main__":
     dfu = DFU_Reboot()
-    devices = dfu.listDeviced()
+    devices = dfu.listDevices()
+    print("devices:")
     print(devices)
     # print(dfu.reboot(devices))
