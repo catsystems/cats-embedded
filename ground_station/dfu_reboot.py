@@ -21,31 +21,28 @@ import usb.backend.libusb1
 
 class DFU_Reboot:
     def __init__(self):
-        pass
+        self.backend = usb.backend.libusb1.get_backend()
+        if self.backend is None:
+            print("Warning: libusb backend not found; falling back to PyUSB default")
+            self.backend = None
     
     def listDevices(self):
         deviceList = []
-        backend = usb.backend.libusb1.get_backend()
-        if backend is None:
-            raise RuntimeError("libusb backend not found")
-
-        devices = usb.core.find(find_all=True, backend=backend)
-        for dev in devices:
-            if dev is not None:
-                try:
-                    deviceInfo = {
-                        "dev": dev,
-                        "vid": dev.idVendor,
-                        "pid": dev.idProduct,
-                        "ser": usb.util.get_string(dev, dev.iSerialNumber) if dev.iSerialNumber else None,
-                        "manufacturer": usb.util.get_string(dev, dev.iManufacturer) if dev.iManufacturer else None,
-                        "product": usb.util.get_string(dev, dev.iProduct) if dev.iProduct else None,
-                    }
-                    deviceList.append(deviceInfo)
-                except Exception:
-                    pass
-
-        deviceList = sorted(deviceList, key=lambda x: x['ser'] or "")
+        devices = usb.core.find(find_all=True, backend=self.backend)
+        for dev in devices or []:
+            try:
+                deviceInfo = {
+                    "dev": dev,
+                    "vid": dev.idVendor,
+                    "pid": dev.idProduct,
+                    "ser": getattr(dev, "serial_number", None),
+                    "manufacturer": getattr(dev, "manufacturer", None),
+                    "product": getattr(dev, "product", None),
+                }
+                deviceList.append(deviceInfo)
+            except Exception:
+                pass
+        deviceList.sort(key=lambda x: x["ser"] or "")
         return deviceList
 
     def reboot(self, devices):
