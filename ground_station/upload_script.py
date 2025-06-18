@@ -16,7 +16,6 @@ Import("env")
 
 import ast
 import time
-import glob
 import shutil
 import subprocess
 from packet_installer import installPackages
@@ -85,11 +84,16 @@ def on_upload(source, target, env):
 
     availableDrives = loader.get_drives()
     if not availableDrives:
-        devices = dfu.listDeviced()
+        devices = dfu.listDevices()
+        filtered_devices = []
         for d in devices:
-            if(d['ser'] == "0000000000000001"):
-                devices.remove(d)
+            if d['ser'] == "0000000000000001":
                 print("Removed fake device: ['0000000000000001']")
+            elif d['ser'] is None:
+                print("Removed 'None' device")
+            else:
+                filtered_devices.append(d)
+        devices = filtered_devices
         if not devices:
             return ['No devices found for entering bootloader, check if "libusb-win32" driver has been installed for "TinyUSB DFU_RT (Interface 1)"']
         if(compare_Serial):
