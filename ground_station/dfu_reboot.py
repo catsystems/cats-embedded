@@ -21,26 +21,28 @@ import usb.backend.libusb1
 
 class DFU_Reboot:
     def __init__(self):
-        pass
+        self.backend = usb.backend.libusb1.get_backend()
+        if self.backend is None:
+            print("Warning: libusb backend not found; falling back to PyUSB default")
+            self.backend = None
     
-    def listDeviced(self):
+    def listDevices(self):
         deviceList = []
-        busses = usb.busses()
-        for bus in busses:
-            devices = bus.devices
-            for dev in devices:
-                if dev != None:
-                    try:
-                        deviceInfo = {"dev":dev.dev,
-                                      "vid":dev.idVendor,
-                                      "pid":dev.idProduct,
-                                      "ser":dev.dev.serial_number,
-                                      "manufacturer":dev.dev.manufacturer,
-                                      "product":dev.dev.product}
-                        deviceList.append(deviceInfo)
-                    except:
-                        pass
-        deviceList = sorted(deviceList, key=lambda x: x['ser'])   # Sort list by increasing Serial number
+        devices = usb.core.find(find_all=True, backend=self.backend)
+        for dev in devices or []:
+            try:
+                deviceInfo = {
+                    "dev": dev,
+                    "vid": dev.idVendor,
+                    "pid": dev.idProduct,
+                    "ser": getattr(dev, "serial_number", None),
+                    "manufacturer": getattr(dev, "manufacturer", None),
+                    "product": getattr(dev, "product", None),
+                }
+                deviceList.append(deviceInfo)
+            except Exception:
+                pass
+        deviceList.sort(key=lambda x: x["ser"] or "")
         return deviceList
 
     def reboot(self, devices):
@@ -68,6 +70,6 @@ class DFU_Reboot:
 
 if __name__ == "__main__":
     dfu = DFU_Reboot()
-    devices = dfu.listDeviced()
-    print(devices)
+    devices = dfu.listDevices()
+    print(f"devices: {devices}")
     # print(dfu.reboot(devices))

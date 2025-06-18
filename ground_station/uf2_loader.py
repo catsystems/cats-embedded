@@ -32,7 +32,7 @@ class UF2Loader:
         self.UF2_MAGIC_END    = 0x0AB16F30   # Ditto
         
         self.SEARCH_PATH = "esp32-firmware-update/*.bin"
-        self.INFO_FILE = "/INFO_UF2.TXT"
+        self.INFO_FILE = "INFO_UF2.TXT"
         self.appstartaddr = startAddr
         self.familyid = 0x0
         
@@ -185,13 +185,18 @@ class UF2Loader:
     def get_drives(self):
         drives = []
         if sys.platform == "win32":
-            r = subprocess.check_output(["wmic", "PATH", "Win32_LogicalDisk",
-                                         "get", "DeviceID,", "VolumeName,",
-                                         "FileSystem,", "DriveType"])
-            for line in self.to_str(r).split('\n'):
-                words = re.split('\s+', line)
-                if len(words) >= 3 and words[1] == "2" and words[2] == "FAT":
-                    drives.append(words[0])
+            try:
+                r = subprocess.check_output(
+                    ["wmic", "logicaldisk", "get", "DeviceID,FileSystem,DriveType"],
+                    universal_newlines=True
+                )
+                for line in r.splitlines():
+                    if "FAT" in line and "2" in line:
+                        match = re.match(r"^\s*([A-Z]:)", line)
+                        if match:
+                            drives.append(match.group(1) + "\\")
+            except Exception as e:
+                print("WMIC drive check failed:", e)
         else:
             rootpath = "/media"
             if sys.platform == "darwin":
@@ -206,7 +211,7 @@ class UF2Loader:
     
         def has_info(d):
             try:
-                return os.path.isfile(d + self.INFO_FILE)
+                return os.path.isfile(os.path.join(d, self.INFO_FILE))
             except:
                 return False
     
