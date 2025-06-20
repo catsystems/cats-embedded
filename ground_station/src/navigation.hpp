@@ -113,7 +113,7 @@ class Navigation {
     return elevation;
   }
 
-  inline float computeBearing() { return (azimuth + filter.getYawRadians() - PI_F / 2) / (2 * PI_F / 360); }
+  inline float computeBearing() const { return (azimuth - PI_F / 2) / (2 * PI_F / 360); }
 
   struct mag_calibration_t {
     float offset[3];

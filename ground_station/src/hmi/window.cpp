@@ -332,8 +332,8 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     float bearing = navigation->computeBearing();
 
     display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
-    display.print(old_bearing[0]);
-    display.print(" deg");
+    //display.print(old_bearing[0]);
+    display.print("Coming soon");
     old_bearing[0] = bearing;
 
     // Set Downrange text of FC 2 to white
@@ -351,8 +351,8 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     bearing = navigation->computeBearing();
 
     display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
-    display.print(old_bearing[1]);
-    display.print(" deg");
+    //display.print(old_bearing[1]);
+    display.print("Coming soon");
     old_bearing[1] = bearing;
 
     // Set DownRange to white
@@ -556,12 +556,12 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
 
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
     display.setTextColor(WHITE);
-    display.print(old_bearing[index]);
-    display.print(" deg");
+    //display.print(old_bearing[index]);
+    display.print("Coming soon");
     display.setTextColor(color);
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
-    display.print(bearing);
-    display.print(" deg");
+    //display.print(bearing);
+    display.print("Coming soon");
     old_bearing[index] = bearing;
   }
 
