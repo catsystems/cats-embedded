@@ -19,9 +19,22 @@ import usb.core
 import usb.backend.libusb1
 
 
+def get_libusb_backend():
+    backend = usb.backend.libusb1.get_backend()
+    if backend is not None:
+        return backend
+
+    try:
+        from libusb._platform import DLL_PATH
+    except (ImportError, OSError):
+        return None
+
+    return usb.backend.libusb1.get_backend(find_library=lambda _name: str(DLL_PATH))
+
+
 class DFU_Reboot:
     def __init__(self):
-        self.backend = usb.backend.libusb1.get_backend()
+        self.backend = get_libusb_backend()
         if self.backend is None:
             print("Warning: libusb backend not found; falling back to PyUSB default")
             self.backend = None
