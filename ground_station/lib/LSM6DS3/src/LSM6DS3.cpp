@@ -54,7 +54,8 @@ int LSM6DS3Class::begin(TwoWire& wire, uint8_t slaveAddress)
     //_wire->begin(14,15);
   }*/
 
-  if (readRegister(LSM6DS3_WHO_AM_I_REG) != 0x6B) {
+  int whoAmI = readRegister(LSM6DS3_WHO_AM_I_REG);
+  if (whoAmI != 0x69 && whoAmI != 0x6B) {
     end();
     return 0;
   }
@@ -84,7 +85,6 @@ void LSM6DS3Class::end()
   } else {
     writeRegister(LSM6DS3_CTRL2_G, 0x00);
     writeRegister(LSM6DS3_CTRL1_XL, 0x00);
-    _wire->end();
   }
 }
 
