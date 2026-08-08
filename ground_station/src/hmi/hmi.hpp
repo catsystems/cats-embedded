@@ -5,6 +5,7 @@
 #pragma once
 
 #include "JC_Button.h"
+#include "clock.hpp"
 #include "config.hpp"
 #include "logging/recorder.hpp"
 #include "window.hpp"
@@ -19,7 +20,8 @@ class Hmi {
         rightButton(5),
         centerButton(1),
         okButton(7),
-        backButton(6) {}
+        backButton(6),
+        window(display, systemConfig, clock) {}
 
   void begin();
 
@@ -100,6 +102,8 @@ class Hmi {
   Button okButton;
   Button backButton;
 
+  FirmwareDisplay display;
+  FirmwareClock clock;
   Window window;
 
   int16_t menuIndex = 0;

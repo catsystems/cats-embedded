@@ -1,0 +1,45 @@
+name: Ground Station Simulator
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows-simulator:
+    name: Windows simulator (Emscripten 6.0.6)
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pinned Emscripten SDK
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LOCALAPPDATA }}\CATS\tools\emsdk-6.0.6
+          key: windows-emscripten-6.0.6-833aa203ba2283fc2b6adb504a79a3a0d692df81
+
+      - name: Install pinned Emscripten SDK
+        shell: pwsh
+        run: .\ground_station\gs-sim.ps1 setup
+
+      - name: Run deterministic simulator suite
+        shell: pwsh
+        run: .\ground_station\gs-sim.ps1 test
+
+      - name: Build WebAssembly browser bundle
+        shell: pwsh
+        run: .\ground_station\gs-sim.ps1 serve -Port 8788
+
+      - name: Verify browser bundle
+        shell: pwsh
+        run: |
+          if (!(Test-Path .\ground_station\simulator\web\gs-sim.js)) { throw 'gs-sim.js was not generated' }

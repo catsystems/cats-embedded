@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CATS Ground Station Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>CATS Ground Station Simulator</h1>
+    <section class="toolbar">
+      <button id="pause" title="Freeze or resume the simulator's virtual clock">Pause time</button>
+      <button id="reset">Reset</button>
+      <label>Advance by <input id="step" type="number" min="1" value="100" aria-label="Virtual time step in milliseconds"> ms</label>
+      <button id="advance" title="Move virtual time forward by the selected amount">Advance time</button>
+    </section>
+    <p class="toolbar-help">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
+    <canvas id="display" width="400" height="240" tabindex="0" aria-label="Ground station display"></canvas>
+    <p id="status" role="status">Loading WebAssembly simulator...</p>
+    <p class="keyboard-help">Keyboard: arrows move · A, Enter, or Space selects · B or Escape goes back</p>
+    <section class="controls" aria-label="Ground station controls">
+      <div class="dpad" aria-label="Directional pad">
+        <button class="dpad-up" data-button="up" aria-label="Up">▲</button>
+        <button class="dpad-left" data-button="left" aria-label="Left">◀</button>
+        <span class="dpad-center" aria-hidden="true"></span>
+        <button class="dpad-right" data-button="right" aria-label="Right">▶</button>
+        <button class="dpad-down" data-button="down" aria-label="Down">▼</button>
+      </div>
+      <div class="face-buttons" aria-label="A and B buttons">
+        <button class="face-button" data-button="back" aria-label="B, Back">B</button>
+        <button class="face-button" data-button="ok" aria-label="A, OK">A</button>
+      </div>
+    </section>
+    <pre id="snapshot"></pre>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

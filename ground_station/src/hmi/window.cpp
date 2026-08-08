@@ -12,8 +12,6 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
-#include <TimeLib.h>
-
 #include <cmath>
 
 uint16_t GetNegativeColor(uint16_t color) {
@@ -24,20 +22,35 @@ uint16_t GetNegativeColor(uint16_t color) {
 }
 
 void Window::begin() {
-  display.begin();
-  display.clearDisplay();
+  surface.begin();
+  surface.clear();
   display.setRotation(0);
+  oldBarHour = 0;
+  oldBarMinute = 0;
+  oldBarUsbStatus = false;
+  oldBarLoggingStatus = false;
+  oldBarFreeMemory = 0;
+  barBlinkStatus = false;
+  oldMenuHighlight = 0;
+  oldTestingIndex = 0;
+  oldCalibrationPercentage = 0.0F;
+  livestate = LiveState::kShowGnss;
+  old_bearing[0] = old_bearing[1] = 0.0F;
+  old_downrange[0] = old_downrange[1] = 0;
+  connected[0] = connected[1] = false;
+  lastTeleData[0] = lastTeleData[1] = 0;
+  dataAge[0] = dataAge[1] = 0;
 }
 
 void Window::logo() {
   display.drawBitmap(160, 20, cats_logo, 120, 200, BLACK);
-  display.refresh();
+  surface.present();
 }
 
 void Window::Bootloader() {
-  display.clearDisplay();
+  surface.clear();
   display.drawBitmap(136, 56, usb_logo, 128, 128, BLACK);
-  display.refresh();
+  surface.present();
 }
 
 void Window::drawCentreString(const char *buf, int16_t x, int16_t y) {
@@ -77,20 +90,13 @@ void Window::initBar() {
 }
 
 void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, uint32_t free_memory) {
-  static int32_t oldHour = 0;
-  static int32_t oldMinute = 0;
-  static bool oldUsbStatus = false;
-  static bool oldLoggingStatus = false;
-  static uint32_t oldFreeMemory = 0;
-  static bool blinkStatus = false;
-
   // Logging
-  if (logging != oldLoggingStatus) {
+  if (logging != oldBarLoggingStatus) {
     display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(!logging));
-    oldLoggingStatus = logging;
+    oldBarLoggingStatus = logging;
   }
   if (logging) {
-    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(blinkStatus));
+    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(barBlinkStatus));
   }
 
   // Location
@@ -99,52 +105,52 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   // Memory Usage
-  if (free_memory != oldFreeMemory) {
+  if (free_memory != oldBarFreeMemory) {
     display.setFont(nullptr);
     display.setTextSize(2);
 
     display.setTextColor(WHITE);
 
-    String t = String(oldFreeMemory) + "%";
+    String t = String(oldBarFreeMemory) + "%";
     drawCentreString(t, 50, 2);
 
-    oldFreeMemory = free_memory;
+    oldBarFreeMemory = free_memory;
     display.setTextColor(BLACK);
 
-    t = String(oldFreeMemory) + "%";
+    t = String(oldBarFreeMemory) + "%";
     drawCentreString(t, 50, 2);
   }
 
-  if ((minute() != oldMinute || hour() != oldHour) && time) {
+  if ((clock.minute() != oldBarMinute || clock.hour() != oldBarHour) && time) {
     display.setFont(nullptr);
     display.setTextSize(2);
 
     display.setTextColor(WHITE);
 
-    String t = String(oldHour) + ":";
-    if (oldMinute < 10) {
+    String t = String(oldBarHour) + ":";
+    if (oldBarMinute < 10) {
       t += '0';
     }
-    t += String(oldMinute);
+    t += String(oldBarMinute);
 
     drawCentreString(t, 200, 2);
 
-    oldHour = hour();
-    oldMinute = minute();
+    oldBarHour = clock.hour();
+    oldBarMinute = clock.minute();
     display.setTextColor(BLACK);
 
-    t = String(oldHour) + ":";
-    if (oldMinute < 10) {
+    t = String(oldBarHour) + ":";
+    if (oldBarMinute < 10) {
       t += '0';
     }
-    t += String(oldMinute);
+    t += String(oldBarMinute);
 
     drawCentreString(t, 200, 2);
   }
 
   // USB
-  if (usb != oldUsbStatus) {
-    oldUsbStatus = usb;
+  if (usb != oldBarUsbStatus) {
+    oldBarUsbStatus = usb;
 
     display.fillRect(373, 5, 6, 8, WHITE);
     display.fillRect(380, 5, 6, 8, WHITE);
@@ -156,8 +162,8 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   if (batteryVoltage != 0.0F && !usb) {
     const bool veryLow = batteryVoltage <= 3.3F;
     display.fillRect(373, 5, 6, 8, veryLow ? WHITE : BLACK);
-    display.drawRoundRect(371, 3, 24, 12, 2, veryLow ? static_cast<uint16_t>(blinkStatus) : BLACK);
-    display.fillRect(395, 5, 3, 8, veryLow ? static_cast<uint16_t>(blinkStatus) : BLACK);
+    display.drawRoundRect(371, 3, 24, 12, 2, veryLow ? static_cast<uint16_t>(barBlinkStatus) : BLACK);
+    display.fillRect(395, 5, 3, 8, veryLow ? static_cast<uint16_t>(barBlinkStatus) : BLACK);
 
     // Bar 1: > 3.5 V
     display.fillRect(373, 5, 6, 8, batteryVoltage > 3.5F ? BLACK : WHITE);
@@ -167,9 +173,9 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     display.fillRect(387, 5, 6, 8, batteryVoltage > 3.9F ? BLACK : WHITE);
   }
 
-  blinkStatus = !blinkStatus;
+  barBlinkStatus = !barBlinkStatus;
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initMenu(int16_t index) {
@@ -193,20 +199,18 @@ void Window::initMenu(int16_t index) {
   }
   updateMenu(index);
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::updateMenu(int16_t index) {
-  static int16_t oldHighlight = 0;
-
-  drawMenuHighlight(oldHighlight, false);
-  drawMenuBitmap(oldHighlight, BLACK);
+  drawMenuHighlight(oldMenuHighlight, false);
+  drawMenuBitmap(oldMenuHighlight, BLACK);
 
   drawMenuHighlight(index, true);
   drawMenuBitmap(index, WHITE);
 
-  display.refresh();
-  oldHighlight = index;
+  surface.present();
+  oldMenuHighlight = index;
 }
 
 void Window::drawMenuBitmap(int16_t index, uint16_t color) {
@@ -299,7 +303,7 @@ void Window::initLive() {
 
   display.setTextColor(BLACK);
   display.setFont(nullptr);
-  display.refresh();
+  surface.present();
 }
 
 void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state) {
@@ -320,7 +324,7 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     // Set Downrange text of FC 1 to white
     auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
     display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 120);
-    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    if (config.config.unitSystem == UnitSystem::kMetric) {
       display.print(old_downrange[0]);
       display.print(" m");
     } else {
@@ -339,7 +343,7 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     // Set Downrange text of FC 2 to white
     downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
     display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 120);
-    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    if (config.config.unitSystem == UnitSystem::kMetric) {
       display.print(old_downrange[1]);
       display.print(" m");
     } else {
@@ -413,7 +417,7 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     display.drawBitmap(358, 125, left_arrow, 24, 24, BLACK);
   }
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::updateLive(TelemetryInfo *info, int16_t index) {
@@ -427,7 +431,7 @@ void Window::updateLive(TelemetryInfo *info, int16_t index) {
   updateLiveInfo(&infoData[index], index, BLACK);
 
   memcpy(&infoData[index], info, sizeof(infoData[0]));
-  dataAge[index] = millis() - lastTeleData[index];
+  dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - lastTeleData[index];
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
@@ -436,7 +440,7 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryIn
     return;
   }
 
-  lastTeleData[index] = millis();
+  lastTeleData[index] = static_cast<uint32_t>(clock.nowMs());
 
   // Clear update flag
   data->clear();
@@ -461,7 +465,7 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t ind
     return;
   }
 
-  lastTeleData[index] = millis();
+  lastTeleData[index] = static_cast<uint32_t>(clock.nowMs());
 
   // Clear update flag
   data->clear();
@@ -503,7 +507,7 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
 
   display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 70);
   const int32_t altitude_m = data->altitude();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(altitude_m);
     display.print(" m");
   } else {
@@ -514,7 +518,7 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
   display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 95);
 
   const int16_t velocity_m_s = data->velocity();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(velocity_m_s);
     display.print(" m/s");
   } else {
@@ -533,7 +537,7 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
   } else {
     const auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
-    if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+    if (config.config.unitSystem == UnitSystem::kMetric) {
       display.setTextColor(WHITE);
       display.print(old_downrange[index]);
       display.print(" m");
@@ -658,7 +662,7 @@ void Window::initRecovery() {
   display.drawBitmap(40, 90, live_lat, 24, 24, BLACK);
   display.drawBitmap(40, 115, live_lon, 24, 24, BLACK);
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::updateRecovery(Navigation *navigation) {
@@ -704,7 +708,7 @@ void Window::updateRecovery(Navigation *navigation) {
 
   display.setCursor(70, 170);
   const float distance_m = navigation->getDistance();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(distance_m);
     display.print(" m");
   } else {
@@ -754,7 +758,7 @@ void Window::updateRecovery(Navigation *navigation) {
     display.drawCircle(300, 125, 6, BLACK);
   }
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initBox(const char *text) {
@@ -775,7 +779,7 @@ void Window::initBox(const char *text) {
   display.setCursor(255, 160);
   display.print("OK (A)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTestingBox(int16_t index [[maybe_unused]]) {
@@ -796,7 +800,7 @@ void Window::initTestingBox(int16_t index [[maybe_unused]]) {
   display.setCursor(255, 160);
   display.print("OK (A)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTesting() {
@@ -831,7 +835,7 @@ void Window::initTesting() {
   display.setCursor(290, 225);
   display.print("Continue (A)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTestingConfirmed(bool connected, bool testingEnabled) {
@@ -878,7 +882,7 @@ void Window::initTestingConfirmed(bool connected, bool testingEnabled) {
     display.print("Cancel (B)");
   }
 
-  display.refresh();
+  surface.present();
 }
 void Window::initTestingFailed() {
   clearMainScreen();
@@ -895,7 +899,7 @@ void Window::initTestingFailed() {
   display.setCursor(6, 225);
   display.print("Cancel (B)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTestingLost() {
@@ -915,7 +919,7 @@ void Window::initTestingLost() {
   display.setCursor(6, 225);
   display.print("Cancel (B)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTestingWait() {
@@ -931,7 +935,7 @@ void Window::initTestingWait() {
   display.setCursor(6, 225);
   display.print("Cancel (B)");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initTestingReady() {
@@ -969,9 +973,8 @@ void Window::initTestingReady() {
 }
 
 void Window::updateTesting(int16_t index) {
-  static int16_t oldIndex = 0;
-  auto xOffset = static_cast<int16_t>(201 * (oldIndex / 4));
-  auto yOffset = static_cast<int16_t>(50 * (oldIndex % 4) + 20);
+  auto xOffset = static_cast<int16_t>(201 * (oldTestingIndex / 4));
+  auto yOffset = static_cast<int16_t>(50 * (oldTestingIndex % 4) + 20);
 
   display.fillRect(xOffset, yOffset, 199, 48, WHITE);
 
@@ -979,10 +982,10 @@ void Window::updateTesting(int16_t index) {
   display.setFont(&FreeSans12pt7b);
   display.setTextColor(BLACK);
 
-  xOffset = static_cast<int16_t>(200 * (oldIndex / 4) + 100);
-  yOffset = static_cast<int16_t>(50 * (oldIndex % 4) + 51);
+  xOffset = static_cast<int16_t>(200 * (oldTestingIndex / 4) + 100);
+  yOffset = static_cast<int16_t>(50 * (oldTestingIndex % 4) + 51);
 
-  drawCentreString(eventName[oldIndex], xOffset, yOffset);
+  drawCentreString(eventName[oldTestingIndex], xOffset, yOffset);
 
   xOffset = static_cast<int16_t>(201 * (index / 4));
   yOffset = static_cast<int16_t>(50 * (index % 4) + 20);
@@ -994,8 +997,8 @@ void Window::updateTesting(int16_t index) {
   yOffset = static_cast<int16_t>(50 * (index % 4) + 51);
   drawCentreString(eventName[index], xOffset, yOffset);
 
-  oldIndex = index;
-  display.refresh();
+  oldTestingIndex = index;
+  surface.present();
 }
 
 void Window::initData(bool fileAvailable) {
@@ -1005,7 +1008,7 @@ void Window::initData(bool fileAvailable) {
     display.setFont(&FreeSans12pt7b);
     display.setTextColor(BLACK);
     drawCentreString("No flight logs found!", 200, 100);
-    display.refresh();
+    surface.present();
   }
 }
 
@@ -1044,7 +1047,7 @@ void Window::initSensors() {
   display.setCursor(220, 225);
   display.print("the compass");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::updateSensors(Navigation *navigation) {
@@ -1163,7 +1166,7 @@ void Window::updateSensors(Navigation *navigation) {
   display.setCursor(static_cast<int16_t>(70 + xOffset), static_cast<int16_t>(yinitOffset + yOffset));
   display.print(navigation->getMZ() / 1000, 2);
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initSensorPrepareCalibrate() {
@@ -1179,7 +1182,7 @@ void Window::initSensorPrepareCalibrate() {
   display.setCursor(45, 180);
   display.print("When ready press A, to cancel press B.");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initSensorCalibrate() {
@@ -1196,22 +1199,20 @@ void Window::initSensorCalibrate() {
   display.setCursor(130, 200);
   display.print("Press B to cancel.");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::updateSensorCalibrate(Navigation *navigation) {
-  static float old_percentage = 0.0F;
-
   display.setFont(&FreeSansBold9pt7b);
   display.setTextSize(1);
 
   // Show Progress
   display.setTextColor(WHITE);
-  String t = "Progress: " + String(old_percentage) + "%";
+  String t = "Progress: " + String(oldCalibrationPercentage) + "%";
   drawCentreString(t, 200, 160);
-  old_percentage = navigation->getCalibrationPercentage();
+  oldCalibrationPercentage = navigation->getCalibrationPercentage();
   display.setTextColor(BLACK);
-  t = "Progress: " + String(old_percentage) + "%";
+  t = "Progress: " + String(oldCalibrationPercentage) + "%";
   drawCentreString(t, 200, 160);
 }
 
@@ -1224,7 +1225,7 @@ void Window::initSensorCalibrateDone() {
   display.setCursor(130, 160);
   display.print("Press A to continue.");
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::initSettings(int16_t submenuIdx) {
@@ -1250,7 +1251,7 @@ void Window::initSettings(int16_t submenuIdx) {
   subMenuSettingIndex = submenuIdx;
 
   display.drawLine(0, 177, 400, 177, BLACK);
-  display.refresh();
+  surface.present();
 }
 
 void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color) {
@@ -1320,7 +1321,7 @@ void Window::updateSettings(int16_t index) {
   }
 
   oldSettingsIndex = index;
-  display.refresh();
+  surface.present();
 }
 
 void Window::drawSettingsTriangles(int16_t submenuIdx, int16_t color) {
@@ -1435,7 +1436,13 @@ void Window::initKeyboard(char *text, uint32_t maxLength) {
     highlightKeyboardKey(-1, BLACK);
   }
 
-  display.refresh();
+  surface.present();
+}
+
+void Window::drawKeyboard(char *text, int32_t keyHighlight, bool uppercase, uint32_t maxLength) {
+  oldKey = keyHighlight;
+  upperCase = uppercase;
+  initKeyboard(text, maxLength);
 }
 
 void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
@@ -1474,7 +1481,7 @@ void Window::updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed) {
   highlightKeyboardKey(keyHighlight, BLACK);
 
   oldKey = keyHighlight;
-  display.refresh();
+  surface.present();
 }
 
 void Window::highlightKeyboardKey(int32_t key, uint16_t color) {
@@ -1535,7 +1542,7 @@ void Window::dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics
   dataShowFlightStatisticsSide(stats1, 0);
   dataShowFlightStatisticsSide(stats2, 1);
 
-  display.refresh();
+  surface.present();
 }
 
 void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t index) {
@@ -1545,7 +1552,7 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 9), 25, data_altitude_peak, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 45);
   const int32_t altitude_m = stats.getMaxAltitude();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(altitude_m);
     display.print(" m");
   } else {
@@ -1563,7 +1570,7 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 75, data_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 95);
   const int32_t velocity_ms = stats.getMaxVelocity();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(velocity_ms);
     display.print(" m/s");
   } else {
@@ -1575,7 +1582,7 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 8), 100, data_drogue_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 120);
   const float drogue_velocity_ms = stats.getDrogueDescentRate();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(drogue_velocity_ms, 1);
     display.print(" m/s");
   } else {
@@ -1587,7 +1594,7 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 125, data_main_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 145);
   const float main_velocity_ms = stats.getMainDescentRate();
-  if (systemConfig.config.unitSystem == UnitSystem::kMetric) {
+  if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(main_velocity_ms, 1);
     display.print(" m/s");
   } else {

@@ -1,0 +1,12 @@
+{
+  "initial": {"ready": true},
+  "steps": [
+    {"assert": {"activeScreen": "menu"}},
+    {"press": "right"},
+    {"press": "ok"},
+    {"assert": {"activeScreen": "recovery"}},
+    {"press": "back"},
+    {"assert": {"activeScreen": "menu"}},
+    {"snapshot": "menu"}
+  ]
+}
