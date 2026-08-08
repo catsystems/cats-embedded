@@ -176,6 +176,8 @@ struct HmiSnapshot {
   int16_t settingsSelection = -1;
   int16_t dataSelection = 0;
   bool dataStatistics = false;
+  std::string qrView = "none";
+  std::string qrUrl;
   uint64_t virtualTimeMs = 0;
   GsConfigSnapshot configuration;
   std::array<LinkSnapshot, 2> links{};
@@ -183,6 +185,7 @@ struct HmiSnapshot {
   DeviceStatusSnapshot device;
   std::vector<FlightLogSnapshot> logs;
   std::array<FlightStatisticsSnapshot, 2> flightStatistics{};
+  std::array<FlightStatisticsSnapshot, 2> recoveryLocations{};
   std::vector<PlatformAction> actions;
   uint32_t framebufferRevision = 0;
 };
@@ -226,7 +229,11 @@ class HmiController {
   void dataStep(uint64_t nowMs);
   void sensorsStep(uint64_t nowMs);
   void settingsStep(uint64_t nowMs);
+  void updateRecoveryLocations();
+  bool showRecoveryLocation(size_t linkIndex);
   void emit(const char* type, uint8_t link = 0, int32_t value = 0, const std::string& text = {});
+  bool showQr(const char* view, float latitude, float longitude);
+  void clearQr();
   [[nodiscard]] std::string screenName() const;
   [[nodiscard]] std::string testingName() const;
   [[nodiscard]] std::string calibrationName() const;
@@ -256,6 +263,9 @@ class HmiController {
   int16_t dataSelection_ = 0;
   int16_t testingSelection_ = 0;
   bool dataStatistics_ = false;
+  std::string qrView_ = "none";
+  std::string qrUrl_;
+  std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
   bool liveDownrange_ = false;
   bool keyboardActive_ = false;
   int16_t keyboardSelection_ = 0;

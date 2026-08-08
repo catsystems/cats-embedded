@@ -2,5 +2,8 @@
   "menu.json": "5b6ed3da54f95e803bc58e88c6ab35f07c380ae8862e6c813ddde6ef60b6ee01",
   "replay.json": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
   "settings.json": "5dac47de522a2757dff994776a98e5523e3b150d572592589d6ba2d3f65dc38c",
-  "testing-timeout.json": "49e96d4416301bd8a61bdbb3ab7bfccd9fd1952036b25066800e6e597980a226"
+  "testing-timeout.json": "49e96d4416301bd8a61bdbb3ab7bfccd9fd1952036b25066800e6e597980a226",
+  "qr-recovery.json": "7354ea8c680a17b118ade789feb95fb0cc730a7cbd5a8c95cabb0db90f8a0935",
+  "qr-data.json": "9f23e6ca44ea8baf005365e0912ad566898d2512374e0974c06f91da3286233b",
+  "qr-no-fix.json": "8ccd998ef80413e9b778d27a4185e9e45c3575efed306ca1961772dbd44f6bcb"
 }

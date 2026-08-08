@@ -41,6 +41,34 @@ def fail(message: str) -> None:
     raise ScenarioError(message)
 
 
+def valid_location(latitude: float, longitude: float) -> bool:
+    return (math.isfinite(latitude) and math.isfinite(longitude) and latitude != 0.0 and longitude != 0.0
+            and -90.0 <= latitude <= 90.0 and -180.0 <= longitude <= 180.0)
+
+
+def google_maps_url(latitude: float, longitude: float) -> str:
+    if not valid_location(latitude, longitude):
+        return ""
+    return f"https://www.google.com/maps/search/?api=1&query={latitude:.4f}%2C{longitude:.4f}"
+
+
+def log_location(log: dict[str, Any], link_source: int) -> tuple[float, float]:
+    last = (0.0, 0.0)
+    for row in csv.reader(str(log.get("csv", "")).splitlines()):
+        if len(row) < 6 or not row[0].strip().isdigit():
+            continue
+        try:
+            if int(row[0]) != link_source:
+                continue
+            latitude = int(row[4]) / 10000.0
+            longitude = int(row[5]) / 10000.0
+        except ValueError:
+            continue
+        if valid_location(latitude, longitude):
+            last = (latitude, longitude)
+    return last
+
+
 class Framebuffer:
     """One-bit logical framebuffer with deterministic 1-bit PNG output."""
 
@@ -226,6 +254,9 @@ class Simulator:
         self.settings_selection = -1
         self.data_selection = 0
         self.data_statistics = False
+        self.qr_view = "none"
+        self.qr_url = ""
+        self.recovery_locations = [(0.0, 0.0), (0.0, 0.0)]
         self.keyboard_index = 0
         self.held = {name: False for name in BUTTONS}
         self.held_since = {name: 0 for name in BUTTONS}
@@ -281,11 +312,26 @@ class Simulator:
                 self.frame.text(16, y, f"L{index + 1} {link['telemetry'].get('state', 0)}")
                 self.frame.text(130, y, f"AGE {max(0, self.now_ms - link['telemetry'].get('lastUpdateMs', 0))}ms")
         elif self.screen == "recovery":
-            self.render("Recovery", "Navigation / downrange")
+            if self.qr_view.startswith("recovery_link_"):
+                self.render(f"[Link {self.qr_view[-1]}] Last Location", self.qr_url)
+            else:
+                has_last_location = any(valid_location(*location) for location in self.recovery_locations)
+                self.render("Recovery", "Press > for last locations" if has_last_location else "Navigation / downrange")
         elif self.screen == "testing":
             self.render("Testing", self.testing_state)
         elif self.screen == "data":
-            self.render("Data", "Flight statistics" if self.data_statistics else "Flight logs")
+            if self.qr_view.startswith("log_link_"):
+                self.render(f"[Link {self.qr_view[-1]}] Last Location", self.qr_url)
+            else:
+                logs = self.state.get("logs", [])
+                if self.data_statistics and logs:
+                    log_name = str(logs[self.data_selection].get("name", ""))
+                    title = log_name
+                    if len(title) > 32:
+                        title = f"{log_name[:29]}..."
+                    self.render(title, "Flight statistics")
+                else:
+                    self.render("Data", "Flight logs")
             self.frame.text(12, 82, f"Selection: {self.data_selection}")
         elif self.screen == "sensors":
             self.render("Sensors", self.calibration_state)
@@ -337,6 +383,11 @@ class Simulator:
             self.tick(set())
 
     def tick(self, explicit_pressed: set[str]) -> None:
+        for index in range(2):
+            telemetry = self.link(index)["telemetry"]
+            location = (float(telemetry.get("latitude", 0.0)), float(telemetry.get("longitude", 0.0)))
+            if valid_location(*location):
+                self.recovery_locations[index] = location
         if self.screen == "logo" and self.now_ms >= BOOT_MS:
             self.screen = "menu"
             self.render_screen()
@@ -352,8 +403,8 @@ class Simulator:
             self.sensors_step(explicit_pressed)
         elif self.screen == "settings":
             self.settings_step(explicit_pressed)
-        elif self.screen == "recovery" and "back" in explicit_pressed:
-            self.to_menu()
+        elif self.screen == "recovery":
+            self.recovery_step(explicit_pressed)
         elif self.screen == "bootloader" and "back" in explicit_pressed:
             self.screen = "settings"
         for name in explicit_pressed:
@@ -374,6 +425,8 @@ class Simulator:
         self.calibration_state = "idle"
         self.data_selection = 0
         self.data_statistics = False
+        self.qr_view = "none"
+        self.qr_url = ""
 
     def menu_step(self, pressed: set[str]) -> None:
         old = self.menu_selection
@@ -389,6 +442,8 @@ class Simulator:
             self.emit("menu_selection", value=self.menu_selection)
         if "ok" in pressed or "center" in pressed:
             self.screen = MENU_SCREENS[self.menu_selection]
+            self.qr_view = "none"
+            self.qr_url = ""
             self.settings_page = 0
             self.settings_selection = -1
             self.settings_state = "list"
@@ -399,6 +454,27 @@ class Simulator:
             self.emit("live_view", text="gnss")
         if "right" in pressed:
             self.emit("live_view", text="downrange")
+        if "back" in pressed:
+            self.to_menu()
+
+    def recovery_step(self, pressed: set[str]) -> None:
+        if "right" in pressed:
+            if self.qr_view == "none":
+                link_index = 0 if valid_location(*self.recovery_locations[0]) else 1
+                if valid_location(*self.recovery_locations[link_index]):
+                    self.qr_view = f"recovery_link_{link_index + 1}"
+            elif self.qr_view == "recovery_link_1" and valid_location(*self.recovery_locations[1]):
+                self.qr_view = "recovery_link_2"
+        if "left" in pressed and self.qr_view != "none":
+            if self.qr_view == "recovery_link_2" and valid_location(*self.recovery_locations[0]):
+                self.qr_view = "recovery_link_1"
+            else:
+                self.qr_view = "none"
+        if self.qr_view.startswith("recovery_link_"):
+            link_index = int(self.qr_view[-1]) - 1
+            self.qr_url = google_maps_url(*self.recovery_locations[link_index])
+        else:
+            self.qr_url = ""
         if "back" in pressed:
             self.to_menu()
 
@@ -461,6 +537,31 @@ class Simulator:
         if self.data_statistics:
             if "back" in pressed:
                 self.data_statistics = False
+                self.qr_view = "none"
+                self.qr_url = ""
+                return
+            if ({"left", "right"} & pressed) and logs:
+                log = logs[self.data_selection]
+                link1 = log_location(log, 1)
+                link2 = log_location(log, 2)
+                if "right" in pressed:
+                    if self.qr_view == "none":
+                        if valid_location(*link1):
+                            self.qr_view = "log_link_1"
+                            self.qr_url = google_maps_url(*link1)
+                        elif valid_location(*link2):
+                            self.qr_view = "log_link_2"
+                            self.qr_url = google_maps_url(*link2)
+                    elif self.qr_view == "log_link_1" and valid_location(*link2):
+                        self.qr_view = "log_link_2"
+                        self.qr_url = google_maps_url(*link2)
+                elif "left" in pressed:
+                    if self.qr_view == "log_link_2" and valid_location(*link1):
+                        self.qr_view = "log_link_1"
+                        self.qr_url = google_maps_url(*link1)
+                    elif self.qr_view != "none":
+                        self.qr_view = "none"
+                        self.qr_url = ""
             return
         if "down" in pressed:
             self.data_selection = min(maximum, self.data_selection + 1)
@@ -468,6 +569,8 @@ class Simulator:
             self.data_selection = max(0, self.data_selection - 1)
         if "ok" in pressed and logs:
             self.data_statistics = True
+            self.qr_view = "none"
+            self.qr_url = ""
             self.emit("flight_statistics", value=self.data_selection)
         if "back" in pressed:
             self.to_menu()
@@ -687,6 +790,12 @@ class Simulator:
             "settingsPage": self.settings_page,
             "settingsSelection": self.settings_selection,
             "dataSelection": self.data_selection,
+            "dataStatistics": self.data_statistics,
+            "qrView": self.qr_view,
+            "qrUrl": self.qr_url,
+            "recoveryLocations": [
+                {"latitude": location[0], "longitude": location[1]} for location in self.recovery_locations
+            ],
             "virtualTimeMs": self.now_ms,
             "configuration": copy.deepcopy(self.config()),
             "links": copy.deepcopy(self.state["links"]),
@@ -799,7 +908,8 @@ def deterministic_test(root: Path) -> int:
     except (OSError, json.JSONDecodeError) as error:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
-    for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json"):
+    for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json",
+                          "qr-recovery.json", "qr-data.json", "qr-no-fix.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():
             try:

@@ -7,13 +7,27 @@ let paused = false;
 let held = new Set();
 let state = { activeScreen: 'menu', virtualTimeMs: 0, framebufferRevision: 0 };
 let loadError = null;
+let demoLogError = null;
 let lastRealtimeMs = performance.now();
 let realtimeRemainderMs = 0;
+
+const demoLogNames = ['log_001.csv', 'log_002.csv'];
 
 // The browser is only a host: the controller API owns state, actions, timing,
 // and framebuffer bytes. A generated Emscripten module can be dropped beside
 // this file without changing the controls below.
 let wasm = null;
+
+async function loadDemoLogs() {
+  if (!wasm) return;
+  const logs = await Promise.all(demoLogNames.map(async name => {
+    const response = await fetch(`./demo-logs/${name}`);
+    if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
+    return { name, csv: await response.text() };
+  }));
+  wasm.ccall('gs_set_logs_json', null, ['string'], [JSON.stringify(logs)]);
+}
+
 async function loadController() {
   try {
     const moduleFactory = (await import('./gs-sim.js')).default;
@@ -26,6 +40,13 @@ async function loadController() {
   if (wasm) {
     loadError = null;
     wasm.ccall('gs_reset', null, [], []);
+    try {
+      await loadDemoLogs();
+      demoLogError = null;
+    } catch (error) {
+      demoLogError = error instanceof Error ? error.message : String(error);
+      console.error('Ground Station simulator demo logs failed to load:', error);
+    }
   }
   render();
   canvas.focus({ preventScroll: true });
@@ -39,7 +60,9 @@ function controllerCall(name, args = []) {
 function refreshSnapshot() {
   if (wasm) {
     state = JSON.parse(wasm.ccall('gs_snapshot_json', 'string', [], []));
-    statusNode.textContent = 'WebAssembly simulator ready.';
+    statusNode.textContent = demoLogError
+      ? `WebAssembly simulator ready; demo logs unavailable: ${demoLogError}`
+      : 'WebAssembly simulator ready with 2 demo logs.';
   } else {
     state = {
       activeScreen: 'unavailable',
@@ -109,8 +132,15 @@ document.querySelector('#pause').addEventListener('click', event => {
   event.target.textContent = paused ? 'Resume time' : 'Pause time';
   canvas.focus({ preventScroll: true });
 });
-document.querySelector('#reset').addEventListener('click', () => {
+document.querySelector('#reset').addEventListener('click', async () => {
   if (wasm) controllerCall('gs_reset');
+  try {
+    await loadDemoLogs();
+    demoLogError = null;
+  } catch (error) {
+    demoLogError = error instanceof Error ? error.message : String(error);
+    console.error('Ground Station simulator demo logs failed to load:', error);
+  }
   render();
   canvas.focus({ preventScroll: true });
 });

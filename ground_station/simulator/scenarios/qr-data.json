@@ -1,0 +1,63 @@
+{
+  "initial": {
+    "ready": true,
+    "logs": [
+      {
+        "name": "dual-link.csv",
+        "csv": "link,ts,state,errors,lat,lon,altitude,velocity,voltage\n1,10,3,0,337363,1324829,100,20,42\n2,11,3,0,337358,1324762,100,20,42\n1,12,4,0,0,0,200,30,41\n"
+      },
+      {
+        "name": "link-1-only.csv",
+        "csv": "link,ts,state,errors,lat,lon,altitude,velocity,voltage\n1,10,3,0,337360,1324800,100,20,42\n2,11,3,0,0,0,100,20,42\n"
+      },
+      {
+        "name": "link-2-only.csv",
+        "csv": "link,ts,state,errors,lat,lon,altitude,velocity,voltage\n1,10,3,0,0,0,100,20,42\n2,11,3,0,337350,1324780,100,20,42\n"
+      }
+    ]
+  },
+  "steps": [
+    {"press": "down"},
+    {"press": "ok"},
+    {"press": "ok"},
+    {"assert": {"activeScreen": "data", "dataStatistics": true, "qrView": "none"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_1", "qrUrl": "https://www.google.com/maps/search/?api=1&query=33.7363%2C132.4829"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_2", "qrUrl": "https://www.google.com/maps/search/?api=1&query=33.7358%2C132.4762"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_2"}},
+    {"press": "left"},
+    {"assert": {"qrView": "log_link_1"}},
+    {"press": "left"},
+    {"assert": {"qrView": "none"}},
+    {"press": "left"},
+    {"assert": {"qrView": "none"}},
+    {"press": "back"},
+    {"assert": {"activeScreen": "data", "dataStatistics": false, "qrView": "none"}},
+    {"press": "down"},
+    {"press": "ok"},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_1", "qrUrl": "https://www.google.com/maps/search/?api=1&query=33.7360%2C132.4800"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_1"}},
+    {"press": "left"},
+    {"assert": {"qrView": "none"}},
+    {"press": "back"},
+    {"press": "down"},
+    {"press": "ok"},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_2", "qrUrl": "https://www.google.com/maps/search/?api=1&query=33.7350%2C132.4780"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_2"}},
+    {"press": "left"},
+    {"assert": {"qrView": "none"}},
+    {"press": "back"},
+    {"press": "up"},
+    {"press": "up"},
+    {"press": "ok"},
+    {"press": "right"},
+    {"press": "right"},
+    {"snapshot": "data-link-2-qr"}
+  ]
+}

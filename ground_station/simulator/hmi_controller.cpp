@@ -4,6 +4,8 @@
 
 #include "hmi_controller.hpp"
 
+#include "hmi/location_qr.hpp"
+
 #include <algorithm>
 #include <cstdio>
 
@@ -34,6 +36,8 @@ void HmiController::start() {
   dataSelection_ = 0;
   testingSelection_ = 0;
   dataStatistics_ = false;
+  recoveryLocations_ = {};
+  clearQr();
   liveDownrange_ = false;
   keyboardActive_ = false;
   keyboardSelection_ = 0;
@@ -51,6 +55,8 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
   nowMs_ = nowMs;
   previousInput_ = input_;
   input_ = input;
+
+  updateRecoveryLocations();
 
   for (size_t i = 0; i < input_.held.size(); ++i) {
     if (input_.held[i] && !previousInput_.held[i]) {
@@ -86,6 +92,28 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
       settingsStep(nowMs_);
       break;
     case Screen::Recovery:
+      if (pressed(HmiButton::Right)) {
+        if (qrView_ == "none") {
+          if (!showRecoveryLocation(0)) {
+            (void)showRecoveryLocation(1);
+          }
+        } else if (qrView_ == "recovery_link_1") {
+          (void)showRecoveryLocation(1);
+        }
+      }
+      if (pressed(HmiButton::Left) && qrView_ != "none") {
+        if (qrView_ == "recovery_link_2" &&
+            LocationQr::IsValid(recoveryLocations_[0].lastLatitude, recoveryLocations_[0].lastLongitude)) {
+          (void)showRecoveryLocation(0);
+        } else {
+          clearQr();
+        }
+      }
+      if (qrView_ == "recovery_link_1") {
+        (void)showRecoveryLocation(0);
+      } else if (qrView_ == "recovery_link_2") {
+        (void)showRecoveryLocation(1);
+      }
       if (pressed(HmiButton::Back)) {
         enter(Screen::Menu);
       }
@@ -122,6 +150,7 @@ bool HmiController::repeated(HmiButton button, uint64_t nowMs) {
 
 void HmiController::enter(Screen screen) {
   screen_ = screen;
+  clearQr();
   if (screen_ == Screen::Testing) {
     testingState_ = TestingState::Disclaimer;
     testingSelection_ = 0;
@@ -278,6 +307,34 @@ void HmiController::dataStep(uint64_t nowMs) {
   if (dataStatistics_) {
     if (pressed(HmiButton::Back)) {
       dataStatistics_ = false;
+      clearQr();
+      return;
+    }
+    if ((pressed(HmiButton::Left) || pressed(HmiButton::Right)) && dataSelection_ >= 0 &&
+        dataSelection_ < static_cast<int16_t>(logs.size())) {
+      const auto& log = logs[static_cast<size_t>(dataSelection_)];
+      const auto stats1 = logs_.statistics(log, 1);
+      const auto stats2 = logs_.statistics(log, 2);
+      const bool link1Valid = LocationQr::IsValid(stats1.lastLatitude, stats1.lastLongitude);
+      const bool link2Valid = LocationQr::IsValid(stats2.lastLatitude, stats2.lastLongitude);
+
+      if (pressed(HmiButton::Right)) {
+        if (qrView_ == "none") {
+          if (link1Valid) {
+            (void)showQr("log_link_1", stats1.lastLatitude, stats1.lastLongitude);
+          } else if (link2Valid) {
+            (void)showQr("log_link_2", stats2.lastLatitude, stats2.lastLongitude);
+          }
+        } else if (qrView_ == "log_link_1" && link2Valid) {
+          (void)showQr("log_link_2", stats2.lastLatitude, stats2.lastLongitude);
+        }
+      } else if (pressed(HmiButton::Left)) {
+        if (qrView_ == "log_link_2" && link1Valid) {
+          (void)showQr("log_link_1", stats1.lastLatitude, stats1.lastLongitude);
+        } else if (qrView_ != "none") {
+          clearQr();
+        }
+      }
     }
     return;
   }
@@ -289,6 +346,7 @@ void HmiController::dataStep(uint64_t nowMs) {
   }
   if (pressed(HmiButton::Ok) && !logs.empty()) {
     dataStatistics_ = true;
+    clearQr();
     emit("flight_statistics", 0, dataSelection_);
   }
   if (pressed(HmiButton::Back)) {
@@ -296,6 +354,26 @@ void HmiController::dataStep(uint64_t nowMs) {
     enter(Screen::Menu);
   }
   (void)nowMs;
+}
+
+void HmiController::updateRecoveryLocations() {
+  const std::array<LinkSnapshot, 2> links = {link1_.snapshot(), link2_.snapshot()};
+  for (size_t index = 0; index < links.size(); ++index) {
+    const TelemetrySample &telemetry = links[index].telemetry;
+    if (LocationQr::IsValid(telemetry.latitude, telemetry.longitude)) {
+      recoveryLocations_[index].lastLatitude = telemetry.latitude;
+      recoveryLocations_[index].lastLongitude = telemetry.longitude;
+    }
+  }
+}
+
+bool HmiController::showRecoveryLocation(size_t linkIndex) {
+  if (linkIndex >= recoveryLocations_.size()) {
+    return false;
+  }
+  const FlightStatisticsSnapshot &location = recoveryLocations_[linkIndex];
+  const char *view = linkIndex == 0 ? "recovery_link_1" : "recovery_link_2";
+  return showQr(view, location.lastLatitude, location.lastLongitude);
 }
 
 void HmiController::sensorsStep(uint64_t nowMs) {
@@ -456,6 +534,21 @@ void HmiController::emit(const char* type, uint8_t link, int32_t value, const st
   actions_.push_back(PlatformAction{type, link, value, text});
 }
 
+bool HmiController::showQr(const char* view, float latitude, float longitude) {
+  char url[LocationQr::kGoogleMapsUrlSize] = {};
+  if (!LocationQr::BuildGoogleMapsUrl(latitude, longitude, url, sizeof(url))) {
+    return false;
+  }
+  qrView_ = view;
+  qrUrl_ = url;
+  return true;
+}
+
+void HmiController::clearQr() {
+  qrView_ = "none";
+  qrUrl_.clear();
+}
+
 void HmiController::render() { renderer_.render(snapshot()); }
 
 std::string HmiController::screenName() const {
@@ -495,6 +588,9 @@ HmiSnapshot HmiController::snapshot() const {
   result.settingsSelection = settingsSelection_;
   result.dataSelection = dataSelection_;
   result.dataStatistics = dataStatistics_;
+  result.qrView = qrView_;
+  result.qrUrl = qrUrl_;
+  result.recoveryLocations = recoveryLocations_;
   result.virtualTimeMs = nowMs_;
   result.configuration = config_.config();
   result.links[0] = link1_.snapshot();
