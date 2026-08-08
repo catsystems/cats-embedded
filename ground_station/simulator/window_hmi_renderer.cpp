@@ -1,5 +1,7 @@
 #include "window_hmi_renderer.hpp"
 
+#include "hmi/location_qr.hpp"
+
 #include <algorithm>
 #include <cstring>
 
@@ -93,8 +95,21 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
       }
     }
   } else if (state.screen == "recovery") {
-    window_.initRecovery();
-    window_.updateRecovery(&navigation_);
+    if (state.qrView == "recovery_link_1") {
+      window_.showLocationQr(state.recoveryLocations[0].lastLatitude, state.recoveryLocations[0].lastLongitude,
+                             "[Link 1] Last Location", true,
+                             LocationQr::IsValid(state.recoveryLocations[1].lastLatitude,
+                                                 state.recoveryLocations[1].lastLongitude));
+    } else if (state.qrView == "recovery_link_2") {
+      window_.showLocationQr(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude,
+                             "[Link 2] Last Location", true, false);
+    } else {
+      const bool hasLastLocation =
+          LocationQr::IsValid(state.recoveryLocations[0].lastLatitude, state.recoveryLocations[0].lastLongitude) ||
+          LocationQr::IsValid(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude);
+      window_.initRecovery(hasLastLocation);
+      window_.updateRecovery(&navigation_, hasLastLocation);
+    }
   } else if (state.screen == "testing") {
     if (state.testingState == "disclaimer") {
       window_.initTesting();
@@ -116,8 +131,22 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
       if (state.testingState == "confirm_event") window_.initTestingBox(state.testingSelection);
     }
   } else if (state.screen == "data") {
-    if (state.dataStatistics && !state.logs.empty()) {
-      window_.dataShowFlightStatistics(statistics_[0], statistics_[1]);
+    if (state.qrView == "log_link_1") {
+      window_.showLocationQr(state.flightStatistics[0].lastLatitude, state.flightStatistics[0].lastLongitude,
+                             "[Link 1] Last Location", true,
+                             LocationQr::IsValid(state.flightStatistics[1].lastLatitude,
+                                                 state.flightStatistics[1].lastLongitude));
+    } else if (state.qrView == "log_link_2") {
+      window_.showLocationQr(state.flightStatistics[1].lastLatitude, state.flightStatistics[1].lastLongitude,
+                             "[Link 2] Last Location", true, false);
+    } else if (state.dataStatistics && !state.logs.empty()) {
+      const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)),
+                                               state.logs.size() - 1U);
+      window_.dataShowFlightStatistics(statistics_[0], statistics_[1], state.logs[selected].name.c_str(),
+                                       LocationQr::IsValid(state.flightStatistics[0].lastLatitude,
+                                                           state.flightStatistics[0].lastLongitude) ||
+                                           LocationQr::IsValid(state.flightStatistics[1].lastLatitude,
+                                                               state.flightStatistics[1].lastLongitude));
     } else {
       window_.initData(!state.logs.empty());
       const size_t count = std::min<size_t>(11, state.logs.size());

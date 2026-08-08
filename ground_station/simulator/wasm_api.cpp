@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
+#include <exception>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -49,7 +51,32 @@ class Navigation final : public INavigation {
 class Logs final : public ILogStore {
  public:
   std::vector<FlightLogSnapshot> listLogs() const override { return value; }
-  FlightStatisticsSnapshot statistics(const FlightLogSnapshot&, uint8_t) const override { return {}; }
+  FlightStatisticsSnapshot statistics(const FlightLogSnapshot& log, uint8_t link) const override {
+    FlightStatisticsSnapshot result;
+    std::istringstream rows(log.csv);
+    std::string row;
+    while (std::getline(rows, row)) {
+      std::istringstream fields(row);
+      std::string field;
+      std::array<std::string, 6> values{};
+      size_t count = 0;
+      while (count < values.size() && std::getline(fields, field, ',')) values[count++] = field;
+      if (count < values.size() || values[0] == "link" || values[0].empty()) continue;
+      try {
+        if (std::stoi(values[0]) != link) continue;
+        const float latitude = static_cast<float>(std::stoi(values[4])) / 10000.0F;
+        const float longitude = static_cast<float>(std::stoi(values[5])) / 10000.0F;
+        if (latitude != 0.0F && longitude != 0.0F && latitude >= -90.0F && latitude <= 90.0F &&
+            longitude >= -180.0F && longitude <= 180.0F) {
+          result.lastLatitude = latitude;
+          result.lastLongitude = longitude;
+        }
+      } catch (const std::exception&) {
+        continue;
+      }
+    }
+    return result;
+  }
   void record(const TelemetrySample&, uint8_t) override {}
   std::vector<FlightLogSnapshot> value;
 };
@@ -128,6 +155,39 @@ bool booleanField(const char* json, const char* key, bool& output) {
   return false;
 }
 
+bool stringField(const char* json, const char* key, std::string& output) {
+  if (json == nullptr || key == nullptr) return false;
+  const std::string needle = std::string("\"") + key + "\"";
+  const char* found = std::strstr(json, needle.c_str());
+  if (found == nullptr) return false;
+  found = std::strchr(found + needle.size(), ':');
+  if (found == nullptr) return false;
+  ++found;
+  while (*found == ' ' || *found == '\t' || *found == '\r' || *found == '\n') ++found;
+  if (*found != '"') return false;
+  ++found;
+
+  output.clear();
+  while (*found != '\0' && *found != '"') {
+    if (*found != '\\') {
+      output += *found++;
+      continue;
+    }
+    ++found;
+    if (*found == '\0') return false;
+    switch (*found) {
+      case 'n': output += '\n'; break;
+      case 'r': output += '\r'; break;
+      case 't': output += '\t'; break;
+      case '"': output += '"'; break;
+      case '\\': output += '\\'; break;
+      default: output += *found; break;
+    }
+    ++found;
+  }
+  return *found == '"';
+}
+
 void updateLink(Link& link, const char* json) {
   int32_t integer = 0;
   bool boolean = false;
@@ -169,6 +229,8 @@ void rebuildSnapshot() {
              ",\"calibrationState\":" + quote(state.calibrationState) +
              ",\"settingsState\":" + quote(state.settingsState) +
              ",\"dataStatistics\":" + std::string(state.dataStatistics ? "true" : "false") +
+             ",\"qrView\":" + quote(state.qrView) +
+             ",\"qrUrl\":" + quote(state.qrUrl) +
              ",\"inputState\":" + quote(state.inputState) +
              ",\"menuSelection\":" + std::to_string(state.menuSelection) +
              ",\"settingsPage\":" + std::to_string(state.settingsPage) +
@@ -290,7 +352,18 @@ void gs_set_configuration_json(const char* json) {
   rebuildSnapshot();
 }
 void gs_set_logs_json(const char* json) {
-  if (json != nullptr && std::strstr(json, "name") != nullptr) logs.value.push_back({"desktop-log", json});
+  logs.value.clear();
+  const char* cursor = json;
+  while (cursor != nullptr) {
+    cursor = std::strstr(cursor, "\"name\"");
+    if (cursor == nullptr) break;
+    std::string name;
+    std::string csv;
+    if (stringField(cursor, "name", name) && stringField(cursor, "csv", csv)) {
+      logs.value.push_back({name, csv});
+    }
+    cursor += 6;
+  }
   rebuildSnapshot();
 }
 void gs_load_replay_json(const char*) { rebuildSnapshot(); }

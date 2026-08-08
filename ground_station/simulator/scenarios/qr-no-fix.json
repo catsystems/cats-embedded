@@ -1,0 +1,19 @@
+{
+  "initial": {
+    "ready": true,
+    "logs": [
+      {
+        "name": "no-fix.csv",
+        "csv": "link,ts,state,errors,lat,lon,altitude,velocity,voltage\n1,10,3,0,0,0,100,20,42\n2,11,3,0,500000,0,100,20,42\n"
+      }
+    ]
+  },
+  "steps": [
+    {"press": "down"},
+    {"press": "ok"},
+    {"press": "ok"},
+    {"press": "right"},
+    {"assert": {"activeScreen": "data", "dataStatistics": true, "qrView": "none", "qrUrl": ""}},
+    {"snapshot": "no-fix-statistics"}
+  ]
+}

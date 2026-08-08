@@ -77,10 +77,14 @@ class Hmi {
   void live();
   void initRecovery();
   void recovery();
+  void updateRecoveryLocations();
+  bool showRecoveryLocation(int8_t linkIndex);
   void initTesting();
   void testing();
   void initData();
   void data();
+  bool showDataLocation(int8_t linkIndex);
+  void showDataStatistics();
   void initSensors();
   void sensors();
   void initSettings();
@@ -111,6 +115,14 @@ class Hmi {
   uint8_t dataIndex = 0;
   uint8_t dataFileCount = 0;
   bool dataFlightStatistic = false;
+  FlightStatistics dataStatistics[2];
+  int8_t dataQrLink = -1;
+  char dataLogName[30] = {};
+
+  int8_t recoveryQrLink = -1;
+  EarthPoint3D recoveryLocations[2];
+  bool recoveryLocationValid[2] = {false, false};
+  EarthPoint3D recoveryQrPoint;
 
   uint32_t flashFreeMemory = 100;
 

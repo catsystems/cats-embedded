@@ -55,8 +55,10 @@ class Window {
   void updateLive(TelemetryData *data, Navigation *navigation, int16_t index);
   void UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state);
 
-  void initRecovery();
-  void updateRecovery(Navigation *navigation);
+  void initRecovery(bool hasLastLocation);
+  void updateRecovery(Navigation *navigation, bool hasLastLocation);
+  bool showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
+                      bool hasNextPage);
 
   void initTesting();
   void initTestingConfirmed(bool connected, bool testingEnabled);
@@ -88,7 +90,8 @@ class Window {
 
   void listFileName(const char *fileName, uint16_t index, uint16_t color = BLACK);
   void dataHighlight(const char *fileName, uint8_t index, bool highlight);
-  void dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics &stats2);
+  void dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics &stats2, const char *logName,
+                                bool hasNextPage);
 
   void refresh() { surface.present(); }
 
@@ -100,6 +103,8 @@ class Window {
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);
+  void drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage);
+  void drawRecoveryHint(bool showHint);
 
   void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color = BLACK);
   void highlightSetting(int16_t index, uint16_t color);

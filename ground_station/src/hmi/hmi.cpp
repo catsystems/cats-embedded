@@ -6,10 +6,12 @@
 
 #include <TimeLib.h>
 #include <algorithm>
+#include <cstring>
 
 #include <freertos/task.h>
 
 #include "console.hpp"
+#include "hmi/location_qr.hpp"
 #include "logging/flightStatistics.hpp"
 #include "navigation.hpp"
 #include "telemetry/telemetry.hpp"
@@ -41,6 +43,7 @@ void Hmi::begin() {
 }
 
 void Hmi::fsm() {
+  updateRecoveryLocations();
   switch (state) {
     case MENU:
       menu();
@@ -175,20 +178,73 @@ void Hmi::live() {
 
 /* RECOVERY */
 
-void Hmi::initRecovery() { window.initRecovery(); }
+void Hmi::initRecovery() {
+  recoveryQrLink = -1;
+  const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
+  window.initRecovery(hasLastLocation);
+  window.updateRecovery(&navigation, hasLastLocation);
+}
+
+void Hmi::updateRecoveryLocations() {
+  packedRXMessage *messages[2] = {&link1.data.getRxData(), &link2.data.getRxData()};
+  for (uint8_t index = 0; index < 2; ++index) {
+    const float latitude = static_cast<float>(messages[index]->lat) / 10000.0F;
+    const float longitude = static_cast<float>(messages[index]->lon) / 10000.0F;
+    if (LocationQr::IsValid(latitude, longitude)) {
+      recoveryLocations[index] = EarthPoint3D(latitude, longitude);
+      recoveryLocationValid[index] = true;
+    }
+  }
+}
+
+bool Hmi::showRecoveryLocation(int8_t linkIndex) {
+  if (linkIndex < 0 || linkIndex > 1 || !recoveryLocationValid[linkIndex]) {
+    return false;
+  }
+  const EarthPoint3D &location = recoveryLocations[linkIndex];
+  const char *title = linkIndex == 0 ? "[Link 1] Last Location" : "[Link 2] Last Location";
+  const bool hasNextPage = linkIndex == 0 && recoveryLocationValid[1];
+  if (!window.showLocationQr(location.lat, location.lon, title, true, hasNextPage)) {
+    return false;
+  }
+  recoveryQrLink = linkIndex;
+  recoveryQrPoint = location;
+  return true;
+}
 
 void Hmi::recovery() {
-  EarthPoint3D a;
-  EarthPoint3D b;
+  if (rightButton.wasPressed()) {
+    if (recoveryQrLink < 0) {
+      if (!showRecoveryLocation(0)) {
+        (void)showRecoveryLocation(1);
+      }
+    } else if (recoveryQrLink == 0) {
+      (void)showRecoveryLocation(1);
+    }
+  }
 
-  a = navigation.getPointA();
-  b = navigation.getPointB();
+  if (leftButton.wasPressed() && recoveryQrLink >= 0) {
+    if (recoveryQrLink == 1 && recoveryLocationValid[0]) {
+      (void)showRecoveryLocation(0);
+    } else {
+      recoveryQrLink = -1;
+      const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
+      window.initRecovery(hasLastLocation);
+      window.updateRecovery(&navigation, hasLastLocation);
+    }
+  }
 
-  if (navigation.isUpdated()) {
-    window.updateRecovery(&navigation);
+  if (recoveryQrLink >= 0) {
+    const EarthPoint3D &location = recoveryLocations[recoveryQrLink];
+    if (location.lat != recoveryQrPoint.lat || location.lon != recoveryQrPoint.lon) {
+      (void)showRecoveryLocation(recoveryQrLink);
+    }
+  } else if (navigation.isUpdated()) {
+    window.updateRecovery(&navigation, recoveryLocationValid[0] || recoveryLocationValid[1]);
   }
 
   if (backButton.wasPressed()) {
+    recoveryQrLink = -1;
     state = MENU;
     window.initMenu(menuIndex);
   }
@@ -329,6 +385,7 @@ void Hmi::testing() {
 /* DATA */
 
 void Hmi::initData() {
+  dataQrLink = -1;
   dataFileCount = recorder.getFileCount();
 
   // The display can show a maximum of 11 entries, no scrolling implemented!
@@ -352,11 +409,49 @@ void Hmi::initData() {
   window.refresh();
 }
 
+bool Hmi::showDataLocation(int8_t linkIndex) {
+  if (linkIndex < 0 || linkIndex > 1 || !dataStatistics[linkIndex].hasLastLocation()) {
+    return false;
+  }
+  FlightStatistics &stats = dataStatistics[linkIndex];
+  const char *title = linkIndex == 0 ? "[Link 1] Last Location" : "[Link 2] Last Location";
+  const bool hasNextPage = linkIndex == 0 && dataStatistics[1].hasLastLocation();
+  if (!window.showLocationQr(stats.getLastLatitude(), stats.getLastLongitude(), title, true, hasNextPage)) {
+    return false;
+  }
+  dataQrLink = linkIndex;
+  return true;
+}
+
+void Hmi::showDataStatistics() {
+  dataQrLink = -1;
+  window.dataShowFlightStatistics(dataStatistics[0], dataStatistics[1], dataLogName,
+                                  dataStatistics[0].hasLastLocation() || dataStatistics[1].hasLastLocation());
+}
+
 void Hmi::data() {
   if (dataFlightStatistic) {
     if (backButton.wasPressed()) {
       dataFlightStatistic = false;
       initData();
+      return;
+    }
+    if (rightButton.wasPressed()) {
+      if (dataQrLink < 0) {
+        if (!showDataLocation(0)) {
+          (void)showDataLocation(1);
+        }
+      } else if (dataQrLink == 0 && dataStatistics[1].hasLastLocation()) {
+        (void)showDataLocation(1);
+      }
+    }
+
+    if (leftButton.wasPressed() && dataQrLink >= 0) {
+      if (dataQrLink == 1 && dataStatistics[0].hasLastLocation()) {
+        (void)showDataLocation(0);
+      } else {
+        showDataStatistics();
+      }
     }
   } else {
     if (backButton.wasPressed()) {
@@ -388,16 +483,18 @@ void Hmi::data() {
     }
 
     if (okButton.wasPressed() && (dataFileCount > 0)) {
-      FlightStatistics stats1;
-      FlightStatistics stats2;
+      dataStatistics[0] = FlightStatistics{};
+      dataStatistics[1] = FlightStatistics{};
       char fileName[30] = {};
       // NOLINTNEXTLINE(cppcoreguidelines-init-variables) not sure why...
       const char *directory = recorder.getDirectory();
       recorder.getFileNameByIndex(dataIndex, fileName);
-      stats1.parseFlightLog(directory, fileName, 1U);
-      stats2.parseFlightLog(directory, fileName, 2U);
+      memcpy(dataLogName, fileName, sizeof(dataLogName));
+      dataLogName[sizeof(dataLogName) - 1U] = '\0';
+      dataStatistics[0].parseFlightLog(directory, fileName, 1U);
+      dataStatistics[1].parseFlightLog(directory, fileName, 2U);
       dataFlightStatistic = true;
-      window.dataShowFlightStatistics(stats1, stats2);
+      showDataStatistics();
     }
   }
 }

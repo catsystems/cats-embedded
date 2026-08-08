@@ -8,7 +8,9 @@ add_executable(gs-sim-wasm
   wasm_api.cpp
   window_hmi_renderer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Adafruit_GFX_Library/Adafruit_GFX.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../lib/NayukiQRCode/src/qrcodegen.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/hmi_controller.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../src/hmi/location_qr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/hmi/settings.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/hmi/window.cpp)
 set_target_properties(gs-sim-wasm PROPERTIES OUTPUT_NAME "gs-sim")
@@ -16,6 +18,7 @@ target_compile_definitions(gs-sim-wasm PRIVATE GS_SIMULATOR_WASM=1 ARDUINO=100)
 target_include_directories(gs-sim-wasm PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/compat
   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Adafruit_GFX_Library
+  ${CMAKE_CURRENT_SOURCE_DIR}/../lib/NayukiQRCode/src
   ${CMAKE_CURRENT_SOURCE_DIR}/../src
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/hmi)
 if(EMSCRIPTEN)

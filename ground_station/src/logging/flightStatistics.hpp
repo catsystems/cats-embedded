@@ -76,8 +76,12 @@ class FlightStatistics {
 
           flightTimeRaw = data.timestamp - liftoffTimestamp;
 
-          lastLatitude = data.lat;
-          lastLongitude = data.lon;
+          if (data.lat != 0 && data.lon != 0 && data.lat >= -900000 && data.lat <= 900000 &&
+              data.lon >= -1800000 && data.lon <= 1800000) {
+            lastLatitude = data.lat;
+            lastLongitude = data.lon;
+            lastLocationValid = true;
+          }
         }
       }
       count++;
@@ -96,6 +100,8 @@ class FlightStatistics {
   float getLastLatitude() const { return static_cast<float>(lastLatitude) / 10000.0F; }
 
   float getLastLongitude() const { return static_cast<float>(lastLongitude) / 10000.0F; }
+
+  bool hasLastLocation() const { return lastLocationValid; }
 
   float getFlightTime() const { return flightTimeSeconds; }
 
@@ -168,5 +174,6 @@ class FlightStatistics {
   int32_t maxVelocity = 0;
   int32_t lastLatitude = 0;
   int32_t lastLongitude = 0;
+  bool lastLocationValid = false;
   int32_t mainDeployAltitude = 0;
 };

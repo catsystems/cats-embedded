@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 
 class FlightStatistics {
@@ -22,6 +23,10 @@ class FlightStatistics {
   [[nodiscard]] float getMainDescentRate() const { return mainRate_; }
   [[nodiscard]] float getLastLatitude() const { return latitude_; }
   [[nodiscard]] float getLastLongitude() const { return longitude_; }
+  [[nodiscard]] bool hasLastLocation() const {
+    return std::isfinite(latitude_) && std::isfinite(longitude_) && latitude_ != 0.0F && longitude_ != 0.0F &&
+           latitude_ >= -90.0F && latitude_ <= 90.0F && longitude_ >= -180.0F && longitude_ <= 180.0F;
+  }
   [[nodiscard]] float getFlightTime() const { return flightTime_; }
 
  private:

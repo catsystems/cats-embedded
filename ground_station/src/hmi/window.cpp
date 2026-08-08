@@ -5,6 +5,7 @@
 #include "window.hpp"
 #include "bmp.hpp"
 #include "config.hpp"
+#include "location_qr.hpp"
 #include "utils.hpp"
 
 #include <Fonts/FreeMonoBold12pt7b.h>
@@ -648,7 +649,7 @@ void Window::updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color) 
   }
 }
 
-void Window::initRecovery() {
+void Window::initRecovery(bool hasLastLocation) {
   clearMainScreen();
 
   display.drawCircle(300, 125, 80, BLACK);
@@ -662,10 +663,12 @@ void Window::initRecovery() {
   display.drawBitmap(40, 90, live_lat, 24, 24, BLACK);
   display.drawBitmap(40, 115, live_lon, 24, 24, BLACK);
 
+  drawRecoveryHint(hasLastLocation);
+
   surface.present();
 }
 
-void Window::updateRecovery(Navigation *navigation) {
+void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
   display.fillRect(60, 19, 400, 222, WHITE);
 
   float angle = navigation->getNorth();
@@ -758,7 +761,28 @@ void Window::updateRecovery(Navigation *navigation) {
     display.drawCircle(300, 125, 6, BLACK);
   }
 
+  drawRecoveryHint(hasLastLocation);
+
   surface.present();
+}
+
+void Window::drawRecoveryHint(bool showHint) {
+  display.fillRect(0, 180, 200, 60, WHITE);
+  if (!showHint) {
+    return;
+  }
+
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  display.drawRoundRect(2, 181, 170, 57, 5, BLACK);
+  display.setCursor(8, 203);
+  display.print("Press");
+  display.fillTriangle(88, 195, 74, 187, 74, 203, BLACK);
+  display.setCursor(92, 203);
+  display.print("for");
+  display.setCursor(8, 231);
+  display.print("last locations");
 }
 
 void Window::initBox(const char *text) {
@@ -1009,6 +1033,40 @@ void Window::initData(bool fileAvailable) {
     display.setTextColor(BLACK);
     drawCentreString("No flight logs found!", 200, 100);
     surface.present();
+  }
+}
+
+bool Window::showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
+                            bool hasNextPage) {
+  if (!LocationQr::IsValid(latitude, longitude)) {
+    return false;
+  }
+
+  clearMainScreen();
+  drawPageHeader(label, hasPreviousPage, hasNextPage);
+
+  if (!LocationQr::DrawGoogleMapsQr(display, latitude, longitude, 118, 50, BLACK, WHITE)) {
+    return false;
+  }
+  display.setFont(&FreeSans9pt7b);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  drawCentreString("Scan to see the last location on Google Maps", 200, 235);
+  surface.present();
+  return true;
+}
+
+void Window::drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage) {
+  display.fillRect(0, 19, 400, 30, BLACK);
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  drawCentreString(title, 200, 42);
+  if (hasPreviousPage) {
+    display.fillTriangle(13, 33, 21, 25, 21, 41, WHITE);
+  }
+  if (hasNextPage) {
+    display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
   }
 }
 
@@ -1530,14 +1588,32 @@ void Window::dataHighlight(const char *fileName, uint8_t index, bool highlight) 
   listFileName(fileName, index, highlight ? WHITE : BLACK);
 }
 
-void Window::dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics &stats2) {
+void Window::dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics &stats2, const char *logName,
+                                      bool hasNextPage) {
   clearMainScreen();
   display.setTextColor(BLACK);
   display.setTextSize(1);
-  display.setFont(&FreeSans12pt7b);
 
-  display.drawLine(199, 18, 199, 240, BLACK);
-  display.drawLine(200, 18, 200, 240, BLACK);
+  std::string visibleName = logName == nullptr ? "" : logName;
+  std::string title = visibleName;
+  int16_t boundsX = 0;
+  int16_t boundsY = 0;
+  uint16_t boundsWidth = 0;
+  uint16_t boundsHeight = 0;
+  display.setFont(&FreeSans12pt7b);
+  display.getTextBounds(title.c_str(), 0, 0, &boundsX, &boundsY, &boundsWidth, &boundsHeight);
+  while (boundsWidth > 330U && !visibleName.empty()) {
+    visibleName.pop_back();
+    title = visibleName + "...";
+    display.getTextBounds(title.c_str(), 0, 0, &boundsX, &boundsY, &boundsWidth, &boundsHeight);
+  }
+
+  drawPageHeader(title.c_str(), false, hasNextPage);
+  display.setFont(&FreeSans12pt7b);
+  display.setTextColor(BLACK);
+
+  display.drawLine(199, 49, 199, 240, BLACK);
+  display.drawLine(200, 49, 200, 240, BLACK);
 
   dataShowFlightStatisticsSide(stats1, 0);
   dataShowFlightStatisticsSide(stats2, 1);
@@ -1549,8 +1625,8 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   const auto xOffset = static_cast<int16_t>(index * 200);
 
   // Max altitude
-  display.drawBitmap(static_cast<int16_t>(xOffset + 9), 25, data_altitude_peak, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 45);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 9), 50, data_altitude_peak, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 69);
   const int32_t altitude_m = stats.getMaxAltitude();
   if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(altitude_m);
@@ -1561,14 +1637,14 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   }
 
   // Time to apogee
-  display.drawBitmap(static_cast<int16_t>(xOffset + 9), 50, data_altitude_time, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 70);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 9), 73, data_altitude_time, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 92);
   display.print(stats.getTimeToApogee(), 1);
   display.print(" s");
 
   // Max speed
-  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 75, data_speed, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 95);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 96, data_speed, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 115);
   const int32_t velocity_ms = stats.getMaxVelocity();
   if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(velocity_ms);
@@ -1579,8 +1655,8 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   }
 
   // Drogue descent rate
-  display.drawBitmap(static_cast<int16_t>(xOffset + 8), 100, data_drogue_speed, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 120);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 8), 119, data_drogue_speed, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 138);
   const float drogue_velocity_ms = stats.getDrogueDescentRate();
   if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(drogue_velocity_ms, 1);
@@ -1591,8 +1667,8 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   }
 
   // Main descent rate
-  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 125, data_main_speed, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 145);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 142, data_main_speed, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 161);
   const float main_velocity_ms = stats.getMainDescentRate();
   if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(main_velocity_ms, 1);
@@ -1603,20 +1679,20 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   }
 
   // Latitude
-  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 150, live_lat, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 170);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 165, live_lat, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 184);
   display.print(stats.getLastLatitude(), 4);
   display.print(" N");
 
   // Longitude
-  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 175, live_lon, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 195);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 188, live_lon, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 207);
   display.print(stats.getLastLongitude(), 4);
   display.print(" E");
 
   // Flight Time
-  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 200, data_flight_time, 24, 24, BLACK);
-  display.setCursor(static_cast<int16_t>(xOffset + 45), 220);
+  display.drawBitmap(static_cast<int16_t>(xOffset + 5), 211, data_flight_time, 24, 24, BLACK);
+  display.setCursor(static_cast<int16_t>(xOffset + 45), 230);
   display.print(stats.getFlightTime(), 1);
   display.print(" s");
 }
