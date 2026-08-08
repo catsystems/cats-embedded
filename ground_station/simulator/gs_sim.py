@@ -1,0 +1,850 @@
+#!/usr/bin/env python3
+"""Deterministic Ground Station simulator CLI.
+
+The WebAssembly controller contract is mirrored here for headless scenarios.
+This small launcher is intentionally dependency-free so `gs-sim.ps1 test` also works
+on a clean Windows checkout before Emscripten has been installed.  It is the
+headless scenario runner used by the browser fallback and by CI diagnostics.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import copy
+import csv
+import hashlib
+import json
+import math
+import os
+import struct
+import sys
+import zlib
+from pathlib import Path
+from typing import Any
+
+WIDTH = 400
+HEIGHT = 240
+BOOT_MS = 2000
+LONG_PRESS_MS = 500
+REPEAT_MS = 100
+BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
+MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
+SETTING_COUNTS = (3, 4, 2)
+
+
+class ScenarioError(ValueError):
+    pass
+
+
+def fail(message: str) -> None:
+    raise ScenarioError(message)
+
+
+class Framebuffer:
+    """One-bit logical framebuffer with deterministic 1-bit PNG output."""
+
+    def __init__(self) -> None:
+        self.pixels = bytearray(WIDTH * HEIGHT)  # 0 = white, 1 = black
+        self.revision = 0
+
+    def clear(self, black: bool = False) -> None:
+        self.pixels[:] = bytes([1 if black else 0]) * len(self.pixels)
+
+    def pixel(self, x: int, y: int, black: bool = True) -> None:
+        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+            self.pixels[y * WIDTH + x] = 1 if black else 0
+
+    def rect(self, x: int, y: int, w: int, h: int, black: bool = True, filled: bool = True) -> None:
+        if filled:
+            for yy in range(max(0, y), min(HEIGHT, y + h)):
+                start = yy * WIDTH + max(0, x)
+                end = yy * WIDTH + min(WIDTH, x + w)
+                if end > start:
+                    self.pixels[start:end] = bytes([1 if black else 0]) * (end - start)
+        else:
+            for xx in range(x, x + w):
+                self.pixel(xx, y, black)
+                self.pixel(xx, y + h - 1, black)
+            for yy in range(y, y + h):
+                self.pixel(x, yy, black)
+                self.pixel(x + w - 1, yy, black)
+
+    def line(self, x0: int, y0: int, x1: int, y1: int, black: bool = True) -> None:
+        dx = abs(x1 - x0)
+        sx = 1 if x0 < x1 else -1
+        dy = -abs(y1 - y0)
+        sy = 1 if y0 < y1 else -1
+        err = dx + dy
+        while True:
+            self.pixel(x0, y0, black)
+            if x0 == x1 and y0 == y1:
+                break
+            twice = 2 * err
+            if twice >= dy:
+                err += dy
+                x0 += sx
+            if twice <= dx:
+                err += dx
+                y0 += sy
+
+    def text(self, x: int, y: int, value: str, scale: int = 1, black: bool = True) -> None:
+        cursor = x
+        for char in str(value):
+            glyph = FONT.get(char.upper(), FONT["?"])
+            for row, bits in enumerate(glyph):
+                for col in range(5):
+                    if bits & (1 << (4 - col)):
+                        for sy in range(scale):
+                            for sx in range(scale):
+                                self.pixel(cursor + col * scale + sx, y + row * scale + sy, black)
+            cursor += 6 * scale
+
+    def present(self) -> None:
+        self.revision += 1
+
+    def packed(self) -> bytes:
+        result = bytearray((WIDTH * HEIGHT + 7) // 8)
+        for index, black in enumerate(self.pixels):
+            if not black:  # PNG/API bit 1 means white, matching GFXcanvas1.
+                result[index // 8] |= 0x80 >> (index & 7)
+        return bytes(result)
+
+    def png(self) -> bytes:
+        rows = bytearray()
+        for y in range(HEIGHT):
+            rows.append(0)
+            row = self.pixels[y * WIDTH : (y + 1) * WIDTH]
+            packed = bytearray((WIDTH + 7) // 8)
+            for x, black in enumerate(row):
+                if not black:
+                    packed[x // 8] |= 0x80 >> (x & 7)
+            rows.extend(packed)
+
+        def chunk(kind: bytes, data: bytes) -> bytes:
+            return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+        header = struct.pack(">IIBBBBB", WIDTH, HEIGHT, 1, 0, 0, 0, 0)
+        return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(bytes(rows), 9)) + chunk(b"IEND", b"")
+
+
+# Five-by-seven glyphs.  Keeping labels in the same framebuffer pipeline makes
+# PNGs and revision numbers deterministic without a host-font dependency.
+FONT = {
+    " ": (0, 0, 0, 0, 0, 0, 0),
+    "?": (14, 17, 1, 2, 4, 0, 4),
+    "-": (0, 0, 0, 31, 0, 0, 0),
+    ":": (0, 4, 0, 0, 0, 4, 0),
+    "/": (1, 2, 4, 8, 16, 0, 0),
+    ".": (0, 0, 0, 0, 0, 6, 6),
+    "0": (14, 17, 19, 21, 25, 17, 14),
+    "1": (4, 12, 4, 4, 4, 4, 14),
+    "2": (14, 17, 1, 2, 4, 8, 31),
+    "3": (30, 1, 1, 14, 1, 1, 30),
+    "4": (2, 6, 10, 18, 31, 2, 2),
+    "5": (31, 16, 16, 30, 1, 1, 30),
+    "6": (6, 8, 16, 30, 17, 17, 14),
+    "7": (31, 1, 2, 4, 8, 8, 8),
+    "8": (14, 17, 17, 14, 17, 17, 14),
+    "9": (14, 17, 17, 15, 1, 2, 12),
+}
+for _char, _bits in zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", (
+    (14, 17, 17, 31, 17, 17, 17), (30, 17, 17, 30, 17, 17, 30),
+    (14, 17, 16, 16, 16, 17, 14), (30, 17, 17, 17, 17, 17, 30),
+    (31, 16, 16, 30, 16, 16, 31), (31, 16, 16, 30, 16, 16, 16),
+    (14, 17, 16, 23, 17, 17, 14), (17, 17, 17, 31, 17, 17, 17),
+    (14, 4, 4, 4, 4, 4, 14), (7, 2, 2, 2, 18, 18, 12),
+    (17, 18, 20, 24, 20, 18, 17), (16, 16, 16, 16, 16, 16, 31),
+    (17, 27, 21, 21, 17, 17, 17), (17, 25, 21, 19, 17, 17, 17),
+    (14, 17, 17, 17, 17, 17, 14), (30, 17, 17, 30, 16, 16, 16),
+    (14, 17, 17, 17, 21, 18, 13), (30, 17, 17, 30, 20, 18, 17),
+    (15, 16, 16, 14, 1, 1, 30), (31, 4, 4, 4, 4, 4, 4),
+    (17, 17, 17, 17, 17, 17, 14), (17, 17, 17, 17, 17, 10, 4),
+    (17, 17, 17, 21, 21, 21, 10), (17, 17, 10, 4, 10, 17, 17),
+    (17, 17, 10, 4, 4, 4, 4), (31, 1, 2, 4, 8, 16, 31),
+)):
+    FONT[_char] = _bits
+
+
+def defaults() -> dict[str, Any]:
+    return {
+        "configuration": {
+            "timeZoneOffset": 0, "neverStopLogging": False, "dualReceiver": False,
+            "linkPhrase1": "", "linkPhrase2": "", "testingPhrase": "", "imperialUnits": False,
+        },
+        "links": [
+            {"enabled": True, "connected": False, "telemetry": {"state": 2, "errors": 0, "altitudeM": 0,
+             "velocityMps": 0, "latitude": 0.0, "longitude": 0.0, "voltage": 0.0, "pyroContinuity": 0,
+             "testingMode": False, "timestampDs": 0, "lastUpdateMs": 0, "updated": False},
+             "info": {"linkQuality": 0, "rssi": 0, "snr": 0, "lastUpdateMs": 0, "updated": False}},
+            {"enabled": True, "connected": False, "telemetry": {"state": 2, "errors": 0, "altitudeM": 0,
+             "velocityMps": 0, "latitude": 0.0, "longitude": 0.0, "voltage": 0.0, "pyroContinuity": 0,
+             "testingMode": False, "timestampDs": 0, "lastUpdateMs": 0, "updated": False},
+             "info": {"linkQuality": 0, "rssi": 0, "snr": 0, "lastUpdateMs": 0, "updated": False}},
+        ],
+        "navigation": {"homeLatitude": 0.0, "homeLongitude": 0.0, "rocketLatitude": 0.0,
+                        "rocketLongitude": 0.0, "northRad": 0.0, "azimuthRad": 0.0, "distanceM": 0.0,
+                        "elevationRad": 0.0, "ax": 0.0, "ay": 0.0, "az": 1.0, "gx": 0.0, "gy": 0.0,
+                        "gz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0, "calibrationPercentage": 0.0,
+                        "calibrationState": 0, "updated": False},
+        "deviceStatus": {"batteryVoltage": 0.0, "usb": False, "freeStoragePercent": 100, "gnss": False,
+                          "clockValid": False, "hour": 0, "minute": 0, "logging": False},
+        "logs": [],
+    }
+
+
+def merge(base: Any, patch: Any) -> Any:
+    if isinstance(base, dict) and isinstance(patch, dict):
+        for key, value in patch.items():
+            base[key] = merge(base.get(key), value) if key in base else copy.deepcopy(value)
+        return base
+    return copy.deepcopy(patch)
+
+
+def canonical_path(value: str) -> str:
+    return value.replace("device_status", "deviceStatus").replace("free_storage_percent", "freeStoragePercent")
+
+
+class Simulator:
+    def __init__(self, initial: dict[str, Any] | None = None, ready: bool = True, base_dir: Path | None = None) -> None:
+        self.state = merge(defaults(), initial or {})
+        self.base_dir = base_dir or Path.cwd()
+        default_links = defaults()["links"]
+        supplied_links = self.state.get("links", [])
+        self.state["links"] = [
+            merge(copy.deepcopy(default_links[index]), supplied_links[index] if index < len(supplied_links) else {})
+            for index in range(2)
+        ]
+        self.frame = Framebuffer()
+        self.now_ms = 0
+        self.screen = "logo"
+        self.testing_state = "disclaimer"
+        self.calibration_state = "idle"
+        self.settings_state = "list"
+        self.menu_selection = 0
+        self.settings_page = 0
+        self.settings_selection = -1
+        self.data_selection = 0
+        self.data_statistics = False
+        self.keyboard_index = 0
+        self.held = {name: False for name in BUTTONS}
+        self.held_since = {name: 0 for name in BUTTONS}
+        self.last_repeat = {name: 0 for name in BUTTONS}
+        self.actions: list[dict[str, Any]] = []
+        self.replay_rows: list[dict[str, Any]] = []
+        self.replay_index = 0
+        self.replay_speed = 1.0
+        self.replay_start = 0
+        self.testing_start = 0
+        if ready:
+            self.advance(BOOT_MS)
+        else:
+            self.render("CATS Ground Station", "Starting...")
+
+    def config(self) -> dict[str, Any]:
+        return self.state["configuration"]
+
+    def link(self, index: int) -> dict[str, Any]:
+        return self.state["links"][index]
+
+    def emit(self, action: str, link: int = 0, value: int | float | None = None, text: str | None = None) -> None:
+        item: dict[str, Any] = {"type": action}
+        if link:
+            item["link"] = link
+        if value is not None:
+            item["value"] = value
+        if text is not None:
+            item["text"] = text
+        self.actions.append(item)
+
+    def render(self, title: str, subtitle: str = "") -> None:
+        self.frame.clear()
+        self.frame.rect(0, 0, WIDTH, 18, True)
+        self.frame.text(8, 5, "CATS GS", 1, False)
+        self.frame.text(12, 32, title, 2)
+        if subtitle:
+            self.frame.text(12, 64, subtitle[:60], 1)
+        self.frame.rect(8, 95, 384, 125, True, filled=False)
+        self.frame.present()
+
+    def render_screen(self) -> None:
+        if self.screen == "logo":
+            self.render("CATS Ground Station", "Starting...")
+        elif self.screen == "menu":
+            self.render("Main Menu", " ".join(MENU_SCREENS))
+            self.frame.text(12, 82, f"Selection: {self.menu_selection}")
+        elif self.screen == "live":
+            self.render("Live", "Left GNSS  Right downrange  B back")
+            for index in range(2):
+                link = self.link(index)
+                y = 110 + index * 48
+                self.frame.text(16, y, f"L{index + 1} {link['telemetry'].get('state', 0)}")
+                self.frame.text(130, y, f"AGE {max(0, self.now_ms - link['telemetry'].get('lastUpdateMs', 0))}ms")
+        elif self.screen == "recovery":
+            self.render("Recovery", "Navigation / downrange")
+        elif self.screen == "testing":
+            self.render("Testing", self.testing_state)
+        elif self.screen == "data":
+            self.render("Data", "Flight statistics" if self.data_statistics else "Flight logs")
+            self.frame.text(12, 82, f"Selection: {self.data_selection}")
+        elif self.screen == "sensors":
+            self.render("Sensors", self.calibration_state)
+        elif self.screen == "settings":
+            title = f"Settings page {self.settings_page}"
+            self.render(title, self.settings_state)
+            self.frame.text(12, 82, f"Selection: {self.settings_selection}")
+        elif self.screen == "bootloader":
+            self.render("Bootloader", "Bootloader request emitted")
+
+    def press(self, button: str) -> None:
+        button = self.normalize_button(button)
+        if button not in self.held:
+            fail(f"unknown button '{button}'")
+        self.held[button] = True
+        self.held_since[button] = self.now_ms
+        self.last_repeat[button] = self.now_ms
+        self.tick({button})
+
+    def release(self, button: str) -> None:
+        button = self.normalize_button(button)
+        if button not in self.held:
+            fail(f"unknown button '{button}'")
+        self.held[button] = False
+        self.held_since[button] = 0
+        self.last_repeat[button] = 0
+        self.tick(set())
+
+    def hold(self, button: str, milliseconds: int) -> None:
+        if milliseconds < 0:
+            fail("hold duration must be non-negative")
+        self.press(button)
+        self.advance(milliseconds)
+        self.release(button)
+
+    def advance(self, milliseconds: int) -> None:
+        if milliseconds < 0:
+            fail("advance duration must be non-negative")
+        target = self.now_ms + milliseconds
+        while self.now_ms < target:
+            next_tick = min(target, self.now_ms + 20)
+            self.now_ms = next_tick
+            self.apply_replay()
+            repeats = {name for name in BUTTONS if self.held[name] and self.now_ms - self.held_since[name] >= LONG_PRESS_MS
+                       and self.now_ms - self.last_repeat[name] >= REPEAT_MS}
+            self.tick(repeats)
+        if milliseconds == 0:
+            self.apply_replay()
+            self.tick(set())
+
+    def tick(self, explicit_pressed: set[str]) -> None:
+        if self.screen == "logo" and self.now_ms >= BOOT_MS:
+            self.screen = "menu"
+            self.render_screen()
+        if self.screen == "menu":
+            self.menu_step(explicit_pressed)
+        elif self.screen == "live":
+            self.live_step(explicit_pressed)
+        elif self.screen == "testing":
+            self.testing_step(explicit_pressed)
+        elif self.screen == "data":
+            self.data_step(explicit_pressed)
+        elif self.screen == "sensors":
+            self.sensors_step(explicit_pressed)
+        elif self.screen == "settings":
+            self.settings_step(explicit_pressed)
+        elif self.screen == "recovery" and "back" in explicit_pressed:
+            self.to_menu()
+        elif self.screen == "bootloader" and "back" in explicit_pressed:
+            self.screen = "settings"
+        for name in explicit_pressed:
+            if self.held.get(name):
+                self.last_repeat[name] = self.now_ms
+        self.state["deviceStatus"]["logging"] = any(self.link(i)["telemetry"].get("state", 0) > 2 for i in range(2))
+        self.render_screen()
+
+    @staticmethod
+    def normalize_button(button: str) -> str:
+        aliases = {"a": "ok", "b": "back", "space": "center", "enter": "ok", "escape": "back",
+                   "up": "up", "down": "down", "left": "left", "right": "right", "center": "center", "ok": "ok", "back": "back"}
+        return aliases.get(str(button).lower(), str(button).lower())
+
+    def to_menu(self) -> None:
+        self.screen = "menu"
+        self.testing_state = "disclaimer"
+        self.calibration_state = "idle"
+        self.data_selection = 0
+        self.data_statistics = False
+
+    def menu_step(self, pressed: set[str]) -> None:
+        old = self.menu_selection
+        if "right" in pressed and self.menu_selection % 3 < 2:
+            self.menu_selection += 1
+        if "left" in pressed and self.menu_selection % 3 > 0:
+            self.menu_selection -= 1
+        if "down" in pressed and self.menu_selection < 3:
+            self.menu_selection += 3
+        if "up" in pressed and self.menu_selection > 2:
+            self.menu_selection -= 3
+        if old != self.menu_selection:
+            self.emit("menu_selection", value=self.menu_selection)
+        if "ok" in pressed or "center" in pressed:
+            self.screen = MENU_SCREENS[self.menu_selection]
+            self.settings_page = 0
+            self.settings_selection = -1
+            self.settings_state = "list"
+            self.render_screen()
+
+    def live_step(self, pressed: set[str]) -> None:
+        if "left" in pressed:
+            self.emit("live_view", text="gnss")
+        if "right" in pressed:
+            self.emit("live_view", text="downrange")
+        if "back" in pressed:
+            self.to_menu()
+
+    def testing_step(self, pressed: set[str]) -> None:
+        link1 = self.link(0)
+        if self.testing_state == "confirm_event":
+            if "ok" in pressed:
+                event = self.keyboard_index + 1
+                self.emit("event_triggered", 1, event)
+                self.testing_state = "started"
+            if "back" in pressed:
+                self.testing_state = "started"
+            return
+        if "back" in pressed:
+            if self.testing_state in ("waiting", "started", "confirm_event"):
+                self.emit("testing_exit", 1)
+            self.to_menu()
+            return
+        if self.testing_state == "disclaimer" and "ok" in pressed:
+            if link1.get("connected", False):
+                self.testing_state = "can_start"
+                self.emit("testing_connection", 1, 1)
+            else:
+                self.testing_state = "cannot_start"
+                self.emit("testing_connection", 1, 0)
+        elif self.testing_state == "can_start" and "ok" in pressed:
+            self.link(1)["enabled"] = False
+            self.link(0)["enabled"] = True
+            self.testing_start = self.now_ms
+            self.testing_state = "waiting"
+            self.emit("link_disabled", 2)
+            self.emit("testing_enter", 1)
+        elif self.testing_state == "waiting":
+            tel = link1["telemetry"]
+            if tel.get("testingMode") and tel.get("state") == 1:
+                self.testing_state = "started"
+                self.emit("testing_started", 1)
+            elif self.now_ms - self.testing_start > 10000:
+                link1["enabled"] = False
+                self.testing_state = "failed"
+                self.emit("testing_timeout", 1)
+        elif self.testing_state == "started":
+            if "up" in pressed and self.keyboard_index % 4 > 0:
+                self.keyboard_index -= 1
+            if "down" in pressed and self.keyboard_index % 4 < 3:
+                self.keyboard_index += 1
+            if "left" in pressed and self.keyboard_index > 3:
+                self.keyboard_index -= 4
+            if "right" in pressed and self.keyboard_index < 4:
+                self.keyboard_index += 4
+            if "ok" in pressed:
+                self.testing_state = "confirm_event"
+            if not link1.get("connected", False) or link1["telemetry"].get("state") != 1:
+                self.testing_state = "failed"
+                self.emit("testing_connection_lost", 1)
+
+    def data_step(self, pressed: set[str]) -> None:
+        logs = self.state.get("logs", [])
+        maximum = max(0, min(11, len(logs)) - 1)
+        if self.data_statistics:
+            if "back" in pressed:
+                self.data_statistics = False
+            return
+        if "down" in pressed:
+            self.data_selection = min(maximum, self.data_selection + 1)
+        if "up" in pressed:
+            self.data_selection = max(0, self.data_selection - 1)
+        if "ok" in pressed and logs:
+            self.data_statistics = True
+            self.emit("flight_statistics", value=self.data_selection)
+        if "back" in pressed:
+            self.to_menu()
+
+    def sensors_step(self, pressed: set[str]) -> None:
+        if self.calibration_state == "idle":
+            if "ok" in pressed:
+                self.calibration_state = "prepare"
+            if "back" in pressed:
+                self.to_menu()
+        elif self.calibration_state == "prepare":
+            if "ok" in pressed:
+                self.calibration_state = "calibrating"
+                self.state["navigation"]["calibrationState"] = 1
+                self.emit("calibration_started")
+            if "back" in pressed:
+                self.calibration_state = "idle"
+        elif self.calibration_state == "calibrating":
+            if "back" in pressed:
+                self.calibration_state = "idle"
+                self.state["navigation"]["calibrationState"] = 2
+                self.emit("calibration_cancelled")
+            elif self.state["navigation"].get("calibrationState") == 3 or self.state["navigation"].get("calibrationPercentage", 0) >= 100:
+                self.calibration_state = "concluded"
+                self.emit("calibration_completed")
+        elif self.calibration_state == "concluded" and ({"ok", "back"} & pressed):
+            self.calibration_state = "idle"
+            self.emit("configuration_saved")
+
+    def settings_step(self, pressed: set[str]) -> None:
+        if self.settings_state == "keyboard":
+            if "right" in pressed:
+                self.keyboard_index = min(37, self.keyboard_index + 1)
+            if "left" in pressed:
+                self.keyboard_index = max(0, self.keyboard_index - 1)
+            if "ok" in pressed:
+                alphabet = "1234567890QWERTYUIOPASDFGHJKL ZXCVBNM_"
+                config = self.config()
+                key = ("linkPhrase1", "linkPhrase2", "testingPhrase")[max(0, min(2, self.settings_selection - 1))]
+                config[key] = (config.get(key, "") + alphabet[self.keyboard_index])[:16]
+            if "back" in pressed:
+                self.settings_state = "list"
+                self.emit("settings_string_done")
+            return
+
+        if self.settings_selection < 0:
+            if "right" in pressed:
+                self.settings_page = min(2, self.settings_page + 1)
+            if "left" in pressed:
+                self.settings_page = max(0, self.settings_page - 1)
+        else:
+            config = self.config()
+            inc = "right" in pressed
+            dec = "left" in pressed
+            if self.settings_page == 0 and self.settings_selection == 0:
+                if inc: config["neverStopLogging"] = True
+                if dec: config["neverStopLogging"] = False
+            elif self.settings_page == 0 and self.settings_selection == 2 and "ok" in pressed:
+                self.screen = "bootloader"
+                self.emit("bootloader_requested")
+            elif self.settings_page == 1 and self.settings_selection == 0:
+                if inc: config["dualReceiver"] = True
+                if dec: config["dualReceiver"] = False
+            elif self.settings_page == 1 and 1 <= self.settings_selection <= 3 and "ok" in pressed:
+                self.settings_state = "keyboard"
+                self.keyboard_index = 0
+            elif self.settings_page == 2 and self.settings_selection == 0:
+                config["timeZoneOffset"] = max(-12, min(12, config.get("timeZoneOffset", 0) + (1 if inc else -1 if dec else 0)))
+            elif self.settings_page == 2 and self.settings_selection == 1 and (inc or dec):
+                config["imperialUnits"] = not config.get("imperialUnits", False)
+
+        if "down" in pressed:
+            self.settings_selection = min(SETTING_COUNTS[self.settings_page] - 1, self.settings_selection + 1)
+        if "up" in pressed:
+            self.settings_selection = max(-1, self.settings_selection - 1)
+        if "back" in pressed:
+            if self.settings_selection >= 0:
+                self.settings_selection = -1
+            else:
+                self.emit("configuration_saved")
+                self.to_menu()
+
+    def set_value(self, path: str, value: Any) -> None:
+        path = canonical_path(path)
+        aliases = {"config": "configuration", "device": "deviceStatus", "nav": "navigation"}
+        parts = path.split(".")
+        if parts[0] in aliases:
+            parts[0] = aliases[parts[0]]
+        target: Any = self.state
+        for part in parts[:-1]:
+            if part.startswith("link") and part[4:].isdigit():
+                target = self.link(int(part[4:]) - 1)
+            elif part.isdigit():
+                target = target[int(part)]
+            else:
+                if part not in target:
+                    fail(f"set path '{path}' has no field '{part}'")
+                target = target[part]
+        key = parts[-1]
+        if isinstance(target, list) and key.isdigit():
+            target[int(key)] = value
+        elif isinstance(target, dict) and key in target:
+            target[key] = value
+        else:
+            fail(f"set path '{path}' has no field '{key}'")
+        if path.startswith("links") or path.startswith("link"):
+            # Injected peripheral values are observable updates, like a radio commit.
+            link_index = None
+            if path.startswith("link") and path[4:5].isdigit():
+                link_index = int(path[4]) - 1
+            elif path.startswith("links.") and path[6:7].isdigit():
+                link_index = int(path[6])
+            if link_index in (0, 1):
+                self.link(link_index)["telemetry"]["updated"] = True
+                self.link(link_index)["info"]["updated"] = True
+
+    def set_initial(self, values: dict[str, Any]) -> None:
+        if not isinstance(values, dict):
+            fail("set step must be an object")
+        if any(isinstance(key, str) and "." in key for key in values):
+            for key, value in values.items():
+                if "." in key:
+                    self.set_value(key, value)
+                else:
+                    self.set_value(key, value)
+        else:
+            merge(self.state, values)
+        default_links = defaults()["links"]
+        supplied_links = self.state.get("links", [])
+        self.state["links"] = [
+            merge(copy.deepcopy(default_links[index]), supplied_links[index] if index < len(supplied_links) else {})
+            for index in range(2)
+        ]
+        self.render_screen()
+
+    def replay(self, spec: Any) -> None:
+        if isinstance(spec, str):
+            path = spec
+            speed = 1.0
+        elif isinstance(spec, dict):
+            path = spec.get("file", spec.get("path"))
+            speed = float(spec.get("speed", 1.0))
+        else:
+            fail("replay step must be a CSV path or object")
+        if not path:
+            fail("replay step is missing file")
+        if speed <= 0:
+            fail("replay speed must be positive")
+        csv_path = Path(path)
+        if not csv_path.is_absolute():
+            csv_path = self.base_dir / csv_path
+        try:
+            raw_lines = csv_path.read_text(encoding="utf-8").splitlines()
+        except OSError as error:
+            fail(f"cannot read replay '{csv_path}': {error}")
+        rows: list[dict[str, Any]] = []
+        for line_number, line in enumerate(raw_lines, 1):
+            if not line.strip() or line.lower().startswith("link,"):
+                continue
+            fields = next(csv.reader([line]))
+            if len(fields) < 9:
+                fail(f"replay {csv_path}:{line_number}: expected at least 9 fields, got {len(fields)}")
+            try:
+                values = [int(item.strip()) for item in fields[:9]]
+            except ValueError as error:
+                fail(f"replay {csv_path}:{line_number}: non-integer field: {error}")
+            link, timestamp, state, errors, lat, lon, altitude, velocity, voltage = values
+            if link not in (1, 2):
+                fail(f"replay {csv_path}:{line_number}: link must be 1 or 2")
+            try:
+                pyro = (int(fields[9]) if len(fields) > 9 else 0) & 1
+                if len(fields) > 10 and int(fields[10]):
+                    pyro |= 2
+            except ValueError as error:
+                fail(f"replay {csv_path}:{line_number}: invalid continuity field: {error}")
+            row = {"link": link, "ts": timestamp, "state": state, "errors": errors, "lat": lat, "lon": lon,
+                   "altitude": altitude, "velocity": velocity, "voltage": voltage, "pyro": pyro, "line": line_number}
+            if len(fields) >= 14:
+                try:
+                    row["lq"], row["rssi"], row["snr"] = int(fields[11]), int(fields[12]), int(fields[13])
+                except (ValueError, IndexError) as error:
+                    fail(f"replay {csv_path}:{line_number}: invalid metric field: {error}")
+            else:
+                row["lq"], row["rssi"], row["snr"] = 100, -50, 10
+            rows.append(row)
+        rows.sort(key=lambda item: (item["ts"], item["line"]))
+        self.replay_rows = rows
+        self.replay_index = 0
+        self.replay_speed = speed
+        self.replay_start = self.now_ms
+        self.apply_replay()
+
+    def apply_replay(self) -> None:
+        while self.replay_index < len(self.replay_rows):
+            row = self.replay_rows[self.replay_index]
+            if self.now_ms < self.replay_start + int((row["ts"] - self.replay_rows[0]["ts"]) * 100 / self.replay_speed):
+                break
+            link = self.link(row["link"] - 1)
+            tel = link["telemetry"]
+            tel.update({"state": row["state"], "errors": row["errors"], "latitude": row["lat"] / 10000.0,
+                        "longitude": row["lon"] / 10000.0, "altitudeM": row["altitude"], "velocityMps": row["velocity"],
+                        "voltage": row["voltage"] / 10.0, "pyroContinuity": row["pyro"], "timestampDs": row["ts"],
+                        "lastUpdateMs": self.now_ms, "updated": True})
+            info = link["info"]
+            info.update({"linkQuality": row["lq"], "rssi": row["rssi"], "snr": row["snr"], "lastUpdateMs": self.now_ms, "updated": True})
+            link["connected"] = True
+            self.replay_index += 1
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "activeScreen": self.screen,
+            "testingState": self.testing_state,
+            "calibrationState": self.calibration_state,
+            "settingsState": self.settings_state,
+            "inputState": "held" if any(self.held.values()) else "idle",
+            "menuSelection": self.menu_selection,
+            "settingsPage": self.settings_page,
+            "settingsSelection": self.settings_selection,
+            "dataSelection": self.data_selection,
+            "virtualTimeMs": self.now_ms,
+            "configuration": copy.deepcopy(self.config()),
+            "links": copy.deepcopy(self.state["links"]),
+            "navigation": copy.deepcopy(self.state["navigation"]),
+            "deviceStatus": copy.deepcopy(self.state["deviceStatus"]),
+            "actions": copy.deepcopy(self.actions),
+            "framebufferRevision": self.frame.revision,
+            "framebufferBytes": base64.b64encode(self.frame.packed()).decode("ascii"),
+            "framebufferSha256": hashlib.sha256(self.frame.packed()).hexdigest(),
+        }
+
+    def assert_value(self, assertion: dict[str, Any]) -> None:
+        if not isinstance(assertion, dict):
+            fail("assert step must be an object")
+        snap = self.snapshot()
+        for key, expected in assertion.items():
+            if key in ("action", "emittedAction", "emittedActions"):
+                names = {item.get("type") for item in snap["actions"]}
+                wanted = expected if isinstance(expected, list) else [expected]
+                missing = [name for name in wanted if name not in names]
+                if missing:
+                    fail(f"assert actions missing {missing}; emitted {sorted(names)}")
+                continue
+            actual: Any = snap
+            for part in str(key).replace(".", "/").split("/"):
+                if isinstance(actual, dict) and part in actual:
+                    actual = actual[part]
+                elif isinstance(actual, list) and part.isdigit() and int(part) < len(actual):
+                    actual = actual[int(part)]
+                else:
+                    fail(f"assert field '{key}' does not exist")
+            if actual != expected:
+                fail(f"assertion failed for '{key}': expected {expected!r}, got {actual!r}")
+
+    def run(self, steps: list[Any]) -> list[dict[str, Any]]:
+        snapshots: list[dict[str, Any]] = []
+        if not isinstance(steps, list):
+            fail("scenario steps must be an array")
+        for index, step in enumerate(steps, 1):
+            if not isinstance(step, dict) or len(step) != 1:
+                fail(f"step {index}: expected an object with one operation")
+            operation, value = next(iter(step.items()))
+            try:
+                if operation == "set":
+                    self.set_initial(value)
+                elif operation == "press":
+                    self.press(value)
+                elif operation == "release":
+                    self.release(value)
+                elif operation == "hold":
+                    if not isinstance(value, dict): fail(f"step {index}: hold expects object")
+                    self.hold(value.get("button"), int(value.get("ms", value.get("durationMs", 0))))
+                elif operation == "advance":
+                    self.advance(int(value))
+                elif operation == "replay":
+                    self.replay(value)
+                elif operation == "assert":
+                    self.assert_value(value)
+                elif operation == "snapshot":
+                    snapshots.append(self.snapshot())
+                else:
+                    fail(f"step {index}: unknown operation '{operation}'")
+            except ScenarioError:
+                raise
+            except Exception as error:
+                fail(f"step {index} ({operation}): {error}")
+        return snapshots
+
+
+def run_scenario(path: Path, write_snapshots: bool = False) -> dict[str, Any]:
+    try:
+        scenario = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        fail(f"scenario {path}:{error.lineno}:{error.colno}: invalid JSON: {error.msg}")
+    except OSError as error:
+        fail(f"cannot read scenario '{path}': {error}")
+    if not isinstance(scenario, dict):
+        fail(f"scenario {path}: root must be an object")
+    initial = scenario.get("initial", {})
+    if not isinstance(initial, dict):
+        fail("initial must be an object")
+    ready = bool(initial.pop("ready", scenario.get("ready", True)))
+    sim = Simulator(initial, ready=ready, base_dir=path.parent)
+    snapshots = sim.run(scenario.get("steps", []))
+    result = {"scenario": str(path), "snapshot": sim.snapshot(), "snapshots": snapshots, "ok": True}
+    if write_snapshots:
+        output = path.with_suffix(".actual.json")
+        output.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        output.with_suffix(".png").write_bytes(sim.frame.png())
+    return result
+
+
+def deterministic_test(root: Path) -> int:
+    fixture = {
+        "initial": {"ready": True, "links": [{"connected": True, "telemetry": {"state": 2}}, {}]},
+        "steps": [
+            {"assert": {"activeScreen": "menu"}}, {"press": "right"}, {"press": "right"},
+            {"press": "ok"}, {"assert": {"activeScreen": "testing"}}, {"press": "ok"},
+            {"assert": {"testingState": "can_start"}}, {"press": "ok"}, {"advance": 10001},
+            {"assert": {"testingState": "failed", "emittedAction": "testing_timeout"}}, {"snapshot": "timeout"},
+        ],
+    }
+    cases = [("inline-timeout", fixture)]
+    scenario_dir = root / "ground_station" / "simulator" / "scenarios"
+    if not scenario_dir.exists():
+        scenario_dir = root / "simulator" / "scenarios"
+    golden_path = scenario_dir.parent / "golden" / "snapshots.json"
+    try:
+        goldens = json.loads(golden_path.read_text(encoding="utf-8")) if golden_path.exists() else {}
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
+        return 1
+    for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json"):
+        scenario_path = scenario_dir / scenario_name
+        if scenario_path.exists():
+            try:
+                cases.append((scenario_name, json.loads(scenario_path.read_text(encoding="utf-8"))))
+            except (OSError, json.JSONDecodeError) as error:
+                print(f"cannot load simulator fixture {scenario_path}: {error}", file=sys.stderr)
+                return 1
+
+    for name, case in cases:
+        first = Simulator(copy.deepcopy(case["initial"]), ready=True, base_dir=scenario_dir)
+        first.run(copy.deepcopy(case["steps"]))
+        second = Simulator(copy.deepcopy(case["initial"]), ready=True, base_dir=scenario_dir)
+        second.run(copy.deepcopy(case["steps"]))
+        a, b = first.snapshot(), second.snapshot()
+        if json.dumps(a, sort_keys=True) != json.dumps(b, sort_keys=True) or first.frame.png() != second.frame.png():
+            print(f"determinism test failed: {name}", file=sys.stderr)
+            return 1
+        expected_hash = goldens.get(name)
+        if expected_hash is not None and a["framebufferSha256"] != expected_hash:
+            print(f"golden framebuffer failed: {name}: expected {expected_hash}, got {a['framebufferSha256']}", file=sys.stderr)
+            return 1
+    print(f"gs-sim: {len(cases)} deterministic controller/scenario tests passed")
+    print(f"framebuffer: {len(first.frame.packed())} bytes, sha256={a['framebufferSha256']}")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="gs-sim")
+    sub = parser.add_subparsers(dest="command", required=True)
+    run = sub.add_parser("run")
+    run.add_argument("scenario", type=Path)
+    run.add_argument("--write-snapshots", action="store_true")
+    test = sub.add_parser("test")
+    test.add_argument("--root", type=Path, default=Path.cwd())
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "test":
+            return deterministic_test(args.root)
+        result = run_scenario(args.scenario.resolve(), args.write_snapshots)
+        print(json.dumps(result, sort_keys=True, indent=2))
+        return 0
+    except ScenarioError as error:
+        print(f"gs-sim: error: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

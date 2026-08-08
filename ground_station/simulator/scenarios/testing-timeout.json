@@ -1,0 +1,16 @@
+{
+  "initial": {
+    "ready": true,
+    "links": [{"connected": true, "telemetry": {"state": 2}}, {}]
+  },
+  "steps": [
+    {"press": "right"},
+    {"press": "right"},
+    {"press": "ok"},
+    {"press": "ok"},
+    {"press": "ok"},
+    {"advance": 10001},
+    {"assert": {"activeScreen": "testing", "testingState": "failed", "emittedAction": "testing_timeout"}},
+    {"snapshot": "timeout"}
+  ]
+}

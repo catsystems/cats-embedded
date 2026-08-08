@@ -1,0 +1,15 @@
+{
+  "initial": {"ready": true},
+  "steps": [
+    {"press": "down"},
+    {"press": "right"},
+    {"press": "right"},
+    {"press": "ok"},
+    {"press": "down"},
+    {"press": "right"},
+    {"press": "back"},
+    {"press": "back"},
+    {"assert": {"activeScreen": "menu", "configuration.neverStopLogging": true, "emittedAction": "configuration_saved"}},
+    {"snapshot": "settings"}
+  ]
+}

@@ -1,0 +1,31 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+body { margin: 0; background: #101214; color: #e8edf2; }
+main { width: min(900px, 96vw); margin: 24px auto; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
+.toolbar-help, .keyboard-help { color: #9ca8b3; font-size: 14px; margin: 7px 0 12px; }
+.keyboard-help { color: #f4b740; }
+button, input { font: inherit; color: inherit; background: #20262c; border: 1px solid #5c6973; border-radius: 4px; padding: 6px 10px; }
+button:active { background: #384752; }
+canvas { width: min(800px, 100%); height: auto; image-rendering: pixelated; image-rendering: crisp-edges; background: white; border: 1px solid #5c6973; }
+canvas:focus { outline: 2px solid #f4b740; outline-offset: 3px; }
+#status { color: #ffcc66; min-height: 1.4em; }
+.controls { display: flex; align-items: center; gap: 110px; width: min(720px, 100%); margin: 20px 0; padding: 10px 36px; box-sizing: border-box; }
+.dpad { display: grid; grid-template: repeat(3, 54px) / repeat(3, 54px); }
+.dpad button { min-width: 54px; min-height: 54px; padding: 0; border: 0; border-radius: 8px; background: #f7941d; color: #5a2b00; font-size: 20px; font-weight: 700; }
+.dpad button:active, .face-button:active { background: #ffb14a; transform: translateY(1px); }
+.dpad-up { grid-area: 1 / 2; }
+.dpad-left { grid-area: 2 / 1; }
+.dpad-center { grid-area: 2 / 2; border-radius: 0 !important; }
+.dpad-right { grid-area: 2 / 3; }
+.dpad-down { grid-area: 3 / 2; }
+.dpad-center { grid-area: 2 / 2; background: #f7941d; }
+.face-buttons { display: flex; align-items: center; gap: 28px; padding-top: 20px; }
+.face-button { width: 68px; height: 68px; padding: 0; border: 0; border-radius: 50%; background: #f7941d; color: #7a3900; font-size: 25px; font-weight: 800; box-shadow: inset 0 -4px 0 rgb(113 55 0 / 28%); }
+pre { max-height: 350px; overflow: auto; background: #171b1f; padding: 12px; }
+
+@media (max-width: 620px) {
+  .controls { gap: 45px; padding-inline: 8px; }
+  .dpad { grid-template: repeat(3, 46px) / repeat(3, 46px); }
+  .dpad button { min-width: 46px; min-height: 46px; }
+  .face-button { width: 58px; height: 58px; }
+}

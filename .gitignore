@@ -204,6 +204,13 @@ SHASUMS256.txt
 compile_commands.json
 .envrc
 
+# Ground Station simulator generated output
+ground_station/simulator/build-wasm/
+ground_station/simulator/web/gs-sim.js
+ground_station/simulator/web/gs-sim.wasm
+ground_station/simulator/scenarios/*.actual.json
+ground_station/simulator/scenarios/*.actual.png
+
 # npm package
 /desktop_app/npm/dist
 /desktop_app/npm/path.txt

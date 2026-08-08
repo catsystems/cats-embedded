@@ -1,0 +1,9 @@
+{
+  "initial": {"ready": true},
+  "steps": [
+    {"replay": {"file": "sample-log.csv", "speed": 1}},
+    {"advance": 5000},
+    {"assert": {"links.0.connected": true, "links.0.telemetry.state": 6}},
+    {"snapshot": "replay"}
+  ]
+}
