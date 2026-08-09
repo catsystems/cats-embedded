@@ -4,7 +4,7 @@
 
 = Testing
 
-#metadata(none) <sec-Testing> This section explains how to run tests with the #gls("CATS", cap: false) system.
+#metadata(none) <sec-Testing> This section explains how to run tests with the CATS System.
 
 == Working Principle
 
@@ -22,51 +22,51 @@ To enable the testing mode, follow these steps:
 
 #enum(tight: false,
   [
-Connect your CATS Vega to your computer, start the configurator and connect to the flight computer.
+Connect your CATS Vega to your computer, start the Configurator, and connect to the flight computer.
 ],
   [
-Navigate on the home screen on the configurator and select testing mode.
+On the Configurator's Home screen, enable Testing Mode.
 ],
   [
-Set a testing password.
+Set a testing phrase.
 ],
   [
 Reboot the flight computer. If the flight computer is not restarted, the testing mode is not activated.
 ],
   [
-The flight computer should beep with the "Testing" Beeping Pattern. See section #xref("sec:BeepingPatterns") for more information about beeping.
+The flight computer should emit the "Testing" beeping pattern. See Section #xref("sec:BeepingPatterns") for more information.
 ],
   [
-Turn on your ground station.
+Turn on your Ground Station.
 ],
   [
-Make sure that the link phrase and the testing password match the ones on the flight computer.
+Make sure that the link phrase and testing phrase match those configured on the flight computer.
 ],
   [
-Navigate to the testing menu on the ground station.
+Open the Testing menu on the Ground Station.
 
 #cats-figure(image("../images/Testing/GroundStation_MainMenu.jpg", width: 70%), caption: [Ground Station Main Menu.]) <fig-GSTestingMainMenu>
 ],
   [
-Read the disclaimer carefully and arm the testing mode. *Attention:* After this step executing events will trigger the connected mechanisms! Make sure to follow safety guidelines.
+Read the disclaimer carefully and arm testing mode. *Attention:* After this step, executing events will trigger the connected mechanisms. Follow all safety guidelines.
 
 #cats-figure(image("../images/Testing/GroundStation_Arm_Testing_Mode.jpg", width: 70%), caption: [Arming the test mode.]) <fig-GSTestingArming>
 ],
   [
-A screen will pop up that shows that testing mode is being activated. Wait until this screen disappears.
+A pop-up indicates that testing mode is being activated. Wait until it disappears.
 
-#cats-figure(image("../images/Testing/GroundStation_Wait_Testing_Mode.jpg", width: 70%), caption: [Waiting that testing mode is being started.]) <fig-GSTestingWaitingArming>
+#cats-figure(image("../images/Testing/GroundStation_Wait_Testing_Mode.jpg", width: 70%), caption: [Waiting for testing mode to activate.]) <fig-GSTestingWaitingArming>
 ],
   [
-he flight computer should beep with the "Armed Testing" Beeping Pattern. See section #xref("sec:BeepingPatterns") for more information about beeping.
+The flight computer should emit the "Armed Testing" beeping pattern. See Section #xref("sec:BeepingPatterns") for more information.
 ],
   [
-Select the event which you want to trigger.
+Select the event that you want to trigger.
 
 #cats-figure(image("../images/Testing/GroundStation_Event_Menu.jpg", width: 70%), caption: [Selection of the Event to be triggered.]) <fig-GSTestingEventMenu>
 ],
   [
-Click on the event and confirm.
+Select the event and confirm.
 
 #cats-figure(image("../images/Testing/GroundStation_Trigger_Event.jpg", width: 70%), caption: [Confirming to trigger the desired Event.]) <fig-GSTestingEventTriggering>
 ]

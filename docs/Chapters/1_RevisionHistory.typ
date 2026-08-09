@@ -27,12 +27,16 @@
   [21 Jun 2026],
   [2.1.1],
   [Added section on Ground Station USB Data Streaming],
+  [09 Aug 2026],
+  [2.1.2],
+  [Corrected Ground Station flash memory capacity and CATS Vega dimensions],
   table.hline(y: 1, stroke: 0.5pt + black),
   table.hline(y: 2, stroke: 0.5pt + black),
   table.hline(y: 3, stroke: 0.5pt + black),
   table.hline(y: 4, stroke: 0.5pt + black),
   table.hline(y: 5, stroke: 0.5pt + black),
-  table.hline(y: 6, stroke: 0.5pt + black)
+  table.hline(y: 6, stroke: 0.5pt + black),
+  table.hline(y: 7, stroke: 0.5pt + black)
 ),
   caption: [Revision History],
   continued: false,
