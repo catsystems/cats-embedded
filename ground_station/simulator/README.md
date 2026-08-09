@@ -28,3 +28,9 @@ Scenario operations are `set`, `press`, `release`, `hold`, `advance`, `replay`,
 `assert`, and `snapshot`. CSV replay accepts the firmware recorder format
 (`link,ts[deciseconds],state,...`) and schedules rows relative to the first
 decisecond timestamp. Missing radio metrics use deterministic defaults.
+
+The browser toolbar includes presets for complete/partial and 24-log
+catalogs, nominal dual recovery, a missing recovery fix, active Never-mode
+recording, USB deletion blocking, write/delete/finalize failures, and manual
+finalization. These presets drive the compiled controller and production
+`Window` renderer rather than static images.

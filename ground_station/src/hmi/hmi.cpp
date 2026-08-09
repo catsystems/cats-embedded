@@ -35,7 +35,10 @@ void Hmi::begin() {
   backButton.begin();
 
   recorder.begin();
+  recorder.configure(systemConfig.config.receiverMode, systemConfig.config.neverStopLogging);
   recorder.enable();
+  link1.setPacketSink(&recorder, 1);
+  link2.setPacketSink(&recorder, 2);
 
   window.begin();
   initialized = true;
@@ -43,6 +46,9 @@ void Hmi::begin() {
 }
 
 void Hmi::fsm() {
+  recorder.configure(systemConfig.config.receiverMode, systemConfig.config.neverStopLogging);
+  const RecorderStatus recorderStatus = recorder.getStatus();
+  isLogging = recorderStatus.state == RecorderState::Recording;
   updateRecoveryLocations();
   switch (state) {
     case MENU:
@@ -130,11 +136,6 @@ void Hmi::live() {
   bool updated = false;
 
   if (link1.data.isUpdated() && link1.info.isUpdated()) {
-    // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
-    link1Log = (link1.data.state() > 2) && (systemConfig.config.neverStopLogging || link1.data.state() < 7);
-    if (link1Log) {
-      recorder.record(&link1.data.getRxData(), 1);
-    }
     window.updateLive(&link1.data, &navigation, &link1.info, 0);
     updated = true;
   } else if (link1.info.isUpdated()) {
@@ -143,11 +144,6 @@ void Hmi::live() {
   }
 
   if (link2.data.isUpdated() && link2.info.isUpdated()) {
-    // We log after LIFTOFF and stop either never (if neverStopLogging == TRUE) or at TOUCHDOWN
-    link2Log = (link2.data.state() > 2) && (systemConfig.config.neverStopLogging || link2.data.state() < 7);
-    if (link2Log) {
-      recorder.record(&link2.data.getRxData(), 2);
-    }
     window.updateLive(&link2.data, &navigation, &link2.info, 1);
     updated = true;
   } else if (link2.info.isUpdated()) {
@@ -155,7 +151,7 @@ void Hmi::live() {
     updated = true;
   }
 
-  isLogging = link1Log || link2Log;
+  isLogging = recorder.getStatus().state == RecorderState::Recording;
 
   if (updated) {
     window.refresh();
@@ -171,7 +167,6 @@ void Hmi::live() {
 
   if (backButton.wasPressed()) {
     state = MENU;
-    isLogging = false;
     window.initMenu(menuIndex);
   }
 }
@@ -182,7 +177,14 @@ void Hmi::initRecovery() {
   recoveryQrLink = -1;
   const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
   window.initRecovery(hasLastLocation);
-  window.updateRecovery(&navigation, hasLastLocation);
+  if (systemConfig.config.receiverMode == DUAL) {
+    selectedRecoveryLink = recoveryLocationValid[0] ? 0 : (recoveryLocationValid[1] ? 1 : 0);
+    window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
+                                recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
+                                hasLastLocation);
+  } else {
+    window.updateRecovery(&navigation, hasLastLocation);
+  }
 }
 
 void Hmi::updateRecoveryLocations() {
@@ -203,7 +205,7 @@ bool Hmi::showRecoveryLocation(int8_t linkIndex) {
   }
   const EarthPoint3D &location = recoveryLocations[linkIndex];
   const char *title = linkIndex == 0 ? "[Link 1] Last Location" : "[Link 2] Last Location";
-  const bool hasNextPage = linkIndex == 0 && recoveryLocationValid[1];
+  const bool hasNextPage = recoveryLocationValid[1 - linkIndex];
   if (!window.showLocationQr(location.lat, location.lon, title, true, hasNextPage)) {
     return false;
   }
@@ -213,34 +215,69 @@ bool Hmi::showRecoveryLocation(int8_t linkIndex) {
 }
 
 void Hmi::recovery() {
+  const bool dualMode = systemConfig.config.receiverMode == DUAL;
+  if (recoveryQrLink < 0 && dualMode && (upButton.wasPressed() || downButton.wasPressed())) {
+    selectedRecoveryLink = 1 - selectedRecoveryLink;
+    const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
+    window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
+                                recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
+                                hasLastLocation);
+  }
+
   if (rightButton.wasPressed()) {
     if (recoveryQrLink < 0) {
-      if (!showRecoveryLocation(0)) {
-        (void)showRecoveryLocation(1);
+      if (dualMode) {
+        (void)showRecoveryLocation(selectedRecoveryLink);
+      } else {
+        const EarthPoint3D target = navigation.getPointB();
+        if (LocationQr::IsValid(target.lat, target.lon) &&
+            window.showLocationQr(target.lat, target.lon, "Last Location", true, false)) {
+          recoveryQrLink = 0;
+          recoveryQrPoint = target;
+        }
       }
-    } else if (recoveryQrLink == 0) {
-      (void)showRecoveryLocation(1);
+    } else if (dualMode && recoveryLocationValid[1 - recoveryQrLink]) {
+      selectedRecoveryLink = 1 - recoveryQrLink;
+      (void)showRecoveryLocation(selectedRecoveryLink);
     }
   }
 
   if (leftButton.wasPressed() && recoveryQrLink >= 0) {
-    if (recoveryQrLink == 1 && recoveryLocationValid[0]) {
-      (void)showRecoveryLocation(0);
+    recoveryQrLink = -1;
+    const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
+    window.initRecovery(hasLastLocation);
+    if (dualMode) {
+      window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
+                                  recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
+                                  hasLastLocation);
     } else {
-      recoveryQrLink = -1;
-      const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
-      window.initRecovery(hasLastLocation);
       window.updateRecovery(&navigation, hasLastLocation);
     }
   }
 
   if (recoveryQrLink >= 0) {
-    const EarthPoint3D &location = recoveryLocations[recoveryQrLink];
-    if (location.lat != recoveryQrPoint.lat || location.lon != recoveryQrPoint.lon) {
-      (void)showRecoveryLocation(recoveryQrLink);
+    if (dualMode) {
+      const EarthPoint3D &location = recoveryLocations[recoveryQrLink];
+      if (location.lat != recoveryQrPoint.lat || location.lon != recoveryQrPoint.lon) {
+        (void)showRecoveryLocation(recoveryQrLink);
+      }
+    } else {
+      const EarthPoint3D location = navigation.getPointB();
+      if ((location.lat != recoveryQrPoint.lat || location.lon != recoveryQrPoint.lon) &&
+          LocationQr::IsValid(location.lat, location.lon) &&
+          window.showLocationQr(location.lat, location.lon, "Last Location", true, false)) {
+        recoveryQrPoint = location;
+      }
     }
   } else if (navigation.isUpdated()) {
-    window.updateRecovery(&navigation, recoveryLocationValid[0] || recoveryLocationValid[1]);
+    const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
+    if (dualMode) {
+      window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
+                                  recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
+                                  hasLastLocation);
+    } else {
+      window.updateRecovery(&navigation, hasLastLocation);
+    }
   }
 
   if (backButton.wasPressed()) {
@@ -386,27 +423,68 @@ void Hmi::testing() {
 
 void Hmi::initData() {
   dataQrLink = -1;
-  dataFileCount = recorder.getFileCount();
-
-  // The display can show a maximum of 11 entries, no scrolling implemented!
-  // It is highly unlikely to get more than 11 flight logs because the flash is quite small
-  dataFileCount = std::min<decltype(dataFileCount)>(dataFileCount, 11);
-
-  if (dataFileCount > 0) {
-    window.initData(true);
-    char fileName[30] = {};
-    for (uint8_t i = 0; i < dataFileCount; i++) {
-      recorder.getFileNameByIndex(i, fileName);
-      if (i == dataIndex) {
-        window.dataHighlight(fileName, i, true);
-      } else {
-        window.listFileName(fileName, i);
-      }
-    }
-  } else {
-    window.initData(false);
+  dataView = DataView::List;
+  if (!recorder.refreshCatalog(dataCatalog)) {
+    dataCatalog.clear();
+    dataMessageReturn = DataView::List;
+    dataView = DataView::Message;
+    window.initDataMessage("Log Error", "Unable to read log catalog");
+    return;
   }
+  if (dataCatalog.empty()) {
+    dataIndex = 0;
+    dataWindowStart = 0;
+  } else {
+    dataIndex = std::min(dataIndex, dataCatalog.size() - 1U);
+    dataWindowStart = std::min(dataWindowStart, dataIndex);
+    if (dataIndex >= dataWindowStart + 11U) {
+      dataWindowStart = dataIndex - 10U;
+    }
+  }
+  drawDataList();
+}
+
+void Hmi::drawDataList() {
+  window.initData(!dataCatalog.empty());
+  const size_t end = std::min(dataCatalog.size(), dataWindowStart + 11U);
+  for (size_t index = dataWindowStart; index < end; ++index) {
+    const uint16_t row = static_cast<uint16_t>(index - dataWindowStart);
+    char label[44]{};
+    snprintf(label, sizeof(label), "%s%s", dataCatalog[index].name, dataCatalog[index].active ? "  [ACTIVE]" : "");
+    if (index == dataIndex) {
+      window.dataHighlight(label, row, true);
+    } else {
+      window.listFileName(label, row);
+    }
+  }
+  window.dataScrollIndicators(dataWindowStart > 0U, end < dataCatalog.size(),
+                              dataCatalog.empty() ? -1 : static_cast<int16_t>(dataIndex - dataWindowStart));
   window.refresh();
+}
+
+void Hmi::openSelectedLog() {
+  if (dataIndex >= dataCatalog.size()) {
+    return;
+  }
+  const LogEntry& entry = dataCatalog[dataIndex];
+  strncpy(dataLogName, entry.name, sizeof(dataLogName) - 1U);
+  dataLogName[sizeof(dataLogName) - 1U] = '\0';
+  if (entry.active && !recorder.sync()) {
+    dataMessageReturn = DataView::List;
+    dataView = DataView::Message;
+    window.initDataMessage("Log Error", "Unable to sync active log");
+    return;
+  }
+  if (!dataAnalysis.parse(recorder.getDirectory(), entry.name)) {
+    dataMessageReturn = DataView::List;
+    dataView = DataView::Message;
+    window.initDataMessage("Log Error", "Unable to read log");
+    return;
+  }
+  dataStatistics[0] = dataAnalysis.summaries[0];
+  dataStatistics[1] = dataAnalysis.summaries[1];
+  dataView = DataView::Details;
+  showDataStatistics();
 }
 
 bool Hmi::showDataLocation(int8_t linkIndex) {
@@ -430,10 +508,14 @@ void Hmi::showDataStatistics() {
 }
 
 void Hmi::data() {
-  if (dataFlightStatistic) {
-    if (backButton.wasPressed()) {
-      dataFlightStatistic = false;
+  if (dataView == DataView::Details) {
+    if (backButton.wasPressed() || (upButton.wasPressed() && dataQrLink < 0)) {
       initData();
+      return;
+    }
+    if (downButton.wasPressed() && dataQrLink < 0 && dataIndex < dataCatalog.size()) {
+      dataView = DataView::Options;
+      window.initDataOptions(dataCatalog[dataIndex].name, dataCatalog[dataIndex].active);
       return;
     }
     if (rightButton.wasPressed()) {
@@ -453,48 +535,89 @@ void Hmi::data() {
         showDataStatistics();
       }
     }
-  } else {
+    return;
+  }
+
+  if (dataView == DataView::Options) {
+    if (backButton.wasPressed() || upButton.wasPressed()) {
+      dataView = DataView::Details;
+      showDataStatistics();
+    } else if (okButton.wasPressed() && dataIndex < dataCatalog.size()) {
+      dataView = dataCatalog[dataIndex].active ? DataView::ConfirmFinalize : DataView::ConfirmDelete;
+      window.initBox(dataCatalog[dataIndex].active ? "Finalize this log?" : "Delete this log?");
+    }
+    return;
+  }
+
+  if (dataView == DataView::ConfirmFinalize || dataView == DataView::ConfirmDelete) {
+    if (backButton.wasPressed()) {
+      dataView = DataView::Options;
+      window.initDataOptions(dataCatalog[dataIndex].name, dataCatalog[dataIndex].active);
+      return;
+    }
+    if (okButton.wasPressed()) {
+      const bool deleting = dataView == DataView::ConfirmDelete;
+      if (deleting && Utils::isConnected()) {
+        dataMessageReturn = DataView::Options;
+        dataView = DataView::Message;
+        window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
+        return;
+      }
+      const bool success = deleting ? recorder.deleteLog(dataCatalog[dataIndex].name)
+                                    : recorder.finalize(FinalizeReason::UserRequested);
+      if (!success) {
+        dataMessageReturn = DataView::Options;
+        dataView = DataView::Message;
+        if (deleting && Utils::isConnected()) {
+          window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
+        } else {
+          window.initDataMessage(deleting ? "Delete Failed" : "Finalize Failed",
+                                 deleting ? "Log was not deleted" : "Log is still active");
+        }
+        return;
+      }
+      initData();
+    }
+    return;
+  }
+
+  if (dataView == DataView::Message) {
+    if (backButton.wasPressed()) {
+      if (dataMessageReturn == DataView::List) {
+        initData();
+      } else {
+        dataView = DataView::Options;
+        window.initDataOptions(dataCatalog[dataIndex].name, dataCatalog[dataIndex].active);
+      }
+    }
+    return;
+  }
+
+  if (dataView == DataView::List) {
     if (backButton.wasPressed()) {
       state = MENU;
       window.initMenu(menuIndex);
       dataIndex = 0;
+      dataWindowStart = 0;
+      return;
     }
-    if (downButton.wasPressed() && dataIndex < (dataFileCount - 1)) {
+    if (downButton.wasPressed() && !dataCatalog.empty() && dataIndex + 1U < dataCatalog.size()) {
       dataIndex++;
-      char fileName[30] = {};
-      if (dataIndex >= 1) {
-        recorder.getFileNameByIndex(dataIndex - 1, fileName);
-        window.dataHighlight(fileName, dataIndex - 1, false);
+      if (dataIndex >= dataWindowStart + 11U) {
+        dataWindowStart = dataIndex - 10U;
       }
-      recorder.getFileNameByIndex(dataIndex, fileName);
-      window.dataHighlight(fileName, dataIndex, true);
-      window.refresh();
+      drawDataList();
     }
     if (upButton.wasPressed() && dataIndex > 0) {
       dataIndex--;
-      char fileName[30] = {};
-      if (dataIndex < (dataFileCount - 1)) {
-        recorder.getFileNameByIndex(dataIndex + 1, fileName);
-        window.dataHighlight(fileName, dataIndex + 1, false);
+      if (dataIndex < dataWindowStart) {
+        dataWindowStart = dataIndex;
       }
-      recorder.getFileNameByIndex(dataIndex, fileName);
-      window.dataHighlight(fileName, dataIndex, true);
-      window.refresh();
+      drawDataList();
     }
 
-    if (okButton.wasPressed() && (dataFileCount > 0)) {
-      dataStatistics[0] = FlightStatistics{};
-      dataStatistics[1] = FlightStatistics{};
-      char fileName[30] = {};
-      // NOLINTNEXTLINE(cppcoreguidelines-init-variables) not sure why...
-      const char *directory = recorder.getDirectory();
-      recorder.getFileNameByIndex(dataIndex, fileName);
-      memcpy(dataLogName, fileName, sizeof(dataLogName));
-      dataLogName[sizeof(dataLogName) - 1U] = '\0';
-      dataStatistics[0].parseFlightLog(directory, fileName, 1U);
-      dataStatistics[1].parseFlightLog(directory, fileName, 2U);
-      dataFlightStatistic = true;
-      showDataStatistics();
+    if (okButton.wasPressed() && !dataCatalog.empty()) {
+      openSelectedLog();
     }
   }
 }
@@ -757,8 +880,10 @@ void Hmi::update(void *pvParameter) {
         adjustTime(systemConfig.config.timeZoneOffset * 3600L);
         timeValid = true;
       }
-      ref->window.updateBar(voltage, static_cast<bool>(digitalRead(21)), ref->isLogging, link2.location.isValid(),
-                            timeValid, ref->flashFreeMemory);
+      const RecorderStatus recorderStatus = ref->recorder.getStatus();
+      ref->window.updateBar(voltage, static_cast<bool>(digitalRead(21)),
+                            recorderStatus.state == RecorderState::Recording, link2.location.isValid(), timeValid,
+                            ref->flashFreeMemory, recorderStatus.state == RecorderState::Fault);
     }
 
     ref->upButton.read();

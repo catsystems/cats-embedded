@@ -1,0 +1,33 @@
+{
+  "initial": {
+    "ready": true,
+    "logs": [
+      {"name":"log_019.csv","csv":""},{"name":"log_018.csv","csv":""},{"name":"log_017.csv","csv":""},
+      {"name":"log_016.csv","csv":""},{"name":"log_015.csv","csv":""},{"name":"log_014.csv","csv":""},
+      {"name":"log_013.csv","csv":""},{"name":"log_012.csv","csv":""},{"name":"log_011.csv","csv":""},
+      {"name":"log_010.csv","csv":""},{"name":"log_009.csv","csv":""},{"name":"log_008.csv","csv":""},
+      {"name":"log_007.csv","csv":""},{"name":"log_006.csv","csv":""},{"name":"log_005.csv","csv":""},
+      {"name":"log_004.csv","csv":""},{"name":"log_003.csv","csv":""},{"name":"log_002.csv","csv":""},
+      {"name":"log_001.csv","csv":""},{"name":"log_000.csv","csv":""}
+    ]
+  },
+  "steps": [
+    {"press":"down"},{"release":"down"},{"press":"ok"},{"release":"ok"},
+    {"hold":{"button":"down","ms":7000}},
+    {"assert":{"activeScreen":"data","dataSelection":19,"logScrollOffset":9,"logCount":20}},
+    {"press":"down"},{"release":"down"},{"assert":{"dataSelection":19}},
+    {"hold":{"button":"up","ms":7000}},
+    {"assert":{"dataSelection":0,"logScrollOffset":0}},
+    {"press":"ok"},{"press":"up"},{"assert":{"currentDataSubview":"list"}},
+    {"press":"ok"},{"press":"down"},{"assert":{"currentDataSubview":"options"}},
+    {"press":"up"},{"assert":{"currentDataSubview":"details"}},
+    {"press":"back"},{"assert":{"currentDataSubview":"list"}},
+    {"press":"ok"},{"press":"down"},{"press":"back"},{"assert":{"currentDataSubview":"details"}},
+    {"press":"down"},{"press":"ok"},
+    {"set":{"device.usb":true}},
+    {"press":"ok"},{"assert":{"currentDataSubview":"usb_blocked","logCount":20}},
+    {"press":"back"},{"set":{"device.usb":false}},{"press":"ok"},{"press":"ok"},
+    {"assert":{"currentDataSubview":"list","logCount":19,"dataSelection":0}},
+    {"snapshot":"log-management"}
+  ]
+}

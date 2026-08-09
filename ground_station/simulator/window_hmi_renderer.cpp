@@ -51,12 +51,14 @@ void WindowHmiRenderer::syncLink(const LinkSnapshot& source, size_t index) {
 void WindowHmiRenderer::syncStatistics(const FlightStatisticsSnapshot& source, size_t index) {
   statistics_[index].set(source.maxAltitudeM, source.timeToApogeeS, source.maxVelocityMps,
                          source.drogueDescentRateMps, source.mainDescentRateMps, source.lastLatitude,
-                         source.lastLongitude, source.flightTimeS);
+                         source.lastLongitude, source.flightTimeS, source.maxAltitudeValid,
+                         source.timeToApogeeValid, source.maxVelocityValid, source.drogueRateValid,
+                         source.mainRateValid, source.lastLocationValid, source.flightTimeValid);
 }
 
 void WindowHmiRenderer::drawStatusBar(const DeviceStatusSnapshot& status) {
   window_.updateBar(status.batteryVoltage, status.usb, status.logging, status.gnss, status.clockValid,
-                    status.freeStoragePercent);
+                    status.freeStoragePercent, status.recorderFault);
 }
 
 void WindowHmiRenderer::render(const HmiSnapshot& state) {
@@ -103,12 +105,22 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     } else if (state.qrView == "recovery_link_2") {
       window_.showLocationQr(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude,
                              "[Link 2] Last Location", true, false);
+    } else if (state.qrView == "recovery_fused") {
+      window_.showLocationQr(state.navigation.rocketLatitude, state.navigation.rocketLongitude, "Last Location", true,
+                             false);
     } else {
       const bool hasLastLocation =
           LocationQr::IsValid(state.recoveryLocations[0].lastLatitude, state.recoveryLocations[0].lastLongitude) ||
           LocationQr::IsValid(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude);
       window_.initRecovery(hasLastLocation);
-      window_.updateRecovery(&navigation_, hasLastLocation);
+      if (state.configuration.dualReceiver) {
+        const EarthPoint3D target(state.recoverySolution.latitude, state.recoverySolution.longitude);
+        window_.updateRecoveryTarget(&navigation_, target,
+                                     LocationQr::IsValid(target.lat, target.lon), state.selectedRecoveryLink, true,
+                                     hasLastLocation);
+      } else {
+        window_.updateRecovery(&navigation_, hasLastLocation);
+      }
     }
   } else if (state.screen == "testing") {
     if (state.testingState == "disclaimer") {
@@ -139,7 +151,7 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     } else if (state.qrView == "log_link_2") {
       window_.showLocationQr(state.flightStatistics[1].lastLatitude, state.flightStatistics[1].lastLongitude,
                              "[Link 2] Last Location", true, false);
-    } else if (state.dataStatistics && !state.logs.empty()) {
+    } else if (state.currentDataSubview == "details" && !state.logs.empty()) {
       const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)),
                                                state.logs.size() - 1U);
       window_.dataShowFlightStatistics(statistics_[0], statistics_[1], state.logs[selected].name.c_str(),
@@ -147,16 +159,30 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
                                                            state.flightStatistics[0].lastLongitude) ||
                                            LocationQr::IsValid(state.flightStatistics[1].lastLatitude,
                                                                state.flightStatistics[1].lastLongitude));
+    } else if (state.currentDataSubview == "options" && !state.logs.empty()) {
+      const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)),
+                                               state.logs.size() - 1U);
+      window_.initDataOptions(state.logs[selected].name.c_str(), state.logs[selected].active);
+    } else if ((state.currentDataSubview == "confirm_finalize" || state.currentDataSubview == "confirm_delete") &&
+               !state.logs.empty()) {
+      window_.initData(true);
+      window_.initBox(state.currentDataSubview == "confirm_finalize" ? "Finalize this log?" : "Delete this log?");
+    } else if (state.currentDataSubview == "message") {
+      window_.initDataMessage(state.dataMessageTitle.c_str(), state.dataMessageText.c_str());
     } else {
       window_.initData(!state.logs.empty());
-      const size_t count = std::min<size_t>(11, state.logs.size());
-      for (size_t index = 0; index < count; ++index) {
-        window_.listFileName(state.logs[index].name.c_str(), static_cast<uint16_t>(index));
+      const size_t end = std::min<size_t>(state.logs.size(), state.logScrollOffset + 11U);
+      for (size_t index = state.logScrollOffset; index < end; ++index) {
+        std::string label = state.logs[index].name + (state.logs[index].active ? "  [ACTIVE]" : "");
+        window_.listFileName(label.c_str(), static_cast<uint16_t>(index - state.logScrollOffset));
       }
-      if (count > 0) {
-        const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), count - 1);
-        window_.dataHighlight(state.logs[selected].name.c_str(), static_cast<uint8_t>(selected), true);
+      if (!state.logs.empty()) {
+        const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), state.logs.size() - 1U);
+        std::string label = state.logs[selected].name + (state.logs[selected].active ? "  [ACTIVE]" : "");
+        window_.dataHighlight(label.c_str(), static_cast<uint16_t>(selected - state.logScrollOffset), true);
       }
+      window_.dataScrollIndicators(state.logScrollOffset > 0U, end < state.logs.size(),
+                                   state.logs.empty() ? -1 : static_cast<int16_t>(state.dataSelection - state.logScrollOffset));
       window_.refresh();
     }
   } else if (state.screen == "sensors") {

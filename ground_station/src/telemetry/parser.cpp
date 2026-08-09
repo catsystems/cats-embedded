@@ -7,6 +7,18 @@
 #include "console.hpp"
 #include "crc.hpp"
 
+namespace {
+constexpr uint32_t kRadioPayloadLength = 16U;
+
+constexpr bool isTelemetryPayloadLengthValid(uint32_t length) {
+  return length >= sizeof(packedRXMessage) && length <= kRadioPayloadLength;
+}
+
+static_assert(isTelemetryPayloadLengthValid(sizeof(packedRXMessage)));
+static_assert(isTelemetryPayloadLengthValid(kRadioPayloadLength));
+static_assert(!isTelemetryPayloadLengthValid(sizeof(packedRXMessage) - 1U));
+}  // namespace
+
 void Parser::parse() {
   (this->*commandFunction[opCodeIndex])(&buffer[2], dataIndex);
 
@@ -64,7 +76,18 @@ void Parser::process(uint8_t ch) {
   }
 }
 
-void Parser::cmdRX(uint8_t *args, uint32_t length) { data->commit(args, length); }
+void Parser::cmdRX(uint8_t *args, uint32_t length) {
+  // The Vega radio always forwards a full 16-byte RF payload. The decoded
+  // telemetry structure currently occupies 15 bytes; accept the trailing RF
+  // padding byte without copying it past the structure boundary.
+  if (!isTelemetryPayloadLengthValid(length)) {
+    return;
+  }
+  data->commit(args, sizeof(packedRXMessage));
+  if (sink != nullptr) {
+    sink->onTelemetryPacket(data->getRxData(), source);
+  }
+}
 
 void Parser::cmdInfo(uint8_t *args, uint32_t length) { info->commit(args, length); }
 

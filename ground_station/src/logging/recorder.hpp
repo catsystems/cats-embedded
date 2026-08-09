@@ -4,49 +4,101 @@
 
 #pragma once
 
-#include "telemetry/telemetryData.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
+#include "config.hpp"
+#include "telemetry/packetSink.hpp"
 #include "utils.hpp"
 
-struct RecorderElement {
-  packedRXMessage data;
-  uint8_t source;  // Link 1 or Link 2
+enum class RecorderState : uint8_t { Idle, Recording, Finalizing, Fault };
+enum class FinalizeReason : uint8_t { MissionComplete, UserRequested, Shutdown };
+
+struct RecorderStatus {
+  RecorderState state{RecorderState::Idle};
+  char activeFilename[30]{};
+  uint8_t participantMask{0};
+  uint32_t writtenSamples{0};
+  uint32_t droppedSamples{0};
+  char lastError[64]{};
 };
 
-class Recorder {
+struct LogEntry {
+  char name[30]{};
+  size_t sizeBytes{0};
+  bool active{false};
+};
+
+class Recorder : public ITelemetryPacketSink {
  public:
   explicit Recorder(const char* directory) : directory(directory) {}
   bool begin();
 
   void enable() { enabled = true; }
-
   void disable() { enabled = false; }
-
-  void record(packedRXMessage* data, uint8_t link_source) {
-    if (enabled) {
-      RecorderElement rec_elem = {*data, link_source};
-      xQueueSend(queue, &rec_elem, 0);
-    }
+  void configure(ReceiverTelemetryMode_e mode, bool neverStop) {
+    receiverMode = mode;
+    neverStopLogging = neverStop;
   }
 
-  uint8_t getFileCount();
+  void onTelemetryPacket(const packedRXMessage& packet, uint8_t source) override;
+  RecorderStatus getStatus() const;
+  bool sync();
+  bool finalize(FinalizeReason reason = FinalizeReason::UserRequested);
+  bool deleteLog(const char* name);
+  bool refreshCatalog(std::vector<LogEntry>& entries);
 
-  bool getFileNameByIndex(uint8_t index, char* name) const;
-
+  size_t getFileCount();
+  bool getFileNameByIndex(size_t index, char* name) const;
   const char* getDirectory() const { return directory; }
 
  private:
-  bool initialized = false;
-  bool enabled = false;
-  bool fileCreated = false;
+  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete };
+  struct Command {
+    CommandType type{CommandType::Sample};
+    packedRXMessage data{};
+    uint8_t source{0};
+    FinalizeReason reason{FinalizeReason::MissionComplete};
+    char name[30]{};
+    uint32_t requestId{0};
+  };
+  struct Response {
+    uint32_t requestId{0};
+    bool result{false};
+  };
+
+  bool initialized{false};
+  bool enabled{false};
+  bool fileCreated{false};
+  bool armed{true};
+  bool neverStopLogging{false};
+  ReceiverTelemetryMode_e receiverMode{SINGLE};
+  uint8_t touchdownMask{0};
+  uint8_t rearmMask{0};
+  uint8_t completedParticipantMask{0};
+  uint32_t unsyncedRows{0};
 
   const char* directory;
-
-  char fileName[30] = {};
-
+  char fileName[30]{};
   QueueHandle_t queue{nullptr};
+  QueueHandle_t responseQueue{nullptr};
+  SemaphoreHandle_t fsMutex{nullptr};
+  SemaphoreHandle_t catalogMutex{nullptr};
+  portMUX_TYPE statusMux = portMUX_INITIALIZER_UNLOCKED;
   File file{};
+  RecorderStatus status{};
+  std::vector<LogEntry> catalogCache{};
+  uint32_t nextRequestId{0};
 
-  void createFile();
-
+  bool chooseNextFileName();
+  bool createFile();
+  bool writeSample(const Command& command);
+  bool finalizeFile(FinalizeReason reason);
+  bool deleteFile(const char* name);
+  bool scanCatalog(std::vector<LogEntry>& entries);
+  void setFault(const char* message);
+  bool submitAndWait(Command& command);
+  static int32_t logNumber(const char* name);
   static void recordTask(void* pvParameter);
 };

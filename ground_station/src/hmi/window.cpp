@@ -30,6 +30,7 @@ void Window::begin() {
   oldBarMinute = 0;
   oldBarUsbStatus = false;
   oldBarLoggingStatus = false;
+  oldBarRecorderFault = false;
   oldBarFreeMemory = 0;
   barBlinkStatus = false;
   oldMenuHighlight = 0;
@@ -90,14 +91,22 @@ void Window::initBar() {
   display.drawLine(0, 18, 400, 18, BLACK);
 }
 
-void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, uint32_t free_memory) {
+void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, uint32_t free_memory,
+                       bool recorderFault) {
   // Logging
-  if (logging != oldBarLoggingStatus) {
-    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(!logging));
+  if (logging != oldBarLoggingStatus || recorderFault != oldBarRecorderFault) {
+    display.fillRect(74, 0, 19, 18, WHITE);
     oldBarLoggingStatus = logging;
+    oldBarRecorderFault = recorderFault;
   }
   if (logging) {
     display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(barBlinkStatus));
+  } else if (recorderFault) {
+    display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(barBlinkStatus));
+    if (barBlinkStatus == 0) {
+      display.drawLine(75, 1, 90, 16, BLACK);
+      display.drawLine(90, 1, 75, 16, BLACK);
+    }
   }
 
   // Location
@@ -669,6 +678,13 @@ void Window::initRecovery(bool hasLastLocation) {
 }
 
 void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
+  const EarthPoint3D target = navigation->getPointB();
+  updateRecoveryTarget(navigation, target, target.lat != 0.0F && target.lon != 0.0F, -1, false,
+                       hasLastLocation);
+}
+
+void Window::updateRecoveryTarget(Navigation *navigation, const EarthPoint3D& target, bool targetValid,
+                                  int8_t selectedLink, bool dualMode, bool hasLastLocation) {
   display.fillRect(60, 19, 400, 222, WHITE);
 
   float angle = navigation->getNorth();
@@ -677,17 +693,17 @@ void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
   display.setTextSize(1);
 
   display.setCursor(70, 50);
-  float lon = navigation->getPointB().lon;
-  float lat = navigation->getPointB().lat;
-  if (lat == 0) {
-    display.print(" -");
+  float lon = target.lon;
+  float lat = target.lat;
+  if (!targetValid) {
+    display.print(" --");
   } else {
     display.print(lat, 4);
   }
 
   display.setCursor(70, 75);
-  if (lon == 0) {
-    display.print(" -");
+  if (!targetValid) {
+    display.print(" --");
   } else {
     display.print(lon, 4);
   }
@@ -709,14 +725,39 @@ void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
     display.print(lon, 4);
   }
 
+  const EarthPoint3D home = navigation->getPointA();
+  float distance_m = 0.0F;
+  float azimuth = 0.0F;
+  const bool solutionValid = targetValid && home.lat != 0.0F && home.lon != 0.0F;
+  if (solutionValid) {
+    constexpr float kEarthRadiusM = 6378100.0F;
+    const float dy = (target.lat - home.lat) * (PI_F / 180.0F) * kEarthRadiusM;
+    const float dx = (target.lon - home.lon) * (PI_F / 180.0F) * cos(home.lat * PI_F / 180.0F) * kEarthRadiusM;
+    const float dz = target.alt - home.alt;
+    distance_m = sqrt(dx * dx + dy * dy + dz * dz);
+    azimuth = atan2(dx, dy);
+  }
+
   display.setCursor(70, 170);
-  const float distance_m = navigation->getDistance();
-  if (config.config.unitSystem == UnitSystem::kMetric) {
-    display.print(distance_m);
+  if (!solutionValid) {
+    display.print("--");
+  } else if (config.config.unitSystem == UnitSystem::kMetric) {
+    display.print(distance_m, 0);
     display.print(" m");
   } else {
-    display.print(Utils::MetersToFeet(distance_m));
+    display.print(Utils::MetersToFeet(distance_m), 0);
     display.print(" ft");
+  }
+
+  if (dualMode) {
+    display.fillRect(2, 145, 58, 28, BLACK);
+    display.setFont(&FreeSans9pt7b);
+    display.setTextColor(WHITE);
+    display.setCursor(19, 165);
+    display.print(selectedLink == 0 ? "L1" : "L2");
+    display.fillTriangle(7, 157, 12, 151, 17, 157, WHITE);
+    display.fillTriangle(7, 161, 12, 167, 17, 161, WHITE);
+    display.setTextColor(BLACK);
   }
 
   display.setFont(&FreeSans9pt7b);
@@ -744,7 +785,7 @@ void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
   drawCentreString("W", static_cast<int16_t>(x + 300),
                    static_cast<int16_t>(static_cast<float>(y) + correctionFactor * static_cast<float>(y)));
 
-  angle = navigation->getAzimuth() + angle - PI_F / 2;
+  angle = azimuth + angle - PI_F / 2;
 
   x = static_cast<int16_t>(70 * cos(angle) + 300);
   y = static_cast<int16_t>(70 * sin(angle) + 125);
@@ -755,10 +796,14 @@ void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
 
   display.drawCircle(300, 125, 80, BLACK);
 
-  if (navigation->getDistance() > 20) {
+  if (solutionValid && distance_m > 20) {
     display.fillTriangle(x, y, x1, y1, x2, y2, BLACK);
-  } else {
+  } else if (solutionValid) {
     display.drawCircle(300, 125, 6, BLACK);
+  } else {
+    display.setFont(&FreeSans9pt7b);
+    display.setTextColor(BLACK);
+    drawCentreString("No location", 300, 132);
   }
 
   drawRecoveryHint(hasLastLocation);
@@ -1036,6 +1081,46 @@ void Window::initData(bool fileAvailable) {
   }
 }
 
+void Window::dataScrollIndicators(bool hasPrevious, bool hasNext, int16_t selectedRow) {
+  if (hasPrevious) {
+    display.fillTriangle(389, 25, 383, 33, 395, 33, selectedRow == 0 ? WHITE : BLACK);
+  }
+  if (hasNext) {
+    display.fillTriangle(389, 233, 383, 225, 395, 225, selectedRow == 10 ? WHITE : BLACK);
+  }
+}
+
+void Window::initDataOptions(const char *logName, bool active) {
+  clearMainScreen();
+  drawPageHeader(logName, false, false);
+  display.fillRect(0, 59, 400, 36, BLACK);
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(18, 85);
+  display.print(active ? "Finalize Log" : "Delete Log");
+  display.setFont(&FreeSans9pt7b);
+  display.setTextColor(BLACK);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  display.setCursor(260, 230);
+  display.print("Select (A)");
+  drawVerticalNavigationTile(true);
+  surface.present();
+}
+
+void Window::initDataMessage(const char *title, const char *message) {
+  clearMainScreen();
+  drawPageHeader(title, true, false);
+  display.setFont(&FreeSans12pt7b);
+  display.setTextColor(BLACK);
+  drawCentreString(message, 200, 120);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  surface.present();
+}
+
 bool Window::showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
                             bool hasNextPage) {
   if (!LocationQr::IsValid(latitude, longitude)) {
@@ -1067,6 +1152,15 @@ void Window::drawPageHeader(const char *title, bool hasPreviousPage, bool hasNex
   }
   if (hasNextPage) {
     display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
+  }
+}
+
+void Window::drawVerticalNavigationTile(bool pointsUp) {
+  display.fillRect(370, 211, 30, 29, BLACK);
+  if (pointsUp) {
+    display.fillTriangle(385, 218, 377, 231, 393, 231, WHITE);
+  } else {
+    display.fillTriangle(377, 219, 393, 219, 385, 232, WHITE);
   }
 }
 
@@ -1583,7 +1677,7 @@ void Window::listFileName(const char *fileName, uint16_t index, uint16_t color) 
   display.print(fileName);
 }
 
-void Window::dataHighlight(const char *fileName, uint8_t index, bool highlight) {
+void Window::dataHighlight(const char *fileName, uint16_t index, bool highlight) {
   display.fillRect(0, static_cast<int16_t>(19 + 20 * index), 400, 20, highlight ? BLACK : WHITE);
   listFileName(fileName, index, highlight ? WHITE : BLACK);
 }
@@ -1617,6 +1711,7 @@ void Window::dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics
 
   dataShowFlightStatisticsSide(stats1, 0);
   dataShowFlightStatisticsSide(stats2, 1);
+  drawVerticalNavigationTile(false);
 
   surface.present();
 }
@@ -1628,7 +1723,9 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 9), 50, data_altitude_peak, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 69);
   const int32_t altitude_m = stats.getMaxAltitude();
-  if (config.config.unitSystem == UnitSystem::kMetric) {
+  if (!stats.hasMaxAltitude()) {
+    display.print("--");
+  } else if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(altitude_m);
     display.print(" m");
   } else {
@@ -1639,14 +1736,20 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   // Time to apogee
   display.drawBitmap(static_cast<int16_t>(xOffset + 9), 73, data_altitude_time, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 92);
-  display.print(stats.getTimeToApogee(), 1);
-  display.print(" s");
+  if (stats.hasTimeToApogee()) {
+    display.print(stats.getTimeToApogee(), 1);
+    display.print(" s");
+  } else {
+    display.print("--");
+  }
 
   // Max speed
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 96, data_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 115);
   const int32_t velocity_ms = stats.getMaxVelocity();
-  if (config.config.unitSystem == UnitSystem::kMetric) {
+  if (!stats.hasMaxVelocity()) {
+    display.print("--");
+  } else if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(velocity_ms);
     display.print(" m/s");
   } else {
@@ -1658,7 +1761,9 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 8), 119, data_drogue_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 138);
   const float drogue_velocity_ms = stats.getDrogueDescentRate();
-  if (config.config.unitSystem == UnitSystem::kMetric) {
+  if (!stats.hasDrogueDescentRate()) {
+    display.print("--");
+  } else if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(drogue_velocity_ms, 1);
     display.print(" m/s");
   } else {
@@ -1670,7 +1775,9 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 142, data_main_speed, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 161);
   const float main_velocity_ms = stats.getMainDescentRate();
-  if (config.config.unitSystem == UnitSystem::kMetric) {
+  if (!stats.hasMainDescentRate()) {
+    display.print("--");
+  } else if (config.config.unitSystem == UnitSystem::kMetric) {
     display.print(main_velocity_ms, 1);
     display.print(" m/s");
   } else {
@@ -1681,18 +1788,30 @@ void Window::dataShowFlightStatisticsSide(FlightStatistics &stats, uint16_t inde
   // Latitude
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 165, live_lat, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 184);
-  display.print(stats.getLastLatitude(), 4);
-  display.print(" N");
+  if (stats.hasLastLocation()) {
+    display.print(stats.getLastLatitude(), 4);
+    display.print(" N");
+  } else {
+    display.print("--");
+  }
 
   // Longitude
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 188, live_lon, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 207);
-  display.print(stats.getLastLongitude(), 4);
-  display.print(" E");
+  if (stats.hasLastLocation()) {
+    display.print(stats.getLastLongitude(), 4);
+    display.print(" E");
+  } else {
+    display.print("--");
+  }
 
   // Flight Time
   display.drawBitmap(static_cast<int16_t>(xOffset + 5), 211, data_flight_time, 24, 24, BLACK);
   display.setCursor(static_cast<int16_t>(xOffset + 45), 230);
-  display.print(stats.getFlightTime(), 1);
-  display.print(" s");
+  if (stats.hasFlightTime()) {
+    display.print(stats.getFlightTime(), 1);
+    display.print(" s");
+  } else {
+    display.print("--");
+  }
 }

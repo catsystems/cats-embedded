@@ -14,6 +14,8 @@ class Telemetry {
   Telemetry(HardwareSerial& serial, int rxPin, int txPin) : serial(serial), rxPin(rxPin), txPin(txPin) {}
   void begin();
 
+  void setPacketSink(ITelemetryPacketSink* sink, uint8_t source) { parser.setPacketSink(sink, source); }
+
   void setLinkPhrase(const char* phrase, uint32_t length);
   void setLinkPhrase(const String& phrase);
 
