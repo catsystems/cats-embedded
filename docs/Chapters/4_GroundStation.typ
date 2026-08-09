@@ -2,7 +2,7 @@
 
 = Ground Station
 
-The ground station is the counterpart to the #gls("CATS", cap: false) Vega. It receives the data from the board and can send commands to it. It allows you to track the position and velocity of your rocket in real time as well as the health and other important information about the rocket. In the following chapters we will explain in detail how to use it and also provide more details on its working principle.
+The Ground Station is the counterpart to the CATS Vega. It receives data from the flight computer and sends commands to it. It displays the rocket's position, velocity, system health, and other important information in real time. This chapter explains how to use the Ground Station and describes its operating principle.
 
 #cats-figure(image("../images/How To Use/Groundstation/Ground_Station.jpg", width: 80%), caption: [Ground Station])
 
@@ -10,7 +10,7 @@ The ground station is the counterpart to the #gls("CATS", cap: false) Vega. It r
 
 === Overview
 
-The ground station is based around an ESP32S2 microcontroller and features a transflective display making it very readable even in bright sunlight. The onboard flash can store up to 1 MB of data, enough to track over an hour of flight data.
+The Ground Station is built around an ESP32-S2 microcontroller and features a transflective display that remains readable in bright sunlight. The onboard flash can store up to 1 MB of data, enough to track over an hour of flight data.
 
 #pagebreak()
 
@@ -26,7 +26,7 @@ The ground station is based around an ESP32S2 microcontroller and features a tra
   [Microcontroller],
   [ESP32-S2],
   [Flash Memory],
-  [4MB],
+  [1 MB],
   [Battery],
   [Li-Ion 18650],
   [Power Consumption],
@@ -49,81 +49,83 @@ The ground station is based around an ESP32S2 microcontroller and features a tra
 
 == How to Use
 
-This section should be sufficient for the basic usage of the ground station. For more advanced information refer to the sections further below.
+This section covers the basic use of the Ground Station. For more advanced information, refer to the later sections.
 
 === Explanation of All Menus
 
-#metadata(none) <sec-explanMenus> To navigate on the display, use the joystick to move left, right, up and down. Use the A button to enter a menu or select an option and the B button the go back.#linebreak()#linebreak()#v(1.8pt)
+#metadata(none) <sec-explanMenus> Use the joystick to move left, right, up, and down. Press the A button to open a menu or select an option, and press the B button to go back.#linebreak()#linebreak()#v(1.8pt)
 
-*Live Data*#linebreak()#v(-1.8pt) The Live data screen shows all the data received from the Vega flight computer as well as information about the data link quality.
+*Live Data*#linebreak()#v(-1.8pt) The Live Data screen shows all data received from the Vega flight computer, together with information about the data-link quality.
 
 #pagebreak()
 
 #cats-figure(image("../images/How To Use/Groundstation/Ground_Station_Live_Data.jpg", width: 80%), caption: [Live Data of the Ground Station.])
 
-On top of the screen the current status of the flight computer is shown. Information about the rocket altitude, vertical velocity, GNSS coordinates, battery voltage, pyro continuity and errors is shown below.
+The current flight-computer status appears at the top of the screen. The rocket's altitude, vertical velocity, GNSS coordinates, battery voltage, pyro continuity, and errors appear below it.
 
 At the bottom, information about the telemetry link is displayed:
 
 #list(tight: false,
   [
-*AGE* - The package age in seconds. If no package is received for 5 seconds, the link disconnects.
+*AGE* - The packet age in seconds. If no packet is received for 5 seconds, the link disconnects.
 ],
   [
-*SNR* - Signal to noise ratio in dB. The link can be kept alive down to a SNR of -15 dB. If the SNR is low, lots of radio interference is present at your location.
+*SNR* - Signal-to-noise ratio in dB. The link can remain active down to an SNR of -15 dB. A low SNR indicates substantial radio interference at your location.
 ],
   [
-*LQ* - Link Quality in percent, this is the ratio of packages received vs the expected number of packages over the last 3 seconds.
+*LQ* - Link quality as a percentage: the ratio of packets received to packets expected during the last 3 seconds.
 ],
   [
-*RSSI* - Received signal strength indication in dBm. The link can be kept alive down to a RSSI of -110 dBm. As a rule of thumb the RSSI reduces by 6 dB with every doubling of distance.
+*RSSI* - Received signal-strength indication in dBm. The link can remain active down to an RSSI of -110 dBm. As a rule of thumb, RSSI decreases by 6 dB each time the distance doubles.
 ]
 )
 
-*Recovery*#linebreak()#v(-1.8pt) The recovery window helps you track down your rocket once it is on the ground. The last known GNSS location of the rocket (or the current if connection is still established) is used to track your rocket. The ground stations onboard sensor suite is used to calculate the distance and direction to the rocket. For the direction to work, make sure you calibrate the devices compass outdoors in the general vicinity of the launch site with no large metallic objects close by. The calibration procedure will be explained in a later version of this manual. #linebreak() The #gls("GNSS", cap: false) coordinates of the ground station and the rocket are shown in the recovery window, as well as the distance to the rocket. To find your rocket, simply follow the arrow!#linebreak()#linebreak()#v(1.8pt)
+*Recovery*#linebreak()#v(-1.8pt) The Recovery screen helps you locate the rocket after it lands. It uses the rocket's last known GNSS location, or its current location if the connection is still active. The Ground Station's onboard sensors calculate the distance and direction to the rocket. For accurate direction guidance, calibrate the device's compass outdoors near the launch site and away from large metal objects. The calibration procedure will be explained in a later version of this manual. #linebreak() The Recovery screen shows the #gls("GNSS", cap: false) coordinates of the Ground Station and the rocket, as well as the distance to the rocket. Follow the arrow to locate the rocket.#linebreak()#linebreak()#v(1.8pt)
 
-*Testing*#linebreak()#v(-1.8pt) The testing window is used to do some manual tests. Refer to section #xref("sec:Testing") for a thorough explanation of the testing mode and how to use it.#linebreak()#linebreak()#v(1.8pt)
+*Testing*#linebreak()#v(-1.8pt) The Testing screen is used to perform manual tests. Refer to Section #xref("sec:Testing") for a detailed explanation of testing mode and how to use it.#linebreak()#linebreak()#v(1.8pt)
 
-*Data*#linebreak()#v(-1.8pt) Coming Soon#linebreak()#linebreak()#v(1.8pt)
+#block(breakable: false)[
+*Data*#linebreak()#v(-1.8pt) Not yet implemented.#linebreak()#linebreak()#v(1.8pt)
+]
 
-*Sensors*#linebreak()#v(-1.8pt) The sensors tab shows you the raw data of the onboard IMU, magnetometer and GNSS module. Additionally, it allows you to calibrate the magnetometer.#linebreak() Magnetometer calibration should be done if the compass shown in the recovery tab is not showing north. To calibrate the magnetometer, simply press A in the sensors tab and follow the instructions. The ground station should be rotated slowly in all different directions for the calibration. On the screen, the progress is shown. Once it reaches 100% the magnetometer is calibrated and the calibration is saved on the ground station.#linebreak()#linebreak()#v(1.8pt)
+*Sensors*#linebreak()#v(-1.8pt) The Sensors screen displays raw data from the onboard IMU, magnetometer, and GNSS module. It also allows you to calibrate the magnetometer.#linebreak() Calibrate the magnetometer if the compass on the Recovery screen does not point north. On the Sensors screen, press A and follow the instructions. Slowly rotate the Ground Station in every direction while the progress appears on the screen. When progress reaches 100%, the calibration is complete and is saved on the Ground Station.#linebreak()#linebreak()#v(1.8pt)
 
-*Settings*#linebreak()#v(-1.8pt) The ground station settings are built in a way that it should be mostly self explanatory. Tool tips are shown for all options. The current Software version support the following settings:
+*Settings*#linebreak()#v(-1.8pt) The Ground Station settings are mostly self-explanatory, and tooltips are provided for every option. The current software version supports the following settings:
 
 #list(tight: false,
   [
-*Timezone*: Chose the timezone which you are operating in for correct time display.
+*Timezone*: Choose your local timezone to display the correct time.
 ],
   [
-*Stop Logging*: Choose if the ground station stops logging after touchdown or never stops logging.
+*Stop Logging*: Choose whether the Ground Station stops logging after touchdown or continues logging indefinitely.
 ],
   [
-*Version*: ground station software version number.
+*Version*: Ground Station software version number.
 ],
   [
-*Bootloader*: Start the bootloader for software updates, described in section #xref("sec:gs_updates").
+*Bootloader*: Start the bootloader for software updates, as described in Section #xref("sec:gs_updates").
 ],
   [
-*Telemetry Mode*: Single or Dual mode, described in section #xref("sec:telemetrymode").
+*Telemetry Mode*: Select Single or Dual mode, as described in Section #xref("sec:telemetrymode").
 ],
   [
-*Link Phrase 1*: Link phrase which needs to match the link phrase configured on the CATS Vega for connection.
+*Link Phrase 1*: Set the phrase that must match the link phrase configured on the CATS Vega.
 ],
   [
-*Link Phrase 2*: Link phrase which needs to match the link phrase configured on the CATS Vega for connection to track a second CATS Vega. Not used if the telemetry mode is set to single mode.
+*Link Phrase 2*: Set the phrase that must match the second CATS Vega when tracking two flight computers. This setting is not used in Single mode.
 ],
   [
-*Testing Phrase*: Test phrase which needs to match the test phrase configured on the CATS Vega. This test phrase is crucial to use the testing mode of the system explained further in section #xref("sec:Testing").
+*Testing Phrase*: Set the phrase that must match the testing phrase configured on the CATS Vega. This phrase is required to use the testing mode described in Section #xref("sec:Testing").
 ]
 )
 
 === Telemetry Modes
 
-#metadata(none) <sec-telemetrymode> Under the telemetry settings on the ground station you will find an option called _mode_. Since the ground station has two receivers, they can be used in two modes.
+#metadata(none) <sec-telemetrymode> The Ground Station's telemetry settings include a _mode_ option. Because the Ground Station has two receivers, it supports two modes.
 
-In *Dual mode* the ground station can track two Vega computers. This can be useful if you separate a section of your rocket and want to keep track of it as well as the main body.
+In *Dual mode*, the Ground Station can track two Vega flight computers. This is useful when a section separates from the rocket and you want to track it as well as the main body.
 
-In *Single mode*, the ground station tracks just one Vega computer. Packages are fused from both antennas making it possible to receive more data than with just one receiver. We recommend that you use a directional as well as an omnidirectional antenna in diversity mode to get the best performance out of it.
+In *Single mode*, the Ground Station tracks one Vega flight computer. Packets from both receivers are combined, allowing more data to be received than with a single receiver. For best diversity performance, use one directional antenna and one omnidirectional antenna.
 
 === Data Streaming via USB
 
@@ -161,11 +163,11 @@ The serial stream emits one line per newly received telemetry packet. All units 
 
 === Charging
 
-The ground station is powered by a Li-Ion 18650 battery. With a fully charged battery the system can run for more than 8 hours. Charging the battery can be done through the USB port. With a charging current of 500 mA it can take up to 6 hours for it to fully charge up. While the battery is charging, the LED next to the USB port will light up and turn off once it is fully charged. The internal battery can also be replaced by removing the battery cover on the back of the ground station. If the battery is replaced with one of other specification, the remaining battery estimate displayed on the screen can differ from the actual battery percentage.
+The Ground Station is powered by a Li-ion 18650 battery. A fully charged battery provides more than 8 hours of operation. Charge the battery through the USB port. At a charging current of 500 mA, a full charge can take up to 6 hours. The LED next to the USB port lights while the battery is charging and turns off when charging is complete. To replace the internal battery, remove the battery cover on the back of the Ground Station. If the replacement battery has different specifications, the estimated remaining charge shown on the screen may differ from the actual percentage.
 
 === How to Get the Data on Your Computer
 
-Just like the #gls("CATS", cap: false) Vega, the ground station can be connected to any computer and is recognized as a mass storage device. A folder will open up on your computer and you can just drag and drop the recorded logs to your preferred location. The logs from the ground station are stored in a .csv file format.
+Like the CATS Vega, the Ground Station is recognized as a mass-storage device when connected to a computer. Open the device folder and drag the recorded logs to your preferred location. Ground Station logs are stored as `.csv` files.
 
 #cats-figure(image("../images/How To Use/Groundstation/Ground_Station_Logs.png", width: 95%), caption: [Ground station data when connecting the ground station to the user computer.])
 
@@ -173,7 +175,7 @@ Just like the #gls("CATS", cap: false) Vega, the ground station can be connected
 
 === Software Updates
 
-#metadata(none) <sec-gs_updates> To do software updates on the ground station, #gls("DFU", cap: false) mode needs to be entered. First connect the ground station with your computer. Then select the bootloader setting in the Settings panel. Then a large USB symbol is shown on the screen and on the computer a new mass storage device will appear on your computer with the name SAOLA1RBOOT. Now, simply drag and drop the firmware file into the folder. The old file is then overwritten. #linebreak() Entering the bootloader can also be done with the hardware only. In this case, remove the casing from the ground station. Plug in the ground station to your computer. Then quickly click the reset button, followed by the boot button. If you do this quickly, the mass storage device with SAOLA1RBOOT will appear on your computer. Then you can just drag and drop the firmware to your ground station. #linebreak() Firmware files have the file ending .UF2 and the newest version of the ground station can always be downloaded from our repository.
+#metadata(none) <sec-gs_updates> To update the Ground Station software, enter #gls("DFU", cap: false) mode. First, connect the Ground Station to your computer. In the Settings panel, select Bootloader. A large USB symbol appears on the screen, and a mass-storage device named SAOLA1RBOOT appears on the computer. Drag the firmware file into this folder to overwrite the old file. #linebreak() You can also enter the bootloader using the hardware controls. Remove the Ground Station casing and connect the Ground Station to your computer. Quickly press the reset button, followed by the boot button. The SAOLA1RBOOT mass-storage device will appear on your computer. Drag the firmware file onto the device. #linebreak() Firmware filenames end in `.UF2`. The latest Ground Station firmware can be downloaded from our repository.
 
 #cats-figure(image("../images/How To Use/Groundstation/Ground_Station_DFU.png", width: 95%), caption: [SAOLA1RBOOT mass storage device when successfully changing to the #gls("DFU", cap: false) Mode])
 

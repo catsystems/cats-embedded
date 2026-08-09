@@ -2,11 +2,11 @@
 
 = Disclaimer
 
-The use of the CATS System is at your own risk. The CATS System needs to always be used in conjunction with a second safety system that operates in a different manner, such as a motor ejection or another electronic system, to ensure maximum safety.
+The use of the CATS System is at your own risk. The CATS System must always be used in conjunction with a second safety system that operates in a different manner, such as motor ejection or another electronic system, to ensure maximum safety.
 
  The manufacturer is not liable for any damages that may occur as a result of using the CATS System, and will not be held responsible for any damages inflicted on third parties.
 
- Do not touch the CATS Vega when it is powered through the battery port as large currents are routed throughout the board.
+ Do not touch the CATS Vega while it is powered through the battery port because high currents flow through the board.
 
  The manufacturer cannot be held liable for any program errors or malfunctions in the software.
 
