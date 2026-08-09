@@ -17,6 +17,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import struct
 import sys
 import zlib
@@ -216,7 +217,8 @@ def defaults() -> dict[str, Any]:
                         "gz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0, "calibrationPercentage": 0.0,
                         "calibrationState": 0, "updated": False},
         "deviceStatus": {"batteryVoltage": 0.0, "usb": False, "freeStoragePercent": 100, "gnss": False,
-                          "clockValid": False, "hour": 0, "minute": 0, "logging": False},
+                          "clockValid": False, "hour": 0, "minute": 0, "logging": False,
+                          "recorderWriteFailure": False, "deleteFailure": False, "finalizeFailure": False},
         "logs": [],
     }
 
@@ -254,9 +256,21 @@ class Simulator:
         self.settings_selection = -1
         self.data_selection = 0
         self.data_statistics = False
+        self.data_subview = "list"
+        self.log_scroll_offset = 0
         self.qr_view = "none"
         self.qr_url = ""
         self.recovery_locations = [(0.0, 0.0), (0.0, 0.0)]
+        self.selected_recovery_link = 0
+        self.recorder_state = "idle"
+        self.active_filename = ""
+        self.recorded_rows = 0
+        self.dropped_rows = 0
+        self.participant_mask = 0
+        self.touchdown_mask = 0
+        self.recorder_armed = True
+        self.completed_participants = 0
+        self.rearm_mask = 0
         self.keyboard_index = 0
         self.held = {name: False for name in BUTTONS}
         self.held_since = {name: 0 for name in BUTTONS}
@@ -388,6 +402,7 @@ class Simulator:
             location = (float(telemetry.get("latitude", 0.0)), float(telemetry.get("longitude", 0.0)))
             if valid_location(*location):
                 self.recovery_locations[index] = location
+        self.ingest_recording()
         if self.screen == "logo" and self.now_ms >= BOOT_MS:
             self.screen = "menu"
             self.render_screen()
@@ -410,8 +425,78 @@ class Simulator:
         for name in explicit_pressed:
             if self.held.get(name):
                 self.last_repeat[name] = self.now_ms
-        self.state["deviceStatus"]["logging"] = any(self.link(i)["telemetry"].get("state", 0) > 2 for i in range(2))
+        self.state["deviceStatus"]["logging"] = self.recorder_state == "recording"
         self.render_screen()
+
+    def ingest_recording(self) -> None:
+        for index in range(2):
+            telemetry = self.link(index)["telemetry"]
+            if not telemetry.get("updated", False):
+                continue
+            telemetry["updated"] = False
+            source_bit = 1 << index
+            state = int(telemetry.get("state", 0))
+            if not self.recorder_armed:
+                if state <= 2:
+                    self.rearm_mask |= source_bit
+                    if (not self.config().get("dualReceiver", False) or
+                            self.completed_participants and
+                            self.rearm_mask & self.completed_participants == self.completed_participants):
+                        self.recorder_armed = True
+                        self.participant_mask = 0
+                        self.completed_participants = 0
+                        self.recorded_rows = 0
+                continue
+            if state <= 2:
+                continue
+            if self.state["deviceStatus"].get("recorderWriteFailure", False):
+                self.recorder_state = "fault"
+                continue
+            logs = self.state.setdefault("logs", [])
+            active = next((log for log in logs if log.get("active")), None)
+            if active is None:
+                numbers = []
+                for log in logs:
+                    match = re.fullmatch(r"log_(\d+)\.csv", str(log.get("name", "")))
+                    if match:
+                        numbers.append(int(match.group(1)))
+                self.active_filename = f"log_{max(numbers, default=-1) + 1:03d}.csv"
+                active = {"name": self.active_filename, "active": True,
+                          "csv": "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n"}
+                logs.insert(0, active)
+                self.recorder_state = "recording"
+            row = [index + 1, int(telemetry.get("timestampDs", 0)), state, int(telemetry.get("errors", 0)),
+                   round(float(telemetry.get("latitude", 0)) * 10000), round(float(telemetry.get("longitude", 0)) * 10000),
+                   int(telemetry.get("altitudeM", 0)), int(telemetry.get("velocityMps", 0)),
+                   round(float(telemetry.get("voltage", 0)) * 10), int(telemetry.get("pyroContinuity", 0)) & 1,
+                   1 if int(telemetry.get("pyroContinuity", 0)) & 2 else 0]
+            active["csv"] += ",".join(str(value) for value in row) + "\n"
+            active["sizeBytes"] = len(active["csv"])
+            self.participant_mask |= source_bit
+            self.recorded_rows += 1
+            if state == 7:
+                self.touchdown_mask |= source_bit
+                complete = (not self.config().get("dualReceiver", False) or
+                            self.touchdown_mask & self.participant_mask == self.participant_mask)
+                if complete and not self.config().get("neverStopLogging", False):
+                    self.finalize_recording()
+
+    def finalize_recording(self) -> bool:
+        if self.recorder_state not in ("recording", "fault") or not self.active_filename:
+            return False
+        if self.state["deviceStatus"].get("finalizeFailure", False):
+            self.recorder_state = "fault"
+            return False
+        for log in self.state.get("logs", []):
+            if log.get("name") == self.active_filename:
+                log["active"] = False
+        self.completed_participants = self.participant_mask
+        self.recorder_state = "idle"
+        self.active_filename = ""
+        self.recorder_armed = False
+        self.touchdown_mask = 0
+        self.rearm_mask = 0
+        return True
 
     @staticmethod
     def normalize_button(button: str) -> str:
@@ -425,6 +510,8 @@ class Simulator:
         self.calibration_state = "idle"
         self.data_selection = 0
         self.data_statistics = False
+        self.data_subview = "list"
+        self.log_scroll_offset = 0
         self.qr_view = "none"
         self.qr_url = ""
 
@@ -447,6 +534,8 @@ class Simulator:
             self.settings_page = 0
             self.settings_selection = -1
             self.settings_state = "list"
+            if self.screen == "recovery" and self.config().get("dualReceiver", False):
+                self.selected_recovery_link = 0 if valid_location(*self.recovery_locations[0]) else 1 if valid_location(*self.recovery_locations[1]) else 0
             self.render_screen()
 
     def live_step(self, pressed: set[str]) -> None:
@@ -458,6 +547,28 @@ class Simulator:
             self.to_menu()
 
     def recovery_step(self, pressed: set[str]) -> None:
+        if self.config().get("dualReceiver", False):
+            if self.qr_view == "none" and ({"up", "down"} & pressed):
+                self.selected_recovery_link = 1 - self.selected_recovery_link
+            if "right" in pressed:
+                if self.qr_view == "none":
+                    if valid_location(*self.recovery_locations[self.selected_recovery_link]):
+                        self.qr_view = f"recovery_link_{self.selected_recovery_link + 1}"
+                else:
+                    other = 1 if self.qr_view == "recovery_link_1" else 0
+                    if valid_location(*self.recovery_locations[other]):
+                        self.selected_recovery_link = other
+                        self.qr_view = f"recovery_link_{other + 1}"
+            if "left" in pressed and self.qr_view != "none":
+                self.qr_view = "none"
+            if self.qr_view.startswith("recovery_link_"):
+                link_index = int(self.qr_view[-1]) - 1
+                self.qr_url = google_maps_url(*self.recovery_locations[link_index])
+            else:
+                self.qr_url = ""
+            if "back" in pressed:
+                self.to_menu()
+            return
         if "right" in pressed:
             if self.qr_view == "none":
                 link_index = 0 if valid_location(*self.recovery_locations[0]) else 1
@@ -533,12 +644,17 @@ class Simulator:
 
     def data_step(self, pressed: set[str]) -> None:
         logs = self.state.get("logs", [])
-        maximum = max(0, min(11, len(logs)) - 1)
-        if self.data_statistics:
-            if "back" in pressed:
+        maximum = max(0, len(logs) - 1)
+        if self.data_subview == "details":
+            if "back" in pressed or ("up" in pressed and self.qr_view == "none"):
                 self.data_statistics = False
+                self.data_subview = "list"
                 self.qr_view = "none"
                 self.qr_url = ""
+                return
+            if "down" in pressed and self.qr_view == "none":
+                self.data_statistics = False
+                self.data_subview = "options"
                 return
             if ({"left", "right"} & pressed) and logs:
                 log = logs[self.data_selection]
@@ -563,12 +679,45 @@ class Simulator:
                         self.qr_view = "none"
                         self.qr_url = ""
             return
+        if self.data_subview == "options":
+            if "back" in pressed or "up" in pressed:
+                self.data_statistics = True
+                self.data_subview = "details"
+            elif "ok" in pressed and logs:
+                self.data_subview = "confirm_finalize" if logs[self.data_selection].get("active") else "confirm_delete"
+            return
+        if self.data_subview in ("confirm_finalize", "confirm_delete"):
+            if "back" in pressed:
+                self.data_subview = "options"
+            elif "ok" in pressed:
+                if self.data_subview == "confirm_finalize":
+                    success = self.finalize_recording()
+                elif self.state["deviceStatus"].get("usb", False):
+                    self.data_subview = "usb_blocked"
+                    return
+                elif self.state["deviceStatus"].get("deleteFailure", False):
+                    success = False
+                else:
+                    del logs[self.data_selection]
+                    success = True
+                self.data_subview = "list" if success else "failure"
+                self.data_selection = min(self.data_selection, max(0, len(logs) - 1))
+            return
+        if self.data_subview in ("failure", "usb_blocked"):
+            if "back" in pressed:
+                self.data_subview = "options"
+            return
         if "down" in pressed:
             self.data_selection = min(maximum, self.data_selection + 1)
+            if self.data_selection >= self.log_scroll_offset + 11:
+                self.log_scroll_offset = self.data_selection - 10
         if "up" in pressed:
             self.data_selection = max(0, self.data_selection - 1)
+            if self.data_selection < self.log_scroll_offset:
+                self.log_scroll_offset = self.data_selection
         if "ok" in pressed and logs:
             self.data_statistics = True
+            self.data_subview = "details"
             self.qr_view = "none"
             self.qr_url = ""
             self.emit("flight_statistics", value=self.data_selection)
@@ -780,6 +929,24 @@ class Simulator:
             self.replay_index += 1
 
     def snapshot(self) -> dict[str, Any]:
+        logs = self.state.get("logs", [])
+        selected_health = "none"
+        if logs and self.data_subview != "list":
+            selected_health = "active" if logs[self.data_selection].get("active") else "complete"
+        selected_link = self.selected_recovery_link if self.config().get("dualReceiver", False) else -1
+        target = (self.recovery_locations[selected_link] if selected_link >= 0 else
+                  (float(self.state["navigation"].get("rocketLatitude", 0.0)),
+                   float(self.state["navigation"].get("rocketLongitude", 0.0))))
+        home = (float(self.state["navigation"].get("homeLatitude", 0.0)),
+                float(self.state["navigation"].get("homeLongitude", 0.0)))
+        recovery_valid = valid_location(*target) and valid_location(*home)
+        distance = 0.0
+        azimuth = 0.0
+        if recovery_valid:
+            dy = math.radians(target[0] - home[0]) * 6378100.0
+            dx = math.radians(target[1] - home[1]) * math.cos(math.radians(home[0])) * 6378100.0
+            distance = math.sqrt(dx * dx + dy * dy)
+            azimuth = math.atan2(dx, dy)
         return {
             "activeScreen": self.screen,
             "testingState": self.testing_state,
@@ -791,6 +958,17 @@ class Simulator:
             "settingsSelection": self.settings_selection,
             "dataSelection": self.data_selection,
             "dataStatistics": self.data_statistics,
+            "currentDataSubview": self.data_subview,
+            "logCount": len(logs),
+            "logScrollOffset": self.log_scroll_offset,
+            "selectedLogHealth": selected_health,
+            "recorderState": self.recorder_state,
+            "activeFilename": self.active_filename,
+            "recordedRowCount": self.recorded_rows,
+            "droppedRowCount": self.dropped_rows,
+            "selectedRecoveryLink": selected_link,
+            "recoverySolution": {"valid": recovery_valid, "latitude": target[0], "longitude": target[1],
+                                 "distanceM": distance, "azimuthRad": azimuth},
             "qrView": self.qr_view,
             "qrUrl": self.qr_url,
             "recoveryLocations": [
@@ -909,7 +1087,8 @@ def deterministic_test(root: Path) -> int:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
     for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json",
-                          "qr-recovery.json", "qr-data.json", "qr-no-fix.json"):
+                          "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "recording-independent.json",
+                          "recording-modes.json", "log-management.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():
             try:

@@ -14,8 +14,23 @@
       <button id="reset">Reset</button>
       <label>Advance by <input id="step" type="number" min="1" value="100" aria-label="Virtual time step in milliseconds"> ms</label>
       <button id="advance" title="Move virtual time forward by the selected amount">Advance time</button>
+      <label>Fixture
+        <select id="fixture" aria-label="Simulator fixture preset">
+          <option value="demo">Complete and partial logs</option>
+          <option value="dual">Nominal dual-link mission</option>
+          <option value="many">More than 11 logs</option>
+          <option value="missing-fix">One missing recovery fix</option>
+          <option value="never">Active Never recording</option>
+          <option value="delete-failure">Deletion failure</option>
+          <option value="usb-delete">USB deletion block</option>
+          <option value="finalize-failure">Finalization failure</option>
+          <option value="recorder-fault">Recorder write fault</option>
+        </select>
+      </label>
+      <button id="apply-fixture">Apply fixture</button>
     </section>
     <p class="toolbar-help">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
+    <p id="fixture-description" class="fixture-description" aria-live="polite"></p>
     <canvas id="display" width="400" height="240" tabindex="0" aria-label="Ground station display"></canvas>
     <p id="status" role="status">Loading WebAssembly simulator...</p>
     <p class="keyboard-help">Keyboard: arrows move · A, Enter, or Space selects · B or Escape goes back</p>
@@ -34,6 +49,6 @@
     </section>
     <pre id="snapshot"></pre>
   </main>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

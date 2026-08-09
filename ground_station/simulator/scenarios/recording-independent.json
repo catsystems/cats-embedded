@@ -1,0 +1,28 @@
+{
+  "initial": {"ready": true, "configuration": {"dualReceiver": true, "neverStopLogging": false}},
+  "steps": [
+    {"set": {"link1.telemetry.state": 3, "link1.telemetry.timestampDs": 10, "link1.telemetry.latitude": 33.7363, "link1.telemetry.longitude": 132.4829}},
+    {"advance": 0},
+    {"press": "right"},
+    {"press": "ok"},
+    {"assert": {"activeScreen": "recovery", "recorderState": "recording", "recordedRowCount": 1}},
+    {"set": {"link2.telemetry.state": 3, "link2.telemetry.timestampDs": 11, "link2.telemetry.latitude": 33.7358, "link2.telemetry.longitude": 132.4762}},
+    {"advance": 0},
+    {"assert": {"activeScreen": "recovery", "recordedRowCount": 2}},
+    {"set": {"link1.telemetry.state": 7, "link1.telemetry.timestampDs": 50}},
+    {"advance": 0},
+    {"assert": {"recorderState": "recording", "recordedRowCount": 3}},
+    {"set": {"link2.telemetry.state": 7, "link2.telemetry.timestampDs": 51}},
+    {"advance": 0},
+    {"assert": {"recorderState": "idle", "recordedRowCount": 4, "logCount": 1}},
+    {"set": {"link1.telemetry.state": 7, "link1.telemetry.timestampDs": 52}},
+    {"advance": 0},
+    {"assert": {"recorderState": "idle", "recordedRowCount": 4, "logCount": 1}},
+    {"set": {"link1.telemetry.state": 2, "link2.telemetry.state": 2}},
+    {"advance": 0},
+    {"set": {"link1.telemetry.state": 3, "link1.telemetry.timestampDs": 1}},
+    {"advance": 0},
+    {"assert": {"recorderState": "recording", "recordedRowCount": 1, "logCount": 2}},
+    {"snapshot": "screen-independent-recording"}
+  ]
+}

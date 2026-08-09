@@ -99,6 +99,11 @@ class TelemetryData {
 
   [[nodiscard]] uint32_t getLastUpdateTime() const { return lastCommitTime; }
 
+  /// Returns the latest packet without consuming the HMI's updated flag.
+  /// Background consumers such as navigation and console streaming must use
+  /// this instead of the presentation getters above.
+  [[nodiscard]] packedRXMessage snapshot() const { return rxData; }
+
   packedRXMessage &getRxData() { return rxData; }
 
  private:

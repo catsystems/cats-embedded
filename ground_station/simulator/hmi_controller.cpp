@@ -7,6 +7,7 @@
 #include "hmi/location_qr.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 
 namespace {
@@ -35,7 +36,8 @@ void HmiController::start() {
   settingsSelection_ = -1;
   dataSelection_ = 0;
   testingSelection_ = 0;
-  dataStatistics_ = false;
+  dataSubview_ = DataSubview::List;
+  logScrollOffset_ = 0;
   recoveryLocations_ = {};
   clearQr();
   liveDownrange_ = false;
@@ -57,6 +59,7 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
   input_ = input;
 
   updateRecoveryLocations();
+  ingestTelemetry();
 
   for (size_t i = 0; i < input_.held.size(); ++i) {
     if (input_.held[i] && !previousInput_.held[i]) {
@@ -92,22 +95,25 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
       settingsStep(nowMs_);
       break;
     case Screen::Recovery:
+      if (qrView_ == "none" && config_.config().dualReceiver &&
+          (pressed(HmiButton::Up) || pressed(HmiButton::Down))) {
+        selectedRecoveryLink_ = static_cast<int8_t>(1 - selectedRecoveryLink_);
+      }
       if (pressed(HmiButton::Right)) {
         if (qrView_ == "none") {
-          if (!showRecoveryLocation(0)) {
-            (void)showRecoveryLocation(1);
+          if (config_.config().dualReceiver) {
+            (void)showRecoveryLocation(static_cast<size_t>(selectedRecoveryLink_));
+          } else {
+            const auto nav = navigation_.snapshot();
+            (void)showQr("recovery_fused", nav.rocketLatitude, nav.rocketLongitude);
           }
-        } else if (qrView_ == "recovery_link_1") {
-          (void)showRecoveryLocation(1);
+        } else if (config_.config().dualReceiver) {
+          const size_t other = qrView_ == "recovery_link_1" ? 1U : 0U;
+          if (showRecoveryLocation(other)) selectedRecoveryLink_ = static_cast<int8_t>(other);
         }
       }
       if (pressed(HmiButton::Left) && qrView_ != "none") {
-        if (qrView_ == "recovery_link_2" &&
-            LocationQr::IsValid(recoveryLocations_[0].lastLatitude, recoveryLocations_[0].lastLongitude)) {
-          (void)showRecoveryLocation(0);
-        } else {
-          clearQr();
-        }
+        clearQr();
       }
       if (qrView_ == "recovery_link_1") {
         (void)showRecoveryLocation(0);
@@ -163,6 +169,17 @@ void HmiController::enter(Screen screen) {
     settingsSelection_ = -1;
     keyboardActive_ = false;
   }
+  if (screen_ == Screen::Recovery) {
+    const bool link1Valid = LocationQr::IsValid(recoveryLocations_[0].lastLatitude, recoveryLocations_[0].lastLongitude);
+    const bool link2Valid = LocationQr::IsValid(recoveryLocations_[1].lastLatitude, recoveryLocations_[1].lastLongitude);
+    selectedRecoveryLink_ = link1Valid ? 0 : (link2Valid ? 1 : 0);
+  }
+  if (screen_ == Screen::Data) {
+    dataSubview_ = DataSubview::List;
+    const auto entries = logs_.listLogs();
+    if (entries.empty()) dataSelection_ = 0;
+    else dataSelection_ = std::min<int16_t>(dataSelection_, static_cast<int16_t>(entries.size() - 1U));
+  }
 }
 
 void HmiController::menuStep(uint64_t nowMs) {
@@ -189,20 +206,6 @@ void HmiController::menuStep(uint64_t nowMs) {
 }
 
 void HmiController::liveStep(uint64_t nowMs) {
-  const auto link1 = link1_.snapshot();
-  const auto link2 = link2_.snapshot();
-  if (link1.telemetry.updated && link1.info.updated) {
-    if (link1.telemetry.state > 2 && (config_.config().neverStopLogging || link1.telemetry.state < 7)) {
-      logs_.record(link1.telemetry, 1);
-    }
-    link1_.clearUpdates();
-  }
-  if (link2.telemetry.updated && link2.info.updated) {
-    if (link2.telemetry.state > 2 && (config_.config().neverStopLogging || link2.telemetry.state < 7)) {
-      logs_.record(link2.telemetry, 2);
-    }
-    link2_.clearUpdates();
-  }
   if (pressed(HmiButton::Left)) {
     liveDownrange_ = false;
     emit("live_view", 0, 0, "gnss");
@@ -215,6 +218,20 @@ void HmiController::liveStep(uint64_t nowMs) {
     enter(Screen::Menu);
   }
   (void)nowMs;
+}
+
+void HmiController::ingestTelemetry() {
+  logs_.configure(config_.config().dualReceiver, config_.config().neverStopLogging);
+  const auto first = link1_.snapshot();
+  const auto second = link2_.snapshot();
+  if (first.telemetry.updated) {
+    logs_.record(first.telemetry, 1);
+    link1_.clearUpdates();
+  }
+  if (second.telemetry.updated) {
+    logs_.record(second.telemetry, 2);
+    link2_.clearUpdates();
+  }
 }
 
 void HmiController::testingStep(uint64_t nowMs) {
@@ -303,11 +320,15 @@ void HmiController::testingStep(uint64_t nowMs) {
 
 void HmiController::dataStep(uint64_t nowMs) {
   const auto logs = logs_.listLogs();
-  const int16_t maxIndex = std::max<int16_t>(0, std::min<int16_t>(11, static_cast<int16_t>(logs.size())) - 1);
-  if (dataStatistics_) {
-    if (pressed(HmiButton::Back)) {
-      dataStatistics_ = false;
+  const int16_t maxIndex = std::max<int16_t>(0, static_cast<int16_t>(logs.size()) - 1);
+  if (dataSubview_ == DataSubview::Details) {
+    if (pressed(HmiButton::Back) || (pressed(HmiButton::Up) && qrView_ == "none")) {
+      dataSubview_ = DataSubview::List;
       clearQr();
+      return;
+    }
+    if (pressed(HmiButton::Down) && qrView_ == "none") {
+      dataSubview_ = DataSubview::Options;
       return;
     }
     if ((pressed(HmiButton::Left) || pressed(HmiButton::Right)) && dataSelection_ >= 0 &&
@@ -338,19 +359,65 @@ void HmiController::dataStep(uint64_t nowMs) {
     }
     return;
   }
+  if (dataSubview_ == DataSubview::Options) {
+    if (pressed(HmiButton::Back) || pressed(HmiButton::Up)) dataSubview_ = DataSubview::Details;
+    else if (pressed(HmiButton::Ok) && dataSelection_ >= 0 && dataSelection_ < static_cast<int16_t>(logs.size())) {
+      dataSubview_ = logs[static_cast<size_t>(dataSelection_)].active ? DataSubview::ConfirmFinalize
+                                                                     : DataSubview::ConfirmDelete;
+    }
+    return;
+  }
+  if (dataSubview_ == DataSubview::ConfirmFinalize || dataSubview_ == DataSubview::ConfirmDelete) {
+    if (pressed(HmiButton::Back)) {
+      dataSubview_ = DataSubview::Options;
+      return;
+    }
+    if (pressed(HmiButton::Ok)) {
+      const bool deleting = dataSubview_ == DataSubview::ConfirmDelete;
+      if (deleting && device_.snapshot().usb) {
+        dataMessageTitle_ = "USB Connected";
+        dataMessageText_ = "Disconnect USB before deleting.";
+        dataSubview_ = DataSubview::Message;
+      } else {
+        const bool success = deleting ? logs_.remove(logs[static_cast<size_t>(dataSelection_)].name) : logs_.finalize();
+        if (success) {
+          const auto updated = logs_.listLogs();
+          dataSelection_ = updated.empty() ? 0 : std::min<int16_t>(dataSelection_, static_cast<int16_t>(updated.size() - 1U));
+          logScrollOffset_ = std::min<size_t>(logScrollOffset_, static_cast<size_t>(dataSelection_));
+          dataSubview_ = DataSubview::List;
+        } else {
+          dataMessageTitle_ = deleting ? "Delete Failed" : "Finalize Failed";
+          dataMessageText_ = deleting ? "Log was not deleted" : "Log is still active";
+          dataSubview_ = DataSubview::Message;
+        }
+      }
+    }
+    return;
+  }
+  if (dataSubview_ == DataSubview::Message) {
+    if (pressed(HmiButton::Back)) dataSubview_ = DataSubview::Options;
+    return;
+  }
   if (pressed(HmiButton::Down) && dataSelection_ < maxIndex) {
     ++dataSelection_;
+    if (static_cast<size_t>(dataSelection_) >= logScrollOffset_ + 11U) {
+      logScrollOffset_ = static_cast<size_t>(dataSelection_) - 10U;
+    }
   }
   if (pressed(HmiButton::Up) && dataSelection_ > 0) {
     --dataSelection_;
+    if (static_cast<size_t>(dataSelection_) < logScrollOffset_) {
+      logScrollOffset_ = static_cast<size_t>(dataSelection_);
+    }
   }
   if (pressed(HmiButton::Ok) && !logs.empty()) {
-    dataStatistics_ = true;
+    dataSubview_ = DataSubview::Details;
     clearQr();
     emit("flight_statistics", 0, dataSelection_);
   }
   if (pressed(HmiButton::Back)) {
     dataSelection_ = 0;
+    logScrollOffset_ = 0;
     enter(Screen::Menu);
   }
   (void)nowMs;
@@ -566,6 +633,11 @@ std::string HmiController::calibrationName() const {
   return names[static_cast<size_t>(calibrationState_)];
 }
 
+std::string HmiController::dataSubviewName() const {
+  static constexpr const char* names[] = {"list", "details", "options", "confirm_finalize", "confirm_delete", "message"};
+  return names[static_cast<size_t>(dataSubview_)];
+}
+
 HmiSnapshot HmiController::snapshot() const {
   HmiSnapshot result;
   result.screen = screenName();
@@ -587,7 +659,11 @@ HmiSnapshot HmiController::snapshot() const {
   result.settingsPage = settingsPage_;
   result.settingsSelection = settingsSelection_;
   result.dataSelection = dataSelection_;
-  result.dataStatistics = dataStatistics_;
+  result.dataStatistics = dataSubview_ == DataSubview::Details;
+  result.currentDataSubview = dataSubviewName();
+  result.logScrollOffset = logScrollOffset_;
+  result.dataMessageTitle = dataMessageTitle_;
+  result.dataMessageText = dataMessageText_;
   result.qrView = qrView_;
   result.qrUrl = qrUrl_;
   result.recoveryLocations = recoveryLocations_;
@@ -597,10 +673,39 @@ HmiSnapshot HmiController::snapshot() const {
   result.links[1] = link2_.snapshot();
   result.navigation = navigation_.snapshot();
   result.device = device_.snapshot();
+  result.recorder = logs_.recorderStatus();
+  result.device.logging = result.recorder.state == "recording";
+  result.device.recorderFault = result.recorder.state == "fault";
   result.logs = logs_.listLogs();
-  if (dataStatistics_ && dataSelection_ >= 0 && dataSelection_ < static_cast<int16_t>(result.logs.size())) {
+  if (dataSubview_ != DataSubview::List && dataSelection_ >= 0 && dataSelection_ < static_cast<int16_t>(result.logs.size())) {
     result.flightStatistics[0] = logs_.statistics(result.logs[static_cast<size_t>(dataSelection_)], 1);
     result.flightStatistics[1] = logs_.statistics(result.logs[static_cast<size_t>(dataSelection_)], 2);
+    const bool anyParticipant = result.flightStatistics[0].participant || result.flightStatistics[1].participant;
+    const bool complete = anyParticipant &&
+        (!result.flightStatistics[0].participant || result.flightStatistics[0].complete) &&
+        (!result.flightStatistics[1].participant || result.flightStatistics[1].complete);
+    result.selectedLogHealth = result.logs[static_cast<size_t>(dataSelection_)].active ? "active" :
+                               (complete ? "complete" : "incomplete");
+  }
+  result.selectedRecoveryLink = result.configuration.dualReceiver ? selectedRecoveryLink_ : -1;
+  const float targetLatitude = result.configuration.dualReceiver
+                                   ? recoveryLocations_[static_cast<size_t>(selectedRecoveryLink_)].lastLatitude
+                                   : result.navigation.rocketLatitude;
+  const float targetLongitude = result.configuration.dualReceiver
+                                    ? recoveryLocations_[static_cast<size_t>(selectedRecoveryLink_)].lastLongitude
+                                    : result.navigation.rocketLongitude;
+  result.recoverySolution.latitude = targetLatitude;
+  result.recoverySolution.longitude = targetLongitude;
+  result.recoverySolution.valid = LocationQr::IsValid(targetLatitude, targetLongitude) &&
+                                  LocationQr::IsValid(result.navigation.homeLatitude, result.navigation.homeLongitude);
+  if (result.recoverySolution.valid) {
+    constexpr float kRadians = 0.017453292519943295F;
+    constexpr float kEarthRadius = 6378100.0F;
+    const float dy = (targetLatitude - result.navigation.homeLatitude) * kRadians * kEarthRadius;
+    const float dx = (targetLongitude - result.navigation.homeLongitude) * kRadians *
+                     std::cos(result.navigation.homeLatitude * kRadians) * kEarthRadius;
+    result.recoverySolution.distanceM = std::sqrt(dx * dx + dy * dy);
+    result.recoverySolution.azimuthRad = std::atan2(dx, dy);
   }
   result.actions = actions_;
   result.framebufferRevision = renderer_.revision();

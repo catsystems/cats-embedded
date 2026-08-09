@@ -3,8 +3,9 @@ body { margin: 0; background: #101214; color: #e8edf2; }
 main { width: min(900px, 96vw); margin: 24px auto; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
 .toolbar-help, .keyboard-help { color: #9ca8b3; font-size: 14px; margin: 7px 0 12px; }
+.fixture-description { min-height: 2.6em; margin: 0 0 14px; padding: 8px 10px; box-sizing: border-box; color: #d9e1e8; background: #171b1f; border-left: 3px solid #f4b740; }
 .keyboard-help { color: #f4b740; }
-button, input { font: inherit; color: inherit; background: #20262c; border: 1px solid #5c6973; border-radius: 4px; padding: 6px 10px; }
+button, input, select { font: inherit; color: inherit; background: #20262c; border: 1px solid #5c6973; border-radius: 4px; padding: 6px 10px; }
 button:active { background: #384752; }
 canvas { width: min(800px, 100%); height: auto; image-rendering: pixelated; image-rendering: crisp-edges; background: white; border: 1px solid #5c6973; }
 canvas:focus { outline: 2px solid #f4b740; outline-offset: 3px; }

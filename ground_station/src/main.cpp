@@ -37,13 +37,14 @@ void setup() {
 
   systemConfig.load();
 
+  // Register the recorder before the radio tasks can deliver their first packet.
+  hmi.begin();
   link1.begin();
   link2.begin();
 
   navigation.setPointA(0, 0);
   navigation.setPointB(0, 0);
 
-  hmi.begin();
 }
 
 void loop() {
@@ -73,53 +74,62 @@ void loop() {
     navigation.setPointA(link2.location.lat(), link2.location.lon());
   }
 
+  // Navigation and console output are background consumers. Read snapshots so
+  // they do not clear the update flag before the Live screen can render it.
+  const packedRXMessage link1Data = link1.data.snapshot();
+  const packedRXMessage link2Data = link2.data.snapshot();
+  const float link1Lat = static_cast<float>(link1Data.lat) / 10000.0F;
+  const float link1Lon = static_cast<float>(link1Data.lon) / 10000.0F;
+  const float link2Lat = static_cast<float>(link2Data.lat) / 10000.0F;
+  const float link2Lon = static_cast<float>(link2Data.lon) / 10000.0F;
+
   // In single mode, both antennas track the same rocket
   if (systemConfig.config.receiverMode == SINGLE) {
-    const bool link1GpsValid = (link1.data.lat() != 0) && (link1.data.lon() != 0);
-    const bool link2GpsValid = (link2.data.lat() != 0) && (link2.data.lon() != 0);
+    const bool link1GpsValid = (link1Lat != 0) && (link1Lon != 0);
+    const bool link2GpsValid = (link2Lat != 0) && (link2Lon != 0);
     // Check if data from link 1 is newer than link 2
     if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
       // Stream data from Link 1
-      if (link1LastTs != link1.data.ts()) {
+      if (link1LastTs != link1Data.timestamp) {
         Utils::streamUsb(&link1, 1);
       }
 
       // Take data from link 1 with higher priority
       if (link1GpsValid) {
-        navigation.setPointB(link1.data.lat(), link1.data.lon());
+        navigation.setPointB(link1Lat, link1Lon);
       } else if (link2GpsValid) {
-        navigation.setPointB(link2.data.lat(), link2.data.lon());
+        navigation.setPointB(link2Lat, link2Lon);
       }
     } else {
       // Stream data from Link 2
-      if (link2LastTs != link2.data.ts()) {
+      if (link2LastTs != link2Data.timestamp) {
         Utils::streamUsb(&link2, 2);
       }
 
       // Take data from link 2 with higher priority
       if (link2GpsValid) {
-        navigation.setPointB(link2.data.lat(), link2.data.lon());
+        navigation.setPointB(link2Lat, link2Lon);
       } else if (link1GpsValid) {
-        navigation.setPointB(link1.data.lat(), link1.data.lon());
+        navigation.setPointB(link1Lat, link1Lon);
       }
     }
   } else {
     // Stream both Links as they track different FC's
-    if (link1LastTs != link1.data.ts()) {
+    if (link1LastTs != link1Data.timestamp) {
       Utils::streamUsb(&link1, 1);
     }
-    if (link2LastTs != link2.data.ts()) {
+    if (link2LastTs != link2Data.timestamp) {
       Utils::streamUsb(&link2, 2);
     }
 
-    if (link1.data.lat() != 0 && link1.data.lon() != 0) {
-      navigation.setPointB(link1.data.lat(), link1.data.lon());
+    if (link1Lat != 0 && link1Lon != 0) {
+      navigation.setPointB(link1Lat, link1Lon);
     }
   }
 
   // Update last timestamp from the link
-  link1LastTs = link1.data.ts();
-  link2LastTs = link2.data.ts();
+  link1LastTs = link1Data.timestamp;
+  link2LastTs = link2Data.timestamp;
 
   delay(100);
 }

@@ -197,22 +197,33 @@ int32_t Utils::getFlashMemoryUsage() {
 void Utils::streamUsb(Telemetry *link, uint8_t link_idx) {
   char print_char[150];
 
-  const int32_t time_int = link->data.ts() / 10;
-  const int32_t time_prec = link->data.ts() - time_int * 10;
+  // Console streaming must not consume the packet update intended for HMI.
+  const packedRXMessage data = link->data.snapshot();
+  const float latitude = static_cast<float>(data.lat) / 10000.0F;
+  const float longitude = static_cast<float>(data.lon) / 10000.0F;
+  const float voltage = static_cast<float>(data.voltage) / 10.0F;
+  const int32_t altitude = data.altitude;
+  int16_t velocity = data.velocity;
+  if ((velocity < -100) && data.state < 5U) {
+    velocity += 1024;
+  }
 
-  const auto lat_int = static_cast<int32_t>(link->data.lat());
-  const auto lat_prec = static_cast<int32_t>((link->data.lat() - static_cast<float>(lat_int)) * 100000.0F);
+  const int32_t time_int = data.timestamp / 10;
+  const int32_t time_prec = data.timestamp - time_int * 10;
 
-  const auto lon_int = static_cast<int32_t>(link->data.lon());
-  const auto lon_prec = static_cast<int32_t>((link->data.lon() - static_cast<float>(lon_int)) * 100000.0F);
+  const auto lat_int = static_cast<int32_t>(latitude);
+  const auto lat_prec = static_cast<int32_t>((latitude - static_cast<float>(lat_int)) * 100000.0F);
 
-  const auto voltage_int = static_cast<int32_t>(link->data.voltage());
-  const auto voltage_prec = static_cast<int32_t>((link->data.voltage() - static_cast<float>(voltage_int)) * 10.0F);
+  const auto lon_int = static_cast<int32_t>(longitude);
+  const auto lon_prec = static_cast<int32_t>((longitude - static_cast<float>(lon_int)) * 100000.0F);
+
+  const auto voltage_int = static_cast<int32_t>(voltage);
+  const auto voltage_prec = static_cast<int32_t>((voltage - static_cast<float>(voltage_int)) * 10.0F);
 
   std::snprintf(print_char, 150,
                 "Link %d: Ts: %ld.%ld, State: %d, Lat: %ld.%05ld, Lon: %ld.%05ld, Alt: %ld, Vel: %d, V: %ld.%ld",
-                link_idx, time_int, time_prec, link->data.state(), lat_int, lat_prec, lon_int, lon_prec,
-                link->data.altitude(), link->data.velocity(), voltage_int, voltage_prec);
+                link_idx, time_int, time_prec, data.state, lat_int, lat_prec, lon_int, lon_prec, altitude, velocity,
+                voltage_int, voltage_prec);
   console.log.println(print_char);
 }
 

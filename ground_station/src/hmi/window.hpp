@@ -42,7 +42,7 @@ class Window {
 
   void initBar();
   void updateBar(float batteryVoltage, bool usb = false, bool logging = false, bool location = false, bool time = false,
-                 uint32_t free_memory = 100);
+                 uint32_t free_memory = 100, bool recorderFault = false);
 
   void initMenu(int16_t index);
   void updateMenu(int16_t index);
@@ -57,6 +57,8 @@ class Window {
 
   void initRecovery(bool hasLastLocation);
   void updateRecovery(Navigation *navigation, bool hasLastLocation);
+  void updateRecoveryTarget(Navigation *navigation, const EarthPoint3D& target, bool targetValid,
+                            int8_t selectedLink, bool dualMode, bool hasLastLocation);
   bool showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
                       bool hasNextPage);
 
@@ -70,6 +72,9 @@ class Window {
   void initTestingBox(int16_t index);
 
   void initData(bool fileAvailable);
+  void dataScrollIndicators(bool hasPrevious, bool hasNext, int16_t selectedRow = -1);
+  void initDataOptions(const char *logName, bool active);
+  void initDataMessage(const char *title, const char *message);
 
   void initSensors();
   void initSensorPrepareCalibrate();
@@ -89,7 +94,7 @@ class Window {
   void updateKeyboard(char *text, int32_t keyHighlight, bool keyPressed = false);
 
   void listFileName(const char *fileName, uint16_t index, uint16_t color = BLACK);
-  void dataHighlight(const char *fileName, uint8_t index, bool highlight);
+  void dataHighlight(const char *fileName, uint16_t index, bool highlight);
   void dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics &stats2, const char *logName,
                                 bool hasNextPage);
 
@@ -104,6 +109,7 @@ class Window {
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);
   void drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage);
+  void drawVerticalNavigationTile(bool pointsUp);
   void drawRecoveryHint(bool showHint);
 
   void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color = BLACK);
@@ -129,6 +135,7 @@ class Window {
   int32_t oldBarMinute = 0;
   bool oldBarUsbStatus = false;
   bool oldBarLoggingStatus = false;
+  bool oldBarRecorderFault = false;
   uint32_t oldBarFreeMemory = 0;
   bool barBlinkStatus = false;
   TelemetryData teleData[2]{};

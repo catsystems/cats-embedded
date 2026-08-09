@@ -19,3 +19,13 @@ gs_framebuffer(), gs_framebuffer_size(), gs_framebuffer_revision()
 The browser host calls only these functions and paints the returned one-bit
 buffer with nearest-neighbor scaling. State identifiers and action names are
 kept in `HmiSnapshot`/`PlatformAction` in `simulator/hmi_controller.hpp`.
+
+Telemetry injection accepts state, timestamp, coordinates, altitude, velocity,
+voltage, continuity, connection/update state, LQ, RSSI, and SNR for either
+link. Navigation injection accepts home/rocket coordinates, compass north,
+azimuth, distance, and sensor/calibration values. Device injection accepts USB
+state plus recorder write, finalize, and delete failure flags.
+
+Snapshots include `recorderState`, `activeFilename`, recorded/dropped row
+counts, `selectedRecoveryLink`, `recoverySolution`, `logCount`,
+`logScrollOffset`, `selectedLogHealth`, and `currentDataSubview`.

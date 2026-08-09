@@ -10,6 +10,8 @@
 #include "logging/recorder.hpp"
 #include "window.hpp"
 
+#include <vector>
+
 class Hmi {
  public:
   explicit Hmi(const char* dir)
@@ -82,6 +84,8 @@ class Hmi {
   void initTesting();
   void testing();
   void initData();
+  void drawDataList();
+  void openSelectedLog();
   void data();
   bool showDataLocation(int8_t linkIndex);
   void showDataStatistics();
@@ -112,20 +116,23 @@ class Hmi {
 
   int16_t menuIndex = 0;
 
-  uint8_t dataIndex = 0;
-  uint8_t dataFileCount = 0;
-  bool dataFlightStatistic = false;
+  enum class DataView : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
+  DataView dataView{DataView::List};
+  DataView dataMessageReturn{DataView::Options};
+  size_t dataIndex{0};
+  size_t dataWindowStart{0};
+  std::vector<LogEntry> dataCatalog{};
+  FlightLogAnalysis dataAnalysis{};
   FlightStatistics dataStatistics[2];
   int8_t dataQrLink = -1;
   char dataLogName[30] = {};
 
   int8_t recoveryQrLink = -1;
+  int8_t selectedRecoveryLink = 0;
   EarthPoint3D recoveryLocations[2];
   bool recoveryLocationValid[2] = {false, false};
   EarthPoint3D recoveryQrPoint;
 
   uint32_t flashFreeMemory = 100;
 
-  bool link1Log = false;
-  bool link2Log = false;
 };

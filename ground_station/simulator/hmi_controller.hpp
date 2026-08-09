@@ -75,6 +75,7 @@ struct DeviceStatusSnapshot {
   uint8_t hour = 0;
   uint8_t minute = 0;
   bool logging = false;
+  bool recorderFault = false;
 };
 
 struct GsConfigSnapshot {
@@ -90,6 +91,8 @@ struct GsConfigSnapshot {
 struct FlightLogSnapshot {
   std::string name;
   std::string csv;
+  size_t sizeBytes = 0;
+  bool active = false;
 };
 
 struct FlightStatisticsSnapshot {
@@ -101,6 +104,34 @@ struct FlightStatisticsSnapshot {
   float lastLatitude = 0.0F;
   float lastLongitude = 0.0F;
   float flightTimeS = 0.0F;
+  bool maxAltitudeValid = false;
+  bool timeToApogeeValid = false;
+  bool maxVelocityValid = false;
+  bool drogueRateValid = false;
+  bool mainRateValid = false;
+  bool lastLocationValid = false;
+  bool flightTimeValid = false;
+  bool participant = false;
+  bool complete = false;
+  size_t validRows = 0;
+  size_t malformedRows = 0;
+};
+
+struct RecorderSnapshot {
+  std::string state = "idle";
+  std::string activeFilename;
+  uint8_t participantMask = 0;
+  uint32_t writtenRows = 0;
+  uint32_t droppedRows = 0;
+  std::string lastError;
+};
+
+struct RecoverySolutionSnapshot {
+  bool valid = false;
+  float latitude = 0.0F;
+  float longitude = 0.0F;
+  float distanceM = 0.0F;
+  float azimuthRad = 0.0F;
 };
 
 enum class HmiButton : uint8_t { Up, Down, Left, Right, Center, Ok, Back };
@@ -144,7 +175,11 @@ class ILogStore {
   virtual ~ILogStore() = default;
   [[nodiscard]] virtual std::vector<FlightLogSnapshot> listLogs() const = 0;
   [[nodiscard]] virtual FlightStatisticsSnapshot statistics(const FlightLogSnapshot& log, uint8_t link) const = 0;
+  [[nodiscard]] virtual RecorderSnapshot recorderStatus() const = 0;
+  virtual void configure(bool dual, bool neverStop) = 0;
   virtual void record(const TelemetrySample& sample, uint8_t link) = 0;
+  virtual bool finalize() = 0;
+  virtual bool remove(const std::string& name) = 0;
 };
 
 class IConfigStore {
@@ -176,6 +211,11 @@ struct HmiSnapshot {
   int16_t settingsSelection = -1;
   int16_t dataSelection = 0;
   bool dataStatistics = false;
+  std::string currentDataSubview = "list";
+  size_t logScrollOffset = 0;
+  std::string selectedLogHealth = "none";
+  std::string dataMessageTitle;
+  std::string dataMessageText;
   std::string qrView = "none";
   std::string qrUrl;
   uint64_t virtualTimeMs = 0;
@@ -186,6 +226,9 @@ struct HmiSnapshot {
   std::vector<FlightLogSnapshot> logs;
   std::array<FlightStatisticsSnapshot, 2> flightStatistics{};
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations{};
+  RecorderSnapshot recorder;
+  int8_t selectedRecoveryLink = -1;
+  RecoverySolutionSnapshot recoverySolution;
   std::vector<PlatformAction> actions;
   uint32_t framebufferRevision = 0;
 };
@@ -213,6 +256,7 @@ class HmiController {
   enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader };
   enum class TestingState : uint8_t { Disclaimer, CanStart, CannotStart, Waiting, Failed, Started, ConfirmEvent };
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
+  enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
 
   static constexpr uint64_t kBootDurationMs = 2000;
   static constexpr uint64_t kTestingTimeoutMs = 10000;
@@ -225,6 +269,7 @@ class HmiController {
   bool repeated(HmiButton button, uint64_t nowMs);
   void menuStep(uint64_t nowMs);
   void liveStep(uint64_t nowMs);
+  void ingestTelemetry();
   void testingStep(uint64_t nowMs);
   void dataStep(uint64_t nowMs);
   void sensorsStep(uint64_t nowMs);
@@ -237,6 +282,7 @@ class HmiController {
   [[nodiscard]] std::string screenName() const;
   [[nodiscard]] std::string testingName() const;
   [[nodiscard]] std::string calibrationName() const;
+  [[nodiscard]] std::string dataSubviewName() const;
 
   IHmiRenderer& renderer_;
   ITelemetryLink& link1_;
@@ -262,10 +308,14 @@ class HmiController {
   int16_t settingsSelection_ = -1;
   int16_t dataSelection_ = 0;
   int16_t testingSelection_ = 0;
-  bool dataStatistics_ = false;
+  size_t logScrollOffset_ = 0;
+  DataSubview dataSubview_ = DataSubview::List;
+  std::string dataMessageTitle_;
+  std::string dataMessageText_;
   std::string qrView_ = "none";
   std::string qrUrl_;
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
+  int8_t selectedRecoveryLink_ = 0;
   bool liveDownrange_ = false;
   bool keyboardActive_ = false;
   int16_t keyboardSelection_ = 0;
