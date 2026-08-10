@@ -802,17 +802,16 @@ void Hmi::settings() {
         }
         case BUTTON: {
           if (okButton.wasPressed()) {
-            if (settingSubMenu == 0 && settingIndex == 3) {
-              initUsbStorage();
-              return;
-            }
-            // If the setting is pointing to the bootloader function, we need to display the bootloader screen
-            // first
-            if (cfg.fun_ptr == Utils::startBootloader) {
-              window.Bootloader();
-            }
-            if (cfg.fun_ptr != nullptr) {
-              cfg.fun_ptr();
+            switch (cfg.buttonAction) {
+              case BUTTON_ACTION_USB_STORAGE:
+                initUsbStorage();
+                return;
+              case BUTTON_ACTION_START_BOOTLOADER:
+                window.Bootloader();
+                Utils::startBootloader();
+                return;
+              case BUTTON_ACTION_NONE:
+                break;
             }
           }
           break;

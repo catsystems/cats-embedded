@@ -17,6 +17,12 @@ enum settings_type_e {
   BUTTON = 3,
 };
 
+enum settings_button_action_e {
+  BUTTON_ACTION_NONE = 0,
+  BUTTON_ACTION_USB_STORAGE,
+  BUTTON_ACTION_START_BOOTLOADER,
+};
+
 struct settings_min_max_t {
   int16_t min;
   int16_t max;
@@ -26,7 +32,7 @@ union settings_limits_u {
   uint32_t stringLength;
   uint32_t lookup;
   settings_min_max_t minmax;
-  void (*fun_ptr)();
+  settings_button_action_e buttonAction;
 };
 
 struct device_settings_t {
