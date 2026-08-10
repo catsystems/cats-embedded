@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Position = 0, Mandatory = $true)]
-  [ValidateSet('setup', 'serve', 'run', 'test')]
+  [ValidateSet('setup', 'build', 'fatfs-test', 'serve', 'run', 'test')]
   [string]$Command,
 
   [Parameter(Position = 1)]
@@ -15,7 +15,7 @@ $SimulatorRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $GroundStationRoot = Split-Path -Parent $SimulatorRoot
 $RepoRoot = Split-Path -Parent $GroundStationRoot
 $PinnedEmscripten = '6.0.6'
-$PinnedReleaseCommit = '833aa203ba2283fc2b6adb504a79a3a0d692df81'
+$PinnedEmsdkCommit = '9981799f744be74ac67b1c1813ff172f63be0630'
 $ToolRoot = Join-Path $env:LOCALAPPDATA 'CATS\tools'
 $SdkRoot = Join-Path $ToolRoot ('emsdk-' + $PinnedEmscripten)
 $PythonPath = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python311\python.exe'
@@ -79,21 +79,48 @@ function Invoke-Emsdk {
   } finally { Pop-Location }
 }
 
+function Set-PinnedEmsdkRevision {
+  $git = Get-Command git -ErrorAction SilentlyContinue
+  if ($null -eq $git) { throw 'Git is required to verify the pinned Emscripten SDK.' }
+
+  $head = (& $git.Source -C $SdkRoot rev-parse HEAD).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "Unable to inspect the Emscripten SDK under $SdkRoot." }
+  if ($head -eq $PinnedEmsdkCommit) { return }
+
+  & $git.Source -C $SdkRoot fetch --depth 1 origin tag $PinnedEmscripten
+  if ($LASTEXITCODE -ne 0) { throw "Unable to fetch Emscripten SDK tag $PinnedEmscripten." }
+  & $git.Source -C $SdkRoot checkout --detach $PinnedEmsdkCommit
+  if ($LASTEXITCODE -ne 0) { throw "Unable to check out Emscripten SDK commit $PinnedEmsdkCommit." }
+
+  $head = (& $git.Source -C $SdkRoot rev-parse HEAD).Trim()
+  if ($head -ne $PinnedEmsdkCommit) {
+    throw "Emscripten SDK revision mismatch: expected $PinnedEmsdkCommit, found $head."
+  }
+}
+
 function Setup-Simulator {
   New-Item -ItemType Directory -Force -Path $ToolRoot | Out-Null
   $emsdk = Get-EmsdkPath
   if ($null -eq $emsdk) {
     $git = Get-Command git -ErrorAction SilentlyContinue
     if ($null -eq $git) { throw 'Git is required to install the pinned Emscripten SDK.' }
-    & $git.Source clone --depth 1 --branch main https://github.com/emscripten-core/emsdk.git $SdkRoot
+    & $git.Source clone --depth 1 --branch $PinnedEmscripten https://github.com/emscripten-core/emsdk.git $SdkRoot
+    if ($LASTEXITCODE -ne 0) { throw "Unable to clone Emscripten SDK tag $PinnedEmscripten." }
   }
+  Set-PinnedEmsdkRevision
   Invoke-Emsdk -Arguments @('install', $PinnedEmscripten)
   Invoke-Emsdk -Arguments @('activate', $PinnedEmscripten)
-  if ($null -eq (Get-EmscriptenExecutable -Name 'emcc')) {
+  $emcc = Get-EmscriptenExecutable -Name 'emcc'
+  if ($null -eq $emcc) {
     throw "Emscripten $PinnedEmscripten installed without emcc."
   }
+  Initialize-EmscriptenEnvironment
+  $emccVersion = (& $emcc --version) -join "`n"
+  if ($LASTEXITCODE -ne 0 -or $emccVersion -notmatch "emcc.*$([regex]::Escape($PinnedEmscripten))") {
+    throw "Emscripten version mismatch. Expected $PinnedEmscripten, received: $emccVersion"
+  }
   $marker = Join-Path $SdkRoot 'CATS-emscripten-version.txt'
-  Set-Content -LiteralPath $marker -Value "version=$PinnedEmscripten`nreleaseCommit=$PinnedReleaseCommit" -Encoding UTF8
+  Set-Content -LiteralPath $marker -Value "version=$PinnedEmscripten`nemsdkCommit=$PinnedEmsdkCommit" -Encoding UTF8
   Write-Host "Emscripten $PinnedEmscripten is ready under $SdkRoot"
 }
 
@@ -113,6 +140,7 @@ function Build-WasmDirect {
     '-DGS_SIMULATOR_WASM=1',
     ("-I$(Join-Path $SimulatorRoot 'compat')"),
     ("-I$(Join-Path $GroundStationRoot 'lib\Adafruit_GFX_Library')"),
+    ("-I$(Join-Path $GroundStationRoot 'lib\Adafruit_BusIO')"),
     ("-I$(Join-Path $GroundStationRoot 'lib\NayukiQRCode\src')"),
     ("-I$(Join-Path $GroundStationRoot 'src')"),
     ("-I$(Join-Path $GroundStationRoot 'src\hmi')"),
@@ -167,8 +195,59 @@ function Build-WasmIfAvailable {
   Copy-Item -LiteralPath $generated.FullName -Destination (Join-Path $SimulatorRoot 'web\gs-sim.js') -Force
 }
 
+function Invoke-FatFsCompatibilityTest {
+  $emcc = Get-EmscriptenExecutable -Name 'emcc'
+  if ($null -eq $emcc) { throw "Emscripten $PinnedEmscripten is required for the FatFs compatibility test." }
+  Initialize-EmscriptenEnvironment
+
+  $testRoot = Join-Path $GroundStationRoot 'tests'
+  $fatFsRoot = Join-Path $GroundStationRoot 'lib\FatFs'
+  $buildRoot = Join-Path $GroundStationRoot '.pio\fatfs-test'
+  $compressedFixture = Join-Path $testRoot 'fixtures\fatfs-r013c-sfd.img.gz'
+  $legacyImage = Join-Path $buildRoot 'fatfs-r013c-sfd.img'
+  $newImage = Join-Path $buildRoot 'fatfs-r016-sfd.img'
+  $runner = Join-Path $buildRoot 'fatfs-compatibility.js'
+  New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
+
+  $input = [System.IO.File]::OpenRead($compressedFixture)
+  $output = [System.IO.File]::Create($legacyImage)
+  $gzip = New-Object System.IO.Compression.GZipStream($input, [System.IO.Compression.CompressionMode]::Decompress)
+  try {
+    $gzip.CopyTo($output)
+  } finally {
+    $gzip.Dispose()
+    $output.Dispose()
+    $input.Dispose()
+  }
+
+  $compileArgs = @(
+    (Join-Path $testRoot 'fatfs_compatibility.c'),
+    (Join-Path $fatFsRoot 'ff.c'),
+    (Join-Path $fatFsRoot 'ffunicode.c'),
+    "-I$fatFsRoot",
+    '-std=c11',
+    '-O2',
+    '-sNODERAWFS=1',
+    '-sEXIT_RUNTIME=1',
+    '-o',
+    $runner
+  )
+  & $emcc @compileArgs
+  if ($LASTEXITCODE -ne 0) { throw 'FatFs compatibility harness compilation failed.' }
+
+  & $env:EMSDK_NODE $runner validate $legacyImage
+  if ($LASTEXITCODE -ne 0) { throw 'FatFs R0.16 could not safely read and update the R0.13c fixture.' }
+  & $env:EMSDK_NODE $runner create $newImage
+  if ($LASTEXITCODE -ne 0) { throw 'FatFs R0.16 could not create a test volume.' }
+  & $env:EMSDK_NODE $runner validate $newImage
+  if ($LASTEXITCODE -ne 0) { throw 'FatFs R0.16 could not remount its test volume safely.' }
+  Write-Host 'FatFs legacy/read-write/corrupt-media compatibility tests passed.'
+}
+
 switch ($Command) {
   'setup' { Setup-Simulator }
+  'build' { Build-WasmIfAvailable }
+  'fatfs-test' { Invoke-FatFsCompatibilityTest }
   'run' {
     if ([string]::IsNullOrWhiteSpace($Scenario)) { throw 'run requires a scenario JSON path.' }
     Invoke-Headless @('run', (Resolve-Path -LiteralPath $Scenario).Path, '--write-snapshots')

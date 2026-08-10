@@ -14,18 +14,21 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
+      - name: Verify Ground Station upgrade contract
+        run: python ground_station/check_upgrade_contract.py
+
       - name: Cache pinned Emscripten SDK
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.LOCALAPPDATA }}\CATS\tools\emsdk-6.0.6
-          key: windows-emscripten-6.0.6-833aa203ba2283fc2b6adb504a79a3a0d692df81
+          key: windows-emscripten-6.0.6-9981799f744be74ac67b1c1813ff172f63be0630
 
       - name: Install pinned Emscripten SDK
         shell: pwsh
@@ -35,9 +38,13 @@ jobs:
         shell: pwsh
         run: .\ground_station\gs-sim.ps1 test
 
+      - name: Verify FatFs storage compatibility
+        shell: pwsh
+        run: .\ground_station\gs-sim.ps1 fatfs-test
+
       - name: Build WebAssembly browser bundle
         shell: pwsh
-        run: .\ground_station\gs-sim.ps1 serve -Port 8788
+        run: .\ground_station\gs-sim.ps1 build
 
       - name: Verify browser bundle
         shell: pwsh

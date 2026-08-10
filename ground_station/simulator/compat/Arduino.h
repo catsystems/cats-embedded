@@ -7,6 +7,7 @@
 
 #define ARDUINO 100
 #define PROGMEM
+#define radians(degrees) ((degrees) * 0.017453292519943295769236907684886)
 using boolean = bool;
 using byte = uint8_t;
 

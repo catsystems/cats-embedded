@@ -18,6 +18,7 @@ target_compile_definitions(gs-sim-wasm PRIVATE GS_SIMULATOR_WASM=1 ARDUINO=100)
 target_include_directories(gs-sim-wasm PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/compat
   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Adafruit_GFX_Library
+  ${CMAKE_CURRENT_SOURCE_DIR}/../lib/Adafruit_BusIO
   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/NayukiQRCode/src
   ${CMAKE_CURRENT_SOURCE_DIR}/../src
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/hmi)

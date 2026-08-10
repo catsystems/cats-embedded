@@ -33,6 +33,8 @@
 #define LSM6DS3_CTRL7_G            0X16
 #define LSM6DS3_CTRL8_XL           0X17
 
+#define LSM6DS3_OUT_TEMP_L         0X20
+
 #define LSM6DS3_OUTX_L_G           0X22
 #define LSM6DS3_OUTX_H_G           0X23
 #define LSM6DS3_OUTY_L_G           0X24
@@ -52,11 +54,12 @@
 class LSM6DS3Class {
   public:
     LSM6DS3Class();
-    LSM6DS3Class(TwoWire& wire) : _wire(&wire) {}
+    LSM6DS3Class(TwoWire& wire);
     LSM6DS3Class(TwoWire& wire, uint8_t slaveAddress);
     LSM6DS3Class(SPIClass& spi, int csPin, int irqPin);
     virtual ~LSM6DS3Class();
 
+    int begin();
     int begin(TwoWire& wire, uint8_t slaveAddress);
     void end();
 
@@ -70,6 +73,11 @@ class LSM6DS3Class {
     virtual float gyroscopeSampleRate(); // Sampling rate of the sensor.
     virtual int gyroscopeAvailable(); // Check for available data from gyroscope
 
+    // Temperature Sensor
+    virtual int readTemperature(float& t); // Results are in deg. C
+    virtual float temperatureSampleRate(); // Sampling rate of the sensor.
+    virtual int temperatureAvailable(); // Check for available data from temperature sensor
+
 
   protected:
     int readRegister(uint8_t address);
@@ -78,11 +86,15 @@ class LSM6DS3Class {
 
 
   private:
-    TwoWire* _wire;
+    TwoWire* _wire = NULL;
     SPIClass* _spi = NULL;
-    uint8_t _slaveAddress;
-    int _csPin;
-    int _irqPin;
+    uint8_t _slaveAddress = LSM6DS3_ADDRESS;
+    int _csPin = -1;
+    int _irqPin = -1;
 
     SPISettings _spiSettings;
 };
+
+extern LSM6DS3Class IMU_LSM6DS3;
+#undef IMU
+#define IMU IMU_LSM6DS3

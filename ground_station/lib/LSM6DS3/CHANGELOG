@@ -1,5 +1,7 @@
 Arduino_LSM6DSM ?.?.? - ????.??.??
 
+* Add functions to use temperature sensor.
+
 Arduino_LSM6DSM 1.0.0 - 2019.07.19
 
 * Initial release

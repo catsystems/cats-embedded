@@ -6,64 +6,36 @@
 # This file was adapted from Florian Baumgartner's ESP32 IoT Framework 
 # (https://github.com/FlorianBaumgartner/ESP32_IoT_Framework), released under MIT License.
 
-def installPackages():
-    import sys
-    import time
-    import threading
+def requirePackages():
+    """Fail with an actionable message when optional upload packages are absent."""
+    missing = []
+
     try:
-        import serial
-        import serial.tools.list_ports
+        import serial  # noqa: F401
+        import serial.tools.list_ports  # noqa: F401
     except ModuleNotFoundError:
-        print("USB Modules not found, try to install them...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
+        missing.append("pyserial==3.5")
 
-        install("serial")
-        install("pyserial")
-        import serial
-        import serial.tools.list_ports
-        print("USB Modules successfully installed and imported!")
-        
     try:
-        from tendo.singleton import SingleInstance, SingleInstanceException
+        from tendo.singleton import SingleInstance  # noqa: F401
     except ModuleNotFoundError:
-        print("Singleton Module not found, try to install it...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
+        missing.append("tendo==0.3.0")
 
-        install("tendo")
-        try:
-            from tendo.singleton import SingleInstance, SingleInstanceException
-            print("Singleton Module successfully installed and imported!")
-        except ModuleNotFoundError:
-            print("Please restart upload script...")
-            
     try:
-        import usb.core
-        import usb.backend.libusb1
+        import usb.core  # noqa: F401
+        import usb.backend.libusb1  # noqa: F401
     except ModuleNotFoundError:
-        print("USB Modules not found, try to install them...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
+        missing.append("pyusb==1.3.1")
 
-        install("libusb")
-        install("pyusb")
-        import usb.core
-        import usb.backend.libusb1
-        print("USB Modules successfully installed and imported!")
+    try:
+        from libusb._platform import DLL_PATH  # noqa: F401
+    except (ModuleNotFoundError, OSError):
+        missing.append("libusb==1.0.29.post7")
 
-    print("All needed packages are installed")
-
-installPackages()
+    if missing:
+        packages = ", ".join(missing)
+        raise RuntimeError(
+            "Ground Station upload dependencies are missing: "
+            f"{packages}. Install them with "
+            "'python -m pip install -r ground_station/requirements-upload.txt'."
+        )

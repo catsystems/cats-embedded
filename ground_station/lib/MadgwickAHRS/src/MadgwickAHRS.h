@@ -72,7 +72,7 @@ public:
     void getQuaternion(float* qu0, float* qu1, float* qu2, float* qu3) {
         *qu0 = q0;
         *qu1 = q1;
-        *qu2 = q2; 
+        *qu2 = q2;
         *qu3 = q3;
     }
 };

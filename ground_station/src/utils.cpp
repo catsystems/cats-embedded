@@ -16,8 +16,8 @@
 #include "systemParser.hpp"
 #include "telemetry/telemetry.hpp"
 
-#include "diskio.h"
 #include "ff.h"
+#include "diskio.h"
 
 #include <esp_private/system_internal.h>
 #include <esp_task_wdt.h>
@@ -118,12 +118,39 @@ void Utils::startBootloader() {
 }
 
 void Utils::startWatchdog(uint32_t seconds) {
-  esp_task_wdt_init(seconds, true);  // Enable panic so ESP32 restarts
-  esp_task_wdt_add(nullptr);         // Add current thread to WDT watch
-  esp_task_wdt_reset();
+  const esp_task_wdt_config_t watchdogConfig = {
+      .timeout_ms = seconds * 1000U,
+      .idle_core_mask = 0,
+      .trigger_panic = true,
+  };
+
+  esp_err_t status = esp_task_wdt_init(&watchdogConfig);
+  if (status == ESP_ERR_INVALID_STATE) {
+    status = esp_task_wdt_reconfigure(&watchdogConfig);
+  }
+  if (status != ESP_OK) {
+    console.warning.printf("[UTILS] Could not configure watchdog: %s\n", esp_err_to_name(status));
+    return;
+  }
+
+  status = esp_task_wdt_add(nullptr);
+  if (status != ESP_OK) {
+    console.warning.printf("[UTILS] Could not subscribe task to watchdog: %s\n", esp_err_to_name(status));
+    return;
+  }
+
+  status = esp_task_wdt_reset();
+  if (status != ESP_OK) {
+    console.warning.printf("[UTILS] Could not feed watchdog: %s\n", esp_err_to_name(status));
+  }
 }
 
-void Utils::feedWatchdog() { esp_task_wdt_reset(); }
+void Utils::feedWatchdog() {
+  const esp_err_t status = esp_task_wdt_reset();
+  if (status != ESP_OK) {
+    console.warning.printf("[UTILS] Could not feed watchdog: %s\n", esp_err_to_name(status));
+  }
+}
 
 void Utils::update(void *pvParameter) {
   auto *ref = static_cast<Utils *>(pvParameter);
@@ -250,7 +277,14 @@ bool Utils::format(const char *labelName) {
   static FATFS elmchanFatfs;
   static uint8_t workbuf[4096];  // Working buffer for f_fdisk function.
 
-  static DWORD plist[] = {100, 0, 0, 0};  // 1 primary partition with 100% of space.
+  static const LBA_t plist[] = {100, 0, 0, 0};  // 1 primary partition with 100% of space.
+  static const MKFS_PARM formatOptions = {
+      .fmt = FM_FAT | FM_SFD,
+      .n_fat = 0,
+      .align = 0,
+      .n_root = 0,
+      .au_size = 0,
+  };
   static uint8_t buf[512] = {0};          // Working buffer for f_fdisk function.
   static FRESULT r = f_fdisk(0, plist,
                              buf);  // Partition the flash with 1 partition that takes the entire space.
@@ -258,9 +292,7 @@ bool Utils::format(const char *labelName) {
     console.warning.printf("[UTILS] Error, f_fdisk failed with error code: %d\n", r);
     return false;
   }
-  // NOLINTNEXTLINE(hicpp-signed-bitwise)
-  r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf,
-             sizeof(workbuf));  // Make filesystem.
+  r = f_mkfs("", &formatOptions, workbuf, sizeof(workbuf));  // Make filesystem.
   if (r != FR_OK) {
     console.warning.printf("[UTILS] Error, f_mkfs failed with error code: %d\n", r);
     return false;
@@ -404,6 +436,12 @@ static bool msc_start_stop_cb(uint8_t power_condition [[maybe_unused]], bool sta
 // fatfs diskio
 //--------------------------------------------------------------------+
 extern "C" {
+#if FF_MULTI_PARTITION
+// Preserve the existing super-floppy layout. The old build resolved this table
+// from ESP-IDF's libfatfs as {0, 0}; owning it here avoids that hidden linkage.
+PARTITION VolToPart[FF_VOLUMES] = {{0, 0}};
+#endif
+
 DSTATUS disk_status(BYTE pdrv) {
   (void)pdrv;
   return 0;
@@ -416,7 +454,7 @@ DSTATUS disk_initialize(BYTE pdrv) {
 
 DRESULT disk_read(BYTE pdrv,     // Physical drive nmuber to identify the drive
                   BYTE *buff,    // Data buffer to store read data
-                  DWORD sector,  // Start sector in LBA
+                  LBA_t sector,  // Start sector in LBA
                   UINT count     // Number of sectors to read
 ) {
   (void)pdrv;
@@ -425,7 +463,7 @@ DRESULT disk_read(BYTE pdrv,     // Physical drive nmuber to identify the drive
 
 DRESULT disk_write(BYTE pdrv,         // Physical drive nmuber to identify the drive
                    const BYTE *buff,  // Data to be written
-                   DWORD sector,      // Start sector in LBA
+                   LBA_t sector,      // Start sector in LBA
                    UINT count         // Number of sectors to write
 ) {
   (void)pdrv;
@@ -444,7 +482,7 @@ DRESULT disk_ioctl(BYTE pdrv,  // Physical drive nmuber (0..)
       return RES_OK;
 
     case GET_SECTOR_COUNT:
-      *((DWORD *)buff) = flash.size() / 512;
+      *((LBA_t *)buff) = flash.size() / 512;
       return RES_OK;
 
     case GET_SECTOR_SIZE:

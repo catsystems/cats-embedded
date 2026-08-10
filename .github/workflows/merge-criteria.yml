@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
 
       - name: Get changed directories
         id: changed-files
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           dir_names: 'true'
           dir_names_max_depth: '1'
@@ -70,10 +70,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Run clang-format
-      uses: jidicula/clang-format-action@v4.14.0
+      uses: jidicula/clang-format-action@v4.18.0
       with:
         clang-format-version: '17'
         check-path: '${{ matrix.project }}/src'
@@ -93,26 +93,30 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.platformio/.cache
           # Add OS to key if testing with multiple OSes
           key: ${{ matrix.project }}-pio
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install --upgrade platformio
+        run: pip install --requirement requirements.txt
+
+      - name: Verify Ground Station upgrade contract
+        if: ${{ matrix.project == 'ground_station' }}
+        run: python ground_station/check_upgrade_contract.py
 
       - name: Install PlatformIO Libraries
-        run: pio pkg install --global
+        run: pio pkg install --project-dir ${{ matrix.project }}
 
       - name: Build
         shell: bash
@@ -127,6 +131,8 @@ jobs:
         run: |
           if [[ "${{ matrix.project }}" == "flight_computer" ]]; then
             platformio run -d ${{ matrix.project }} --target compiledb --environment debug
+          elif [[ "${{ matrix.project }}" == "ground_station" ]]; then
+            platformio run -d ${{ matrix.project }} --target compiledbtc
           else
             platformio run -d ${{ matrix.project }} --target compiledb
           fi
@@ -153,7 +159,7 @@ jobs:
           fi
 
       - name: Upload Compile Commands
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ubuntu_compile_commands_${{ matrix.project }}
           path: |
@@ -175,26 +181,34 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.platformio/.cache
           # Add OS to key if testing with multiple OSes
           key: ${{ matrix.project }}-pio
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install --upgrade platformio
+        run: pip install --requirement requirements.txt
+
+      - name: Verify Ground Station upgrade contract
+        if: ${{ matrix.project == 'ground_station' }}
+        run: python ground_station/check_upgrade_contract.py
+
+      - name: Install Ground Station upload dependencies
+        if: ${{ matrix.project == 'ground_station' }}
+        run: pip install --requirement ground_station/requirements-upload.txt
 
       - name: Install PlatformIO Libraries
-        run: pio pkg install --global
+        run: pio pkg install --project-dir ${{ matrix.project }}
 
       - name: Build
         shell: bash
@@ -205,10 +219,16 @@ jobs:
           fi
 
       - name: Generate compile_commands.json
-        run: platformio run -d ${{ matrix.project }} --target compiledb
+        shell: bash
+        run: |
+          if [[ "${{ matrix.project }}" == "ground_station" ]]; then
+            platformio run -d ${{ matrix.project }} --target compiledbtc
+          else
+            platformio run -d ${{ matrix.project }} --target compiledb
+          fi
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts_${{ matrix.project }}
           path: |
