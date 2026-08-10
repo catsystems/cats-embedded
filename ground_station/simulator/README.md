@@ -15,13 +15,19 @@ Then run:
 
 ```powershell
 .\gs-sim.ps1 setup
+.\gs-sim.ps1 build
 .\gs-sim.ps1 serve
 .\gs-sim.ps1 run .\simulator\scenarios\menu.json
 .\gs-sim.ps1 test
+.\gs-sim.ps1 fatfs-test
 ```
 
+`fatfs-test` verifies that FatFs R0.16 can read and update an R0.13c storage
+image, create and remount a new volume, and reject corrupted media without
+writing to it.
+
 The SDK is pinned to Emscripten `6.0.6` and records the release commit
-`833aa203ba2283fc2b6adb504a79a3a0d692df81`. Generated WebAssembly output is
+`9981799f744be74ac67b1c1813ff172f63be0630`. Generated WebAssembly output is
 ignored; source scenarios and the dependency-free runner remain checked in.
 
 Scenario operations are `set`, `press`, `release`, `hold`, `advance`, `replay`,

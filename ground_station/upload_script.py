@@ -15,12 +15,16 @@
 Import("env")
 
 import ast
+from pathlib import Path
 import time
 import shutil
 import subprocess
-from packet_installer import installPackages
-from uf2_loader import UF2Loader
-from dfu_reboot import DFU_Reboot
+import sys
+
+PROJECT_DIR = Path(env.subst("$PROJECT_DIR")).resolve()
+SCRIPT_DIR = PROJECT_DIR
+if not (SCRIPT_DIR / "packet_installer.py").is_file():
+    SCRIPT_DIR = PROJECT_DIR / "ground_station"
 
 DEBUG = False
 
@@ -40,7 +44,12 @@ env.Replace(
 # Python callback
 def on_upload(source, target, env):
     print("\n************************** Custom Upload Script ********************************")
-    installPackages()
+    if str(SCRIPT_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPT_DIR))
+    from packet_installer import requirePackages
+    requirePackages()
+    from uf2_loader import UF2Loader
+    from dfu_reboot import DFU_Reboot
     arguments = env.GetProjectOption("upload_flags")
     firmware_path = str(source[0])
     loader = UF2Loader()
@@ -74,7 +83,7 @@ def on_upload(source, target, env):
         usb_serial = serial_number_list
     
     if(enable_automatic_console):
-        command = ["python", "serial_terminal.py"]
+        command = [sys.executable, str(SCRIPT_DIR / "serial_terminal.py")]
         command += [str(use_tabs_console), str(compare_vid_pid_console), str(compare_Serial), str(usb_vid), str(usb_pid), str(usb_serial)]
         CREATE_NO_WINDOW = 0x08000000
         subprocess.Popen(command, close_fds=True, creationflags=CREATE_NO_WINDOW, shell = True)

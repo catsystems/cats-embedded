@@ -19,7 +19,16 @@
 
 #include "LSM6DS3.h"
 
-LSM6DS3Class::LSM6DS3Class(){}
+LSM6DS3Class::LSM6DS3Class() :
+  _spiSettings(10E6, MSBFIRST, SPI_MODE0)
+{
+}
+
+LSM6DS3Class::LSM6DS3Class(TwoWire& wire) :
+  _wire(&wire),
+  _spiSettings(10E6, MSBFIRST, SPI_MODE0)
+{
+}
 
 LSM6DS3Class::LSM6DS3Class(TwoWire& wire, uint8_t slaveAddress) :
   _wire(&wire),
@@ -41,20 +50,17 @@ LSM6DS3Class::~LSM6DS3Class()
 {
 }
 
-int LSM6DS3Class::begin(TwoWire& wire, uint8_t slaveAddress)
+int LSM6DS3Class::begin()
 {
-  _wire = &wire;
-  _slaveAddress = slaveAddress;
-  /*
   if (_spi != NULL) {
     pinMode(_csPin, OUTPUT);
     digitalWrite(_csPin, HIGH);
     _spi->begin();
-  } else {
-    //_wire->begin(14,15);
-  }*/
+  } else if (_wire == NULL) {
+    return 0;
+  }
 
-  int whoAmI = readRegister(LSM6DS3_WHO_AM_I_REG);
+  const int whoAmI = readRegister(LSM6DS3_WHO_AM_I_REG);
   if (whoAmI != 0x69 && whoAmI != 0x6B) {
     end();
     return 0;
@@ -74,6 +80,14 @@ int LSM6DS3Class::begin(TwoWire& wire, uint8_t slaveAddress)
   writeRegister(LSM6DS3_CTRL8_XL, 0x09);
 
   return 1;
+}
+
+int LSM6DS3Class::begin(TwoWire& wire, uint8_t slaveAddress)
+{
+  _wire = &wire;
+  _spi = NULL;
+  _slaveAddress = slaveAddress;
+  return begin();
 }
 
 void LSM6DS3Class::end()
@@ -154,14 +168,43 @@ float LSM6DS3Class::gyroscopeSampleRate()
   return 104.0F;
 }
 
+int LSM6DS3Class::readTemperature(float& t)
+{
+  int16_t data[1];
+
+  if (!readRegisters(LSM6DS3_OUT_TEMP_L, (uint8_t*)data, sizeof(data))) {
+    t = NAN;
+
+    return 0;
+  }
+
+  t = data[0] / 16.0 + 25;
+
+  return 1;
+}
+
+int LSM6DS3Class::temperatureAvailable()
+{
+  if (readRegister(LSM6DS3_STATUS_REG) & 0x04) {
+    return 1;
+  }
+
+  return 0;
+}
+
+float LSM6DS3Class::temperatureSampleRate()
+{
+  return 52.0F;
+}
+
 int LSM6DS3Class::readRegister(uint8_t address)
 {
   uint8_t value;
-  
+
   if (readRegisters(address, &value, sizeof(value)) != 1) {
     return -1;
   }
-  
+
   return value;
 }
 
@@ -213,3 +256,8 @@ int LSM6DS3Class::writeRegister(uint8_t address, uint8_t value)
   return 1;
 }
 
+#ifdef ARDUINO_AVR_UNO_WIFI_REV2
+  LSM6DS3Class IMU(SPI, SPIIMU_SS, SPIIMU_INT);
+#else
+  LSM6DS3Class IMU_LSM6DS3(Wire, LSM6DS3_ADDRESS);
+#endif

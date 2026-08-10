@@ -20,7 +20,8 @@
 #ifndef _ADAFRUIT_SPITFT_H_
 #define _ADAFRUIT_SPITFT_H_
 
-#if !defined(__AVR_ATtiny85__) // Not for ATtiny, at all
+// Not for ATtiny, at all
+#if !defined(__AVR_ATtiny85__) && !defined(__AVR_ATtiny84__)
 
 #include "Adafruit_GFX.h"
 #include <SPI.h>
@@ -31,8 +32,8 @@
 typedef uint8_t ADAGFX_PORT_t;       ///< PORT values are 8-bit
 #define USE_FAST_PINIO               ///< Use direct PORT register access
 #elif defined(ARDUINO_STM32_FEATHER) // WICED
-typedef class HardwareSPI SPIClass;        ///< SPI is a bit odd on WICED
-typedef uint32_t ADAGFX_PORT_t;            ///< PORT values are 32-bit
+typedef class HardwareSPI SPIClass; ///< SPI is a bit odd on WICED
+typedef uint32_t ADAGFX_PORT_t;     ///< PORT values are 32-bit
 #elif defined(__arm__)
 #if defined(ARDUINO_ARCH_SAMD)
 // Adafruit M0, M4
@@ -65,20 +66,21 @@ typedef uint32_t ADAGFX_PORT_t; ///< PORT values are 32-bit
 #endif                                     // end !ARM
 typedef volatile ADAGFX_PORT_t *PORTreg_t; ///< PORT register type
 
-#if defined(__AVR__)
+#if defined(__AVR__) && !defined(__LGT8F__)
 #define DEFAULT_SPI_FREQ 8000000L ///< Hardware SPI default speed
 #else
 #define DEFAULT_SPI_FREQ 16000000L ///< Hardware SPI default speed
 #endif
 
-#if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYBADGE_M4_EXPRESS) ||      \
+#if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYPORTAL_M4_TITANO) ||      \
+    defined(ADAFRUIT_PYBADGE_M4_EXPRESS) ||                                    \
     defined(ADAFRUIT_PYGAMER_M4_EXPRESS) ||                                    \
     defined(ADAFRUIT_MONSTER_M4SK_EXPRESS) || defined(NRF52_SERIES) ||         \
     defined(ADAFRUIT_CIRCUITPLAYGROUND_M0)
 #define USE_SPI_DMA ///< Auto DMA
 #else
-                                           //#define USE_SPI_DMA ///< If set,
-                                           // use DMA if available
+                                           // #define USE_SPI_DMA ///< If set,
+                                           //  use DMA if available
 #endif
 // Another "oops" name -- this now also handles parallel DMA.
 // If DMA is enabled, Arduino sketch MUST #include <Adafruit_ZeroDMA.h>
@@ -100,6 +102,16 @@ typedef volatile ADAGFX_PORT_t *PORTreg_t; ///< PORT register type
 // and might never be, still needed that disambiguation from soft SPI.
 /*! For first arg to parallel constructor */
 enum tftBusWidth { tft8bitbus, tft16bitbus };
+
+// SPI defaults for RP2040
+#if defined(ARDUINO_ARCH_RP2040)
+#ifndef __SPI0_DEVICE
+#define __SPI0_DEVICE spi0
+#endif
+#ifndef __SPI1_DEVICE
+#define __SPI1_DEVICE spi1
+#endif
+#endif
 
 // CLASS DEFINITION --------------------------------------------------------
 
@@ -153,6 +165,10 @@ public:
   Adafruit_SPITFT(uint16_t w, uint16_t h, tftBusWidth busWidth, int8_t d0,
                   int8_t wr, int8_t dc, int8_t cs = -1, int8_t rst = -1,
                   int8_t rd = -1);
+
+  // DESTRUCTOR ----------------------------------------------------------
+
+  ~Adafruit_SPITFT(){};
 
   // CLASS MEMBER FUNCTIONS ----------------------------------------------
 
@@ -227,6 +243,10 @@ public:
   // Another new function, companion to the new non-blocking
   // writePixels() variant.
   void dmaWait(void);
+  // Used by writePixels() in some situations, but might have rare need in
+  // user code, so it's public...
+  bool dmaBusy(void) const; // true if DMA is used and busy, false otherwise
+  void swapBytes(uint16_t *src, uint32_t len, uint16_t *dest = NULL);
 
   // These functions are similar to the 'write' functions above, but with
   // a chip-select and/or SPI transaction built-in. They're typically used
@@ -387,8 +407,8 @@ protected:
   PORTreg_t dcPortSet; ///< PORT register for data/command SET
   PORTreg_t dcPortClr; ///< PORT register for data/command CLEAR
 #else                  // !HAS_PORT_SET_CLR
-  PORTreg_t csPort;                 ///< PORT register for chip select
-  PORTreg_t dcPort;                 ///< PORT register for data/command
+  PORTreg_t csPort; ///< PORT register for chip select
+  PORTreg_t dcPort; ///< PORT register for data/command
 #endif                 // end HAS_PORT_SET_CLR
 #endif                 // end USE_FAST_PINIO
 #if defined(__cplusplus) && (__cplusplus >= 201100)
@@ -438,8 +458,8 @@ protected:
       volatile uint32_t *writePort; ///< PORT register for DATA WRITE
       volatile uint32_t *readPort;  ///< PORT (PIN) register for DATA READ
 #else
-      volatile uint8_t *writePort;  ///< PORT register for DATA WRITE
-      volatile uint8_t *readPort;   ///< PORT (PIN) register for DATA READ
+      volatile uint8_t *writePort; ///< PORT register for DATA WRITE
+      volatile uint8_t *readPort;  ///< PORT (PIN) register for DATA READ
 #endif
 #if defined(HAS_PORT_SET_CLR)
       // Port direction register pointers are always 8-bit regardless of
@@ -498,10 +518,10 @@ protected:
   ADAGFX_PORT_t dcPinMask; ///< Bitmask for data/command
 #endif                     // end !KINETISK
 #else                      // !HAS_PORT_SET_CLR
-  ADAGFX_PORT_t csPinMaskSet;     ///< Bitmask for chip select SET (OR)
-  ADAGFX_PORT_t csPinMaskClr;     ///< Bitmask for chip select CLEAR (AND)
-  ADAGFX_PORT_t dcPinMaskSet;     ///< Bitmask for data/command SET (OR)
-  ADAGFX_PORT_t dcPinMaskClr;     ///< Bitmask for data/command CLEAR (AND)
+  ADAGFX_PORT_t csPinMaskSet; ///< Bitmask for chip select SET (OR)
+  ADAGFX_PORT_t csPinMaskClr; ///< Bitmask for chip select CLEAR (AND)
+  ADAGFX_PORT_t dcPinMaskSet; ///< Bitmask for data/command SET (OR)
+  ADAGFX_PORT_t dcPinMaskClr; ///< Bitmask for data/command CLEAR (AND)
 #endif                     // end HAS_PORT_SET_CLR
 #endif                     // end USE_FAST_PINIO
   uint8_t connection;      ///< TFT_HARD_SPI, TFT_SOFT_SPI, etc.
@@ -517,5 +537,5 @@ protected:
   uint32_t _freq = 0; ///< Dummy var to keep subclasses happy
 };
 
-#endif // end __AVR_ATtiny85__
+#endif // end __AVR_ATtiny85__ __AVR_ATtiny84__
 #endif // end _ADAFRUIT_SPITFT_H_

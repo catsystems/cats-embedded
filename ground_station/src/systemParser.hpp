@@ -33,9 +33,9 @@ class SystemParser {
   bool getMagCalib(mag_calib_t& calib);
   bool getUnitSystem(UnitSystem& unit_system);
 
-  bool saveFile(const char* path = nullptr);
+ bool saveFile(const char* path = nullptr);
 
  private:
-  StaticJsonDocument<MAX_SYSTEM_FILE_SIZE> doc;
+  JsonDocument doc;
   const char* filePath{nullptr};
 };
