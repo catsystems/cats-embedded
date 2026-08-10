@@ -30,6 +30,14 @@ const device_settings_t settingsTable[][4] = {{
                                                       {.fun_ptr = Utils::startBootloader},
                                                       nullptr,
                                                   },
+                                                  {
+                                                      "USB Drive",
+                                                      "Press A to share finalized logs with the PC",
+                                                      "Recording pauses until the drive is ejected",
+                                                      BUTTON,
+                                                      {.fun_ptr = nullptr},
+                                                      nullptr,
+                                                  },
                                               },
                                               {
                                                   {"Mode",

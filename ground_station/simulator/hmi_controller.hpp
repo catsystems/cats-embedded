@@ -76,6 +76,7 @@ struct DeviceStatusSnapshot {
   uint8_t minute = 0;
   bool logging = false;
   bool recorderFault = false;
+  std::string usbStorageState = "firmware";
 };
 
 struct GsConfigSnapshot {
@@ -194,6 +195,8 @@ class IDeviceStatus {
  public:
   virtual ~IDeviceStatus() = default;
   [[nodiscard]] virtual DeviceStatusSnapshot snapshot() const = 0;
+  virtual bool requestMassStorage() = 0;
+  virtual void requestFirmwareStorage() = 0;
 };
 
 struct HmiSnapshot {
@@ -216,6 +219,7 @@ struct HmiSnapshot {
   std::string selectedLogHealth = "none";
   std::string dataMessageTitle;
   std::string dataMessageText;
+  std::string usbStorageMessage;
   std::string qrView = "none";
   std::string qrUrl;
   uint64_t virtualTimeMs = 0;
@@ -253,7 +257,7 @@ class HmiController {
   void clearActions() { actions_.clear(); }
 
  private:
-  enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader };
+  enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader, UsbStorage };
   enum class TestingState : uint8_t { Disclaimer, CanStart, CannotStart, Waiting, Failed, Started, ConfirmEvent };
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
   enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
@@ -312,6 +316,7 @@ class HmiController {
   DataSubview dataSubview_ = DataSubview::List;
   std::string dataMessageTitle_;
   std::string dataMessageText_;
+  std::string usbStorageMessage_;
   std::string qrView_ = "none";
   std::string qrUrl_;
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
@@ -320,4 +325,5 @@ class HmiController {
   bool keyboardActive_ = false;
   int16_t keyboardSelection_ = 0;
   bool keyboardUppercase_ = false;
+  bool usbStorageSession_ = false;
 };

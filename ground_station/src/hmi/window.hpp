@@ -75,6 +75,7 @@ class Window {
   void dataScrollIndicators(bool hasPrevious, bool hasNext, int16_t selectedRow = -1);
   void initDataOptions(const char *logName, bool active);
   void initDataMessage(const char *title, const char *message);
+  void initUsbStorage(bool active);
 
   void initSensors();
   void initSensorPrepareCalibrate();

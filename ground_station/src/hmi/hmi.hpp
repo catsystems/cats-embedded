@@ -36,6 +36,7 @@ class Hmi {
     DATA = 4,
     SENSORS = 5,
     SETTINGS = 6,
+    USB_STORAGE = 7,
   };
 
   enum TestingState {
@@ -93,6 +94,8 @@ class Hmi {
   void sensors();
   void initSettings();
   void settings();
+  void initUsbStorage();
+  void usbStorage();
 
   bool initialized = false;
   bool isLogging = false;
@@ -135,4 +138,6 @@ class Hmi {
 
   uint32_t flashFreeMemory = 100;
 
+  bool usbStorageSession = false;
+  UsbStorageState displayedUsbStorageState{UsbStorageState::FirmwareOwned};
 };

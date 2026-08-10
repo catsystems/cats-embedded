@@ -129,6 +129,26 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
         enter(Screen::Settings);
       }
       break;
+    case Screen::UsbStorage: {
+      const std::string storageState = device_.snapshot().usbStorageState;
+      if (usbStorageSession_ && storageState == "firmware") {
+        usbStorageSession_ = false;
+        emit("usb_storage_reclaimed");
+        enter(Screen::Settings);
+        settingsPage_ = 0;
+        settingsSelection_ = 3;
+      } else if (usbStorageSession_ && storageState == "fault") {
+        usbStorageSession_ = false;
+        usbStorageMessage_ = "Storage could not be remounted.";
+      } else if (usbStorageSession_ && pressed(HmiButton::Back) && storageState == "preparing") {
+        device_.requestFirmwareStorage();
+      } else if (!usbStorageSession_ && pressed(HmiButton::Back)) {
+        enter(Screen::Settings);
+        settingsPage_ = 0;
+        settingsSelection_ = 3;
+      }
+      break;
+    }
     case Screen::Logo:
       break;
   }
@@ -224,6 +244,11 @@ void HmiController::ingestTelemetry() {
   logs_.configure(config_.config().dualReceiver, config_.config().neverStopLogging);
   const auto first = link1_.snapshot();
   const auto second = link2_.snapshot();
+  if (device_.snapshot().usbStorageState != "firmware") {
+    if (first.telemetry.updated) link1_.clearUpdates();
+    if (second.telemetry.updated) link2_.clearUpdates();
+    return;
+  }
   if (first.telemetry.updated) {
     logs_.record(first.telemetry, 1);
     link1_.clearUpdates();
@@ -374,7 +399,7 @@ void HmiController::dataStep(uint64_t nowMs) {
     }
     if (pressed(HmiButton::Ok)) {
       const bool deleting = dataSubview_ == DataSubview::ConfirmDelete;
-      if (deleting && device_.snapshot().usb) {
+      if (deleting && device_.snapshot().usbStorageState == "host") {
         dataMessageTitle_ = "USB Connected";
         dataMessageText_ = "Disconnect USB before deleting.";
         dataSubview_ = DataSubview::Message;
@@ -486,7 +511,7 @@ void HmiController::sensorsStep(uint64_t nowMs) {
 }
 
 void HmiController::settingsStep(uint64_t nowMs) {
-  const int16_t counts[3] = {3, 4, 2};
+  const int16_t counts[3] = {4, 4, 2};
   if (keyboardActive_) {
     const bool moveRight = pressed(HmiButton::Right) || repeated(HmiButton::Right, nowMs);
     const bool moveLeft = pressed(HmiButton::Left) || repeated(HmiButton::Left, nowMs);
@@ -576,6 +601,21 @@ void HmiController::settingsStep(uint64_t nowMs) {
       enter(Screen::Bootloader);
       emit("bootloader_requested");
     }
+    if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 3) {
+      usbStorageMessage_.clear();
+      if (!device_.snapshot().usb) {
+        usbStorageMessage_ = "Connect USB cable first.";
+      } else if (logs_.recorderStatus().state != "idle") {
+        usbStorageMessage_ = "Finalize the active log first.";
+      } else if (!device_.requestMassStorage()) {
+        usbStorageMessage_ = "USB storage is unavailable.";
+      } else {
+        usbStorageSession_ = true;
+        emit("usb_storage_shared");
+      }
+      enter(Screen::UsbStorage);
+      return;
+    }
   }
   if (pressed(HmiButton::Down) && settingsSelection_ < counts[settingsPage_] - 1) {
     ++settingsSelection_;
@@ -619,7 +659,8 @@ void HmiController::clearQr() {
 void HmiController::render() { renderer_.render(snapshot()); }
 
 std::string HmiController::screenName() const {
-  static constexpr const char* names[] = {"logo", "menu", "live", "recovery", "testing", "data", "sensors", "settings", "bootloader"};
+  static constexpr const char* names[] = {"logo", "menu", "live", "recovery", "testing", "data", "sensors",
+                                           "settings", "bootloader", "usb_storage"};
   return names[static_cast<size_t>(screen_)];
 }
 
@@ -664,6 +705,7 @@ HmiSnapshot HmiController::snapshot() const {
   result.logScrollOffset = logScrollOffset_;
   result.dataMessageTitle = dataMessageTitle_;
   result.dataMessageText = dataMessageText_;
+  result.usbStorageMessage = usbStorageMessage_;
   result.qrView = qrView_;
   result.qrUrl = qrUrl_;
   result.recoveryLocations = recoveryLocations_;

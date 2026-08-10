@@ -79,6 +79,10 @@ void Hmi::fsm() {
       settings();
       break;
 
+    case USB_STORAGE:
+      usbStorage();
+      break;
+
     default:
       break;
   }
@@ -557,7 +561,7 @@ void Hmi::data() {
     }
     if (okButton.wasPressed()) {
       const bool deleting = dataView == DataView::ConfirmDelete;
-      if (deleting && Utils::isConnected()) {
+      if (deleting && !Utils::isFilesystemAvailable()) {
         dataMessageReturn = DataView::Options;
         dataView = DataView::Message;
         window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
@@ -568,7 +572,7 @@ void Hmi::data() {
       if (!success) {
         dataMessageReturn = DataView::Options;
         dataView = DataView::Message;
-        if (deleting && Utils::isConnected()) {
+        if (deleting && !Utils::isFilesystemAvailable()) {
           window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
         } else {
           window.initDataMessage(deleting ? "Delete Failed" : "Finalize Failed",
@@ -798,6 +802,10 @@ void Hmi::settings() {
         }
         case BUTTON: {
           if (okButton.wasPressed()) {
+            if (settingSubMenu == 0 && settingIndex == 3) {
+              initUsbStorage();
+              return;
+            }
             // If the setting is pointing to the bootloader function, we need to display the bootloader screen
             // first
             if (cfg.fun_ptr == Utils::startBootloader) {
@@ -847,6 +855,69 @@ void Hmi::settings() {
   }
 }
 
+void Hmi::initUsbStorage() {
+  state = USB_STORAGE;
+  usbStorageSession = false;
+  displayedUsbStorageState = Utils::getMassStorageState();
+
+  if (!Utils::isConnected()) {
+    window.initDataMessage("USB Drive", "Connect USB cable first.");
+    return;
+  }
+
+  const RecorderStatus recorderStatus = recorder.getStatus();
+  if (recorderStatus.state != RecorderState::Idle || !recorder.pauseForMassStorage()) {
+    window.initDataMessage("USB Drive", "Finalize the active log first.");
+    return;
+  }
+
+  if (!Utils::requestMassStorage()) {
+    recorder.resumeAfterMassStorage();
+    window.initDataMessage("USB Drive", "USB storage is unavailable.");
+    return;
+  }
+
+  usbStorageSession = true;
+  displayedUsbStorageState = UsbStorageState::Preparing;
+  window.initUsbStorage(false);
+}
+
+void Hmi::usbStorage() {
+  if (!usbStorageSession) {
+    if (backButton.wasPressed()) {
+      state = SETTINGS;
+      window.initSettings(settingSubMenu);
+      window.updateSettings(settingIndex);
+    }
+    return;
+  }
+
+  const UsbStorageState storageState = Utils::getMassStorageState();
+  if (storageState != displayedUsbStorageState) {
+    displayedUsbStorageState = storageState;
+    if (storageState == UsbStorageState::HostOwned) {
+      window.initUsbStorage(true);
+    } else if (storageState == UsbStorageState::Reclaiming) {
+      window.initDataMessage("USB Drive", "Closing USB drive...");
+    } else if (storageState == UsbStorageState::FirmwareOwned) {
+      recorder.resumeAfterMassStorage();
+      usbStorageSession = false;
+      state = SETTINGS;
+      window.initSettings(settingSubMenu);
+      window.updateSettings(settingIndex);
+      return;
+    } else if (storageState == UsbStorageState::Fault) {
+      usbStorageSession = false;
+      window.initDataMessage("USB Drive", "Storage could not be remounted.");
+      return;
+    }
+  }
+
+  if (backButton.wasPressed() && storageState == UsbStorageState::Preparing) {
+    Utils::requestFirmwareStorage();
+  }
+}
+
 void Hmi::update(void *pvParameter) {
   auto *ref = static_cast<Hmi *>(pvParameter);
 
@@ -872,7 +943,7 @@ void Hmi::update(void *pvParameter) {
     if (millis() - barUpdate >= 1000) {
       barUpdate = millis();
       const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
-      if (!ref->isLogging) {
+      if (!ref->isLogging && Utils::isFilesystemAvailable()) {
         ref->flashFreeMemory = Utils::getFlashMemoryUsage();
       }
       if (link2.time.isUpdated()) {

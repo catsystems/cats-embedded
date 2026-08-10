@@ -23,11 +23,13 @@
           <option value="never">Active Never recording</option>
           <option value="delete-failure">Deletion failure</option>
           <option value="usb-delete">USB deletion block</option>
+          <option value="usb-storage">USB Drive active</option>
           <option value="finalize-failure">Finalization failure</option>
           <option value="recorder-fault">Recorder write fault</option>
         </select>
       </label>
       <button id="apply-fixture">Apply fixture</button>
+      <button id="eject-usb" title="Simulate safely ejecting the removable drive on the PC">Eject USB drive</button>
     </section>
     <p class="toolbar-help">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
     <p id="fixture-description" class="fixture-description" aria-live="polite"></p>

@@ -1121,6 +1121,30 @@ void Window::initDataMessage(const char *title, const char *message) {
   surface.present();
 }
 
+void Window::initUsbStorage(bool active) {
+  clearMainScreen();
+  drawPageHeader("USB Drive", false, false);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+
+  if (!active) {
+    display.setFont(&FreeSansBold12pt7b);
+    drawCentreString("Preparing USB drive...", 200, 120);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(10, 230);
+    display.print("Cancel (B)");
+    surface.present();
+    return;
+  }
+
+  display.drawBitmap(136, 53, usb_logo, 128, 128, BLACK);
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("Recording paused", 200, 205);
+  display.setFont(&FreeSans9pt7b);
+  drawCentreString("Eject on PC or unplug USB to return", 200, 230);
+  surface.present();
+}
+
 bool Window::showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
                             bool hasNextPage) {
   if (!LocationQr::IsValid(latitude, longitude)) {
