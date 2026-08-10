@@ -31,7 +31,7 @@ LONG_PRESS_MS = 500
 REPEAT_MS = 100
 BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
 MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
-SETTING_COUNTS = (3, 4, 2)
+SETTING_COUNTS = (4, 4, 2)
 
 
 class ScenarioError(ValueError):
@@ -218,7 +218,8 @@ def defaults() -> dict[str, Any]:
                         "calibrationState": 0, "updated": False},
         "deviceStatus": {"batteryVoltage": 0.0, "usb": False, "freeStoragePercent": 100, "gnss": False,
                           "clockValid": False, "hour": 0, "minute": 0, "logging": False,
-                          "recorderWriteFailure": False, "deleteFailure": False, "finalizeFailure": False},
+                          "recorderWriteFailure": False, "deleteFailure": False, "finalizeFailure": False,
+                          "usbStorageState": "firmware"},
         "logs": [],
     }
 
@@ -257,6 +258,8 @@ class Simulator:
         self.data_selection = 0
         self.data_statistics = False
         self.data_subview = "list"
+        self.usb_storage_session = False
+        self.usb_storage_message = ""
         self.log_scroll_offset = 0
         self.qr_view = "none"
         self.qr_url = ""
@@ -355,6 +358,14 @@ class Simulator:
             self.frame.text(12, 82, f"Selection: {self.settings_selection}")
         elif self.screen == "bootloader":
             self.render("Bootloader", "Bootloader request emitted")
+        elif self.screen == "usb_storage":
+            storage_state = self.state["deviceStatus"].get("usbStorageState", "firmware")
+            if self.usb_storage_message:
+                self.render("USB Drive", self.usb_storage_message)
+            elif storage_state == "host":
+                self.render("USB Drive", "Recording paused. Eject on PC or unplug USB to return.")
+            else:
+                self.render("USB Drive", "Preparing USB drive...")
 
     def press(self, button: str) -> None:
         button = self.normalize_button(button)
@@ -422,6 +433,8 @@ class Simulator:
             self.recovery_step(explicit_pressed)
         elif self.screen == "bootloader" and "back" in explicit_pressed:
             self.screen = "settings"
+        elif self.screen == "usb_storage":
+            self.usb_storage_step(explicit_pressed)
         for name in explicit_pressed:
             if self.held.get(name):
                 self.last_repeat[name] = self.now_ms
@@ -429,6 +442,10 @@ class Simulator:
         self.render_screen()
 
     def ingest_recording(self) -> None:
+        if self.state["deviceStatus"].get("usbStorageState", "firmware") != "firmware":
+            for index in range(2):
+                self.link(index)["telemetry"]["updated"] = False
+            return
         for index in range(2):
             telemetry = self.link(index)["telemetry"]
             if not telemetry.get("updated", False):
@@ -692,7 +709,7 @@ class Simulator:
             elif "ok" in pressed:
                 if self.data_subview == "confirm_finalize":
                     success = self.finalize_recording()
-                elif self.state["deviceStatus"].get("usb", False):
+                elif self.state["deviceStatus"].get("usbStorageState", "firmware") == "host":
                     self.data_subview = "usb_blocked"
                     return
                 elif self.state["deviceStatus"].get("deleteFailure", False):
@@ -780,6 +797,21 @@ class Simulator:
             elif self.settings_page == 0 and self.settings_selection == 2 and "ok" in pressed:
                 self.screen = "bootloader"
                 self.emit("bootloader_requested")
+            elif self.settings_page == 0 and self.settings_selection == 3 and "ok" in pressed:
+                self.usb_storage_message = ""
+                device = self.state["deviceStatus"]
+                if not device.get("usb", False):
+                    self.usb_storage_message = "Connect USB cable first."
+                elif self.recorder_state != "idle":
+                    self.usb_storage_message = "Finalize the active log first."
+                elif device.get("usbStorageState", "firmware") != "firmware":
+                    self.usb_storage_message = "USB storage is unavailable."
+                else:
+                    device["usbStorageState"] = "host"
+                    self.usb_storage_session = True
+                    self.emit("usb_storage_shared")
+                self.screen = "usb_storage"
+                return
             elif self.settings_page == 1 and self.settings_selection == 0:
                 if inc: config["dualReceiver"] = True
                 if dec: config["dualReceiver"] = False
@@ -801,6 +833,24 @@ class Simulator:
             else:
                 self.emit("configuration_saved")
                 self.to_menu()
+
+    def usb_storage_step(self, pressed: set[str]) -> None:
+        storage_state = self.state["deviceStatus"].get("usbStorageState", "firmware")
+        if self.usb_storage_session and storage_state == "firmware":
+            self.usb_storage_session = False
+            self.emit("usb_storage_reclaimed")
+            self.screen = "settings"
+            self.settings_page = 0
+            self.settings_selection = 3
+        elif self.usb_storage_session and storage_state == "fault":
+            self.usb_storage_session = False
+            self.usb_storage_message = "Storage could not be remounted."
+        elif self.usb_storage_session and "back" in pressed and storage_state == "preparing":
+            self.state["deviceStatus"]["usbStorageState"] = "firmware"
+        elif not self.usb_storage_session and "back" in pressed:
+            self.screen = "settings"
+            self.settings_page = 0
+            self.settings_selection = 3
 
     def set_value(self, path: str, value: Any) -> None:
         path = canonical_path(path)
@@ -825,6 +875,8 @@ class Simulator:
             target[key] = value
         else:
             fail(f"set path '{path}' has no field '{key}'")
+        if path in ("deviceStatus.usb", "device.usb") and not bool(value):
+            self.state["deviceStatus"]["usbStorageState"] = "firmware"
         if path.startswith("links") or path.startswith("link"):
             # Injected peripheral values are observable updates, like a radio commit.
             link_index = None
@@ -966,6 +1018,8 @@ class Simulator:
             "activeFilename": self.active_filename,
             "recordedRowCount": self.recorded_rows,
             "droppedRowCount": self.dropped_rows,
+            "usbStorageState": self.state["deviceStatus"].get("usbStorageState", "firmware"),
+            "usbStorageMessage": self.usb_storage_message,
             "selectedRecoveryLink": selected_link,
             "recoverySolution": {"valid": recovery_valid, "latitude": target[0], "longitude": target[1],
                                  "distanceM": distance, "azimuthRad": azimuth},
@@ -1088,7 +1142,7 @@ def deterministic_test(root: Path) -> int:
         return 1
     for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "recording-independent.json",
-                          "recording-modes.json", "log-management.json"):
+                          "recording-modes.json", "log-management.json", "usb-storage.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():
             try:

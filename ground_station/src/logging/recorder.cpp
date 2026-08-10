@@ -200,7 +200,7 @@ bool Recorder::finalizeFile(FinalizeReason reason [[maybe_unused]]) {
 }
 
 bool Recorder::deleteFile(const char* name) {
-  if (Utils::isConnected() || name == nullptr || name[0] == '\0' ||
+  if (!Utils::isFilesystemAvailable() || name == nullptr || name[0] == '\0' ||
       (fileCreated && strcmp(name, fileName) == 0)) {
     return false;
   }
@@ -243,6 +243,12 @@ bool Recorder::finalize(FinalizeReason reason) {
   return submitAndWait(command);
 }
 
+bool Recorder::pauseForMassStorage() {
+  Command command{};
+  command.type = CommandType::PauseForMassStorage;
+  return submitAndWait(command);
+}
+
 bool Recorder::sync() {
   Command command{};
   command.type = CommandType::Sync;
@@ -265,6 +271,9 @@ void Recorder::recordTask(void* pvParameter) {
     }
     bool result = true;
     if (command.type == CommandType::Sample) {
+      if (!ref->enabled) {
+        continue;
+      }
       const uint8_t bit = static_cast<uint8_t>(1U << (command.source - 1U));
       if (!ref->armed) {
         if (command.data.state <= kReadyState) {
@@ -316,6 +325,11 @@ void Recorder::recordTask(void* pvParameter) {
       }
     } else if (command.type == CommandType::Delete) {
       result = ref->deleteFile(command.name);
+    } else if (command.type == CommandType::PauseForMassStorage) {
+      result = !ref->fileCreated && ref->getStatus().state == RecorderState::Idle;
+      if (result) {
+        ref->enabled = false;
+      }
     }
     if (command.requestId != 0U) {
       const Response response{command.requestId, result};

@@ -313,6 +313,12 @@ class ConfigStore final : public IConfigStore {
 class Device final : public IDeviceStatus {
  public:
   DeviceStatusSnapshot snapshot() const override { return value; }
+  bool requestMassStorage() override {
+    if (!value.usb || value.usbStorageState != "firmware") return false;
+    value.usbStorageState = "host";
+    return true;
+  }
+  void requestFirmwareStorage() override { value.usbStorageState = "firmware"; }
   DeviceStatusSnapshot value;
 };
 
@@ -470,6 +476,8 @@ void rebuildSnapshot() {
              ",\"activeFilename\":" + quote(state.recorder.activeFilename) +
              ",\"recordedRowCount\":" + std::to_string(state.recorder.writtenRows) +
              ",\"droppedRowCount\":" + std::to_string(state.recorder.droppedRows) +
+             ",\"usbStorageState\":" + quote(state.device.usbStorageState) +
+             ",\"usbStorageMessage\":" + quote(state.usbStorageMessage) +
              ",\"selectedRecoveryLink\":" + std::to_string(state.selectedRecoveryLink) +
              ",\"recoverySolution\":{\"valid\":" + std::string(state.recoverySolution.valid ? "true" : "false") +
              ",\"latitude\":" + std::to_string(state.recoverySolution.latitude) +
@@ -584,6 +592,8 @@ void gs_set_device_status_json(const char* json) {
   virtualClock.minuteValue = device.value.minute;
   if (numberField(json, "freeStoragePercent", integer)) device.value.freeStoragePercent = static_cast<uint32_t>(integer);
   if (booleanField(json, "usb", boolean)) device.value.usb = boolean;
+  if (!device.value.usb && device.value.usbStorageState == "host") device.value.usbStorageState = "firmware";
+  (void)stringField(json, "usbStorageState", device.value.usbStorageState);
   if (booleanField(json, "gnss", boolean)) device.value.gnss = boolean;
   if (booleanField(json, "recorderWriteFailure", boolean)) logs.failWrite = boolean;
   if (booleanField(json, "deleteFailure", boolean)) logs.failDelete = boolean;

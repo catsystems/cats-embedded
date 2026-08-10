@@ -34,3 +34,8 @@ catalogs, nominal dual recovery, a missing recovery fix, active Never-mode
 recording, USB deletion blocking, write/delete/finalize failures, and manual
 finalization. These presets drive the compiled controller and production
 `Window` renderer rather than static images.
+
+USB mass storage is an explicit Settings > General > USB Drive handoff. CDC
+telemetry remains connected at all times, while recording pauses only while
+the host owns the removable drive. Simulate eject by setting
+`device.usbStorageState` back to `firmware`.

@@ -83,4 +83,4 @@ const char* const settingPageName[kSettingPages] = {"General", "Telemetry", "Loc
 
 extern const device_settings_t settingsTable[][4];
 
-const uint16_t settingsTableValueCount[kSettingPages] = {3, 4, 2};
+const uint16_t settingsTableValueCount[kSettingPages] = {4, 4, 2};

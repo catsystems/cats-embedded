@@ -28,14 +28,28 @@ constexpr uint8_t BOOT_BUTTON = 0;
 constexpr uint8_t TASK_UTILS_FREQ = 5;        // [Hz]
 constexpr uint16_t MSC_STARTUP_DELAY = 2000;  // [ms]
 
+enum class UsbConnectionState : uint8_t {
+  Disconnected,
+  Active,
+  Suspended,
+};
+
+bool deadlineReached(TickType_t now, TickType_t deadline) {
+  return static_cast<int32_t>(now - deadline) >= 0;
+}
+
 static void msc_flush_cb();
 static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize);
 static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize);
+static bool msc_start_stop_cb(uint8_t power_condition, bool start, bool load_eject);
 static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 static volatile bool updated = false;
-static volatile bool connected = false;
+static volatile UsbConnectionState usbConnectionState = UsbConnectionState::Disconnected;
+static volatile UsbStorageState usbStorageState = UsbStorageState::FirmwareOwned;
+static volatile bool filesystemMounted = true;
+static SemaphoreHandle_t storageAccessMutex = nullptr;
 Adafruit_USBD_MSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
@@ -44,6 +58,12 @@ FatFileSystem fatfs;
 
 bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFormat) {
   bool status = true;
+
+  storageAccessMutex = xSemaphoreCreateMutex();
+  if (storageAccessMutex == nullptr) {
+    console.warning.println("[UTILS] Could not create storage mutex");
+    status = false;
+  }
 
   pinMode(BOOT_BUTTON, INPUT_PULLUP);
   if (watchdogTimeout > 0) {
@@ -73,15 +93,17 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
   USB.productName(USB_PRODUCT);
   USB.manufacturerName(USB_MANUFACTURER);
   USB.onEvent(usbEventCallback);
-  USB.begin();
 
   usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
   usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb,
                                msc_flush_cb);  // Set callback
+  usb_msc.setStartStopCallback(msc_start_stop_cb);
   usb_msc.setCapacity(flash.size() / 512,
                       512);  // Set disk size, block size should be 512
                              // regardless of spi flash page size
+  usb_msc.setUnitReady(false);
   usb_msc.begin();
+  USB.begin();
 
   xTaskCreate(update, "task_utils", 2048, this, 1, nullptr);
   delay(200);  // TODO: Check if delay helps
@@ -106,27 +128,82 @@ void Utils::feedWatchdog() { esp_task_wdt_reset(); }
 void Utils::update(void *pvParameter) {
   auto *ref = static_cast<Utils *>(pvParameter);
 
-  TickType_t mscTimer = 0;
-  bool connectedOld = false;
+  TickType_t consoleReadyAt = 0;
+  UsbConnectionState previousState = UsbConnectionState::Disconnected;
   while (true) {
     TickType_t task_last_tick = xTaskGetTickCount();
 
-    connected = connected && USB;
-    if (connected && !connectedOld)  // Check if USB Host is connected
-    {
-      mscTimer = xTaskGetTickCount() + MSC_STARTUP_DELAY;
+    const UsbConnectionState currentState = usbConnectionState;
+    if (currentState != previousState) {
+      if (currentState == UsbConnectionState::Disconnected) {
+        consoleReadyAt = 0;
+        console.enable(false);
+        if (usbStorageState == UsbStorageState::HostOwned ||
+            usbStorageState == UsbStorageState::Preparing) {
+          usbStorageState = UsbStorageState::Reclaiming;
+        }
+      } else if (currentState == UsbConnectionState::Suspended) {
+        // Avoid blocking CDC writes while the host has suspended the bus.  A
+        // resume is not a disconnect and must not change storage ownership.
+        console.enable(false);
+      } else if (currentState == UsbConnectionState::Active) {
+        if (previousState == UsbConnectionState::Disconnected) {
+          // Give the host time to finish enumeration before enabling CDC output.
+          consoleReadyAt = task_last_tick + pdMS_TO_TICKS(MSC_STARTUP_DELAY);
+        } else if (previousState == UsbConnectionState::Suspended) {
+          console.enable(true);
+        }
+      }
+      previousState = currentState;
     }
-    if ((!connected && connectedOld) ||
-        (xTaskGetTickCount() > mscTimer))  // USB connected (after delay) or just disconnected
-    {
-      ref->mscReady = connected;            // Make sure that mscReady can only be set if
-                                            // USB Host is connected
-      usb_msc.setUnitReady(ref->mscReady);  // Set MSC ready for read/write
-                                            // (shows drive to host PC)
-      console.enable(connected);
-      mscTimer = 0;
+
+    if (currentState == UsbConnectionState::Active && consoleReadyAt != 0 &&
+        deadlineReached(task_last_tick, consoleReadyAt)) {
+      console.enable(true);
+      consoleReadyAt = 0;
     }
-    connectedOld = connected;
+
+    if (usbStorageState == UsbStorageState::Preparing) {
+      if (currentState != UsbConnectionState::Active || storageAccessMutex == nullptr) {
+        usbStorageState = UsbStorageState::Reclaiming;
+      } else if (xSemaphoreTake(storageAccessMutex, portMAX_DELAY) == pdTRUE) {
+        // FatFS::end() flushes its own sector cache into the flash driver's
+        // cache.  Sync the flash only after that flush, before exposing raw
+        // sectors to the host.
+        const bool unmounted = fatfs.end() != nullptr;
+        filesystemMounted = false;
+        const bool synced = unmounted && flash.syncBlocks();
+        if (synced) {
+          usbStorageState = UsbStorageState::HostOwned;
+          ref->mscReady = true;
+          usb_msc.setUnitReady(true);
+        } else {
+          // Reclaiming attempts a clean remount so a failed handoff does not
+          // leave firmware storage permanently unavailable.
+          usbStorageState = UsbStorageState::Reclaiming;
+        }
+        xSemaphoreGive(storageAccessMutex);
+      }
+    }
+
+    if (usbStorageState == UsbStorageState::Reclaiming) {
+      if (ref->mscReady) {
+        ref->mscReady = false;
+        usb_msc.setUnitReady(false);
+      }
+      if (storageAccessMutex == nullptr) {
+        usbStorageState = UsbStorageState::Fault;
+      } else if (xSemaphoreTake(storageAccessMutex, portMAX_DELAY) == pdTRUE) {
+        const bool synced = flash.syncBlocks();
+        const bool mounted = filesystemMounted || fatfs.begin(&flash);
+        filesystemMounted = mounted;
+        usbStorageState = synced && mounted ? UsbStorageState::FirmwareOwned : UsbStorageState::Fault;
+        if (synced && mounted) {
+          updated = true;
+        }
+        xSemaphoreGive(storageAccessMutex);
+      }
+    }
 
     vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / TASK_UTILS_FREQ);
   }
@@ -141,7 +218,33 @@ bool Utils::isUpdated(bool clearFlag) {
   return status;
 }
 
-bool Utils::isConnected() { return connected; }
+bool Utils::isConnected() { return usbConnectionState != UsbConnectionState::Disconnected; }
+
+bool Utils::requestMassStorage() {
+  if (storageAccessMutex == nullptr ||
+      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+    return false;
+  }
+  const bool available = usbConnectionState == UsbConnectionState::Active &&
+                         usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted;
+  if (available) {
+    usbStorageState = UsbStorageState::Preparing;
+  }
+  xSemaphoreGive(storageAccessMutex);
+  return available;
+}
+
+void Utils::requestFirmwareStorage() {
+  if (usbStorageState == UsbStorageState::Preparing || usbStorageState == UsbStorageState::HostOwned) {
+    usbStorageState = UsbStorageState::Reclaiming;
+  }
+}
+
+UsbStorageState Utils::getMassStorageState() { return usbStorageState; }
+
+bool Utils::isFilesystemAvailable() {
+  return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted;
+}
 
 bool Utils::format(const char *labelName) {
   static FATFS elmchanFatfs;
@@ -186,12 +289,21 @@ bool Utils::format(const char *labelName) {
 }
 
 int32_t Utils::getFlashMemoryUsage() {
+  if (storageAccessMutex == nullptr ||
+      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+    return -1;
+  }
+  if (!isFilesystemAvailable()) {
+    xSemaphoreGive(storageAccessMutex);
+    return -1;
+  }
   const uint32_t num_clusters = fatfs.clusterCount() - 2;
   const uint32_t available_clusters = fatfs.freeClusterCount();
 
   const double percentage = (static_cast<double>(available_clusters) / static_cast<double>(num_clusters)) * 100.0;
-
-  return static_cast<int32_t>(std::ceil(percentage));
+  const int32_t usage = static_cast<int32_t>(std::ceil(percentage));
+  xSemaphoreGive(storageAccessMutex);
+  return usage;
 }
 
 void Utils::streamUsb(Telemetry *link, uint8_t link_idx) {
@@ -232,10 +344,13 @@ void usbEventCallback(void *arg [[maybe_unused]], esp_event_base_t event_base, i
   if (event_base == ARDUINO_USB_EVENTS) {
     // arduino_usb_event_data_t *data = (arduino_usb_event_data_t *)event_data;
     if (event_id == ARDUINO_USB_STARTED_EVENT || event_id == ARDUINO_USB_RESUME_EVENT) {
-      connected = true;
+      usbConnectionState = UsbConnectionState::Active;
     }
-    if (event_id == ARDUINO_USB_STOPPED_EVENT || event_id == ARDUINO_USB_SUSPEND_EVENT) {
-      connected = false;
+    if (event_id == ARDUINO_USB_SUSPEND_EVENT) {
+      usbConnectionState = UsbConnectionState::Suspended;
+    }
+    if (event_id == ARDUINO_USB_STOPPED_EVENT) {
+      usbConnectionState = UsbConnectionState::Disconnected;
     }
   }
 }
@@ -244,22 +359,45 @@ void usbEventCallback(void *arg [[maybe_unused]], esp_event_base_t event_base, i
 // Copy disk's data to buffer (up to bufsize) and
 // return number of copied bytes (must be multiple of block size)
 static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize) {
-  return flash.readBlocks(lba, static_cast<uint8_t *>(buffer), bufsize / 512) ? static_cast<int32_t>(bufsize) : -1;
+  if (usbStorageState != UsbStorageState::HostOwned || storageAccessMutex == nullptr ||
+      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+    return -1;
+  }
+  const bool read = flash.readBlocks(lba, static_cast<uint8_t *>(buffer), bufsize / 512);
+  xSemaphoreGive(storageAccessMutex);
+  return read ? static_cast<int32_t>(bufsize) : -1;
 }
 
 // Callback invoked when received WRITE10 command.
 // Process data in buffer to disk's storage and
 // return number of written bytes (must be multiple of block size)
 static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize) {
-  return flash.writeBlocks(lba, buffer, bufsize / 512) ? static_cast<int32_t>(bufsize) : -1;
+  if (usbStorageState != UsbStorageState::HostOwned || storageAccessMutex == nullptr ||
+      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+    return -1;
+  }
+  const bool written = flash.writeBlocks(lba, buffer, bufsize / 512);
+  xSemaphoreGive(storageAccessMutex);
+  return written ? static_cast<int32_t>(bufsize) : -1;
 }
 
 // Callback invoked when WRITE10 command is completed (status received and
 // accepted by host). Used to flush any pending cache.
 static void msc_flush_cb() {
-  flash.syncBlocks();  // sync with flash
-  fatfs.cacheClear();  // clear file system's cache to force refresh
+  if (usbStorageState != UsbStorageState::HostOwned || storageAccessMutex == nullptr ||
+      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+    return;
+  }
+  flash.syncBlocks();
+  xSemaphoreGive(storageAccessMutex);
   updated = true;
+}
+
+static bool msc_start_stop_cb(uint8_t power_condition [[maybe_unused]], bool start, bool load_eject) {
+  if (load_eject && !start && usbStorageState == UsbStorageState::HostOwned) {
+    usbStorageState = UsbStorageState::Reclaiming;
+  }
+  return true;
 }
 
 //--------------------------------------------------------------------+

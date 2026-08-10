@@ -24,7 +24,7 @@
     {"press":"back"},{"assert":{"currentDataSubview":"list"}},
     {"press":"ok"},{"press":"down"},{"press":"back"},{"assert":{"currentDataSubview":"details"}},
     {"press":"down"},{"press":"ok"},
-    {"set":{"device.usb":true}},
+    {"set":{"device.usb":true,"device.usbStorageState":"host"}},
     {"press":"ok"},{"assert":{"currentDataSubview":"usb_blocked","logCount":20}},
     {"press":"back"},{"set":{"device.usb":false}},{"press":"ok"},{"press":"ok"},
     {"assert":{"currentDataSubview":"list","logCount":19,"dataSelection":0}},

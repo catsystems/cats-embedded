@@ -18,6 +18,14 @@ constexpr float PI_F = static_cast<float>(PI);
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern FatFileSystem fatfs;
 
+enum class UsbStorageState : uint8_t {
+  FirmwareOwned,
+  Preparing,
+  HostOwned,
+  Reclaiming,
+  Fault,
+};
+
 class Utils {
  public:
   explicit Utils() = default;
@@ -27,6 +35,10 @@ class Utils {
   static void feedWatchdog();
   static bool isUpdated(bool clearFlag = true);
   static bool isConnected();
+  static bool requestMassStorage();
+  static void requestFirmwareStorage();
+  static UsbStorageState getMassStorageState();
+  static bool isFilesystemAvailable();
   static int32_t getFlashMemoryUsage();
   static void streamUsb(Telemetry *link, uint8_t link_idx);
   static bool format(const char *labelName);

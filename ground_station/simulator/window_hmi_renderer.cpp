@@ -185,6 +185,12 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
                                    state.logs.empty() ? -1 : static_cast<int16_t>(state.dataSelection - state.logScrollOffset));
       window_.refresh();
     }
+  } else if (state.screen == "usb_storage") {
+    if (!state.usbStorageMessage.empty()) {
+      window_.initDataMessage("USB Drive", state.usbStorageMessage.c_str());
+    } else {
+      window_.initUsbStorage(state.device.usbStorageState == "host");
+    }
   } else if (state.screen == "sensors") {
     if (state.calibrationState == "prepare") {
       window_.initSensorPrepareCalibrate();

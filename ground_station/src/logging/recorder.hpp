@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -44,6 +45,8 @@ class Recorder : public ITelemetryPacketSink {
 
   void onTelemetryPacket(const packedRXMessage& packet, uint8_t source) override;
   RecorderStatus getStatus() const;
+  bool pauseForMassStorage();
+  void resumeAfterMassStorage() { enabled = true; }
   bool sync();
   bool finalize(FinalizeReason reason = FinalizeReason::UserRequested);
   bool deleteLog(const char* name);
@@ -54,7 +57,7 @@ class Recorder : public ITelemetryPacketSink {
   const char* getDirectory() const { return directory; }
 
  private:
-  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete };
+  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete, PauseForMassStorage };
   struct Command {
     CommandType type{CommandType::Sample};
     packedRXMessage data{};
@@ -69,7 +72,7 @@ class Recorder : public ITelemetryPacketSink {
   };
 
   bool initialized{false};
-  bool enabled{false};
+  std::atomic<bool> enabled{false};
   bool fileCreated{false};
   bool armed{true};
   bool neverStopLogging{false};

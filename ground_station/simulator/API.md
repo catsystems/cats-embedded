@@ -24,8 +24,11 @@ Telemetry injection accepts state, timestamp, coordinates, altitude, velocity,
 voltage, continuity, connection/update state, LQ, RSSI, and SNR for either
 link. Navigation injection accepts home/rocket coordinates, compass north,
 azimuth, distance, and sensor/calibration values. Device injection accepts USB
-state plus recorder write, finalize, and delete failure flags.
+state, `usbStorageState` (`firmware`, `preparing`, `host`, or `fault`), plus
+recorder write, finalize, and delete failure flags.
 
 Snapshots include `recorderState`, `activeFilename`, recorded/dropped row
 counts, `selectedRecoveryLink`, `recoverySolution`, `logCount`,
 `logScrollOffset`, `selectedLogHealth`, and `currentDataSubview`.
+They also expose `usbStorageState` and `usbStorageMessage` for the explicit
+USB Drive handoff flow.
