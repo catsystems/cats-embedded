@@ -628,24 +628,35 @@ void Hmi::data() {
 
 /* SENSORS */
 
-void Hmi::initSensors() { window.initSensors(); }
+void Hmi::initSensors() {
+  lastSensorRefresh = 0;
+  window.initSensors();
+}
 
 void Hmi::sensors() {
   switch (calibrationState) {
-    case IDLE:
-
-      window.updateSensors(&navigation);
-      delay(50);
+    case IDLE: {
+      if (backButton.wasPressed()) {
+        state = MENU;
+        window.initMenu(menuIndex);
+        return;
+      }
 
       if (okButton.wasPressed()) {
         window.initSensorPrepareCalibrate();
         calibrationState = PREPARE;
+        return;
       }
-      if (backButton.wasPressed()) {
-        state = MENU;
-        window.initMenu(menuIndex);
+
+      const uint32_t now = millis();
+      if (now - lastSensorRefresh >= kSensorRefreshIntervalMs) {
+        // A full framebuffer transfer blocks this task. Leave a
+        // quiet interval between sensor redraws so button polling stays fast.
+        window.updateSensors(&navigation);
+        lastSensorRefresh = millis();
       }
       break;
+    }
     case PREPARE:
       if (okButton.wasPressed()) {
         window.initSensorCalibrate();
@@ -933,6 +944,15 @@ void Hmi::update(void *pvParameter) {
   while (ref->initialized) {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    ref->upButton.read();
+    ref->downButton.read();
+    ref->leftButton.read();
+    ref->rightButton.read();
+    ref->centerButton.read();
+
+    ref->okButton.read();
+    ref->backButton.read();
+
     ref->fsm();
 
     if (link1.data.isUpdated()) {
@@ -956,14 +976,6 @@ void Hmi::update(void *pvParameter) {
                             ref->flashFreeMemory, recorderStatus.state == RecorderState::Fault);
     }
 
-    ref->upButton.read();
-    ref->downButton.read();
-    ref->leftButton.read();
-    ref->rightButton.read();
-    ref->centerButton.read();
-
-    ref->okButton.read();
-    ref->backButton.read();
     vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / 50);
   }
 }
