@@ -175,24 +175,10 @@ function Build-WasmIfAvailable {
     return
   }
   Initialize-EmscriptenEnvironment
-  $buildRoot = Join-Path $SimulatorRoot 'build-wasm'
-  New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
   $emccVersion = & $emcc --version
   if ($LASTEXITCODE -ne 0) { throw 'Unable to execute the Emscripten compiler.' }
   Write-Host $emccVersion[0]
-  $cmake = Get-Command cmake -ErrorAction SilentlyContinue
-  if ($null -eq $cmake) {
-    Write-Warning 'CMake is not installed; using the direct Emscripten compiler path.'
-    Build-WasmDirect
-    return
-  }
-  $toolchain = Join-Path $SdkRoot 'upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake'
-  & cmake -S $SimulatorRoot -B $buildRoot "-DCMAKE_TOOLCHAIN_FILE=$toolchain"
-  & cmake --build $buildRoot --config Release
-  if ($LASTEXITCODE -ne 0) { throw 'WebAssembly build failed.' }
-  $generated = Get-ChildItem -LiteralPath $buildRoot -Filter 'gs-sim.js' -Recurse | Select-Object -First 1
-  if ($null -eq $generated) { throw 'WebAssembly build completed without gs-sim.js.' }
-  Copy-Item -LiteralPath $generated.FullName -Destination (Join-Path $SimulatorRoot 'web\gs-sim.js') -Force
+  Build-WasmDirect
 }
 
 function Invoke-FatFsCompatibilityTest {
