@@ -27,8 +27,8 @@ constexpr char kGoogleMapsPrefix[] = "https://www.google.com/maps/search/?api=1&
 bool FormatCoordinate(float coordinate, char *text, size_t textSize) {
   const int32_t scaled = static_cast<int32_t>(lroundf(coordinate * 10000.0F));
   const bool negative = scaled < 0;
-  const uint32_t magnitude = negative ? static_cast<uint32_t>(-static_cast<int64_t>(scaled))
-                                      : static_cast<uint32_t>(scaled);
+  const uint32_t magnitude =
+      negative ? static_cast<uint32_t>(-static_cast<int64_t>(scaled)) : static_cast<uint32_t>(scaled);
   uint32_t whole = magnitude / 10000U;
   const uint32_t fraction = magnitude % 10000U;
 
@@ -96,8 +96,8 @@ bool BuildGoogleMapsUrl(float latitude, float longitude, char *url, size_t urlSi
   return true;
 }
 
-bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, int16_t x, int16_t y,
-                      uint16_t black, uint16_t white) {
+bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, int16_t x, int16_t y, uint16_t black,
+                      uint16_t white) {
   char url[kGoogleMapsUrlSize] = {};
   if (!BuildGoogleMapsUrl(latitude, longitude, url, sizeof(url))) {
     return false;
@@ -111,7 +111,7 @@ bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, in
         qrcodegen::QrSegment::makeAlphanumeric(url + prefixLength),
     };
     const auto qr = qrcodegen::QrCode::encodeSegments(segments, qrcodegen::QrCode::Ecc::MEDIUM, kMinQrVersion,
-                                                       kMaxQrVersion, -1, false);
+                                                      kMaxQrVersion, -1, false);
 
     const int16_t moduleSize = qr.getSize() == 33 ? kVersion4ModuleSize : kVersion5ModuleSize;
     const int16_t qrExtent = static_cast<int16_t>((qr.getSize() + 2 * kQuietZoneModules) * moduleSize);
@@ -121,8 +121,8 @@ bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, in
       for (int moduleX = 0; moduleX < qr.getSize(); ++moduleX) {
         if (qr.getModule(moduleX, moduleY)) {
           display.fillRect(static_cast<int16_t>(renderX + (moduleX + kQuietZoneModules) * moduleSize),
-                           static_cast<int16_t>(y + (moduleY + kQuietZoneModules) * moduleSize), moduleSize,
-                           moduleSize, black);
+                           static_cast<int16_t>(y + (moduleY + kQuietZoneModules) * moduleSize), moduleSize, moduleSize,
+                           black);
         }
       }
     }

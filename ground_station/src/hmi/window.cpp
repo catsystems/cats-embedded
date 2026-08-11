@@ -679,11 +679,10 @@ void Window::initRecovery(bool hasLastLocation) {
 
 void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
   const EarthPoint3D target = navigation->getPointB();
-  updateRecoveryTarget(navigation, target, target.lat != 0.0F && target.lon != 0.0F, -1, false,
-                       hasLastLocation);
+  updateRecoveryTarget(navigation, target, target.lat != 0.0F && target.lon != 0.0F, -1, false, hasLastLocation);
 }
 
-void Window::updateRecoveryTarget(Navigation *navigation, const EarthPoint3D& target, bool targetValid,
+void Window::updateRecoveryTarget(Navigation *navigation, const EarthPoint3D &target, bool targetValid,
                                   int8_t selectedLink, bool dualMode, bool hasLastLocation) {
   display.fillRect(60, 19, 400, 222, WHITE);
 

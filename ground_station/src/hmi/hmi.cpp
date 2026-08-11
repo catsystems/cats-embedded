@@ -470,7 +470,7 @@ void Hmi::openSelectedLog() {
   if (dataIndex >= dataCatalog.size()) {
     return;
   }
-  const LogEntry& entry = dataCatalog[dataIndex];
+  const LogEntry &entry = dataCatalog[dataIndex];
   strncpy(dataLogName, entry.name, sizeof(dataLogName) - 1U);
   dataLogName[sizeof(dataLogName) - 1U] = '\0';
   if (entry.active && !recorder.sync()) {
@@ -567,8 +567,8 @@ void Hmi::data() {
         window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
         return;
       }
-      const bool success = deleting ? recorder.deleteLog(dataCatalog[dataIndex].name)
-                                    : recorder.finalize(FinalizeReason::UserRequested);
+      const bool success =
+          deleting ? recorder.deleteLog(dataCatalog[dataIndex].name) : recorder.finalize(FinalizeReason::UserRequested);
       if (!success) {
         dataMessageReturn = DataView::Options;
         dataView = DataView::Message;

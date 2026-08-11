@@ -33,7 +33,7 @@ class SystemParser {
   bool getMagCalib(mag_calib_t& calib);
   bool getUnitSystem(UnitSystem& unit_system);
 
- bool saveFile(const char* path = nullptr);
+  bool saveFile(const char* path = nullptr);
 
  private:
   JsonDocument doc;

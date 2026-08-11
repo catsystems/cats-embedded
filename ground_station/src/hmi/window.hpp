@@ -31,7 +31,7 @@ struct topBarData {
 
 class Window {
  public:
-  Window(IDisplay& surface, Config& config, IClock& clock)
+  Window(IDisplay &surface, Config &config, IClock &clock)
       : surface(surface), display(surface.gfx()), config(config), clock(clock) {}
 
   enum class LiveState { kShowGnss, kShowDownRange };
@@ -57,10 +57,9 @@ class Window {
 
   void initRecovery(bool hasLastLocation);
   void updateRecovery(Navigation *navigation, bool hasLastLocation);
-  void updateRecoveryTarget(Navigation *navigation, const EarthPoint3D& target, bool targetValid,
-                            int8_t selectedLink, bool dualMode, bool hasLastLocation);
-  bool showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage,
-                      bool hasNextPage);
+  void updateRecoveryTarget(Navigation *navigation, const EarthPoint3D &target, bool targetValid, int8_t selectedLink,
+                            bool dualMode, bool hasLastLocation);
+  bool showLocationQr(float latitude, float longitude, const char *label, bool hasPreviousPage, bool hasNextPage);
 
   void initTesting();
   void initTestingConfirmed(bool connected, bool testingEnabled);
@@ -123,10 +122,10 @@ class Window {
 
   void clearMainScreen();
 
-  IDisplay& surface;
-  Adafruit_GFX& display;
-  Config& config;
-  IClock& clock;
+  IDisplay &surface;
+  Adafruit_GFX &display;
+  Config &config;
+  IClock &clock;
 
   bool connected[2]{};
   uint32_t lastTeleData[2]{};

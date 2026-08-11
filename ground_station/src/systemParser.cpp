@@ -55,8 +55,8 @@ bool hasValidTypes(const JsonDocument& document) {
       if (!value.is<int16_t>()) {
         return false;
       }
-    } else if (key == "mag_o_x" || key == "mag_o_y" || key == "mag_o_z" || key == "mag_s_x" ||
-               key == "mag_s_y" || key == "mag_s_z") {
+    } else if (key == "mag_o_x" || key == "mag_o_y" || key == "mag_o_z" || key == "mag_s_x" || key == "mag_s_y" ||
+               key == "mag_s_z") {
       if (!value.is<int32_t>()) {
         return false;
       }
@@ -198,17 +198,11 @@ bool SystemParser::setUnitSystem(UnitSystem unit_system) {
   return !doc.overflowed();
 }
 
-bool SystemParser::getLinkPhrase1(char* phrase) {
-  return copyPhrase(doc, "link_phrase_1", phrase);
-}
+bool SystemParser::getLinkPhrase1(char* phrase) { return copyPhrase(doc, "link_phrase_1", phrase); }
 
-bool SystemParser::getLinkPhrase2(char* phrase) {
-  return copyPhrase(doc, "link_phrase_2", phrase);
-}
+bool SystemParser::getLinkPhrase2(char* phrase) { return copyPhrase(doc, "link_phrase_2", phrase); }
 
-bool SystemParser::getTestingPhrase(char* phrase) {
-  return copyPhrase(doc, "testing_phrase", phrase);
-}
+bool SystemParser::getTestingPhrase(char* phrase) { return copyPhrase(doc, "testing_phrase", phrase); }
 
 bool SystemParser::getNeverStopLoggingFlag(bool& flag) {
   const JsonVariantConst value = doc["never_stop_logging"];

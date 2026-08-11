@@ -17,7 +17,7 @@ bool IsValid(float latitude, float longitude);
 
 bool BuildGoogleMapsUrl(float latitude, float longitude, char *url, size_t urlSize);
 
-bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, int16_t x, int16_t y,
-                      uint16_t black, uint16_t white);
+bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, int16_t x, int16_t y, uint16_t black,
+                      uint16_t white);
 
 }  // namespace LocationQr

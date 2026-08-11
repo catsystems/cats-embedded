@@ -21,7 +21,6 @@ class IDisplay {
   virtual void begin() = 0;
   virtual void clear() = 0;
   virtual void present() = 0;
-
 };
 
 #ifndef GS_SIMULATOR_WASM
