@@ -10,8 +10,8 @@
 
 #include "utils.hpp"
 #include "Adafruit_SPIFlash.h"
-#include "Adafruit_TinyUSB.h"
 #include "SPI.h"
+#include "USBMSC.h"
 #include "console.hpp"
 #include "systemParser.hpp"
 #include "telemetry/telemetry.hpp"
@@ -27,6 +27,7 @@
 constexpr uint8_t BOOT_BUTTON = 0;
 constexpr uint8_t TASK_UTILS_FREQ = 5;        // [Hz]
 constexpr uint16_t MSC_STARTUP_DELAY = 2000;  // [ms]
+constexpr uint32_t MSC_BLOCK_SIZE = 512;
 
 enum class UsbConnectionState : uint8_t {
   Disconnected,
@@ -39,9 +40,9 @@ bool deadlineReached(TickType_t now, TickType_t deadline) {
 }
 
 static void msc_flush_cb();
-static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize);
-static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize);
-static bool msc_start_stop_cb(uint8_t power_condition, bool start, bool load_eject);
+static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize);
+static int32_t coreMscWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize);
+static bool coreMscStartStop(uint8_t power_condition, bool start, bool load_eject);
 static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
@@ -50,7 +51,7 @@ static volatile UsbConnectionState usbConnectionState = UsbConnectionState::Disc
 static volatile UsbStorageState usbStorageState = UsbStorageState::FirmwareOwned;
 static volatile bool filesystemMounted = true;
 static SemaphoreHandle_t storageAccessMutex = nullptr;
-Adafruit_USBD_MSC usb_msc;
+USBMSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
 FatFileSystem fatfs;
@@ -94,16 +95,21 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
   USB.manufacturerName(USB_MANUFACTURER);
   USB.onEvent(usbEventCallback);
 
-  usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
-  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb,
-                               msc_flush_cb);  // Set callback
-  usb_msc.setStartStopCallback(msc_start_stop_cb);
-  usb_msc.setCapacity(flash.size() / 512,
-                      512);  // Set disk size, block size should be 512
-                             // regardless of spi flash page size
-  usb_msc.setUnitReady(false);
-  usb_msc.begin();
-  USB.begin();
+  usb_msc.vendorID(USB_MANUFACTURER);
+  usb_msc.productID(USB_PRODUCT);
+  usb_msc.productRevision(FIRMWARE_VERSION);
+  usb_msc.onRead(coreMscRead);
+  usb_msc.onWrite(coreMscWrite);
+  usb_msc.onStartStop(coreMscStartStop);
+  if (!usb_msc.begin(flash.size() / MSC_BLOCK_SIZE, MSC_BLOCK_SIZE)) {
+    console.warning.println("[UTILS] Could not initialize USB mass storage");
+    status = false;
+  }
+  usb_msc.mediaPresent(false);
+  if (!USB.begin()) {
+    console.warning.println("[UTILS] Could not initialize USB");
+    status = false;
+  }
 
   xTaskCreate(update, "task_utils", 2048, this, 1, nullptr);
   delay(200);  // TODO: Check if delay helps
@@ -203,7 +209,7 @@ void Utils::update(void *pvParameter) {
         if (synced) {
           usbStorageState = UsbStorageState::HostOwned;
           ref->mscReady = true;
-          usb_msc.setUnitReady(true);
+          usb_msc.mediaPresent(true);
         } else {
           // Reclaiming attempts a clean remount so a failed handoff does not
           // leave firmware storage permanently unavailable.
@@ -216,7 +222,7 @@ void Utils::update(void *pvParameter) {
     if (usbStorageState == UsbStorageState::Reclaiming) {
       if (ref->mscReady) {
         ref->mscReady = false;
-        usb_msc.setUnitReady(false);
+        usb_msc.mediaPresent(false);
       }
       if (storageAccessMutex == nullptr) {
         usbStorageState = UsbStorageState::Fault;
@@ -387,28 +393,86 @@ void usbEventCallback(void *arg [[maybe_unused]], esp_event_base_t event_base, i
   }
 }
 
-// Callback invoked when received READ10 command.
-// Copy disk's data to buffer (up to bufsize) and
-// return number of copied bytes (must be multiple of block size)
-static int32_t msc_read_cb(uint32_t lba, void *buffer, uint32_t bufsize) {
+static bool msc_read_range(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size) {
+  uint8_t block[MSC_BLOCK_SIZE];
+  uint32_t address = lba * MSC_BLOCK_SIZE + offset;
+
+  while (size > 0) {
+    const uint32_t blockIndex = address / MSC_BLOCK_SIZE;
+    const uint32_t blockOffset = address % MSC_BLOCK_SIZE;
+    const uint32_t available = MSC_BLOCK_SIZE - blockOffset;
+    const uint32_t chunk = size < available ? size : available;
+
+    if (blockOffset == 0 && chunk == MSC_BLOCK_SIZE) {
+      if (!flash.readBlocks(blockIndex, buffer, 1)) {
+        return false;
+      }
+    } else {
+      if (!flash.readBlocks(blockIndex, block, 1)) {
+        return false;
+      }
+      memcpy(buffer, block + blockOffset, chunk);
+    }
+
+    address += chunk;
+    buffer += chunk;
+    size -= chunk;
+  }
+  return true;
+}
+
+static bool msc_write_range(uint32_t lba, uint32_t offset, const uint8_t *buffer, uint32_t size) {
+  uint8_t block[MSC_BLOCK_SIZE];
+  uint32_t address = lba * MSC_BLOCK_SIZE + offset;
+
+  while (size > 0) {
+    const uint32_t blockIndex = address / MSC_BLOCK_SIZE;
+    const uint32_t blockOffset = address % MSC_BLOCK_SIZE;
+    const uint32_t available = MSC_BLOCK_SIZE - blockOffset;
+    const uint32_t chunk = size < available ? size : available;
+
+    if (blockOffset == 0 && chunk == MSC_BLOCK_SIZE) {
+      if (!flash.writeBlocks(blockIndex, buffer, 1)) {
+        return false;
+      }
+    } else {
+      if (!flash.readBlocks(blockIndex, block, 1)) {
+        return false;
+      }
+      memcpy(block + blockOffset, buffer, chunk);
+      if (!flash.writeBlocks(blockIndex, block, 1)) {
+        return false;
+      }
+    }
+
+    address += chunk;
+    buffer += chunk;
+    size -= chunk;
+  }
+  return true;
+}
+
+// Copy a possibly partial READ10 range into the host buffer.
+static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize) {
   if (usbStorageState != UsbStorageState::HostOwned || storageAccessMutex == nullptr ||
       xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return -1;
   }
-  const bool read = flash.readBlocks(lba, static_cast<uint8_t *>(buffer), bufsize / 512);
+  const uint64_t endAddress = static_cast<uint64_t>(lba) * MSC_BLOCK_SIZE + offset + bufsize;
+  const bool read = endAddress <= flash.size() &&
+                    msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
   xSemaphoreGive(storageAccessMutex);
   return read ? static_cast<int32_t>(bufsize) : -1;
 }
 
-// Callback invoked when received WRITE10 command.
-// Process data in buffer to disk's storage and
-// return number of written bytes (must be multiple of block size)
-static int32_t msc_write_cb(uint32_t lba, uint8_t *buffer, uint32_t bufsize) {
+// Process a possibly partial WRITE10 range from the host buffer.
+static int32_t coreMscWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize) {
   if (usbStorageState != UsbStorageState::HostOwned || storageAccessMutex == nullptr ||
       xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return -1;
   }
-  const bool written = flash.writeBlocks(lba, buffer, bufsize / 512);
+  const uint64_t endAddress = static_cast<uint64_t>(lba) * MSC_BLOCK_SIZE + offset + bufsize;
+  const bool written = endAddress <= flash.size() && msc_write_range(lba, offset, buffer, bufsize);
   xSemaphoreGive(storageAccessMutex);
   return written ? static_cast<int32_t>(bufsize) : -1;
 }
@@ -425,12 +489,14 @@ static void msc_flush_cb() {
   updated = true;
 }
 
-static bool msc_start_stop_cb(uint8_t power_condition [[maybe_unused]], bool start, bool load_eject) {
+static bool coreMscStartStop(uint8_t power_condition [[maybe_unused]], bool start, bool load_eject) {
   if (load_eject && !start && usbStorageState == UsbStorageState::HostOwned) {
     usbStorageState = UsbStorageState::Reclaiming;
   }
   return true;
 }
+
+extern "C" void tud_msc_write10_complete_cb(uint8_t lun [[maybe_unused]]) { msc_flush_cb(); }
 
 //--------------------------------------------------------------------+
 // fatfs diskio
