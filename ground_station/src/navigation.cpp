@@ -24,7 +24,9 @@ bool Navigation::begin() {
 
   calibration = CALIB_CONCLUDED;
 
-  xTaskCreate(navigationTask, "task_navigation", 1024, this, 1, nullptr);
+  // Arduino-ESP32 3.x and GCC 15 need more headroom for the sensor/I2C call
+  // chain than the legacy 1 KiB allocation provided.
+  xTaskCreate(navigationTask, "task_navigation", 4096, this, 1, nullptr);
   return true;
 }
 

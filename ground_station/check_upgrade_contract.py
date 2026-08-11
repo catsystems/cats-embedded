@@ -65,7 +65,6 @@ def main() -> None:
         platformio,
         (
             "platform-espressif32/releases/download/2026.05.50/platform-espressif32.zip",
-            "adafruit/Adafruit TinyUSB Library@3.7.7",
             "adafruit/Adafruit SPIFlash@5.1.1",
             "adafruit/SdFat - Adafruit Fork@2.3.103",
             "bblanchon/ArduinoJson@7.4.3",
@@ -79,11 +78,32 @@ def main() -> None:
         ),
     )
     platformio_text = platformio.read_text(encoding="utf-8")
-    forbidden = ("CFG_TUSB_", "CFG_TUD_", "toolchain-xtensa-esp32s2")
+    forbidden = (
+        "Adafruit TinyUSB Library",
+        "CFG_TUSB_",
+        "CFG_TUD_",
+        "toolchain-xtensa-esp32s2",
+    )
     if any(fragment in platformio_text for fragment in forbidden):
-        raise RuntimeError("Obsolete TinyUSB or toolchain overrides are present")
+        raise RuntimeError("External TinyUSB, obsolete TinyUSB flags, or toolchain overrides are present")
     if (GROUND_STATION / "src" / "USBCDC.cpp").exists():
         raise RuntimeError("USBCDC.cpp must come from the pinned Arduino-ESP32 core")
+    require_text(
+        GROUND_STATION / "src" / "USB.cpp",
+        (
+            "#if CFG_TUD_DFU_RUNTIME",
+            "TUD_DFU_RT_DESCRIPTOR",
+            "APP_REQUEST_UF2_RESET_HINT = 0x11F2",
+        ),
+    )
+    require_text(
+        GROUND_STATION / "src" / "utils.cpp",
+        (
+            '#include "USBMSC.h"',
+            "USBMSC usb_msc;",
+            "tud_msc_write10_complete_cb",
+        ),
+    )
 
     require_text(GROUND_STATION / "lib" / "Adafruit_GFX_Library" / "library.properties", ("version=1.12.6",))
     require_text(GROUND_STATION / "lib" / "Adafruit_BusIO" / "library.properties", ("version=1.17.4",))

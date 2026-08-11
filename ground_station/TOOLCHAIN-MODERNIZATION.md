@@ -5,7 +5,8 @@
 - PlatformIO Core 6.1.19 on Python 3.11
 - Tasmota platform-espressif32 2026.05.50
 - Arduino-ESP32 3.3.8 (`f2a3fa2b`) and GCC 15.2
-- TinyUSB 3.7.7, SPIFlash 5.1.1, SdFat 2.3.103
+- Arduino-ESP32 native TinyUSB CDC/MSC/runtime-DFU support, SPIFlash 5.1.1,
+  SdFat 2.3.103
 - ArduinoJson 7.4.3, JC_Button 2.1.6, Time 1.6.1
 - Adafruit GFX 1.12.6, BusIO 1.17.4, Sharp Memory Display 1.1.4
 - Arduino_LSM6DS3 1.0.3 and Madgwick 1.2.0 with documented CATS deltas
@@ -15,12 +16,22 @@
 `QMC5883Compass` is protected by a checked manifest and is not upgraded or
 modified. The two TinyUF2 0.10.2 combined images are also hash-locked.
 
+The standalone Adafruit TinyUSB library is intentionally not installed. It
+uses a second descriptor registry that is incompatible with manual USB startup
+in Arduino-ESP32 3.3.8. USB CDC and MSC now use the pinned core directly. The
+documented `USB.cpp` override selects runtime DFU when the core configuration
+enables both DFU variants and retains the TinyUF2 reset hint `0x11F2`.
+
 ## Automated result
 
-The empty-home Windows build uses 528,592 bytes of flash (36.7%) and 45,840
-bytes of static RAM (14.0%). Relative to the recorded baseline, flash is
-35,014 bytes smaller and static RAM is 5,892 bytes larger, within the per-stage
-limits. All 12 deterministic simulator scenarios pass with the unchanged
+The clean Windows build uses 543,680 bytes of flash (37.7%) and 63,928 bytes
+of static RAM (19.5%). Relative to the recorded baseline, flash is 19,926
+bytes smaller and static RAM is 23,980 bytes larger. The RAM increase is
+accounted for by fixed MSC, transfer, and endpoint buffers in the pinned
+core's precompiled native USB implementation; 263,752 bytes (80.5%) remain
+available. This intentionally replaces the incompatible mixed core/Adafruit
+USB descriptor registries that failed during hardware testing. All 12
+deterministic simulator scenarios pass with the unchanged
 framebuffer SHA-256
 `4d81f455bcf9e62e7489cd6eb5bb939be6e54f7f89ab32523e0cd5b0b48d03d2`,
 and the Emscripten WebAssembly bundle builds successfully. The host storage
