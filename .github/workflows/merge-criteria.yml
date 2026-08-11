@@ -131,8 +131,6 @@ jobs:
         run: |
           if [[ "${{ matrix.project }}" == "flight_computer" ]]; then
             platformio run -d ${{ matrix.project }} --target compiledb --environment debug
-          elif [[ "${{ matrix.project }}" == "ground_station" ]]; then
-            platformio run -d ${{ matrix.project }} --target compiledbtc
           else
             platformio run -d ${{ matrix.project }} --target compiledb
           fi
@@ -211,21 +209,16 @@ jobs:
         run: pio pkg install --project-dir ${{ matrix.project }}
 
       - name: Build
-        shell: bash
+        shell: pwsh
         run: |
           platformio run -d ${{ matrix.project }}
-          if [[ "${{ matrix.project }}" == "ground_station" ]]; then
+          if ("${{ matrix.project }}" -eq "ground_station") {
             python ${{ matrix.project }}/uf2_loader.py ${{ matrix.project }}/.pio/build/ground_station/firmware
-          fi
+          }
 
       - name: Generate compile_commands.json
-        shell: bash
-        run: |
-          if [[ "${{ matrix.project }}" == "ground_station" ]]; then
-            platformio run -d ${{ matrix.project }} --target compiledbtc
-          else
-            platformio run -d ${{ matrix.project }} --target compiledb
-          fi
+        shell: pwsh
+        run: platformio run -d ${{ matrix.project }} --target compiledb
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
