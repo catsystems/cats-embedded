@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "telemetryData.hpp"
 #include "packetSink.hpp"
+#include "telemetryData.hpp"
 #include "telemetry_reg.hpp"
 
 #include <cstdint>

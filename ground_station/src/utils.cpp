@@ -16,8 +16,10 @@
 #include "systemParser.hpp"
 #include "telemetry/telemetry.hpp"
 
+// clang-format off: diskio.h uses the FatFs types declared by ff.h.
 #include "ff.h"
 #include "diskio.h"
+// clang-format on
 
 #include <esp_private/system_internal.h>
 #include <esp_task_wdt.h>
@@ -35,9 +37,7 @@ enum class UsbConnectionState : uint8_t {
   Suspended,
 };
 
-bool deadlineReached(TickType_t now, TickType_t deadline) {
-  return static_cast<int32_t>(now - deadline) >= 0;
-}
+bool deadlineReached(TickType_t now, TickType_t deadline) { return static_cast<int32_t>(now - deadline) >= 0; }
 
 static void msc_flush_cb();
 static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize);
@@ -171,8 +171,7 @@ void Utils::update(void *pvParameter) {
       if (currentState == UsbConnectionState::Disconnected) {
         consoleReadyAt = 0;
         console.enable(false);
-        if (usbStorageState == UsbStorageState::HostOwned ||
-            usbStorageState == UsbStorageState::Preparing) {
+        if (usbStorageState == UsbStorageState::HostOwned || usbStorageState == UsbStorageState::Preparing) {
           usbStorageState = UsbStorageState::Reclaiming;
         }
       } else if (currentState == UsbConnectionState::Suspended) {
@@ -254,8 +253,7 @@ bool Utils::isUpdated(bool clearFlag) {
 bool Utils::isConnected() { return usbConnectionState != UsbConnectionState::Disconnected; }
 
 bool Utils::requestMassStorage() {
-  if (storageAccessMutex == nullptr ||
-      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+  if (storageAccessMutex == nullptr || xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return false;
   }
   const bool available = usbConnectionState == UsbConnectionState::Active &&
@@ -275,9 +273,7 @@ void Utils::requestFirmwareStorage() {
 
 UsbStorageState Utils::getMassStorageState() { return usbStorageState; }
 
-bool Utils::isFilesystemAvailable() {
-  return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted;
-}
+bool Utils::isFilesystemAvailable() { return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted; }
 
 bool Utils::format(const char *labelName) {
   static FATFS elmchanFatfs;
@@ -291,7 +287,7 @@ bool Utils::format(const char *labelName) {
       .n_root = 0,
       .au_size = 0,
   };
-  static uint8_t buf[512] = {0};          // Working buffer for f_fdisk function.
+  static uint8_t buf[512] = {0};  // Working buffer for f_fdisk function.
   static FRESULT r = f_fdisk(0, plist,
                              buf);  // Partition the flash with 1 partition that takes the entire space.
   if (r != FR_OK) {
@@ -327,8 +323,7 @@ bool Utils::format(const char *labelName) {
 }
 
 int32_t Utils::getFlashMemoryUsage() {
-  if (storageAccessMutex == nullptr ||
-      xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+  if (storageAccessMutex == nullptr || xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return -1;
   }
   if (!isFilesystemAvailable()) {
@@ -459,8 +454,7 @@ static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t
     return -1;
   }
   const uint64_t endAddress = static_cast<uint64_t>(lba) * MSC_BLOCK_SIZE + offset + bufsize;
-  const bool read = endAddress <= flash.size() &&
-                    msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
+  const bool read = endAddress <= flash.size() && msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
   xSemaphoreGive(storageAccessMutex);
   return read ? static_cast<int32_t>(bufsize) : -1;
 }

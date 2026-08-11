@@ -17,14 +17,14 @@
 #if SOC_USB_OTG_SUPPORTED
 #if CONFIG_TINYUSB_ENABLED
 
-#include "pins_arduino.h"
-#include "esp32-hal.h"
-#include "esp32-hal-tinyusb.h"
-#include "common/tusb_common.h"
 #include "StreamString.h"
-#include "rom/ets_sys.h"
+#include "common/tusb_common.h"
+#include "esp32-hal-tinyusb.h"
+#include "esp32-hal.h"
 #include "esp_mac.h"
 #include "esp_private/system_internal.h"
+#include "pins_arduino.h"
+#include "rom/ets_sys.h"
 
 #ifndef USB_VID
 #define USB_VID USB_ESPRESSIF_VID
@@ -58,17 +58,15 @@ static uint16_t load_dfu_descriptor(uint8_t *dst, uint8_t *itf) {
 #define DFU_ATTRS (DFU_ATTR_CAN_DOWNLOAD | DFU_ATTR_CAN_UPLOAD | DFU_ATTR_MANIFESTATION_TOLERANT)
 
   uint8_t str_index = tinyusb_add_string_descriptor("TinyUSB DFU_RT");
-  uint8_t descriptor[TUD_DFU_RT_DESC_LEN] = {// Interface number, string index, attributes, detach timeout, transfer size */
-                                             TUD_DFU_RT_DESCRIPTOR(*itf, str_index, DFU_ATTRS, 700, 64)
-  };
+  uint8_t descriptor[TUD_DFU_RT_DESC_LEN] = {
+      // Interface number, string index, attributes, detach timeout, transfer size */
+      TUD_DFU_RT_DESCRIPTOR(*itf, str_index, DFU_ATTRS, 700, 64)};
   *itf += 1;
   memcpy(dst, descriptor, TUD_DFU_RT_DESC_LEN);
   return TUD_DFU_RT_DESC_LEN;
 }
 #elif CFG_TUD_DFU
-__attribute__((weak)) uint16_t load_dfu_ota_descriptor(uint8_t *dst, uint8_t *itf) {
-  return 0;
-}
+__attribute__((weak)) uint16_t load_dfu_ota_descriptor(uint8_t *dst, uint8_t *itf) { return 0; }
 #endif /* CFG_TUD_DFU_RUNTIME */
 
 #if CFG_TUD_DFU_RUNTIME
@@ -86,17 +84,21 @@ ESP_EVENT_DEFINE_BASE(ARDUINO_USB_EVENTS);
 
 static esp_event_loop_handle_t arduino_usb_event_loop_handle = NULL;
 
-esp_err_t arduino_usb_event_post(esp_event_base_t event_base, int32_t event_id, void *event_data, size_t event_data_size, TickType_t ticks_to_wait) {
+esp_err_t arduino_usb_event_post(esp_event_base_t event_base, int32_t event_id, void *event_data,
+                                 size_t event_data_size, TickType_t ticks_to_wait) {
   if (arduino_usb_event_loop_handle == NULL) {
     return ESP_FAIL;
   }
-  return esp_event_post_to(arduino_usb_event_loop_handle, event_base, event_id, event_data, event_data_size, ticks_to_wait);
+  return esp_event_post_to(arduino_usb_event_loop_handle, event_base, event_id, event_data, event_data_size,
+                           ticks_to_wait);
 }
-esp_err_t arduino_usb_event_handler_register_with(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void *event_handler_arg) {
+esp_err_t arduino_usb_event_handler_register_with(esp_event_base_t event_base, int32_t event_id,
+                                                  esp_event_handler_t event_handler, void *event_handler_arg) {
   if (arduino_usb_event_loop_handle == NULL) {
     return ESP_FAIL;
   }
-  return esp_event_handler_register_with(arduino_usb_event_loop_handle, event_base, event_id, event_handler, event_handler_arg);
+  return esp_event_handler_register_with(arduino_usb_event_loop_handle, event_base, event_id, event_handler,
+                                         event_handler_arg);
 }
 
 static bool tinyusb_device_mounted = false;
@@ -107,7 +109,8 @@ void tud_mount_cb(void) {
   tinyusb_device_mounted = true;
   arduino_usb_event_data_t p;
   p.suspend.remote_wakeup_en = 0;
-  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_STARTED_EVENT, &p, sizeof(arduino_usb_event_data_t), portMAX_DELAY);
+  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_STARTED_EVENT, &p, sizeof(arduino_usb_event_data_t),
+                         portMAX_DELAY);
 }
 
 // Invoked when device is unmounted
@@ -115,7 +118,8 @@ void tud_umount_cb(void) {
   tinyusb_device_mounted = false;
   arduino_usb_event_data_t p;
   p.suspend.remote_wakeup_en = 0;
-  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_STOPPED_EVENT, &p, sizeof(arduino_usb_event_data_t), portMAX_DELAY);
+  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_STOPPED_EVENT, &p, sizeof(arduino_usb_event_data_t),
+                         portMAX_DELAY);
 }
 
 // Invoked when usb bus is suspended
@@ -124,7 +128,8 @@ void tud_suspend_cb(bool remote_wakeup_en) {
   tinyusb_device_suspended = true;
   arduino_usb_event_data_t p;
   p.suspend.remote_wakeup_en = remote_wakeup_en;
-  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_SUSPEND_EVENT, &p, sizeof(arduino_usb_event_data_t), portMAX_DELAY);
+  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_SUSPEND_EVENT, &p, sizeof(arduino_usb_event_data_t),
+                         portMAX_DELAY);
 }
 
 // Invoked when usb bus is resumed
@@ -132,24 +137,35 @@ void tud_resume_cb(void) {
   tinyusb_device_suspended = false;
   arduino_usb_event_data_t p;
   p.suspend.remote_wakeup_en = 0;
-  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_RESUME_EVENT, &p, sizeof(arduino_usb_event_data_t), portMAX_DELAY);
+  arduino_usb_event_post(ARDUINO_USB_EVENTS, ARDUINO_USB_RESUME_EVENT, &p, sizeof(arduino_usb_event_data_t),
+                         portMAX_DELAY);
 }
 
 ESPUSB::ESPUSB(size_t task_stack_size, uint8_t event_task_priority)
-  : vid(USB_VID), pid(USB_PID), product_name(USB_PRODUCT), manufacturer_name(USB_MANUFACTURER), serial_number(USB_SERIAL), fw_version(0x0100),
-    usb_version(0x0200)  // at least 2.1 or 3.x for BOS & webUSB
-    ,
-    usb_class(TUSB_CLASS_MISC), usb_subclass(MISC_SUBCLASS_COMMON), usb_protocol(MISC_PROTOCOL_IAD), usb_attributes(TUSB_DESC_CONFIG_ATT_SELF_POWERED),
-    usb_power_ma(500), webusb_enabled(USB_WEBUSB_ENABLED), webusb_url(USB_WEBUSB_URL), _started(false), _task_stack_size(task_stack_size),
-    _event_task_priority(event_task_priority) {
+    : vid(USB_VID),
+      pid(USB_PID),
+      product_name(USB_PRODUCT),
+      manufacturer_name(USB_MANUFACTURER),
+      serial_number(USB_SERIAL),
+      fw_version(0x0100),
+      usb_version(0x0200)  // at least 2.1 or 3.x for BOS & webUSB
+      ,
+      usb_class(TUSB_CLASS_MISC),
+      usb_subclass(MISC_SUBCLASS_COMMON),
+      usb_protocol(MISC_PROTOCOL_IAD),
+      usb_attributes(TUSB_DESC_CONFIG_ATT_SELF_POWERED),
+      usb_power_ma(500),
+      webusb_enabled(USB_WEBUSB_ENABLED),
+      webusb_url(USB_WEBUSB_URL),
+      _started(false),
+      _task_stack_size(task_stack_size),
+      _event_task_priority(event_task_priority) {
   if (!arduino_usb_event_loop_handle) {
-    esp_event_loop_args_t event_task_args = {
-      .queue_size = 5,
-      .task_name = "arduino_usb_events",
-      .task_priority = _event_task_priority,
-      .task_stack_size = _task_stack_size,
-      .task_core_id = tskNO_AFFINITY
-    };
+    esp_event_loop_args_t event_task_args = {.queue_size = 5,
+                                             .task_name = "arduino_usb_events",
+                                             .task_priority = _event_task_priority,
+                                             .task_stack_size = _task_stack_size,
+                                             .task_core_id = tskNO_AFFINITY};
     if (esp_event_loop_create(&event_task_args, &arduino_usb_event_loop_handle) != ESP_OK) {
       log_e("esp_event_loop_create failed");
     }
@@ -174,37 +190,31 @@ bool ESPUSB::begin() {
       serial_number = s;
     }
 #endif
-    tinyusb_device_config_t tinyusb_device_config = {
-      .vid = vid,
-      .pid = pid,
-      .product_name = product_name.c_str(),
-      .manufacturer_name = manufacturer_name.c_str(),
-      .serial_number = serial_number.c_str(),
-      .fw_version = fw_version,
-      .usb_version = usb_version,
-      .usb_class = usb_class,
-      .usb_subclass = usb_subclass,
-      .usb_protocol = usb_protocol,
-      .usb_attributes = usb_attributes,
-      .usb_power_ma = usb_power_ma,
-      .webusb_enabled = webusb_enabled,
-      .webusb_url = webusb_url.c_str()
-    };
+    tinyusb_device_config_t tinyusb_device_config = {.vid = vid,
+                                                     .pid = pid,
+                                                     .product_name = product_name.c_str(),
+                                                     .manufacturer_name = manufacturer_name.c_str(),
+                                                     .serial_number = serial_number.c_str(),
+                                                     .fw_version = fw_version,
+                                                     .usb_version = usb_version,
+                                                     .usb_class = usb_class,
+                                                     .usb_subclass = usb_subclass,
+                                                     .usb_protocol = usb_protocol,
+                                                     .usb_attributes = usb_attributes,
+                                                     .usb_power_ma = usb_power_ma,
+                                                     .webusb_enabled = webusb_enabled,
+                                                     .webusb_url = webusb_url.c_str()};
     _started = tinyusb_init(&tinyusb_device_config) == ESP_OK;
   }
   return _started;
 }
 
-void ESPUSB::onEvent(esp_event_handler_t callback) {
-  onEvent(ARDUINO_USB_ANY_EVENT, callback);
-}
+void ESPUSB::onEvent(esp_event_handler_t callback) { onEvent(ARDUINO_USB_ANY_EVENT, callback); }
 void ESPUSB::onEvent(arduino_usb_event_t event, esp_event_handler_t callback) {
   arduino_usb_event_handler_register_with(ARDUINO_USB_EVENTS, event, callback, this);
 }
 
-ESPUSB::operator bool() const {
-  return _started && tinyusb_device_mounted;
-}
+ESPUSB::operator bool() const { return _started && tinyusb_device_mounted; }
 
 bool ESPUSB::enableDFU() {
 #if CFG_TUD_DFU_RUNTIME
@@ -221,9 +231,7 @@ bool ESPUSB::VID(uint16_t v) {
   }
   return !_started;
 }
-uint16_t ESPUSB::VID(void) {
-  return vid;
-}
+uint16_t ESPUSB::VID(void) { return vid; }
 
 bool ESPUSB::PID(uint16_t p) {
   if (!_started) {
@@ -231,9 +239,7 @@ bool ESPUSB::PID(uint16_t p) {
   }
   return !_started;
 }
-uint16_t ESPUSB::PID(void) {
-  return pid;
-}
+uint16_t ESPUSB::PID(void) { return pid; }
 
 bool ESPUSB::firmwareVersion(uint16_t version) {
   if (!_started) {
@@ -241,9 +247,7 @@ bool ESPUSB::firmwareVersion(uint16_t version) {
   }
   return !_started;
 }
-uint16_t ESPUSB::firmwareVersion(void) {
-  return fw_version;
-}
+uint16_t ESPUSB::firmwareVersion(void) { return fw_version; }
 
 bool ESPUSB::usbVersion(uint16_t version) {
   if (!_started) {
@@ -251,9 +255,7 @@ bool ESPUSB::usbVersion(uint16_t version) {
   }
   return !_started;
 }
-uint16_t ESPUSB::usbVersion(void) {
-  return usb_version;
-}
+uint16_t ESPUSB::usbVersion(void) { return usb_version; }
 
 bool ESPUSB::usbPower(uint16_t mA) {
   if (!_started) {
@@ -261,9 +263,7 @@ bool ESPUSB::usbPower(uint16_t mA) {
   }
   return !_started;
 }
-uint16_t ESPUSB::usbPower(void) {
-  return usb_power_ma;
-}
+uint16_t ESPUSB::usbPower(void) { return usb_power_ma; }
 
 bool ESPUSB::usbClass(uint8_t _class) {
   if (!_started) {
@@ -271,9 +271,7 @@ bool ESPUSB::usbClass(uint8_t _class) {
   }
   return !_started;
 }
-uint8_t ESPUSB::usbClass(void) {
-  return usb_class;
-}
+uint8_t ESPUSB::usbClass(void) { return usb_class; }
 
 bool ESPUSB::usbSubClass(uint8_t subClass) {
   if (!_started) {
@@ -281,9 +279,7 @@ bool ESPUSB::usbSubClass(uint8_t subClass) {
   }
   return !_started;
 }
-uint8_t ESPUSB::usbSubClass(void) {
-  return usb_subclass;
-}
+uint8_t ESPUSB::usbSubClass(void) { return usb_subclass; }
 
 bool ESPUSB::usbProtocol(uint8_t protocol) {
   if (!_started) {
@@ -291,9 +287,7 @@ bool ESPUSB::usbProtocol(uint8_t protocol) {
   }
   return !_started;
 }
-uint8_t ESPUSB::usbProtocol(void) {
-  return usb_protocol;
-}
+uint8_t ESPUSB::usbProtocol(void) { return usb_protocol; }
 
 bool ESPUSB::usbAttributes(uint8_t attr) {
   if (!_started) {
@@ -301,9 +295,7 @@ bool ESPUSB::usbAttributes(uint8_t attr) {
   }
   return !_started;
 }
-uint8_t ESPUSB::usbAttributes(void) {
-  return usb_attributes;
-}
+uint8_t ESPUSB::usbAttributes(void) { return usb_attributes; }
 
 bool ESPUSB::webUSB(bool enabled) {
   if (!_started) {
@@ -314,9 +306,7 @@ bool ESPUSB::webUSB(bool enabled) {
   }
   return !_started;
 }
-bool ESPUSB::webUSB(void) {
-  return webusb_enabled;
-}
+bool ESPUSB::webUSB(void) { return webusb_enabled; }
 
 bool ESPUSB::productName(const char *name) {
   if (!_started) {
@@ -324,9 +314,7 @@ bool ESPUSB::productName(const char *name) {
   }
   return !_started;
 }
-const char *ESPUSB::productName(void) {
-  return product_name.c_str();
-}
+const char *ESPUSB::productName(void) { return product_name.c_str(); }
 
 bool ESPUSB::manufacturerName(const char *name) {
   if (!_started) {
@@ -334,9 +322,7 @@ bool ESPUSB::manufacturerName(const char *name) {
   }
   return !_started;
 }
-const char *ESPUSB::manufacturerName(void) {
-  return manufacturer_name.c_str();
-}
+const char *ESPUSB::manufacturerName(void) { return manufacturer_name.c_str(); }
 
 bool ESPUSB::serialNumber(const char *name) {
   if (!_started) {
@@ -344,9 +330,7 @@ bool ESPUSB::serialNumber(const char *name) {
   }
   return !_started;
 }
-const char *ESPUSB::serialNumber(void) {
-  return serial_number.c_str();
-}
+const char *ESPUSB::serialNumber(void) { return serial_number.c_str(); }
 
 bool ESPUSB::webUSBURL(const char *name) {
   if (!_started) {
@@ -354,9 +338,7 @@ bool ESPUSB::webUSBURL(const char *name) {
   }
   return !_started;
 }
-const char *ESPUSB::webUSBURL(void) {
-  return webusb_url.c_str();
-}
+const char *ESPUSB::webUSBURL(void) { return webusb_url.c_str(); }
 
 ESPUSB USB;
 

@@ -90,8 +90,8 @@ class FlightLogAnalysis {
       const int32_t state = fields[2];
       const int32_t latitude = fields[4];
       const int32_t longitude = fields[5];
-      if (link < 1 || link > 2 || timestamp < 0 || timestamp > 65535 || state < 0 || state > 7 ||
-          latitude < -900000 || latitude > 900000 || longitude < -1800000 || longitude > 1800000 ||
+      if (link < 1 || link > 2 || timestamp < 0 || timestamp > 65535 || state < 0 || state > 7 || latitude < -900000 ||
+          latitude > 900000 || longitude < -1800000 || longitude > 1800000 ||
           fields[7] < std::numeric_limits<int16_t>::min() || fields[7] > std::numeric_limits<int16_t>::max() ||
           fields[9] < 0 || fields[9] > 1 || fields[10] < 0 || fields[10] > 1) {
         malformedRows++;

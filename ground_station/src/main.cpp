@@ -44,7 +44,6 @@ void setup() {
 
   navigation.setPointA(0, 0);
   navigation.setPointB(0, 0);
-
 }
 
 void loop() {

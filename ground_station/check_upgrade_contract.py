@@ -23,6 +23,11 @@ def git_blob_id(path: Path) -> str:
     return hashlib.sha1(header + data).hexdigest()  # noqa: S324 - Git uses SHA-1 blob IDs.
 
 
+def normalized_text_sha256(path: Path) -> str:
+    """Hash a text file independently of the checkout's CRLF policy."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def verify_qmc5883_compass() -> None:
     manifest = GROUND_STATION / "dependency-locks" / "QMC5883Compass.git-blobs"
     expected = {}
@@ -148,7 +153,7 @@ def main() -> None:
     }
     fatfs_root = GROUND_STATION / "lib" / "FatFs"
     for filename, expected_digest in fatfs_hashes.items():
-        actual_digest = hashlib.sha256((fatfs_root / filename).read_bytes()).hexdigest()
+        actual_digest = normalized_text_sha256(fatfs_root / filename)
         if actual_digest != expected_digest:
             raise RuntimeError(f"Vendored FatFs source changed unexpectedly: {filename}")
     fixture = GROUND_STATION / "tests" / "fixtures" / "fatfs-r013c-sfd.img.gz"

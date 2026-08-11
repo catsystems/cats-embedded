@@ -15,7 +15,8 @@ constexpr uint8_t kReadyState = 2;
 constexpr uint8_t kTouchdownState = 7;
 constexpr size_t kQueueDepth = 128;
 constexpr char kHeader[] =
-    "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2";
+    "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/"
+    "s],battery[decivolts],pyro1,pyro2";
 }  // namespace
 
 bool Recorder::begin() {
@@ -140,8 +141,8 @@ bool Recorder::writeSample(const Command& command) {
   char line[128]{};
   const uint8_t pyro1 = static_cast<uint8_t>((data.pyro_continuity & 0x01U) != 0U);
   const uint8_t pyro2 = static_cast<uint8_t>((data.pyro_continuity & 0x02U) != 0U);
-  snprintf(line, sizeof(line), "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%hu,%hu", command.source, data.timestamp,
-           data.state, data.errors, data.lat, data.lon, data.altitude, data.velocity, data.voltage, pyro1, pyro2);
+  snprintf(line, sizeof(line), "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%hu,%hu", command.source, data.timestamp, data.state,
+           data.errors, data.lat, data.lon, data.altitude, data.velocity, data.voltage, pyro1, pyro2);
   if (xSemaphoreTake(fsMutex, portMAX_DELAY) != pdTRUE) {
     setFault("Storage lock failed");
     return false;
@@ -369,9 +370,8 @@ bool Recorder::scanCatalog(std::vector<LogEntry>& entries) {
   }
   directoryFile.close();
   xSemaphoreGive(fsMutex);
-  std::sort(entries.begin(), entries.end(), [](const LogEntry& lhs, const LogEntry& rhs) {
-    return logNumber(lhs.name) > logNumber(rhs.name);
-  });
+  std::sort(entries.begin(), entries.end(),
+            [](const LogEntry& lhs, const LogEntry& rhs) { return logNumber(lhs.name) > logNumber(rhs.name); });
   return true;
 }
 
