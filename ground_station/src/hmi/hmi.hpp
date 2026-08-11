@@ -16,18 +16,21 @@ class Hmi {
  public:
   explicit Hmi(const char* dir)
       : recorder(dir),
-        upButton(3),
-        downButton(4),
-        leftButton(2),
-        rightButton(5),
-        centerButton(1),
-        okButton(7),
-        backButton(6),
+        upButton(3, kButtonDebounceMs),
+        downButton(4, kButtonDebounceMs),
+        leftButton(2, kButtonDebounceMs),
+        rightButton(5, kButtonDebounceMs),
+        centerButton(1, kButtonDebounceMs),
+        okButton(7, kButtonDebounceMs),
+        backButton(6, kButtonDebounceMs),
         window(display, systemConfig, clock) {}
 
   void begin();
 
  private:
+  static constexpr uint32_t kButtonDebounceMs = 15;
+  static constexpr uint32_t kSensorRefreshIntervalMs = 200;
+
   enum State {
     MENU = 0,
     LIVE = 1,
@@ -62,6 +65,7 @@ class Hmi {
   int16_t testingIndex = 0;
 
   CalibrationState calibrationState = IDLE;
+  uint32_t lastSensorRefresh = 0;
 
   Recorder recorder;
 

@@ -26,7 +26,7 @@ class IDisplay {
 #ifndef GS_SIMULATOR_WASM
 class FirmwareDisplay final : public IDisplay {
  public:
-  FirmwareDisplay() : display(SHARP_SCK, SHARP_MOSI, SHARP_SS, 400, 240) {}
+  FirmwareDisplay() : display(&SPI, SHARP_SS, 400, 240) {}
 
   Adafruit_GFX& gfx() override { return display; }
   void begin() override { display.begin(); }
@@ -34,8 +34,6 @@ class FirmwareDisplay final : public IDisplay {
   void present() override { display.refresh(); }
 
  private:
-  static constexpr uint8_t SHARP_SCK = 36;
-  static constexpr uint8_t SHARP_MOSI = 35;
   static constexpr uint8_t SHARP_SS = 34;
 
   Adafruit_SharpMem display;
