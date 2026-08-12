@@ -48,11 +48,10 @@ void Telemetry::setMode(transmission_mode_e mode) {
 }
 
 void Telemetry::initLink() {
-  if (linkInitialized) {
-    sendDisable();
-  }
-
-  linkInitialized = true;
+  // The receiver MCU can remain active across an ESP reset, so its state is
+  // unknown even during the first initialization.
+  sendDisable();
+  linkInitialized = false;
 
   vTaskDelay(100);
   sendSetting(CMD_DIRECTION, transmissionDirection);
@@ -67,7 +66,12 @@ void Telemetry::initLink() {
     const uint32_t phraseCrc = crc32(linkPhrase, strlen(reinterpret_cast<const char*>(linkPhrase)));
     sendLinkPhraseCrc(phraseCrc, 4);
     vTaskDelay(100);
+
+    // Keep this next to ENABLE. If the receiver became ready partway through
+    // startup, it must still see the intended direction before starting.
+    sendSetting(CMD_DIRECTION, transmissionDirection);
     sendEnable();
+    linkInitialized = true;
   }
 
   if (testingPhrase[0] != 0) {
