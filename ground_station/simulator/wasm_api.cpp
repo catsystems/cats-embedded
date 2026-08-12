@@ -140,8 +140,16 @@ class Logs final : public ILogStore {
 
   void load(std::vector<FlightLogSnapshot> logs) {
     value = std::move(logs);
-    std::sort(value.begin(), value.end(), [](const FlightLogSnapshot& lhs, const FlightLogSnapshot& rhs) {
-      return number(lhs.name) > number(rhs.name);
+    value.erase(std::remove_if(value.begin(), value.end(), [](const FlightLogSnapshot& log) {
+                  return !isCsv(log.name);
+                }),
+                value.end());
+    std::stable_sort(value.begin(), value.end(), [](const FlightLogSnapshot& lhs, const FlightLogSnapshot& rhs) {
+      const int32_t lhsNumber = number(lhs.name);
+      const int32_t rhsNumber = number(rhs.name);
+      if ((lhsNumber >= 0) != (rhsNumber >= 0)) return lhsNumber >= 0;
+      if (lhsNumber >= 0 && lhsNumber != rhsNumber) return lhsNumber > rhsNumber;
+      return false;
     });
     activeIndex = -1;
     for (size_t index = 0; index < value.size(); ++index) {
@@ -178,7 +186,17 @@ class Logs final : public ILogStore {
 
   static int32_t number(const std::string& name) {
     long result = -1;
-    return std::sscanf(name.c_str(), "log_%ld.csv", &result) == 1 ? static_cast<int32_t>(result) : -1;
+    char tail = '\0';
+    return std::sscanf(name.c_str(), "log_%ld.csv%c", &result, &tail) == 1 ? static_cast<int32_t>(result) : -1;
+  }
+
+  static bool isCsv(const std::string& name) {
+    if (name.size() <= 4U || name[name.size() - 4U] != '.') return false;
+    const auto lower = [](char value) {
+      return static_cast<char>(value >= 'A' && value <= 'Z' ? value + ('a' - 'A') : value);
+    };
+    return lower(name[name.size() - 3U]) == 'c' && lower(name[name.size() - 2U]) == 's' &&
+           lower(name[name.size() - 1U]) == 'v';
   }
 
   void createLog() {

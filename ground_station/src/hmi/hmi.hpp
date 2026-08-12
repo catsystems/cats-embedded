@@ -100,6 +100,8 @@ class Hmi {
   void settings();
   void initUsbStorage();
   void usbStorage();
+  void updateAutomaticUsbStorage(const RecorderStatus& recorderStatus);
+  bool claimStorageForFirmware();
 
   bool initialized = false;
   bool isLogging = false;
@@ -132,7 +134,7 @@ class Hmi {
   FlightLogAnalysis dataAnalysis{};
   FlightStatistics dataStatistics[2];
   int8_t dataQrLink = -1;
-  char dataLogName[30] = {};
+  char dataLogName[kLogFilenameSize] = {};
 
   int8_t recoveryQrLink = -1;
   int8_t selectedRecoveryLink = 0;
@@ -144,4 +146,8 @@ class Hmi {
 
   bool usbStorageSession = false;
   UsbStorageState displayedUsbStorageState{UsbStorageState::FirmwareOwned};
+  RecorderState previousRecorderState{RecorderState::Idle};
+  bool usbPreviouslyConnected = false;
+  bool automaticUsbSharePending = false;
+  uint32_t lastAutomaticUsbShareAttempt = 0;
 };

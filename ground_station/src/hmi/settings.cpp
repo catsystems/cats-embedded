@@ -24,8 +24,8 @@ const device_settings_t settingsTable[][4] = {{
                                                   },
                                                   {
                                                       "USB Drive",
-                                                      "Press A to share finalized logs with the PC",
-                                                      "Recording pauses until the drive is ejected",
+                                                      "Shared automatically while not logging",
+                                                      "Press A to view or disconnect the drive",
                                                       BUTTON,
                                                       {.buttonAction = BUTTON_ACTION_USB_STORAGE},
                                                       nullptr,

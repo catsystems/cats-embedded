@@ -274,6 +274,7 @@ class HmiController {
   void menuStep(uint64_t nowMs);
   void liveStep(uint64_t nowMs);
   void ingestTelemetry();
+  void updateAutomaticUsbStorage();
   void testingStep(uint64_t nowMs);
   void dataStep(uint64_t nowMs);
   void sensorsStep(uint64_t nowMs);
@@ -326,4 +327,7 @@ class HmiController {
   int16_t keyboardSelection_ = 0;
   bool keyboardUppercase_ = false;
   bool usbStorageSession_ = false;
+  bool usbPreviouslyConnected_ = false;
+  bool automaticUsbSharePending_ = false;
+  std::string previousRecorderState_ = "idle";
 };
