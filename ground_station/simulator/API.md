@@ -30,5 +30,5 @@ recorder write, finalize, and delete failure flags.
 Snapshots include `recorderState`, `activeFilename`, recorded/dropped row
 counts, `selectedRecoveryLink`, `recoverySolution`, `logCount`,
 `logScrollOffset`, `selectedLogHealth`, and `currentDataSubview`.
-They also expose `usbStorageState` and `usbStorageMessage` for the explicit
-USB Drive handoff flow.
+They also expose `usbStorageState` and `usbStorageMessage` for the automatic
+idle-time USB Drive handoff flow.

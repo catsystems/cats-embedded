@@ -24,7 +24,7 @@ const fixtureDescriptions = {
   never: 'Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until Finalize Log is confirmed.',
   'delete-failure': 'Loads a finalized log and injects a storage deletion error. The log must remain in the catalog and an error message should appear.',
   'usb-delete': 'Loads a finalized log while USB mass storage is connected. Delete Log must be blocked until USB is disconnected.',
-  'usb-storage': 'Opens Settings > General > USB Drive with host ownership active. Recording is paused while live telemetry can continue; use Eject USB drive to return storage to the Ground Station.',
+  'usb-storage': 'Connects USB while idle, automatically shares the logs, and opens Settings > General > USB Drive. Press B or use Eject USB drive to return storage to the Ground Station.',
   'finalize-failure': 'Creates an active Never-mode log and injects a finalization error. The log must remain active after the failed attempt.',
   'recorder-fault': 'Injects a storage write failure as recording starts. Use it to check the recorder fault state and crossed logging indicator.'
 };
@@ -110,7 +110,7 @@ async function applyFixture(name) {
     sendJson('gs_set_device_status_json', { usb: true, usbStorageState: 'host' });
   } else if (name === 'usb-storage') {
     sendJson('gs_set_device_status_json', { usb: true, usbStorageState: 'firmware' });
-    for (const button of ['right', 'right', 'down', 'ok', 'down', 'down', 'down', 'down', 'ok']) {
+    for (const button of ['right', 'right', 'down', 'ok', 'down', 'down', 'down', 'ok']) {
       tapSimulatorButton(button);
     }
   } else if (name === 'recorder-fault') {

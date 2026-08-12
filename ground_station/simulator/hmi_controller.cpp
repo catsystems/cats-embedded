@@ -44,6 +44,9 @@ void HmiController::start() {
   keyboardActive_ = false;
   keyboardSelection_ = 0;
   keyboardUppercase_ = false;
+  usbPreviouslyConnected_ = false;
+  automaticUsbSharePending_ = false;
+  previousRecorderState_ = logs_.recorderStatus().state;
   input_ = {};
   previousInput_ = {};
   heldSince_.fill(0);
@@ -60,6 +63,7 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
 
   updateRecoveryLocations();
   ingestTelemetry();
+  updateAutomaticUsbStorage();
 
   for (size_t i = 0; i < input_.held.size(); ++i) {
     if (input_.held[i] && !previousInput_.held[i]) {
@@ -136,16 +140,17 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
         emit("usb_storage_reclaimed");
         enter(Screen::Settings);
         settingsPage_ = 0;
-        settingsSelection_ = 3;
+        settingsSelection_ = 2;
       } else if (usbStorageSession_ && storageState == "fault") {
         usbStorageSession_ = false;
         usbStorageMessage_ = "Storage could not be remounted.";
-      } else if (usbStorageSession_ && pressed(HmiButton::Back) && storageState == "preparing") {
+      } else if (usbStorageSession_ && pressed(HmiButton::Back) &&
+                 (storageState == "preparing" || storageState == "host")) {
         device_.requestFirmwareStorage();
       } else if (!usbStorageSession_ && pressed(HmiButton::Back)) {
         enter(Screen::Settings);
         settingsPage_ = 0;
-        settingsSelection_ = 3;
+        settingsSelection_ = 2;
       }
       break;
     }
@@ -195,6 +200,10 @@ void HmiController::enter(Screen screen) {
     selectedRecoveryLink_ = link1Valid ? 0 : (link2Valid ? 1 : 0);
   }
   if (screen_ == Screen::Data) {
+    automaticUsbSharePending_ = false;
+    if (device_.snapshot().usbStorageState != "firmware") {
+      device_.requestFirmwareStorage();
+    }
     dataSubview_ = DataSubview::List;
     const auto entries = logs_.listLogs();
     if (entries.empty()) dataSelection_ = 0;
@@ -244,18 +253,47 @@ void HmiController::ingestTelemetry() {
   logs_.configure(config_.config().dualReceiver, config_.config().neverStopLogging);
   const auto first = link1_.snapshot();
   const auto second = link2_.snapshot();
-  if (device_.snapshot().usbStorageState != "firmware") {
-    if (first.telemetry.updated) link1_.clearUpdates();
-    if (second.telemetry.updated) link2_.clearUpdates();
-    return;
-  }
   if (first.telemetry.updated) {
+    if (first.telemetry.state > 2 && device_.snapshot().usbStorageState != "firmware") {
+      device_.requestFirmwareStorage();
+    }
     logs_.record(first.telemetry, 1);
     link1_.clearUpdates();
   }
   if (second.telemetry.updated) {
+    if (second.telemetry.state > 2 && device_.snapshot().usbStorageState != "firmware") {
+      device_.requestFirmwareStorage();
+    }
     logs_.record(second.telemetry, 2);
     link2_.clearUpdates();
+  }
+}
+
+void HmiController::updateAutomaticUsbStorage() {
+  const DeviceStatusSnapshot device = device_.snapshot();
+  const std::string recorderState = logs_.recorderStatus().state;
+  if (!device.usb) {
+    usbPreviouslyConnected_ = false;
+    automaticUsbSharePending_ = false;
+    previousRecorderState_ = recorderState;
+    return;
+  }
+  if (!usbPreviouslyConnected_) {
+    usbPreviouslyConnected_ = true;
+    automaticUsbSharePending_ = recorderState == "idle";
+  }
+  if (previousRecorderState_ != "idle" && recorderState == "idle") {
+    automaticUsbSharePending_ = true;
+  }
+  if (recorderState != "idle") {
+    automaticUsbSharePending_ = false;
+  }
+  previousRecorderState_ = recorderState;
+
+  if (automaticUsbSharePending_ && screen_ != Screen::Data && device.usbStorageState == "firmware" &&
+      device_.requestMassStorage()) {
+    automaticUsbSharePending_ = false;
+    emit("usb_storage_shared_automatically");
   }
 }
 
@@ -443,6 +481,7 @@ void HmiController::dataStep(uint64_t nowMs) {
   if (pressed(HmiButton::Back)) {
     dataSelection_ = 0;
     logScrollOffset_ = 0;
+    automaticUsbSharePending_ = device_.snapshot().usb;
     enter(Screen::Menu);
   }
   (void)nowMs;
@@ -502,7 +541,9 @@ void HmiController::sensorsStep(uint64_t nowMs) {
     case CalibrationState::Concluded:
       if (pressed(HmiButton::Ok) || pressed(HmiButton::Back)) {
         calibrationState_ = CalibrationState::Idle;
+        device_.requestFirmwareStorage();
         config_.save();
+        automaticUsbSharePending_ = device_.snapshot().usb;
         emit("configuration_saved");
       }
       break;
@@ -598,15 +639,14 @@ void HmiController::settingsStep(uint64_t nowMs) {
       if (pressed(HmiButton::Left) || pressed(HmiButton::Right)) config_.config().imperialUnits = !config_.config().imperialUnits;
     }
     if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 2) {
-      enter(Screen::Bootloader);
-      emit("bootloader_requested");
-    }
-    if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 3) {
       usbStorageMessage_.clear();
-      if (!device_.snapshot().usb) {
+      const DeviceStatusSnapshot device = device_.snapshot();
+      if (!device.usb) {
         usbStorageMessage_ = "Connect USB cable first.";
       } else if (logs_.recorderStatus().state != "idle") {
         usbStorageMessage_ = "Finalize the active log first.";
+      } else if (device.usbStorageState == "host" || device.usbStorageState == "preparing") {
+        usbStorageSession_ = true;
       } else if (!device_.requestMassStorage()) {
         usbStorageMessage_ = "USB storage is unavailable.";
       } else {
@@ -615,6 +655,10 @@ void HmiController::settingsStep(uint64_t nowMs) {
       }
       enter(Screen::UsbStorage);
       return;
+    }
+    if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 3) {
+      enter(Screen::Bootloader);
+      emit("bootloader_requested");
     }
   }
   if (pressed(HmiButton::Down) && settingsSelection_ < counts[settingsPage_] - 1) {
@@ -630,7 +674,9 @@ void HmiController::settingsStep(uint64_t nowMs) {
       link1_.setLinkPhrase(config_.config().linkPhrase1);
       link2_.setLinkPhrase(config_.config().dualReceiver ? config_.config().linkPhrase2 : config_.config().linkPhrase1);
       link1_.setTestingPhrase(config_.config().testingPhrase);
+      device_.requestFirmwareStorage();
       config_.save();
+      automaticUsbSharePending_ = device_.snapshot().usb;
       emit("configuration_saved");
       enter(Screen::Menu);
     }

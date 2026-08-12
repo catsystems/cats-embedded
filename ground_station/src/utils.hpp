@@ -37,6 +37,7 @@ class Utils {
   static bool isConnected();
   static bool requestMassStorage();
   static void requestFirmwareStorage();
+  static bool claimFirmwareStorage(uint32_t timeoutMs = 3000);
   static UsbStorageState getMassStorageState();
   static bool isFilesystemAvailable();
   static int32_t getFlashMemoryUsage();

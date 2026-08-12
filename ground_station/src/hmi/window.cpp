@@ -1138,9 +1138,9 @@ void Window::initUsbStorage(bool active) {
 
   display.drawBitmap(136, 53, usb_logo, 128, 128, BLACK);
   display.setFont(&FreeSansBold9pt7b);
-  drawCentreString("Recording paused", 200, 205);
+  drawCentreString("Logs available on PC", 200, 205);
   display.setFont(&FreeSans9pt7b);
-  drawCentreString("Eject on PC or unplug USB to return", 200, 230);
+  drawCentreString("Eject on PC or press B to disconnect", 200, 230);
   surface.present();
 }
 

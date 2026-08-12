@@ -15,10 +15,11 @@
 
 enum class RecorderState : uint8_t { Idle, Recording, Finalizing, Fault };
 enum class FinalizeReason : uint8_t { MissionComplete, UserRequested, Shutdown };
+constexpr size_t kLogFilenameSize = 64;
 
 struct RecorderStatus {
   RecorderState state{RecorderState::Idle};
-  char activeFilename[30]{};
+  char activeFilename[kLogFilenameSize]{};
   uint8_t participantMask{0};
   uint32_t writtenSamples{0};
   uint32_t droppedSamples{0};
@@ -26,7 +27,7 @@ struct RecorderStatus {
 };
 
 struct LogEntry {
-  char name[30]{};
+  char name[kLogFilenameSize]{};
   size_t sizeBytes{0};
   bool active{false};
 };
@@ -45,25 +46,24 @@ class Recorder : public ITelemetryPacketSink {
 
   void onTelemetryPacket(const packedRXMessage& packet, uint8_t source) override;
   RecorderStatus getStatus() const;
-  bool pauseForMassStorage();
-  void resumeAfterMassStorage() { enabled = true; }
+  bool shareWithMassStorage();
   bool sync();
   bool finalize(FinalizeReason reason = FinalizeReason::UserRequested);
   bool deleteLog(const char* name);
   bool refreshCatalog(std::vector<LogEntry>& entries);
 
   size_t getFileCount();
-  bool getFileNameByIndex(size_t index, char* name) const;
+  bool getFileNameByIndex(size_t index, char* name, size_t capacity) const;
   const char* getDirectory() const { return directory; }
 
  private:
-  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete, PauseForMassStorage };
+  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete, ShareMassStorage };
   struct Command {
     CommandType type{CommandType::Sample};
     packedRXMessage data{};
     uint8_t source{0};
     FinalizeReason reason{FinalizeReason::MissionComplete};
-    char name[30]{};
+    char name[kLogFilenameSize]{};
     uint32_t requestId{0};
   };
   struct Response {
@@ -83,7 +83,7 @@ class Recorder : public ITelemetryPacketSink {
   uint32_t unsyncedRows{0};
 
   const char* directory;
-  char fileName[30]{};
+  char fileName[kLogFilenameSize]{};
   QueueHandle_t queue{nullptr};
   QueueHandle_t responseQueue{nullptr};
   SemaphoreHandle_t fsMutex{nullptr};
@@ -102,6 +102,7 @@ class Recorder : public ITelemetryPacketSink {
   bool scanCatalog(std::vector<LogEntry>& entries);
   void setFault(const char* message);
   bool submitAndWait(Command& command);
+  static bool isCsvLog(const char* name);
   static int32_t logNumber(const char* name);
   static void recordTask(void* pvParameter);
 };

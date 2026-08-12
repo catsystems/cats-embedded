@@ -83,7 +83,7 @@ bool Recorder::chooseNextFileName() {
   }
   File entry = directoryFile.openNextFile();
   while (entry) {
-    char name[30]{};
+    char name[kLogFilenameSize]{};
     entry.getName(name, sizeof(name));
     highest = std::max(highest, logNumber(name));
     entry.close();
@@ -104,7 +104,7 @@ bool Recorder::createFile() {
     setFault("Could not scan log directory");
     return false;
   }
-  char path[64]{};
+  char path[kLogFilenameSize + 16U]{};
   snprintf(path, sizeof(path), "%s/%s", directory, fileName);
   file = fatfs.open(path, FILE_WRITE);
   if (!file) {
@@ -205,7 +205,7 @@ bool Recorder::deleteFile(const char* name) {
       (fileCreated && strcmp(name, fileName) == 0)) {
     return false;
   }
-  char path[64]{};
+  char path[kLogFilenameSize + 16U]{};
   snprintf(path, sizeof(path), "%s/%s", directory, name);
   if (xSemaphoreTake(fsMutex, portMAX_DELAY) != pdTRUE) {
     return false;
@@ -244,9 +244,9 @@ bool Recorder::finalize(FinalizeReason reason) {
   return submitAndWait(command);
 }
 
-bool Recorder::pauseForMassStorage() {
+bool Recorder::shareWithMassStorage() {
   Command command{};
-  command.type = CommandType::PauseForMassStorage;
+  command.type = CommandType::ShareMassStorage;
   return submitAndWait(command);
 }
 
@@ -292,7 +292,12 @@ void Recorder::recordTask(void* pvParameter) {
           }
         }
       } else if (command.data.state > kReadyState) {
-        result = ref->writeSample(command);
+        if (!Utils::isFilesystemAvailable() && !Utils::claimFirmwareStorage()) {
+          ref->setFault("Storage unavailable for logging");
+          result = false;
+        } else {
+          result = ref->writeSample(command);
+        }
         if (result && command.data.state == kTouchdownState) {
           ref->touchdownMask |= bit;
           const bool complete = ref->receiverMode == SINGLE ||
@@ -326,10 +331,10 @@ void Recorder::recordTask(void* pvParameter) {
       }
     } else if (command.type == CommandType::Delete) {
       result = ref->deleteFile(command.name);
-    } else if (command.type == CommandType::PauseForMassStorage) {
+    } else if (command.type == CommandType::ShareMassStorage) {
       result = !ref->fileCreated && ref->getStatus().state == RecorderState::Idle;
       if (result) {
-        ref->enabled = false;
+        result = Utils::requestMassStorage();
       }
     }
     if (command.requestId != 0U) {
@@ -346,6 +351,20 @@ int32_t Recorder::logNumber(const char* name) {
   return sscanf(name, "log_%ld.csv%c", &number, &tail) == 1 ? static_cast<int32_t>(number) : -1;
 }
 
+bool Recorder::isCsvLog(const char* name) {
+  if (name == nullptr) {
+    return false;
+  }
+  const size_t length = strlen(name);
+  if (length <= 4U || name[length - 4U] != '.') {
+    return false;
+  }
+  const auto lower = [](char value) {
+    return static_cast<char>(value >= 'A' && value <= 'Z' ? value + ('a' - 'A') : value);
+  };
+  return lower(name[length - 3U]) == 'c' && lower(name[length - 2U]) == 's' && lower(name[length - 1U]) == 'v';
+}
+
 bool Recorder::scanCatalog(std::vector<LogEntry>& entries) {
   entries.clear();
   if (xSemaphoreTake(fsMutex, portMAX_DELAY) != pdTRUE) {
@@ -360,7 +379,7 @@ bool Recorder::scanCatalog(std::vector<LogEntry>& entries) {
   while (entry) {
     LogEntry log{};
     entry.getName(log.name, sizeof(log.name));
-    if (logNumber(log.name) >= 0) {
+    if (!entry.isDirectory() && isCsvLog(log.name)) {
       log.sizeBytes = entry.size();
       log.active = fileCreated && strcmp(log.name, fileName) == 0;
       entries.push_back(log);
@@ -370,8 +389,17 @@ bool Recorder::scanCatalog(std::vector<LogEntry>& entries) {
   }
   directoryFile.close();
   xSemaphoreGive(fsMutex);
-  std::sort(entries.begin(), entries.end(),
-            [](const LogEntry& lhs, const LogEntry& rhs) { return logNumber(lhs.name) > logNumber(rhs.name); });
+  std::stable_sort(entries.begin(), entries.end(), [](const LogEntry& lhs, const LogEntry& rhs) {
+    const int32_t lhsNumber = logNumber(lhs.name);
+    const int32_t rhsNumber = logNumber(rhs.name);
+    if ((lhsNumber >= 0) != (rhsNumber >= 0)) {
+      return lhsNumber >= 0;
+    }
+    if (lhsNumber >= 0 && lhsNumber != rhsNumber) {
+      return lhsNumber > rhsNumber;
+    }
+    return false;
+  });
   return true;
 }
 
@@ -391,12 +419,13 @@ size_t Recorder::getFileCount() {
   return refreshCatalog(entries) ? entries.size() : 0U;
 }
 
-bool Recorder::getFileNameByIndex(size_t index, char* name) const {
+bool Recorder::getFileNameByIndex(size_t index, char* name, size_t capacity) const {
   std::vector<LogEntry> entries;
-  if (!const_cast<Recorder*>(this)->refreshCatalog(entries) || index >= entries.size()) {
+  if (name == nullptr || capacity == 0U || !const_cast<Recorder*>(this)->refreshCatalog(entries) ||
+      index >= entries.size()) {
     return false;
   }
-  strncpy(name, entries[index].name, 29U);
-  name[29] = '\0';
+  strncpy(name, entries[index].name, capacity - 1U);
+  name[capacity - 1U] = '\0';
   return true;
 }

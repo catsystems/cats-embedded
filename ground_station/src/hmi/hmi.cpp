@@ -49,6 +49,7 @@ void Hmi::fsm() {
   recorder.configure(systemConfig.config.receiverMode, systemConfig.config.neverStopLogging);
   const RecorderStatus recorderStatus = recorder.getStatus();
   isLogging = recorderStatus.state == RecorderState::Recording;
+  updateAutomaticUsbStorage(recorderStatus);
   updateRecoveryLocations();
   switch (state) {
     case MENU:
@@ -428,6 +429,13 @@ void Hmi::testing() {
 void Hmi::initData() {
   dataQrLink = -1;
   dataView = DataView::List;
+  if (!claimStorageForFirmware()) {
+    dataCatalog.clear();
+    dataMessageReturn = DataView::List;
+    dataView = DataView::Message;
+    window.initDataMessage("Log Error", "Unable to reclaim USB storage");
+    return;
+  }
   if (!recorder.refreshCatalog(dataCatalog)) {
     dataCatalog.clear();
     dataMessageReturn = DataView::List;
@@ -453,7 +461,7 @@ void Hmi::drawDataList() {
   const size_t end = std::min(dataCatalog.size(), dataWindowStart + 11U);
   for (size_t index = dataWindowStart; index < end; ++index) {
     const uint16_t row = static_cast<uint16_t>(index - dataWindowStart);
-    char label[44]{};
+    char label[kLogFilenameSize + 12U]{};
     snprintf(label, sizeof(label), "%s%s", dataCatalog[index].name, dataCatalog[index].active ? "  [ACTIVE]" : "");
     if (index == dataIndex) {
       window.dataHighlight(label, row, true);
@@ -603,6 +611,7 @@ void Hmi::data() {
       window.initMenu(menuIndex);
       dataIndex = 0;
       dataWindowStart = 0;
+      automaticUsbSharePending = Utils::isConnected();
       return;
     }
     if (downButton.wasPressed() && !dataCatalog.empty() && dataIndex + 1U < dataCatalog.size()) {
@@ -684,7 +693,10 @@ void Hmi::sensors() {
     case CONCLUDED:
       if (okButton.wasPressed() || backButton.wasPressed()) {
         calibrationState = IDLE;
-        systemConfig.save();
+        if (claimStorageForFirmware()) {
+          systemConfig.save();
+          automaticUsbSharePending = Utils::isConnected();
+        }
         window.initSensors();
       }
       break;
@@ -858,7 +870,10 @@ void Hmi::settings() {
         }
 
         link1.setTestingPhrase(systemConfig.config.testingPhrase, kMaxPhraseLen);
-        systemConfig.save();
+        if (claimStorageForFirmware()) {
+          systemConfig.save();
+          automaticUsbSharePending = Utils::isConnected();
+        }
       }
       window.initMenu(menuIndex);
     }
@@ -867,8 +882,26 @@ void Hmi::settings() {
 
 void Hmi::initUsbStorage() {
   state = USB_STORAGE;
-  usbStorageSession = false;
+  automaticUsbSharePending = false;
   displayedUsbStorageState = Utils::getMassStorageState();
+
+  if (displayedUsbStorageState == UsbStorageState::HostOwned) {
+    usbStorageSession = true;
+    window.initUsbStorage(true);
+    return;
+  }
+  if (displayedUsbStorageState == UsbStorageState::Preparing) {
+    usbStorageSession = true;
+    window.initUsbStorage(false);
+    return;
+  }
+  if (displayedUsbStorageState == UsbStorageState::Reclaiming) {
+    usbStorageSession = true;
+    window.initDataMessage("USB Drive", "Closing USB drive...");
+    return;
+  }
+
+  usbStorageSession = false;
 
   if (!Utils::isConnected()) {
     window.initDataMessage("USB Drive", "Connect USB cable first.");
@@ -876,13 +909,12 @@ void Hmi::initUsbStorage() {
   }
 
   const RecorderStatus recorderStatus = recorder.getStatus();
-  if (recorderStatus.state != RecorderState::Idle || !recorder.pauseForMassStorage()) {
+  if (recorderStatus.state != RecorderState::Idle) {
     window.initDataMessage("USB Drive", "Finalize the active log first.");
     return;
   }
 
-  if (!Utils::requestMassStorage()) {
-    recorder.resumeAfterMassStorage();
+  if (!recorder.shareWithMassStorage()) {
     window.initDataMessage("USB Drive", "USB storage is unavailable.");
     return;
   }
@@ -910,7 +942,6 @@ void Hmi::usbStorage() {
     } else if (storageState == UsbStorageState::Reclaiming) {
       window.initDataMessage("USB Drive", "Closing USB drive...");
     } else if (storageState == UsbStorageState::FirmwareOwned) {
-      recorder.resumeAfterMassStorage();
       usbStorageSession = false;
       state = SETTINGS;
       window.initSettings(settingSubMenu);
@@ -923,9 +954,52 @@ void Hmi::usbStorage() {
     }
   }
 
-  if (backButton.wasPressed() && storageState == UsbStorageState::Preparing) {
+  if (backButton.wasPressed() &&
+      (storageState == UsbStorageState::Preparing || storageState == UsbStorageState::HostOwned)) {
     Utils::requestFirmwareStorage();
+    displayedUsbStorageState = UsbStorageState::Reclaiming;
+    window.initDataMessage("USB Drive", "Closing USB drive...");
   }
+}
+
+void Hmi::updateAutomaticUsbStorage(const RecorderStatus& recorderStatus) {
+  const bool connected = Utils::isConnected();
+  if (!connected) {
+    usbPreviouslyConnected = false;
+    automaticUsbSharePending = false;
+    previousRecorderState = recorderStatus.state;
+    return;
+  }
+
+  if (!usbPreviouslyConnected) {
+    usbPreviouslyConnected = true;
+    automaticUsbSharePending = recorderStatus.state == RecorderState::Idle;
+  }
+  if (previousRecorderState != RecorderState::Idle && recorderStatus.state == RecorderState::Idle) {
+    automaticUsbSharePending = true;
+  }
+  if (recorderStatus.state != RecorderState::Idle) {
+    automaticUsbSharePending = false;
+  }
+  previousRecorderState = recorderStatus.state;
+
+  if (!automaticUsbSharePending || state == DATA || Utils::getMassStorageState() != UsbStorageState::FirmwareOwned) {
+    return;
+  }
+
+  const uint32_t now = millis();
+  if (now - lastAutomaticUsbShareAttempt < 500U) {
+    return;
+  }
+  lastAutomaticUsbShareAttempt = now;
+  if (recorder.shareWithMassStorage()) {
+    automaticUsbSharePending = false;
+  }
+}
+
+bool Hmi::claimStorageForFirmware() {
+  automaticUsbSharePending = false;
+  return Utils::claimFirmwareStorage();
 }
 
 void Hmi::update(void *pvParameter) {

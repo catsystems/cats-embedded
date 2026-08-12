@@ -271,6 +271,18 @@ void Utils::requestFirmwareStorage() {
   }
 }
 
+bool Utils::claimFirmwareStorage(uint32_t timeoutMs) {
+  requestFirmwareStorage();
+  const uint32_t startedAt = millis();
+  while (!isFilesystemAvailable()) {
+    if (usbStorageState == UsbStorageState::Fault || millis() - startedAt >= timeoutMs) {
+      return false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  return true;
+}
+
 UsbStorageState Utils::getMassStorageState() { return usbStorageState; }
 
 bool Utils::isFilesystemAvailable() { return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted; }

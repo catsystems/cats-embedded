@@ -41,7 +41,8 @@ recording, USB deletion blocking, write/delete/finalize failures, and manual
 finalization. These presets drive the compiled controller and production
 `Window` renderer rather than static images.
 
-USB mass storage is an explicit Settings > General > USB Drive handoff. CDC
-telemetry remains connected at all times, while recording pauses only while
-the host owns the removable drive. Simulate eject by setting
-`device.usbStorageState` back to `firmware`.
+USB mass storage is shared automatically whenever USB is connected and the
+recorder is idle. The firmware reclaims the filesystem before writing the
+first flight sample and shares it again after finalization. Settings > General
+> USB Drive shows the current state and can disconnect the drive manually.
+Simulate eject by setting `device.usbStorageState` back to `firmware`.

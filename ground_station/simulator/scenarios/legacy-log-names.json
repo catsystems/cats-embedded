@@ -1,0 +1,18 @@
+{
+  "initial": {
+    "ready": true,
+    "logs": [
+      {"name":"cats1_launch_004.csv","csv":""},
+      {"name":"cats1_cats2_003.CSV","csv":""},
+      {"name":"log_002.csv","csv":""},
+      {"name":"notes.txt","csv":""}
+    ]
+  },
+  "steps": [
+    {"press":"down"},{"press":"ok"},
+    {"assert":{"activeScreen":"data","logCount":3,"dataSelection":0}},
+    {"press":"down"},{"press":"down"},
+    {"assert":{"dataSelection":2}},
+    {"snapshot":"legacy-log-names"}
+  ]
+}
