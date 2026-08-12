@@ -13,6 +13,7 @@ let demoLogError = null;
 let fixtureStatus = null;
 let lastRealtimeMs = performance.now();
 let realtimeRemainderMs = 0;
+const simulatorBuildTag = 'startup-intro-20260812-2';
 
 const demoLogNames = ['log_001.csv', 'log_002.csv'];
 const csvHeader = 'link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n';
@@ -151,8 +152,10 @@ async function loadDemoLogs() {
 
 async function loadController() {
   try {
-    const moduleFactory = (await import('./gs-sim.js')).default;
-    wasm = await moduleFactory();
+    const moduleFactory = (await import(`./gs-sim.js?v=${simulatorBuildTag}`)).default;
+    wasm = await moduleFactory({
+      locateFile: path => `${path}?v=${simulatorBuildTag}`
+    });
   } catch (error) {
     wasm = null;
     loadError = error instanceof Error ? error.message : String(error);
@@ -160,7 +163,7 @@ async function loadController() {
   }
   if (wasm) {
     loadError = null;
-    wasm.ccall('gs_reset', null, [], []);
+    wasm.ccall('gs_restart', null, [], []);
     try {
       await loadDemoLogs();
       demoLogError = null;
@@ -256,7 +259,7 @@ document.querySelector('#pause').addEventListener('click', event => {
   canvas.focus({ preventScroll: true });
 });
 document.querySelector('#reset').addEventListener('click', async () => {
-  if (wasm) controllerCall('gs_reset');
+  if (wasm) controllerCall('gs_restart');
   fixtureStatus = null;
   try {
     await loadDemoLogs();

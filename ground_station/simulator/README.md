@@ -22,6 +22,10 @@ Then run:
 .\gs-sim.ps1 fatfs-test
 ```
 
+The browser plays the four-second startup intro on initial load and whenever
+Reset is selected. Pause time and use the millisecond step control to inspect
+individual deterministic animation phases.
+
 `fatfs-test` verifies that FatFs R0.16 can read and update an R0.13c storage
 image, create and remount a new volume, and reject corrupted media without
 writing to it.

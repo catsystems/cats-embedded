@@ -503,6 +503,8 @@ void rebuildSnapshot() {
              ",\"distanceM\":" + std::to_string(state.recoverySolution.distanceM) +
              ",\"azimuthRad\":" + std::to_string(state.recoverySolution.azimuthRad) + "}" +
              ",\"virtualTimeMs\":" + std::to_string(state.virtualTimeMs) +
+             ",\"startupElapsedMs\":" + std::to_string(state.startupElapsedMs) +
+             ",\"startupPhase\":" + quote(state.startupPhase) +
              ",\"configuration\":{\"dualReceiver\":" + std::string(state.configuration.dualReceiver ? "true" : "false") +
              ",\"imperialUnits\":" + std::string(state.configuration.imperialUnits ? "true" : "false") +
              ",\"neverStopLogging\":" + std::string(state.configuration.neverStopLogging ? "true" : "false") +
@@ -523,7 +525,7 @@ void rebuildSnapshot() {
 
 void step() { controller.step(input, virtualClock.now); }
 
-void resetState() {
+void resetState(bool skipStartup) {
   virtualClock.now = 0;
   virtualClock.hourValue = 0;
   virtualClock.minuteValue = 0;
@@ -535,14 +537,17 @@ void resetState() {
   configStore = ConfigStore{};
   device = Device{};
   controller.start();
-  virtualClock.now = 2000;
-  step();
+  if (skipStartup) {
+    virtualClock.now = StartupIntro::kDurationMs;
+    step();
+  }
   rebuildSnapshot();
 }
 }  // namespace
 
 extern "C" {
-void gs_reset() { resetState(); }
+void gs_reset() { resetState(true); }
+void gs_restart() { resetState(false); }
 void gs_advance(uint32_t milliseconds);
 void gs_press(const char* button) {
   if (button == nullptr) return;

@@ -28,6 +28,8 @@ HmiController::HmiController(IHmiRenderer& renderer, ITelemetryLink& link1, ITel
 
 void HmiController::start() {
   nowMs_ = clock_.nowMs();
+  startupStartedMs_ = nowMs_;
+  lastStartupFrame_ = UINT32_MAX;
   screen_ = Screen::Logo;
   testingState_ = TestingState::Disclaimer;
   calibrationState_ = CalibrationState::Idle;
@@ -75,7 +77,7 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
     }
   }
 
-  if (screen_ == Screen::Logo && nowMs_ >= kBootDurationMs) {
+  if (screen_ == Screen::Logo && nowMs_ - startupStartedMs_ >= StartupIntro::kDurationMs) {
     enter(Screen::Menu);
   }
 
@@ -702,7 +704,18 @@ void HmiController::clearQr() {
   qrUrl_.clear();
 }
 
-void HmiController::render() { renderer_.render(snapshot()); }
+void HmiController::render() {
+  if (screen_ == Screen::Logo) {
+    const auto elapsedMs = static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_,
+                                                                    StartupIntro::kDurationMs));
+    const uint32_t frame = elapsedMs / StartupIntro::kFrameIntervalMs;
+    if (frame == lastStartupFrame_) {
+      return;
+    }
+    lastStartupFrame_ = frame;
+  }
+  renderer_.render(snapshot());
+}
 
 std::string HmiController::screenName() const {
   static constexpr const char* names[] = {"logo", "menu", "live", "recovery", "testing", "data", "sensors",
@@ -756,6 +769,11 @@ HmiSnapshot HmiController::snapshot() const {
   result.qrUrl = qrUrl_;
   result.recoveryLocations = recoveryLocations_;
   result.virtualTimeMs = nowMs_;
+  const auto startupElapsed = static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_,
+                                                                       StartupIntro::kDurationMs));
+  result.startupElapsedMs = startupElapsed;
+  result.startupPhase = screen_ == Screen::Logo ? StartupIntro::PhaseName(StartupIntro::PhaseAt(startupElapsed))
+                                                 : StartupIntro::PhaseName(StartupIntro::Phase::kComplete);
   result.configuration = config_.config();
   result.links[0] = link1_.snapshot();
   result.links[1] = link2_.snapshot();

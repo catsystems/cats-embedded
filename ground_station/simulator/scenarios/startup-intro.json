@@ -1,0 +1,33 @@
+{
+  "initial": {"ready": false},
+  "steps": [
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 0, "startupPhase": "rocket_flight"}},
+    {"snapshot": "rocket-launch"},
+    {"advance": 850},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 850, "startupPhase": "rocket_flight"}},
+    {"snapshot": "rocket-through-clouds"},
+    {"advance": 850},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 1700, "startupPhase": "cloud_transition"}},
+    {"snapshot": "rocket-exited"},
+    {"advance": 700},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 2400, "startupPhase": "logo_descent"}},
+    {"snapshot": "logo-descent"},
+    {"advance": 1100},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 3500, "startupPhase": "logo_settle"}},
+    {"snapshot": "logo-settle"},
+    {"advance": 100},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 3600, "startupPhase": "logo_settle"}},
+    {"snapshot": "logo-settle-final"},
+    {"advance": 50},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 3650, "startupPhase": "logo_hold"}},
+    {"snapshot": "logo-hold-start"},
+    {"advance": 250},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 3900, "startupPhase": "logo_hold"}},
+    {"snapshot": "logo-hold"},
+    {"advance": 99},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 3999, "startupPhase": "logo_hold"}},
+    {"advance": 1},
+    {"assert": {"activeScreen": "menu", "virtualTimeMs": 4000, "startupElapsedMs": 4000,
+                "startupPhase": "complete"}}
+  ]
+}

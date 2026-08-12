@@ -26,12 +26,35 @@ from typing import Any
 
 WIDTH = 400
 HEIGHT = 240
-BOOT_MS = 2000
+INTRO_FRAME_MS = 50
+ROCKET_FLIGHT_END_MS = 1700
+LOGO_DESCENT_START_MS = 1900
+LOGO_DESCENT_END_MS = 3350
+LOGO_SETTLE_END_MS = 3650
+BOOT_MS = 4000
+MAXIMUM_BOOT_MS = 5000
 LONG_PRESS_MS = 500
 REPEAT_MS = 100
 BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
 MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
 SETTING_COUNTS = (4, 4, 2)
+
+assert BOOT_MS <= MAXIMUM_BOOT_MS
+assert BOOT_MS % INTRO_FRAME_MS == 0
+
+
+def startup_phase(elapsed_ms: int) -> str:
+    if elapsed_ms < ROCKET_FLIGHT_END_MS:
+        return "rocket_flight"
+    if elapsed_ms < LOGO_DESCENT_START_MS:
+        return "cloud_transition"
+    if elapsed_ms < LOGO_DESCENT_END_MS:
+        return "logo_descent"
+    if elapsed_ms < LOGO_SETTLE_END_MS:
+        return "logo_settle"
+    if elapsed_ms < BOOT_MS:
+        return "logo_hold"
+    return "complete"
 
 
 class ScenarioError(ValueError):
@@ -299,10 +322,11 @@ class Simulator:
         self.replay_speed = 1.0
         self.replay_start = 0
         self.testing_start = 0
+        self.intro_frame_rendered = -1
         if ready:
             self.advance(BOOT_MS)
         else:
-            self.render("CATS Ground Station", "Starting...")
+            self.render_intro()
 
     def config(self) -> dict[str, Any]:
         return self.state["configuration"]
@@ -330,9 +354,78 @@ class Simulator:
         self.frame.rect(8, 95, 384, 125, True, filled=False)
         self.frame.present()
 
+    def draw_intro_cloud(self, x: int, y: int, scale: int) -> None:
+        outline = ((0, 11), (6, 11), (7, 7), (10, 4), (14, 3), (18, 6), (19, 8),
+                   (23, 8), (25, 5), (29, 4), (33, 6), (35, 10), (40, 11), (0, 11))
+        for first, second in zip(outline, outline[1:]):
+            self.frame.line(x + first[0] * scale, y + first[1] * scale,
+                            x + second[0] * scale, y + second[1] * scale)
+
+    def draw_intro_rocket(self, center_x: int, center_y: int, frame_number: int) -> None:
+        def point(forward: int, sideways: int) -> tuple[int, int]:
+            return (center_x + (5 * forward + 9 * sideways) // 10,
+                    center_y + (-9 * forward + 5 * sideways) // 10)
+
+        tip, left, right = point(28, 0), point(-15, -8), point(-15, 8)
+        nose_left, nose_right = point(12, -8), point(12, 8)
+        for start, end in ((tip, nose_left), (tip, nose_right), (nose_left, left),
+                           (nose_right, right), (left, right)):
+            self.frame.line(*start, *end)
+        window = point(5, 0)
+        self.frame.rect(window[0] - 3, window[1] - 3, 7, 7)
+        self.frame.line(*point(-3, -5), *point(-3, 5))
+        for start, end in ((point(-11, -7), point(-21, -16)), (point(-21, -16), point(-2, -8)),
+                           (point(-11, 7), point(-21, 16)), (point(-21, 16), point(-2, 8))):
+            self.frame.line(*start, *end)
+        wobble = 2 if frame_number % 2 == 0 else -2
+        self.frame.line(*point(-16, 0), *point(-34, wobble))
+        self.frame.line(*point(-16, 0), *point(-28, -5 - wobble))
+        self.frame.line(*point(-16, 0), *point(-27, 5 + wobble))
+
+    def render_intro(self) -> None:
+        elapsed = min(self.now_ms, BOOT_MS)
+        elapsed -= elapsed % INTRO_FRAME_MS
+        frame_number = elapsed // INTRO_FRAME_MS
+        if frame_number == self.intro_frame_rendered:
+            return
+        self.intro_frame_rendered = frame_number
+        phase = startup_phase(elapsed)
+        self.frame.clear()
+
+        if phase in ("rocket_flight", "cloud_transition"):
+            drift = elapsed // 85
+            self.draw_intro_cloud(258 - drift, 35, 2)
+            self.draw_intro_cloud(35 - drift // 2, 136, 1)
+            if phase == "rocket_flight":
+                rocket_x = -30 + 245 * elapsed // ROCKET_FLIGHT_END_MS
+                rocket_y = 225 - 270 * elapsed // ROCKET_FLIGHT_END_MS
+                self.draw_intro_rocket(rocket_x, rocket_y, frame_number)
+            self.draw_intro_cloud(90 - drift, 83, 2)
+        else:
+            cloud_elapsed = elapsed - LOGO_DESCENT_START_MS
+            cloud_duration = LOGO_SETTLE_END_MS - LOGO_DESCENT_START_MS
+            cloud_travel = 140 * min(cloud_elapsed, cloud_duration) // cloud_duration
+            self.draw_intro_cloud(52 - cloud_travel, 45, 2)
+            self.draw_intro_cloud(292 + cloud_travel, 139, 1)
+            logo_y = 45
+            if phase == "logo_descent":
+                progress = elapsed - LOGO_DESCENT_START_MS
+                duration = LOGO_DESCENT_END_MS - LOGO_DESCENT_START_MS
+                logo_y = -155 + 202 * progress * (2 * duration - progress) // (duration * duration)
+            elif phase == "logo_settle":
+                progress = elapsed - LOGO_DESCENT_END_MS
+                duration = LOGO_SETTLE_END_MS - LOGO_DESCENT_END_MS
+                logo_y = 47 - 2 * progress * progress // (duration * duration)
+            self.frame.rect(162, logo_y, 90, 150, filled=False)
+            self.frame.text(171, logo_y + 64, "CATS", 3)
+            if phase == "logo_descent":
+                foreground_x = 170 - 220 * cloud_elapsed // cloud_duration
+                self.draw_intro_cloud(foreground_x, 82, 2)
+        self.frame.present()
+
     def render_screen(self) -> None:
         if self.screen == "logo":
-            self.render("CATS Ground Station", "Starting...")
+            self.render_intro()
         elif self.screen == "menu":
             self.render("Main Menu", " ".join(MENU_SCREENS))
             self.frame.text(12, 82, f"Selection: {self.menu_selection}")
@@ -1077,6 +1170,8 @@ class Simulator:
                 {"latitude": location[0], "longitude": location[1]} for location in self.recovery_locations
             ],
             "virtualTimeMs": self.now_ms,
+            "startupElapsedMs": min(self.now_ms, BOOT_MS),
+            "startupPhase": startup_phase(self.now_ms) if self.screen == "logo" else "complete",
             "configuration": copy.deepcopy(self.config()),
             "links": copy.deepcopy(self.state["links"]),
             "navigation": copy.deepcopy(self.state["navigation"]),
@@ -1135,7 +1230,9 @@ class Simulator:
                 elif operation == "assert":
                     self.assert_value(value)
                 elif operation == "snapshot":
-                    snapshots.append(self.snapshot())
+                    snapshot = self.snapshot()
+                    snapshot["snapshotName"] = str(value)
+                    snapshots.append(snapshot)
                 else:
                     fail(f"step {index}: unknown operation '{operation}'")
             except ScenarioError:
@@ -1179,7 +1276,7 @@ def deterministic_test(root: Path) -> int:
     except (OSError, json.JSONDecodeError) as error:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
-    for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json",
+    for scenario_name in ("startup-intro.json", "menu.json", "testing-timeout.json", "settings.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json"):
@@ -1192,18 +1289,37 @@ def deterministic_test(root: Path) -> int:
                 return 1
 
     for name, case in cases:
-        first = Simulator(copy.deepcopy(case["initial"]), ready=True, base_dir=scenario_dir)
-        first.run(copy.deepcopy(case["steps"]))
-        second = Simulator(copy.deepcopy(case["initial"]), ready=True, base_dir=scenario_dir)
-        second.run(copy.deepcopy(case["steps"]))
+        first_initial = copy.deepcopy(case["initial"])
+        first_ready = bool(first_initial.pop("ready", case.get("ready", True)))
+        first = Simulator(first_initial, ready=first_ready, base_dir=scenario_dir)
+        first_snapshots = first.run(copy.deepcopy(case["steps"]))
+        second_initial = copy.deepcopy(case["initial"])
+        second_ready = bool(second_initial.pop("ready", case.get("ready", True)))
+        second = Simulator(second_initial, ready=second_ready, base_dir=scenario_dir)
+        second_snapshots = second.run(copy.deepcopy(case["steps"]))
         a, b = first.snapshot(), second.snapshot()
-        if json.dumps(a, sort_keys=True) != json.dumps(b, sort_keys=True) or first.frame.png() != second.frame.png():
+        if (json.dumps(a, sort_keys=True) != json.dumps(b, sort_keys=True)
+                or json.dumps(first_snapshots, sort_keys=True) != json.dumps(second_snapshots, sort_keys=True)
+                or first.frame.png() != second.frame.png()):
             print(f"determinism test failed: {name}", file=sys.stderr)
             return 1
         expected_hash = goldens.get(name)
-        if expected_hash is not None and a["framebufferSha256"] != expected_hash:
-            print(f"golden framebuffer failed: {name}: expected {expected_hash}, got {a['framebufferSha256']}", file=sys.stderr)
+        if isinstance(expected_hash, str) and a["framebufferSha256"] != expected_hash:
+            print(f"golden framebuffer failed: {name}: expected {expected_hash}, got {a['framebufferSha256']}",
+                  file=sys.stderr)
             return 1
+        if isinstance(expected_hash, dict):
+            expected_final = expected_hash.get("final")
+            if expected_final is not None and a["framebufferSha256"] != expected_final:
+                print(f"golden framebuffer failed: {name}: expected {expected_final}, got {a['framebufferSha256']}",
+                      file=sys.stderr)
+                return 1
+            actual_snapshots = {item["snapshotName"]: item["framebufferSha256"] for item in first_snapshots}
+            for snapshot_name, snapshot_hash in expected_hash.get("snapshots", {}).items():
+                if actual_snapshots.get(snapshot_name) != snapshot_hash:
+                    print(f"golden snapshot failed: {name}/{snapshot_name}: expected {snapshot_hash}, "
+                          f"got {actual_snapshots.get(snapshot_name)}", file=sys.stderr)
+                    return 1
     print(f"gs-sim: {len(cases)} deterministic controller/scenario tests passed")
     print(f"framebuffer: {len(first.frame.packed())} bytes, sha256={a['framebufferSha256']}")
     return 0

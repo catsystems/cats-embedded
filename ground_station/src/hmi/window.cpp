@@ -13,6 +13,7 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
+#include <algorithm>
 #include <cmath>
 
 uint16_t GetNegativeColor(uint16_t color) {
@@ -45,7 +46,158 @@ void Window::begin() {
 }
 
 void Window::logo() {
-  display.drawBitmap(160, 20, cats_logo, 120, 200, BLACK);
+  drawIntroLogo(45);
+  surface.present();
+}
+
+void Window::drawIntroCloud(int16_t x, int16_t y, uint8_t scale) {
+  static constexpr int8_t kCloudOutline[][2] = {
+      {0, 11}, {6, 11}, {7, 7}, {10, 4}, {14, 3}, {18, 6}, {19, 8},
+      {23, 8}, {25, 5}, {29, 4}, {33, 6}, {35, 10}, {40, 11}, {0, 11},
+  };
+  constexpr size_t kPointCount = sizeof(kCloudOutline) / sizeof(kCloudOutline[0]);
+  for (size_t index = 1; index < kPointCount; ++index) {
+    const auto x0 = static_cast<int16_t>(x + kCloudOutline[index - 1][0] * scale);
+    const auto y0 = static_cast<int16_t>(y + kCloudOutline[index - 1][1] * scale);
+    const auto x1 = static_cast<int16_t>(x + kCloudOutline[index][0] * scale);
+    const auto y1 = static_cast<int16_t>(y + kCloudOutline[index][1] * scale);
+    display.drawLine(x0, y0, x1, y1, BLACK);
+  }
+}
+
+void Window::drawIntroRocket(int16_t centerX, int16_t centerY, uint32_t frameNumber) {
+  struct Point {
+    int16_t x;
+    int16_t y;
+  };
+  const auto transform = [centerX, centerY](int16_t forward, int16_t sideways) -> Point {
+    return {
+        static_cast<int16_t>(centerX + (5 * forward + 9 * sideways) / 10),
+        static_cast<int16_t>(centerY + (-9 * forward + 5 * sideways) / 10),
+    };
+  };
+
+  const Point tip = transform(28, 0);
+  const Point noseLeft = transform(12, -8);
+  const Point noseRight = transform(12, 8);
+  const Point tailLeft = transform(-15, -8);
+  const Point tailRight = transform(-15, 8);
+  display.fillTriangle(tip.x, tip.y, noseLeft.x, noseLeft.y, noseRight.x, noseRight.y, BLACK);
+  display.fillTriangle(noseLeft.x, noseLeft.y, noseRight.x, noseRight.y, tailLeft.x, tailLeft.y, BLACK);
+  display.fillTriangle(noseRight.x, noseRight.y, tailLeft.x, tailLeft.y, tailRight.x, tailRight.y, BLACK);
+
+  const Point innerFrontLeft = transform(10, -5);
+  const Point innerFrontRight = transform(10, 5);
+  const Point innerTailLeft = transform(-11, -5);
+  const Point innerTailRight = transform(-11, 5);
+  display.fillTriangle(innerFrontLeft.x, innerFrontLeft.y, innerFrontRight.x, innerFrontRight.y, innerTailLeft.x,
+                       innerTailLeft.y, WHITE);
+  display.fillTriangle(innerFrontRight.x, innerFrontRight.y, innerTailLeft.x, innerTailLeft.y, innerTailRight.x,
+                       innerTailRight.y, WHITE);
+
+  const Point windowCenter = transform(5, 0);
+  display.fillCircle(windowCenter.x, windowCenter.y, 3, BLACK);
+  display.fillCircle(windowCenter.x, windowCenter.y, 1, WHITE);
+
+  const Point bandLeft = transform(-3, -5);
+  const Point bandRight = transform(-3, 5);
+  display.drawLine(bandLeft.x, bandLeft.y, bandRight.x, bandRight.y, BLACK);
+
+  const Point finLeft = transform(-11, -7);
+  const Point finLeftTip = transform(-21, -16);
+  const Point finLeftFront = transform(-2, -8);
+  const Point finRight = transform(-11, 7);
+  const Point finRightTip = transform(-21, 16);
+  const Point finRightFront = transform(-2, 8);
+  display.fillTriangle(finLeft.x, finLeft.y, finLeftTip.x, finLeftTip.y, finLeftFront.x, finLeftFront.y, BLACK);
+  display.fillTriangle(finRight.x, finRight.y, finRightTip.x, finRightTip.y, finRightFront.x, finRightFront.y, BLACK);
+
+  const int16_t flameWobble = (frameNumber % 2U == 0U) ? 2 : -2;
+  const Point flameRoot = transform(-16, 0);
+  const Point flameTip = transform(-34, flameWobble);
+  const Point flameFork = transform(-28, static_cast<int16_t>(-5 - flameWobble));
+  const Point flameForkRight = transform(-27, static_cast<int16_t>(5 + flameWobble));
+  display.drawLine(flameRoot.x, flameRoot.y, flameTip.x, flameTip.y, BLACK);
+  display.drawLine(flameRoot.x, flameRoot.y, flameFork.x, flameFork.y, BLACK);
+  display.drawLine(flameRoot.x, flameRoot.y, flameForkRight.x, flameForkRight.y, BLACK);
+}
+
+void Window::drawIntroLogo(int16_t y) {
+  constexpr int16_t kSourceWidth = 120;
+  constexpr int16_t kOutputWidth = 90;
+  constexpr int16_t kOutputHeight = 150;
+  // The source bitmap spans its full box but has more visual weight on the
+  // left, so a small optical offset looks better than geometric centering.
+  constexpr int16_t kOutputX = (400 - kOutputWidth) / 2 + 7;
+  constexpr int16_t kSourceRowBytes = kSourceWidth / 8;
+
+  display.startWrite();
+  for (int16_t outputY = 0; outputY < kOutputHeight; ++outputY) {
+    const int16_t sourceY = static_cast<int16_t>((outputY * 4) / 3);
+    for (int16_t outputX = 0; outputX < kOutputWidth; ++outputX) {
+      const int16_t sourceX = static_cast<int16_t>((outputX * 4) / 3);
+      const uint8_t sourceByte = cats_logo[sourceY * kSourceRowBytes + sourceX / 8];
+      if ((sourceByte & (0x80U >> (sourceX & 7))) != 0U) {
+        display.writePixel(static_cast<int16_t>(kOutputX + outputX), static_cast<int16_t>(y + outputY), BLACK);
+      }
+    }
+  }
+  display.endWrite();
+}
+
+void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
+  elapsedMs = std::min(elapsedMs, StartupIntro::kDurationMs);
+  elapsedMs -= elapsedMs % StartupIntro::kFrameIntervalMs;
+  const StartupIntro::Phase phase = StartupIntro::PhaseAt(elapsedMs);
+
+  // Clear only the backing buffer. Sending the Sharp Memory LCD clear command
+  // for every frame would introduce visible flashing before the refresh.
+  display.fillScreen(WHITE);
+
+  if (phase == StartupIntro::Phase::kRocketFlight || phase == StartupIntro::Phase::kCloudTransition) {
+    const int16_t drift = static_cast<int16_t>(elapsedMs / 85U);
+    drawIntroCloud(static_cast<int16_t>(258 - drift), 35, 2);
+    drawIntroCloud(static_cast<int16_t>(35 - drift / 2), 136, 1);
+
+    if (phase == StartupIntro::Phase::kRocketFlight) {
+      const int16_t rocketX = static_cast<int16_t>(-30 + (245 * static_cast<int32_t>(elapsedMs)) /
+                                                            StartupIntro::kRocketFlightEndMs);
+      const int16_t rocketY = static_cast<int16_t>(225 - (270 * static_cast<int32_t>(elapsedMs)) /
+                                                            StartupIntro::kRocketFlightEndMs);
+      drawIntroRocket(rocketX, rocketY, elapsedMs / StartupIntro::kFrameIntervalMs);
+    }
+
+    // This foreground cloud briefly masks the rocket, making the flight read
+    // as passing through the cloud layer rather than over a flat backdrop.
+    drawIntroCloud(static_cast<int16_t>(90 - drift), 83, 2);
+  } else {
+    const uint32_t cloudElapsed = elapsedMs - StartupIntro::kLogoDescentStartMs;
+    const uint32_t cloudDuration = StartupIntro::kLogoSettleEndMs - StartupIntro::kLogoDescentStartMs;
+    const int16_t cloudTravel = static_cast<int16_t>((140U * std::min(cloudElapsed, cloudDuration)) / cloudDuration);
+    drawIntroCloud(static_cast<int16_t>(52 - cloudTravel), 45, 2);
+    drawIntroCloud(static_cast<int16_t>(292 + cloudTravel), 139, 1);
+
+    int16_t logoY = 45;
+    if (phase == StartupIntro::Phase::kLogoDescent) {
+      const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentStartMs);
+      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoDescentEndMs -
+                                                    StartupIntro::kLogoDescentStartMs);
+      const int64_t easedNumerator = static_cast<int64_t>(progress) * (2 * duration - progress);
+      logoY = static_cast<int16_t>(-155 + (202 * easedNumerator) / (static_cast<int64_t>(duration) * duration));
+    } else if (phase == StartupIntro::Phase::kLogoSettle) {
+      const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentEndMs);
+      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoSettleEndMs -
+                                                    StartupIntro::kLogoDescentEndMs);
+      logoY = static_cast<int16_t>(47 - (2LL * progress * progress) / (static_cast<int64_t>(duration) * duration));
+    }
+    drawIntroLogo(logoY);
+
+    if (phase == StartupIntro::Phase::kLogoDescent) {
+      const int16_t foregroundX = static_cast<int16_t>(170 - (220U * cloudElapsed) / cloudDuration);
+      drawIntroCloud(foregroundX, 82, 2);
+    }
+  }
+
   surface.present();
 }
 
