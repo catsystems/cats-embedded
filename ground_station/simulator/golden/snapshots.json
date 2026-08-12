@@ -1,4 +1,17 @@
 {
+  "startup-intro.json": {
+    "final": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
+    "snapshots": {
+      "rocket-launch": "d42323c71c0de5b101dd343efd34e53a079d06785754d43e4d3f43b68f1f164c",
+      "rocket-through-clouds": "b7246a9a873df61857560bc10c290b690d7e5083958af9b7673c700596bc079b",
+      "rocket-exited": "b90707df9770540b9371aa93dbfa177b60be52a8b19186c6b9d9dabfea41ca28",
+      "logo-descent": "fb416e6f6799be09247ede6f2f4af62947b3df1d55797ef0ccc81228a52a69e3",
+      "logo-settle": "0f2ec313ce36907818711faf4ad24ed891303f226b7c42b31ed7f72c50a634b8",
+      "logo-settle-final": "40370f3ec0962ba724bef78fb7658ad2ddf6aeb0df71d52fb4926849c620c4f1",
+      "logo-hold-start": "893c7751da739b8fbd8e443af3eaea4a676d6e9082164ac75bbb116f3c70f9ca",
+      "logo-hold": "893c7751da739b8fbd8e443af3eaea4a676d6e9082164ac75bbb116f3c70f9ca"
+    }
+  },
   "menu.json": "5b6ed3da54f95e803bc58e88c6ab35f07c380ae8862e6c813ddde6ef60b6ee01",
   "replay.json": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
   "settings.json": "5dac47de522a2757dff994776a98e5523e3b150d572592589d6ba2d3f65dc38c",

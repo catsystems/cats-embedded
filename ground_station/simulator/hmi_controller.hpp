@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "hmi/startup_intro.hpp"
+
 #include "clock.hpp"
 
 // Simulator state uses portable values rather than packed radio or Arduino
@@ -223,6 +225,8 @@ struct HmiSnapshot {
   std::string qrView = "none";
   std::string qrUrl;
   uint64_t virtualTimeMs = 0;
+  uint32_t startupElapsedMs = 0;
+  std::string startupPhase = "rocket_flight";
   GsConfigSnapshot configuration;
   std::array<LinkSnapshot, 2> links{};
   NavigationSnapshot navigation;
@@ -262,7 +266,6 @@ class HmiController {
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
   enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
 
-  static constexpr uint64_t kBootDurationMs = 2000;
   static constexpr uint64_t kTestingTimeoutMs = 10000;
   static constexpr uint64_t kLongPressMs = 500;
   static constexpr size_t kKeyboardMaxLength = 16;
@@ -307,6 +310,8 @@ class HmiController {
   std::array<uint64_t, 7> lastRepeat_{};
   std::vector<PlatformAction> actions_;
   uint64_t nowMs_ = 0;
+  uint64_t startupStartedMs_ = 0;
+  uint32_t lastStartupFrame_ = UINT32_MAX;
   uint64_t testingStartedMs_ = 0;
   int16_t menuSelection_ = 0;
   int16_t settingsPage_ = 0;

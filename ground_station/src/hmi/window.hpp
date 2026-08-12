@@ -12,6 +12,7 @@
 #include "logging/flightStatistics.hpp"
 #include "navigation.hpp"
 #include "settings.hpp"
+#include "startup_intro.hpp"
 #include "telemetry/telemetryData.hpp"
 
 inline constexpr uint16_t BLACK = 0;
@@ -38,6 +39,7 @@ class Window {
 
   void begin();
   void logo();
+  void drawStartupIntroFrame(uint32_t elapsedMs);
   void Bootloader();
 
   void initBar();
@@ -111,6 +113,9 @@ class Window {
   void drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage);
   void drawVerticalNavigationTile(bool pointsUp);
   void drawRecoveryHint(bool showHint);
+  void drawIntroCloud(int16_t x, int16_t y, uint8_t scale);
+  void drawIntroRocket(int16_t centerX, int16_t centerY, uint32_t frameNumber);
+  void drawIntroLogo(int16_t y);
 
   void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color = BLACK);
   void highlightSetting(int16_t index, uint16_t color);

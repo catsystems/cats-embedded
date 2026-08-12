@@ -159,7 +159,7 @@ function Build-WasmDirect {
     '-sEXPORT_ES6=1',
     '-sENVIRONMENT=web',
     "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','HEAPU8']",
-    "-sEXPORTED_FUNCTIONS=['_gs_reset','_gs_press','_gs_release','_gs_hold','_gs_advance','_gs_set_link_json','_gs_set_navigation_json','_gs_set_sensor_json','_gs_set_device_status_json','_gs_set_configuration_json','_gs_set_logs_json','_gs_load_replay_json','_gs_snapshot_json','_gs_framebuffer','_gs_framebuffer_size','_gs_framebuffer_revision']"
+    "-sEXPORTED_FUNCTIONS=['_gs_reset','_gs_restart','_gs_press','_gs_release','_gs_hold','_gs_advance','_gs_set_link_json','_gs_set_navigation_json','_gs_set_sensor_json','_gs_set_device_status_json','_gs_set_configuration_json','_gs_set_logs_json','_gs_load_replay_json','_gs_snapshot_json','_gs_framebuffer','_gs_framebuffer_size','_gs_framebuffer_revision']"
   )
   & $empp @compileArgs
   if ($LASTEXITCODE -ne 0) { throw 'Direct WebAssembly build failed.' }

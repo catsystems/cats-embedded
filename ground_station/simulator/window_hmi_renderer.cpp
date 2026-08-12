@@ -74,7 +74,7 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
   window_.begin();
 
   if (state.screen == "logo") {
-    window_.logo();
+    window_.drawStartupIntroFrame(state.startupElapsedMs);
     return;
   }
   if (state.screen == "bootloader") {
