@@ -16,8 +16,8 @@ class Hmi {
  public:
   explicit Hmi(const char* dir)
       : recorder(dir),
-        upButton(3, kButtonDebounceMs),
-        downButton(4, kButtonDebounceMs),
+        upButton(kUpButtonPin, kButtonDebounceMs),
+        downButton(kDownButtonPin, kButtonDebounceMs),
         leftButton(2, kButtonDebounceMs),
         rightButton(5, kButtonDebounceMs),
         centerButton(1, kButtonDebounceMs),
@@ -28,6 +28,8 @@ class Hmi {
   void begin();
 
  private:
+  static constexpr uint8_t kUpButtonPin = 3;
+  static constexpr uint8_t kDownButtonPin = 4;
   static constexpr uint32_t kButtonDebounceMs = 15;
   static constexpr uint32_t kSensorRefreshIntervalMs = 200;
 

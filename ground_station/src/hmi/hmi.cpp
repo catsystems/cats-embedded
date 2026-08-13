@@ -221,12 +221,21 @@ bool Hmi::showRecoveryLocation(int8_t linkIndex) {
 
 void Hmi::recovery() {
   const bool dualMode = systemConfig.config.receiverMode == DUAL;
+
+  if (backButton.wasPressed()) {
+    recoveryQrLink = -1;
+    state = MENU;
+    window.initMenu(menuIndex);
+    return;
+  }
+
   if (recoveryQrLink < 0 && dualMode && (upButton.wasPressed() || downButton.wasPressed())) {
     selectedRecoveryLink = 1 - selectedRecoveryLink;
     const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
     window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
                                 recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
                                 hasLastLocation);
+    return;
   }
 
   if (rightButton.wasPressed()) {
@@ -245,6 +254,7 @@ void Hmi::recovery() {
       selectedRecoveryLink = 1 - recoveryQrLink;
       (void)showRecoveryLocation(selectedRecoveryLink);
     }
+    return;
   }
 
   if (leftButton.wasPressed() && recoveryQrLink >= 0) {
@@ -258,6 +268,14 @@ void Hmi::recovery() {
     } else {
       window.updateRecovery(&navigation, hasLastLocation);
     }
+    return;
+  }
+
+  // A display transfer blocks button polling. Let the existing debounce logic
+  // sample a held Link-selection button again before starting another transfer.
+  if (dualMode && recoveryQrLink < 0 &&
+      (digitalRead(kUpButtonPin) == LOW || digitalRead(kDownButtonPin) == LOW)) {
+    return;
   }
 
   if (recoveryQrLink >= 0) {
@@ -283,12 +301,6 @@ void Hmi::recovery() {
     } else {
       window.updateRecovery(&navigation, hasLastLocation);
     }
-  }
-
-  if (backButton.wasPressed()) {
-    recoveryQrLink = -1;
-    state = MENU;
-    window.initMenu(menuIndex);
   }
 }
 
@@ -614,14 +626,15 @@ void Hmi::data() {
       automaticUsbSharePending = Utils::isConnected();
       return;
     }
-    if (downButton.wasPressed() && !dataCatalog.empty() && dataIndex + 1U < dataCatalog.size()) {
+    if ((downButton.wasPressed() || downButton.pressedFor(500)) && !dataCatalog.empty() &&
+        dataIndex + 1U < dataCatalog.size()) {
       dataIndex++;
       if (dataIndex >= dataWindowStart + 11U) {
         dataWindowStart = dataIndex - 10U;
       }
       drawDataList();
     }
-    if (upButton.wasPressed() && dataIndex > 0) {
+    if ((upButton.wasPressed() || upButton.pressedFor(500)) && dataIndex > 0) {
       dataIndex--;
       if (dataIndex < dataWindowStart) {
         dataWindowStart = dataIndex;
