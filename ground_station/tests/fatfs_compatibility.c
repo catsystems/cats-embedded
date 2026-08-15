@@ -228,6 +228,29 @@ static int validate_image(const char *path) {
   if (result != FR_OK || strcmp(label, "DRIVE") != 0) {
     return report_fatfs_error("f_getlabel existing image", result);
   }
+
+  result = f_setlabel("CATS GS");
+  if (result != FR_OK) {
+    return report_fatfs_error("f_setlabel existing image", result);
+  }
+  if (write_count == 0) {
+    fprintf(stderr, "Renaming the volume did not write any sectors\n");
+    return 1;
+  }
+  if ((result = f_unmount("0:")) != FR_OK) {
+    return report_fatfs_error("f_unmount renamed image", result);
+  }
+  write_count = 0;
+  result = f_mount(&filesystem, "0:", 1);
+  if (result != FR_OK) {
+    return report_fatfs_error("f_mount renamed image", result);
+  }
+  memset(label, 0, sizeof(label));
+  result = f_getlabel("0:", label, &serial);
+  if (result != FR_OK || strcmp(label, "CATS GS") != 0) {
+    return report_fatfs_error("f_getlabel renamed image", result);
+  }
+
   if (read_and_check_file("config.json", config) || read_and_check_file("log.txt", log)) {
     return 1;
   }

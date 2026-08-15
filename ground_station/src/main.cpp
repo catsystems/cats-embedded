@@ -31,7 +31,7 @@ void setup() {
   console.setLevel(Console::ConsoleLevel::LEVEL_LOG);
 #endif
 
-  if (!utils.begin(0, "DRIVE")) {
+  if (!utils.begin(0, "CATS GS")) {
     console.warning.println("[MAIN] Could not initialize utilities");
   }
 

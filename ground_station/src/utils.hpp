@@ -29,7 +29,7 @@ enum class UsbStorageState : uint8_t {
 class Utils {
  public:
   explicit Utils() = default;
-  bool begin(uint32_t watchdogTimeout = 0, const char *labelName = "DRIVE", bool forceFormat = false);
+  bool begin(uint32_t watchdogTimeout = 0, const char *labelName = "CATS GS", bool forceFormat = false);
   static void startBootloader();
   static void startWatchdog(uint32_t seconds);
   static void feedWatchdog();
