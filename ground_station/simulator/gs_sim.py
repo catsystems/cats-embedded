@@ -43,7 +43,7 @@ def fail(message: str) -> None:
 
 
 def valid_location(latitude: float, longitude: float) -> bool:
-    return (math.isfinite(latitude) and math.isfinite(longitude) and latitude != 0.0 and longitude != 0.0
+    return (math.isfinite(latitude) and math.isfinite(longitude) and (latitude != 0.0 or longitude != 0.0)
             and -90.0 <= latitude <= 90.0 and -180.0 <= longitude <= 180.0)
 
 
@@ -1169,16 +1169,7 @@ def run_scenario(path: Path, write_snapshots: bool = False) -> dict[str, Any]:
 
 
 def deterministic_test(root: Path) -> int:
-    fixture = {
-        "initial": {"ready": True, "links": [{"connected": True, "telemetry": {"state": 2}}, {}]},
-        "steps": [
-            {"assert": {"activeScreen": "menu"}}, {"press": "right"}, {"press": "right"},
-            {"press": "ok"}, {"assert": {"activeScreen": "testing"}}, {"press": "ok"},
-            {"assert": {"testingState": "can_start"}}, {"press": "ok"}, {"advance": 10001},
-            {"assert": {"testingState": "failed", "emittedAction": "testing_timeout"}}, {"snapshot": "timeout"},
-        ],
-    }
-    cases = [("inline-timeout", fixture)]
+    cases = []
     scenario_dir = root / "ground_station" / "simulator" / "scenarios"
     if not scenario_dir.exists():
         scenario_dir = root / "simulator" / "scenarios"
@@ -1189,9 +1180,9 @@ def deterministic_test(root: Path) -> int:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
     for scenario_name in ("menu.json", "testing-timeout.json", "settings.json", "replay.json",
-                          "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "recording-independent.json",
-                          "recording-modes.json", "log-management.json", "legacy-log-names.json",
-                          "usb-storage.json"):
+                          "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
+                          "recording-independent.json", "recording-modes.json", "log-management.json",
+                          "legacy-log-names.json", "usb-storage.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():
             try:

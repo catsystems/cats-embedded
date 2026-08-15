@@ -5,5 +5,6 @@
   "testing-timeout.json": "49e96d4416301bd8a61bdbb3ab7bfccd9fd1952036b25066800e6e597980a226",
   "qr-recovery.json": "7354ea8c680a17b118ade789feb95fb0cc730a7cbd5a8c95cabb0db90f8a0935",
   "qr-data.json": "9f23e6ca44ea8baf005365e0912ad566898d2512374e0974c06f91da3286233b",
-  "qr-no-fix.json": "8ccd998ef80413e9b778d27a4185e9e45c3575efed306ca1961772dbd44f6bcb"
+  "qr-no-fix.json": "8ccd998ef80413e9b778d27a4185e9e45c3575efed306ca1961772dbd44f6bcb",
+  "qr-zero-coordinate.json": "d32a5de154c9d157b4d2dbcdc82d1ed81f0cc4472ecd3ed823a9d286fac5e1b0"
 }

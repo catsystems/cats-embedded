@@ -4,7 +4,7 @@
     "logs": [
       {
         "name": "no-fix.csv",
-        "csv": "link,ts,state,errors,lat,lon,altitude,velocity,voltage\n1,10,3,0,0,0,100,20,42\n2,11,3,0,500000,0,100,20,42\n"
+        "csv": "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n1,10,3,0,0,0,100,20,42,0,0\n2,11,3,0,0,0,100,20,42,0,0\n"
       }
     ]
   },

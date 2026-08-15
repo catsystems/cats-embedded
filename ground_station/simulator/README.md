@@ -37,9 +37,10 @@ decisecond timestamp. Missing radio metrics use deterministic defaults.
 
 The browser toolbar includes presets for complete/partial and 24-log
 catalogs, nominal dual recovery, a missing recovery fix, active Never-mode
-recording, USB deletion blocking, write/delete/finalize failures, and manual
-finalization. These presets drive the compiled controller and production
-`Window` renderer rather than static images.
+recording, zero-coordinate GNSS fixes, USB deletion blocking,
+write/delete/finalize failures, and manual finalization. These presets drive
+the compiled controller and production `Window` renderer rather than static
+images.
 
 USB mass storage is shared automatically whenever USB is connected and the
 recorder is idle. The firmware reclaims the filesystem before writing the
