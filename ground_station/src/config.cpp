@@ -19,6 +19,7 @@ void Config::save() {
   systemParser.setLinkPhrase2(config.linkPhrase2);
   systemParser.setTelemetryMode(static_cast<bool>(config.receiverMode));
   systemParser.setNeverStopLoggingFlag(config.neverStopLogging);
+  systemParser.setStartupAnimationFlag(config.startupAnimation);
   systemParser.setUnitSystem(config.unitSystem);
   systemParser.setTimeZone(config.timeZoneOffset);
   systemParser.setMagCalib(config.mag_calib);
@@ -52,6 +53,11 @@ void Config::load() {
   if (!systemParser.getNeverStopLoggingFlag(stop)) {
     config.neverStopLogging = false;
     console.warning.println("Logging flag loading failed");
+  }
+
+  if (!systemParser.getStartupAnimationFlag(config.startupAnimation)) {
+    config.startupAnimation = true;
+    console.warning.println("Startup animation flag loading failed");
   }
 
   if (!systemParser.getTimeZone(config.timeZoneOffset)) {

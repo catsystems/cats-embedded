@@ -48,7 +48,7 @@ bool hasValidTypes(const JsonDocument& document) {
       if (!isValidPhrase(value)) {
         return false;
       }
-    } else if (key == "never_stop_logging" || key == "telemetry_mode") {
+    } else if (key == "never_stop_logging" || key == "startup_animation" || key == "telemetry_mode") {
       if (!value.is<bool>()) {
         return false;
       }
@@ -144,6 +144,11 @@ bool SystemParser::setNeverStopLoggingFlag(bool flag) {
   return !doc.overflowed();
 }
 
+bool SystemParser::setStartupAnimationFlag(bool flag) {
+  doc["startup_animation"] = flag;
+  return !doc.overflowed();
+}
+
 bool SystemParser::setTimeZone(int16_t timezone) {
   doc["timezone"] = timezone;
   return !doc.overflowed();
@@ -207,6 +212,15 @@ bool SystemParser::getTestingPhrase(char* phrase) { return copyPhrase(doc, "test
 
 bool SystemParser::getNeverStopLoggingFlag(bool& flag) {
   const JsonVariantConst value = doc["never_stop_logging"];
+  if (!value.is<bool>()) {
+    return false;
+  }
+  flag = value.as<bool>();
+  return true;
+}
+
+bool SystemParser::getStartupAnimationFlag(bool& flag) {
+  const JsonVariantConst value = doc["startup_animation"];
   if (!value.is<bool>()) {
     return false;
   }

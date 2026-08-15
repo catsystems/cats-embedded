@@ -35,3 +35,4 @@ counts, `selectedRecoveryLink`, `recoverySolution`, `logCount`,
 They also expose `usbStorageState` and `usbStorageMessage` for the automatic
 idle-time USB Drive handoff flow.
 During startup they also expose `startupElapsedMs` and `startupPhase`.
+Configuration snapshots include `startupAnimation`, which defaults to `true`.

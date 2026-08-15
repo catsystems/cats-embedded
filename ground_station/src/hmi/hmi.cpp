@@ -1019,11 +1019,16 @@ bool Hmi::claimStorageForFirmware() {
 void Hmi::update(void *pvParameter) {
   auto *ref = static_cast<Hmi *>(pvParameter);
 
-  const uint32_t introStartMs = millis();
-  TickType_t introLastTick = xTaskGetTickCount();
-  while (millis() - introStartMs < StartupIntro::kDurationMs) {
-    ref->window.drawStartupIntroFrame(millis() - introStartMs);
-    vTaskDelayUntil(&introLastTick, pdMS_TO_TICKS(StartupIntro::kFrameIntervalMs));
+  if (systemConfig.config.startupAnimation) {
+    const uint32_t introStartMs = millis();
+    TickType_t introLastTick = xTaskGetTickCount();
+    while (millis() - introStartMs < StartupIntro::kDurationMs) {
+      ref->window.drawStartupIntroFrame(millis() - introStartMs);
+      vTaskDelayUntil(&introLastTick, pdMS_TO_TICKS(StartupIntro::kFrameIntervalMs));
+    }
+  } else {
+    ref->window.logo();
+    vTaskDelay(pdMS_TO_TICKS(StartupIntro::kStaticLogoDurationMs));
   }
 
   ref->window.initBar();

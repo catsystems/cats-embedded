@@ -16,6 +16,7 @@ inline constexpr uint32_t kLogoDescentStartMs = 1900;
 inline constexpr uint32_t kLogoDescentEndMs = 3350;
 inline constexpr uint32_t kLogoSettleEndMs = 3650;
 inline constexpr uint32_t kDurationMs = 4000;
+inline constexpr uint32_t kStaticLogoDurationMs = 2000;
 inline constexpr uint32_t kMaximumAllowedDurationMs = 5000;
 
 [[nodiscard]] constexpr Phase PhaseAt(uint32_t elapsedMs) {
@@ -57,5 +58,7 @@ inline constexpr uint32_t kMaximumAllowedDurationMs = 5000;
 
 static_assert(kDurationMs <= kMaximumAllowedDurationMs, "The startup intro must complete within five seconds");
 static_assert(kDurationMs % kFrameIntervalMs == 0, "The startup duration must end on an animation frame");
+static_assert(kStaticLogoDurationMs <= kMaximumAllowedDurationMs,
+              "The static startup must complete within five seconds");
 
 }  // namespace StartupIntro

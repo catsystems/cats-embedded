@@ -32,12 +32,13 @@ LOGO_DESCENT_START_MS = 1900
 LOGO_DESCENT_END_MS = 3350
 LOGO_SETTLE_END_MS = 3650
 BOOT_MS = 4000
+STATIC_LOGO_MS = 2000
 MAXIMUM_BOOT_MS = 5000
 LONG_PRESS_MS = 500
 REPEAT_MS = 100
 BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
 MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
-SETTING_COUNTS = (4, 4, 2)
+SETTING_COUNTS = (4, 4, 3)
 
 assert BOOT_MS <= MAXIMUM_BOOT_MS
 assert BOOT_MS % INTRO_FRAME_MS == 0
@@ -223,6 +224,7 @@ def defaults() -> dict[str, Any]:
         "configuration": {
             "timeZoneOffset": 0, "neverStopLogging": False, "dualReceiver": False,
             "linkPhrase1": "", "linkPhrase2": "", "testingPhrase": "", "imperialUnits": False,
+            "startupAnimation": True,
         },
         "links": [
             {"enabled": True, "connected": False, "telemetry": {"state": 2, "errors": 0, "altitudeM": 0,
@@ -324,12 +326,15 @@ class Simulator:
         self.testing_start = 0
         self.intro_frame_rendered = -1
         if ready:
-            self.advance(BOOT_MS)
+            self.advance(self.startup_duration_ms())
         else:
             self.render_intro()
 
     def config(self) -> dict[str, Any]:
         return self.state["configuration"]
+
+    def startup_duration_ms(self) -> int:
+        return BOOT_MS if self.config().get("startupAnimation", True) else STATIC_LOGO_MS
 
     def link(self, index: int) -> dict[str, Any]:
         return self.state["links"][index]
@@ -383,6 +388,16 @@ class Simulator:
         self.frame.line(*point(-16, 0), *point(-27, 5 + wobble))
 
     def render_intro(self) -> None:
+        if not self.config().get("startupAnimation", True):
+            if self.intro_frame_rendered == 0:
+                return
+            self.intro_frame_rendered = 0
+            self.frame.clear()
+            self.frame.rect(162, 45, 90, 150, filled=False)
+            self.frame.text(171, 109, "CATS", 3)
+            self.frame.present()
+            return
+
         elapsed = min(self.now_ms, BOOT_MS)
         elapsed -= elapsed % INTRO_FRAME_MS
         frame_number = elapsed // INTRO_FRAME_MS
@@ -523,7 +538,7 @@ class Simulator:
                 self.recovery_locations[index] = location
         self.ingest_recording()
         self.update_automatic_usb_storage()
-        if self.screen == "logo" and self.now_ms >= BOOT_MS:
+        if self.screen == "logo" and self.now_ms >= self.startup_duration_ms():
             self.screen = "menu"
             self.render_screen()
         if self.screen == "menu":
@@ -961,6 +976,9 @@ class Simulator:
                 config["timeZoneOffset"] = max(-12, min(12, config.get("timeZoneOffset", 0) + (1 if inc else -1 if dec else 0)))
             elif self.settings_page == 2 and self.settings_selection == 1 and (inc or dec):
                 config["imperialUnits"] = not config.get("imperialUnits", False)
+            elif self.settings_page == 2 and self.settings_selection == 2:
+                if inc: config["startupAnimation"] = True
+                if dec: config["startupAnimation"] = False
 
         if "down" in pressed:
             self.settings_selection = min(SETTING_COUNTS[self.settings_page] - 1, self.settings_selection + 1)
@@ -1170,8 +1188,9 @@ class Simulator:
                 {"latitude": location[0], "longitude": location[1]} for location in self.recovery_locations
             ],
             "virtualTimeMs": self.now_ms,
-            "startupElapsedMs": min(self.now_ms, BOOT_MS),
-            "startupPhase": startup_phase(self.now_ms) if self.screen == "logo" else "complete",
+            "startupElapsedMs": min(self.now_ms, self.startup_duration_ms()),
+            "startupPhase": ("static_logo" if not self.config().get("startupAnimation", True)
+                             else startup_phase(self.now_ms)) if self.screen == "logo" else "complete",
             "configuration": copy.deepcopy(self.config()),
             "links": copy.deepcopy(self.state["links"]),
             "navigation": copy.deepcopy(self.state["navigation"]),
@@ -1276,7 +1295,8 @@ def deterministic_test(root: Path) -> int:
     except (OSError, json.JSONDecodeError) as error:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
-    for scenario_name in ("startup-intro.json", "menu.json", "testing-timeout.json", "settings.json", "replay.json",
+    for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "testing-timeout.json",
+                          "settings.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json"):

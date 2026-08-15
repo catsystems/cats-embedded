@@ -77,7 +77,9 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
     }
   }
 
-  if (screen_ == Screen::Logo && nowMs_ - startupStartedMs_ >= StartupIntro::kDurationMs) {
+  const uint64_t startupDurationMs =
+      config_.config().startupAnimation ? StartupIntro::kDurationMs : StartupIntro::kStaticLogoDurationMs;
+  if (screen_ == Screen::Logo && nowMs_ - startupStartedMs_ >= startupDurationMs) {
     enter(Screen::Menu);
   }
 
@@ -554,7 +556,7 @@ void HmiController::sensorsStep(uint64_t nowMs) {
 }
 
 void HmiController::settingsStep(uint64_t nowMs) {
-  const int16_t counts[3] = {4, 4, 2};
+  const int16_t counts[3] = {4, 4, 3};
   if (keyboardActive_) {
     const bool moveRight = pressed(HmiButton::Right) || repeated(HmiButton::Right, nowMs);
     const bool moveLeft = pressed(HmiButton::Left) || repeated(HmiButton::Left, nowMs);
@@ -639,6 +641,9 @@ void HmiController::settingsStep(uint64_t nowMs) {
       if (decrement) config_.config().timeZoneOffset = std::max<int16_t>(-12, config_.config().timeZoneOffset - 1);
     } else if (settingsPage_ == 2 && settingsSelection_ == 1) {
       if (pressed(HmiButton::Left) || pressed(HmiButton::Right)) config_.config().imperialUnits = !config_.config().imperialUnits;
+    } else if (settingsPage_ == 2 && settingsSelection_ == 2) {
+      if (increment) config_.config().startupAnimation = true;
+      if (decrement) config_.config().startupAnimation = false;
     }
     if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 2) {
       usbStorageMessage_.clear();
@@ -706,9 +711,11 @@ void HmiController::clearQr() {
 
 void HmiController::render() {
   if (screen_ == Screen::Logo) {
-    const auto elapsedMs = static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_,
-                                                                    StartupIntro::kDurationMs));
-    const uint32_t frame = elapsedMs / StartupIntro::kFrameIntervalMs;
+    const uint64_t startupDurationMs =
+        config_.config().startupAnimation ? StartupIntro::kDurationMs : StartupIntro::kStaticLogoDurationMs;
+    const auto elapsedMs =
+        static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_, startupDurationMs));
+    const uint32_t frame = config_.config().startupAnimation ? elapsedMs / StartupIntro::kFrameIntervalMs : 0U;
     if (frame == lastStartupFrame_) {
       return;
     }
@@ -769,12 +776,17 @@ HmiSnapshot HmiController::snapshot() const {
   result.qrUrl = qrUrl_;
   result.recoveryLocations = recoveryLocations_;
   result.virtualTimeMs = nowMs_;
-  const auto startupElapsed = static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_,
-                                                                       StartupIntro::kDurationMs));
-  result.startupElapsedMs = startupElapsed;
-  result.startupPhase = screen_ == Screen::Logo ? StartupIntro::PhaseName(StartupIntro::PhaseAt(startupElapsed))
-                                                 : StartupIntro::PhaseName(StartupIntro::Phase::kComplete);
   result.configuration = config_.config();
+  const uint64_t startupDurationMs =
+      result.configuration.startupAnimation ? StartupIntro::kDurationMs : StartupIntro::kStaticLogoDurationMs;
+  const auto startupElapsed =
+      static_cast<uint32_t>(std::min<uint64_t>(nowMs_ - startupStartedMs_, startupDurationMs));
+  result.startupElapsedMs = startupElapsed;
+  result.startupPhase = screen_ != Screen::Logo
+                            ? StartupIntro::PhaseName(StartupIntro::Phase::kComplete)
+                            : (result.configuration.startupAnimation
+                                   ? StartupIntro::PhaseName(StartupIntro::PhaseAt(startupElapsed))
+                                   : "static_logo");
   result.links[0] = link1_.snapshot();
   result.links[1] = link2_.snapshot();
   result.navigation = navigation_.snapshot();
