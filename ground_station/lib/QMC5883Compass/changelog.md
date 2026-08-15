@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.3]
+### Fixed
+- Issue #27. Library version number was not updated.
+
+## [v1.2.2]
+### Fixed
+- Issue #25. A previous change to the upstream `calibrate()` helper used values outside the range of `int`; changed its working values to `long`. The CATS fork performs calibration in the navigation task and does not contain this helper.
+- Typo in author credit of QMC5883LCompass.cpp.
+
 ## [v1.1.1]
 ### Changed
 - Fixed version number in library.properties

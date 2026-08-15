@@ -8,13 +8,15 @@
 - Arduino-ESP32 native TinyUSB CDC/MSC/runtime-DFU support, SPIFlash 5.1.1,
   SdFat 2.3.103
 - ArduinoJson 7.4.3, JC_Button 2.1.6, Time 1.6.1
+- QMC5883Compass 1.2.3 with the documented CATS QMC5883L/QMC5883P delta
 - Adafruit GFX 1.12.6, BusIO 1.17.4, Sharp Memory Display 1.1.4
 - Arduino_LSM6DS3 1.0.3 and Madgwick 1.2.0 with documented CATS deltas
 - FatFs R0.16 with upstream patch-2 (July 10, 2026)
 - Emscripten 6.0.6 at emsdk commit `9981799f744be74ac67b1c1813ff172f63be0630`
 
-`QMC5883Compass` is protected by a checked manifest and is not upgraded or
-modified. The two TinyUF2 0.10.2 combined images are also hash-locked.
+`QMC5883Compass` is rebased on upstream 1.2.3 while preserving the checked CATS
+multi-model implementation. The two TinyUF2 0.10.2 combined images are also
+hash-locked.
 
 The standalone Adafruit TinyUSB library is intentionally not installed. It
 uses a second descriptor registry that is incompatible with manual USB startup

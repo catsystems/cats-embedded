@@ -49,6 +49,23 @@ def verify_qmc5883_compass() -> None:
         if actual_digest != expected_digest:
             raise RuntimeError(f"Protected QMC5883Compass file changed: {relative_path}")
 
+    require_text(
+        library_root / "library.properties",
+        ("name=QMC5883Compass", "version=1.2.3"),
+    )
+    require_text(
+        library_root / "CATS-VENDORING.md",
+        (
+            "b6ff8bfab322db558e9eeed516ac617eec0b6af5",
+            "runtime selection between QMC5883L",
+            "no call to `Wire.end()`",
+        ),
+    )
+    require_text(
+        library_root / "src" / "QMC5883Compass.hpp",
+        ("kQMC5883L", "kQMC5883P", "readRaw", "readCalibrated", "createSensor"),
+    )
+
 
 def verify_bootloaders() -> None:
     expected = {
