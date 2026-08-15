@@ -12,11 +12,12 @@
 - Adafruit GFX 1.12.6, BusIO 1.17.4, Sharp Memory Display 1.1.4
 - Arduino_LSM6DS3 1.0.3 and Madgwick 1.2.0 with documented CATS deltas
 - FatFs R0.16 with upstream patch-2 (July 10, 2026)
+- TinyUF2 0.35.0 Saola WROOM/WROVER factory and self-update artifacts
 - Emscripten 6.0.6 at emsdk commit `9981799f744be74ac67b1c1813ff172f63be0630`
 
 `QMC5883Compass` is rebased on upstream 1.2.3 while preserving the checked CATS
-multi-model implementation. The two TinyUF2 0.10.2 combined images are also
-hash-locked.
+multi-model implementation. TinyUF2 0.35.0 is the current bootloader release;
+the known-good 0.10.2 combined images remain hash-locked rollback assets.
 
 The standalone Adafruit TinyUSB library is intentionally not installed. It
 uses a second descriptor registry that is incompatible with manual USB startup
@@ -57,5 +58,5 @@ load/save cycles without continuing heap loss.
 The FatFs rebase preserves the existing `ffconf` behavior, 512-byte disk
 callbacks, code page, super-floppy layout, volume label, and explicit format
 workflow. A normal upgrade does not invoke the formatter merely because the
-vendored FatFs version changed. The TinyUF2 images are not part of this
-migration.
+vendored FatFs version changed. TinyUF2 provenance and deployment constraints
+are documented in `bootloader/README.md`.
