@@ -29,14 +29,15 @@ bool isValidUnitSystem(JsonVariantConst value) {
   if (!value.is<const char*>()) {
     return false;
   }
-  const std::string_view unit{value.as<const char*>()};
+  const auto unit = std::string_view{value.as<const char*>()};
   return unit == unit_map[static_cast<uint8_t>(UnitSystem::kMetric)] ||
          unit == unit_map[static_cast<uint8_t>(UnitSystem::kImperial)];
 }
 
 bool hasValidTypes(const JsonDocument& document) {
+  // The guard keeps malformed root documents out before iterating their keys.
   if (!document.is<JsonObjectConst>()) {
-    return false;
+    return false;  // NOLINT(readability-simplify-boolean-expr)
   }
 
   for (JsonPairConst pair : document.as<JsonObjectConst>()) {
@@ -190,7 +191,7 @@ bool SystemParser::setMagCalib(mag_calib_t calib) {
 }
 
 bool SystemParser::setUnitSystem(UnitSystem unit_system) {
-  const uint8_t unitIndex = static_cast<uint8_t>(unit_system);
+  const auto unitIndex = static_cast<uint8_t>(unit_system);
   if (unitIndex > static_cast<uint8_t>(UnitSystem::kImperial)) {
     return false;
   }
@@ -233,6 +234,8 @@ bool SystemParser::getTelemetryMode(bool& mode) {
 
 bool SystemParser::getMagCalib(mag_calib_t& calib) {
   constexpr const char* keys[] = {"mag_o_x", "mag_o_y", "mag_o_z", "mag_s_x", "mag_s_y", "mag_s_z"};
+  // The explicit loop returns on the first incorrectly typed calibration value.
+  // NOLINTNEXTLINE(readability-use-anyofallof)
   for (const char* key : keys) {
     if (!doc[key].is<int32_t>()) {
       return false;
@@ -283,7 +286,7 @@ bool SystemParser::saveFile(const char* path) {
     console.warning.println("[PARSER] Configuration allocation failed");
     return false;
   }
-  const size_t serializedSize = measureJson(doc);
+  const auto serializedSize = measureJson(doc);
   if (serializedSize == 0 || serializedSize > MAX_SYSTEM_FILE_SIZE) {
     console.warning.println("[PARSER] Configuration exceeds the file size limit");
     return false;
@@ -294,8 +297,7 @@ bool SystemParser::saveFile(const char* path) {
       return false;
     }
   }
-  // NOLINTNEXTLINE(cppcoreguidelines-init-variables) something is wrong with this 'File' type
-  File file = fatfs.open(filePath, FILE_WRITE);
+  auto file = fatfs.open(filePath, FILE_WRITE);
   if (!file) {
     console.warning.println("[PARSER] Open file failed");
     return false;

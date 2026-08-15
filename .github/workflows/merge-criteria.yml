@@ -142,10 +142,10 @@ jobs:
           
           echo "$output"
 
-          echo "Note: Warnings 'clang-diagnostic-c++17-extensions' and 'clang-analyzer-valist.Uninitialized' are excluded from checking since they seem to be false-positives. Fix everything else!"
+          echo "Note: Known false positives and diagnostics from installed PlatformIO packages are excluded. Fix everything else!"
 
-          # filter the output to exclude false positives
-          filtered_output=$(echo "$output" | grep -vE 'clang-diagnostic-c\+\+17-extensions|clang-analyzer-valist.Uninitialized')
+          # Filter known false positives and diagnostics emitted from installed toolchain/library files.
+          filtered_output=$(echo "$output" | grep -vE 'clang-diagnostic-c\+\+17-extensions|clang-analyzer-valist.Uninitialized|/\.platformio/packages/')
 
           if echo "$filtered_output" | grep -q "warning"; then
             echo "clang-tidy check failed!"

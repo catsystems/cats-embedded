@@ -103,7 +103,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(barBlinkStatus));
   } else if (recorderFault) {
     display.drawBitmap(75, 1, bar_download, 16, 16, static_cast<uint16_t>(barBlinkStatus));
-    if (barBlinkStatus == 0) {
+    if (!barBlinkStatus) {
       display.drawLine(75, 1, 90, 16, BLACK);
       display.drawLine(90, 1, 75, 16, BLACK);
     }
@@ -1712,6 +1712,8 @@ void Window::dataShowFlightStatistics(FlightStatistics &stats1, FlightStatistics
   display.setTextSize(1);
 
   std::string visibleName = logName == nullptr ? "" : logName;
+  // Reassigned below when the visible filename needs an ellipsis.
+  // NOLINTNEXTLINE(misc-const-correctness)
   std::string title = visibleName;
   int16_t boundsX = 0;
   int16_t boundsY = 0;

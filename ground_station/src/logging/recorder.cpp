@@ -59,9 +59,9 @@ void Recorder::onTelemetryPacket(const packedRXMessage& packet, uint8_t source) 
 }
 
 RecorderStatus Recorder::getStatus() const {
-  portENTER_CRITICAL(const_cast<portMUX_TYPE*>(&statusMux));
+  portENTER_CRITICAL(&statusMux);
   const RecorderStatus copy = status;
-  portEXIT_CRITICAL(const_cast<portMUX_TYPE*>(&statusMux));
+  portEXIT_CRITICAL(&statusMux);
   return copy;
 }
 
@@ -77,11 +77,11 @@ void Recorder::setFault(const char* message) {
 
 bool Recorder::chooseNextFileName() {
   int32_t highest = -1;
-  File directoryFile = fatfs.open(directory);
+  auto directoryFile = fatfs.open(directory);
   if (!directoryFile) {
     return false;
   }
-  File entry = directoryFile.openNextFile();
+  auto entry = directoryFile.openNextFile();
   while (entry) {
     char name[kLogFilenameSize]{};
     entry.getName(name, sizeof(name));
@@ -134,20 +134,20 @@ bool Recorder::writeSample(const Command& command) {
     return false;
   }
   const auto& data = command.data;
-  const uint8_t sourceBit = static_cast<uint8_t>(1U << (command.source - 1U));
+  const auto sourceBit = static_cast<uint8_t>(1U << (command.source - 1U));
   portENTER_CRITICAL(&statusMux);
   status.participantMask |= sourceBit;
   portEXIT_CRITICAL(&statusMux);
   char line[128]{};
-  const uint8_t pyro1 = static_cast<uint8_t>((data.pyro_continuity & 0x01U) != 0U);
-  const uint8_t pyro2 = static_cast<uint8_t>((data.pyro_continuity & 0x02U) != 0U);
+  const auto pyro1 = static_cast<uint8_t>((data.pyro_continuity & 0x01U) != 0U);
+  const auto pyro2 = static_cast<uint8_t>((data.pyro_continuity & 0x02U) != 0U);
   snprintf(line, sizeof(line), "%hu,%d,%d,%d,%d,%d,%d,%d,%d,%hu,%hu", command.source, data.timestamp, data.state,
            data.errors, data.lat, data.lon, data.altitude, data.velocity, data.voltage, pyro1, pyro2);
   if (xSemaphoreTake(fsMutex, portMAX_DELAY) != pdTRUE) {
     setFault("Storage lock failed");
     return false;
   }
-  const bool written = file.println(line) > 0;
+  const auto written = file.println(line) > 0;
   xSemaphoreGive(fsMutex);
   if (!written) {
     setFault("Could not write log sample");
@@ -159,7 +159,7 @@ bool Recorder::writeSample(const Command& command) {
   if (++unsyncedRows >= 10U) {
     unsyncedRows = 0;
     if (xSemaphoreTake(fsMutex, portMAX_DELAY) == pdTRUE) {
-      const bool synced = file.sync();
+      const auto synced = file.sync();
       xSemaphoreGive(fsMutex);
       if (!synced) {
         setFault("Could not sync log file");
@@ -181,7 +181,7 @@ bool Recorder::finalizeFile(FinalizeReason reason [[maybe_unused]]) {
     setFault("Storage lock failed");
     return false;
   }
-  const bool synced = file.sync();
+  const auto synced = file.sync();
   file.close();
   xSemaphoreGive(fsMutex);
   if (!synced) {
@@ -263,6 +263,8 @@ bool Recorder::deleteLog(const char* name) {
   return submitAndWait(command);
 }
 
+// Keep command handling together so storage ownership transitions remain explicit.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Recorder::recordTask(void* pvParameter) {
   auto* ref = static_cast<Recorder*>(pvParameter);
   Command command{};
@@ -275,7 +277,7 @@ void Recorder::recordTask(void* pvParameter) {
       if (!ref->enabled) {
         continue;
       }
-      const uint8_t bit = static_cast<uint8_t>(1U << (command.source - 1U));
+      const auto bit = static_cast<uint8_t>(1U << (command.source - 1U));
       if (!ref->armed) {
         if (command.data.state <= kReadyState) {
           ref->rearmMask |= bit;
@@ -323,7 +325,7 @@ void Recorder::recordTask(void* pvParameter) {
         result = false;
       }
     } else if (command.type == CommandType::CatalogRefresh) {
-      std::vector<LogEntry> refreshed;
+      auto refreshed = std::vector<LogEntry>{};
       result = ref->scanCatalog(refreshed);
       if (result && xSemaphoreTake(ref->catalogMutex, portMAX_DELAY) == pdTRUE) {
         ref->catalogCache = std::move(refreshed);
@@ -346,6 +348,8 @@ void Recorder::recordTask(void* pvParameter) {
 }
 
 int32_t Recorder::logNumber(const char* name) {
+  // sscanf's %ld conversion requires the C library's long type.
+  // NOLINTNEXTLINE(google-runtime-int)
   long number = -1;
   char tail = '\0';
   return sscanf(name, "log_%ld.csv%c", &number, &tail) == 1 ? static_cast<int32_t>(number) : -1;
@@ -370,12 +374,12 @@ bool Recorder::scanCatalog(std::vector<LogEntry>& entries) {
   if (xSemaphoreTake(fsMutex, portMAX_DELAY) != pdTRUE) {
     return false;
   }
-  File directoryFile = fatfs.open(directory);
+  auto directoryFile = fatfs.open(directory);
   if (!directoryFile) {
     xSemaphoreGive(fsMutex);
     return false;
   }
-  File entry = directoryFile.openNextFile();
+  auto entry = directoryFile.openNextFile();
   while (entry) {
     LogEntry log{};
     entry.getName(log.name, sizeof(log.name));
@@ -411,21 +415,5 @@ bool Recorder::refreshCatalog(std::vector<LogEntry>& entries) {
   }
   entries = catalogCache;
   xSemaphoreGive(catalogMutex);
-  return true;
-}
-
-size_t Recorder::getFileCount() {
-  std::vector<LogEntry> entries;
-  return refreshCatalog(entries) ? entries.size() : 0U;
-}
-
-bool Recorder::getFileNameByIndex(size_t index, char* name, size_t capacity) const {
-  std::vector<LogEntry> entries;
-  if (name == nullptr || capacity == 0U || !const_cast<Recorder*>(this)->refreshCatalog(entries) ||
-      index >= entries.size()) {
-    return false;
-  }
-  strncpy(name, entries[index].name, capacity - 1U);
-  name[capacity - 1U] = '\0';
   return true;
 }

@@ -61,7 +61,7 @@ class FlightLogAnalysis {
     *this = FlightLogAnalysis{};
     char path[96]{};
     snprintf(path, sizeof(path), "%s/%s", directory, name);
-    File file = fatfs.open(path, FILE_READ);
+    auto file = fatfs.open(path, FILE_READ);
     if (!file) {
       return false;
     }
@@ -113,21 +113,29 @@ class FlightLogAnalysis {
     }
     complete = malformedRows == 0U;
     bool anyParticipant = false;
+    // Both summaries and their corresponding phase masks are updated by index.
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (uint8_t index = 0; index < 2; ++index) {
       if (summaries[index].participant) {
         anyParticipant = true;
-        complete = complete && phasePresence[index] == (Liftoff | Apogee | Main | Touchdown);
+        constexpr auto kAllPhases =
+            static_cast<uint8_t>(static_cast<unsigned>(Liftoff) | static_cast<unsigned>(Apogee) |
+                                 static_cast<unsigned>(Main) | static_cast<unsigned>(Touchdown));
+        complete = complete && phasePresence[index] == kAllPhases;
       }
     }
     complete = complete && anyParticipant;
     return true;
   }
 
+  // This is the compact result object populated by parse().
+  // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
   FlightStatistics summaries[2]{};
   size_t validRows{0};
   size_t malformedRows{0};
   uint8_t phasePresence[2]{};
   bool complete{false};
+  // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
  private:
   struct Working {
@@ -148,11 +156,15 @@ class FlightLogAnalysis {
   Working working[2]{};
 
   static bool parseFields(char* line, int32_t fields[11]) {
-    char* cursor = line;
+    const char* cursor = line;
     for (uint8_t index = 0; index < 11; ++index) {
       errno = 0;
-      char* end = nullptr;
-      const long value = strtol(cursor, &end, 10);
+      // strtol writes a mutable pointer even though the parsed input is not modified.
+      char* parsedEnd = nullptr;  // NOLINT(misc-const-correctness)
+      // strtol's result type is fixed by the C library API.
+      // NOLINTNEXTLINE(google-runtime-int)
+      const long value = strtol(cursor, &parsedEnd, 10);
+      const char* end = parsedEnd;
       if (errno == ERANGE || end == cursor || value < std::numeric_limits<int32_t>::min() ||
           value > std::numeric_limits<int32_t>::max()) {
         return false;

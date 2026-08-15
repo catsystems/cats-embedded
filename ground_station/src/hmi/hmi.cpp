@@ -183,7 +183,7 @@ void Hmi::initRecovery() {
   const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
   window.initRecovery(hasLastLocation);
   if (systemConfig.config.receiverMode == DUAL) {
-    selectedRecoveryLink = recoveryLocationValid[0] ? 0 : (recoveryLocationValid[1] ? 1 : 0);
+    selectedRecoveryLink = static_cast<int8_t>(recoveryLocationValid[0] ? 0 : (recoveryLocationValid[1] ? 1 : 0));
     window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
                                 recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
                                 hasLastLocation);
@@ -193,7 +193,7 @@ void Hmi::initRecovery() {
 }
 
 void Hmi::updateRecoveryLocations() {
-  packedRXMessage *messages[2] = {&link1.data.getRxData(), &link2.data.getRxData()};
+  const packedRXMessage *const messages[2] = {&link1.data.getRxData(), &link2.data.getRxData()};
   for (uint8_t index = 0; index < 2; ++index) {
     const float latitude = static_cast<float>(messages[index]->lat) / 10000.0F;
     const float longitude = static_cast<float>(messages[index]->lon) / 10000.0F;
@@ -230,7 +230,7 @@ void Hmi::recovery() {
   }
 
   if (recoveryQrLink < 0 && dualMode && (upButton.wasPressed() || downButton.wasPressed())) {
-    selectedRecoveryLink = 1 - selectedRecoveryLink;
+    selectedRecoveryLink = static_cast<int8_t>(1 - selectedRecoveryLink);
     const bool hasLastLocation = recoveryLocationValid[0] || recoveryLocationValid[1];
     window.updateRecoveryTarget(&navigation, recoveryLocations[selectedRecoveryLink],
                                 recoveryLocationValid[selectedRecoveryLink], selectedRecoveryLink, true,
@@ -251,7 +251,7 @@ void Hmi::recovery() {
         }
       }
     } else if (dualMode && recoveryLocationValid[1 - recoveryQrLink]) {
-      selectedRecoveryLink = 1 - recoveryQrLink;
+      selectedRecoveryLink = static_cast<int8_t>(1 - recoveryQrLink);
       (void)showRecoveryLocation(selectedRecoveryLink);
     }
     return;
@@ -469,9 +469,9 @@ void Hmi::initData() {
 
 void Hmi::drawDataList() {
   window.initData(!dataCatalog.empty());
-  const size_t end = std::min(dataCatalog.size(), dataWindowStart + 11U);
+  const auto end = std::min(dataCatalog.size(), dataWindowStart + 11U);
   for (size_t index = dataWindowStart; index < end; ++index) {
-    const uint16_t row = static_cast<uint16_t>(index - dataWindowStart);
+    const auto row = static_cast<uint16_t>(index - dataWindowStart);
     char label[kLogFilenameSize + 12U]{};
     snprintf(label, sizeof(label), "%s%s", dataCatalog[index].name, dataCatalog[index].active ? "  [ACTIVE]" : "");
     if (index == dataIndex) {
@@ -516,7 +516,7 @@ bool Hmi::showDataLocation(int8_t linkIndex) {
   }
   FlightStatistics &stats = dataStatistics[linkIndex];
   const char *title = linkIndex == 0 ? "[Link 1] Last Location" : "[Link 2] Last Location";
-  const bool hasNextPage = linkIndex == 0 && dataStatistics[1].hasLastLocation();
+  const auto hasNextPage = linkIndex == 0 && dataStatistics[1].hasLastLocation();
   if (!window.showLocationQr(stats.getLastLatitude(), stats.getLastLongitude(), title, true, hasNextPage)) {
     return false;
   }
@@ -530,6 +530,8 @@ void Hmi::showDataStatistics() {
                                   dataStatistics[0].hasLastLocation() || dataStatistics[1].hasLastLocation());
 }
 
+// The branches directly mirror the small, explicit Data screen state machine.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Hmi::data() {
   if (dataView == DataView::Details) {
     if (backButton.wasPressed() || (upButton.wasPressed() && dataQrLink < 0)) {
@@ -586,7 +588,7 @@ void Hmi::data() {
         window.initDataMessage("USB Connected", "Disconnect USB before deleting.");
         return;
       }
-      const bool success =
+      const auto success =
           deleting ? recorder.deleteLog(dataCatalog[dataIndex].name) : recorder.finalize(FinalizeReason::UserRequested);
       if (!success) {
         dataMessageReturn = DataView::Options;

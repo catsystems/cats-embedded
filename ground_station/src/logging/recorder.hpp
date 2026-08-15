@@ -52,8 +52,6 @@ class Recorder : public ITelemetryPacketSink {
   bool deleteLog(const char* name);
   bool refreshCatalog(std::vector<LogEntry>& entries);
 
-  size_t getFileCount();
-  bool getFileNameByIndex(size_t index, char* name, size_t capacity) const;
   const char* getDirectory() const { return directory; }
 
  private:
@@ -88,7 +86,7 @@ class Recorder : public ITelemetryPacketSink {
   QueueHandle_t responseQueue{nullptr};
   SemaphoreHandle_t fsMutex{nullptr};
   SemaphoreHandle_t catalogMutex{nullptr};
-  portMUX_TYPE statusMux = portMUX_INITIALIZER_UNLOCKED;
+  mutable portMUX_TYPE statusMux = portMUX_INITIALIZER_UNLOCKED;
   File file{};
   RecorderStatus status{};
   std::vector<LogEntry> catalogCache{};
