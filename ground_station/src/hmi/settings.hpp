@@ -85,7 +85,7 @@ enum {
   kSettingPages = 3,
 };
 
-const char* const settingPageName[kSettingPages] = {"General", "Telemetry", "Location"};
+const char* const settingPageName[kSettingPages] = {"General", "Telemetry", "Other"};
 
 extern const device_settings_t settingsTable[][4];
 
