@@ -17,6 +17,7 @@
 #include "telemetry/telemetry.hpp"
 
 // clang-format off: diskio.h uses the FatFs types declared by ff.h.
+// NOLINTNEXTLINE(llvm-include-order)
 #include "ff.h"
 #include "diskio.h"
 // clang-format on
@@ -180,6 +181,8 @@ void Utils::feedWatchdog() {
   }
 }
 
+// USB connection and storage-ownership transitions intentionally share one task loop.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Utils::update(void *pvParameter) {
   auto *ref = static_cast<Utils *>(pvParameter);
 
@@ -315,7 +318,7 @@ bool Utils::format(const char *labelName) {
 
   static const LBA_t plist[] = {100, 0, 0, 0};  // 1 primary partition with 100% of space.
   static const MKFS_PARM formatOptions = {
-      .fmt = FM_FAT | FM_SFD,
+      .fmt = static_cast<BYTE>(static_cast<unsigned>(FM_FAT) | static_cast<unsigned>(FM_SFD)),
       .n_fat = 0,
       .align = 0,
       .n_root = 0,
@@ -367,8 +370,8 @@ int32_t Utils::getFlashMemoryUsage() {
   const uint32_t num_clusters = fatfs.clusterCount() - 2;
   const uint32_t available_clusters = fatfs.freeClusterCount();
 
-  const double percentage = (static_cast<double>(available_clusters) / static_cast<double>(num_clusters)) * 100.0;
-  const int32_t usage = static_cast<int32_t>(std::ceil(percentage));
+  const auto percentage = (static_cast<double>(available_clusters) / static_cast<double>(num_clusters)) * 100.0;
+  const auto usage = static_cast<int32_t>(std::ceil(percentage));
   xSemaphoreGive(storageAccessMutex);
   return usage;
 }
@@ -533,6 +536,8 @@ extern "C" {
 #if FF_MULTI_PARTITION
 // Preserve the existing super-floppy layout. The old build resolved this table
 // from ESP-IDF's libfatfs as {0, 0}; owning it here avoids that hidden linkage.
+// FatFs declares this callback table as mutable external state.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 PARTITION VolToPart[FF_VOLUMES] = {{0, 0}};
 #endif
 

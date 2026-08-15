@@ -8,6 +8,11 @@
 
 class IClock {
  public:
+  IClock() = default;
+  IClock(const IClock&) = delete;
+  IClock& operator=(const IClock&) = delete;
+  IClock(IClock&&) = delete;
+  IClock& operator=(IClock&&) = delete;
   virtual ~IClock() = default;
   [[nodiscard]] virtual uint64_t nowMs() const = 0;
   [[nodiscard]] virtual uint8_t hour() const { return 0; }

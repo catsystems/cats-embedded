@@ -25,7 +25,7 @@ constexpr int16_t kVersion4Extent = (33 + 2 * kQuietZoneModules) * kVersion4Modu
 constexpr char kGoogleMapsPrefix[] = "https://www.google.com/maps/search/?api=1&query=";
 
 bool FormatCoordinate(float coordinate, char *text, size_t textSize) {
-  const int32_t scaled = static_cast<int32_t>(lroundf(coordinate * 10000.0F));
+  const auto scaled = static_cast<int32_t>(lroundf(coordinate * 10000.0F));
   const bool negative = scaled < 0;
   const uint32_t magnitude =
       negative ? static_cast<uint32_t>(-static_cast<int64_t>(scaled)) : static_cast<uint32_t>(scaled);
@@ -45,8 +45,12 @@ bool FormatCoordinate(float coordinate, char *text, size_t textSize) {
   }
 
   size_t position = 0;
-  if (negative) text[position++] = '-';
-  while (digits > 0) text[position++] = reversed[--digits];
+  if (negative) {
+    text[position++] = '-';
+  }
+  while (digits > 0) {
+    text[position++] = reversed[--digits];
+  }
   text[position++] = '.';
   text[position++] = static_cast<char>('0' + (fraction / 1000U) % 10U);
   text[position++] = static_cast<char>('0' + (fraction / 100U) % 10U);
@@ -105,8 +109,8 @@ bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, in
 
   try {
     const size_t prefixLength = sizeof(kGoogleMapsPrefix) - 1U;
-    const std::vector<uint8_t> prefixBytes(url, url + prefixLength);
-    const std::vector<qrcodegen::QrSegment> segments = {
+    const auto prefixBytes = std::vector<uint8_t>(url, url + prefixLength);
+    const auto segments = std::vector<qrcodegen::QrSegment>{
         qrcodegen::QrSegment::makeBytes(prefixBytes),
         qrcodegen::QrSegment::makeAlphanumeric(url + prefixLength),
     };
@@ -114,8 +118,8 @@ bool DrawGoogleMapsQr(Adafruit_GFX &display, float latitude, float longitude, in
                                                       kMaxQrVersion, -1, false);
 
     const int16_t moduleSize = qr.getSize() == 33 ? kVersion4ModuleSize : kVersion5ModuleSize;
-    const int16_t qrExtent = static_cast<int16_t>((qr.getSize() + 2 * kQuietZoneModules) * moduleSize);
-    const int16_t renderX = static_cast<int16_t>(x + (kVersion4Extent - qrExtent) / 2);
+    const auto qrExtent = static_cast<int16_t>((qr.getSize() + 2 * kQuietZoneModules) * moduleSize);
+    const auto renderX = static_cast<int16_t>(x + (kVersion4Extent - qrExtent) / 2);
     display.fillRect(renderX, y, qrExtent, qrExtent, white);
     for (int moduleY = 0; moduleY < qr.getSize(); ++moduleY) {
       for (int moduleX = 0; moduleX < qr.getSize(); ++moduleX) {

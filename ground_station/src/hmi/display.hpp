@@ -15,6 +15,11 @@
 // the concrete display and the transport-specific begin/clear/present calls.
 class IDisplay {
  public:
+  IDisplay() = default;
+  IDisplay(const IDisplay&) = delete;
+  IDisplay& operator=(const IDisplay&) = delete;
+  IDisplay(IDisplay&&) = delete;
+  IDisplay& operator=(IDisplay&&) = delete;
   virtual ~IDisplay() = default;
 
   virtual Adafruit_GFX& gfx() = 0;

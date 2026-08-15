@@ -8,6 +8,11 @@
 
 class ITelemetryPacketSink {
  public:
+  ITelemetryPacketSink() = default;
+  ITelemetryPacketSink(const ITelemetryPacketSink&) = delete;
+  ITelemetryPacketSink& operator=(const ITelemetryPacketSink&) = delete;
+  ITelemetryPacketSink(ITelemetryPacketSink&&) = delete;
+  ITelemetryPacketSink& operator=(ITelemetryPacketSink&&) = delete;
   virtual ~ITelemetryPacketSink() = default;
   virtual void onTelemetryPacket(const packedRXMessage& packet, uint8_t source) = 0;
 };
