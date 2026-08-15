@@ -26,6 +26,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <cstring>
+
 constexpr uint8_t BOOT_BUTTON = 0;
 constexpr uint8_t TASK_UTILS_FREQ = 5;        // [Hz]
 constexpr uint16_t MSC_STARTUP_DELAY = 2000;  // [ms]
@@ -75,7 +77,27 @@ bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFor
     console.warning.println("[UTILS] Could not initialize SPI Flash");
     status = false;
   }
-  if (!fatfs.begin(&flash) || forceFormat)  // Check if disk must be formated
+
+  if (!forceFormat) {
+    static FATFS volumeLabelFatfs;
+    FRESULT result = f_mount(&volumeLabelFatfs, "0:", 1);
+    if (result == FR_OK) {
+      char currentLabel[12] = {};
+      result = f_getlabel("0:", currentLabel, nullptr);
+      if (result != FR_OK) {
+        console.warning.printf("[UTILS] Could not read volume label, error code: %d\n", result);
+      } else if (std::strcmp(currentLabel, labelName) != 0) {
+        result = f_setlabel(labelName);
+        if (result != FR_OK) {
+          console.warning.printf("[UTILS] Could not update volume label, error code: %d\n", result);
+        }
+      }
+    }
+    f_unmount("0:");
+  }
+
+  const bool filesystemReady = fatfs.begin(&flash);
+  if (!filesystemReady || forceFormat)  // Check if disk must be formatted
   {
     if (!format(labelName)) {
       console.warning.println("[UTILS] Could not format SPI Flash");
