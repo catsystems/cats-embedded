@@ -12,6 +12,12 @@
       "logo-hold": "893c7751da739b8fbd8e443af3eaea4a676d6e9082164ac75bbb116f3c70f9ca"
     }
   },
+  "startup-static.json": {
+    "final": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
+    "snapshots": {
+      "static-logo": "893c7751da739b8fbd8e443af3eaea4a676d6e9082164ac75bbb116f3c70f9ca"
+    }
+  },
   "menu.json": "5b6ed3da54f95e803bc58e88c6ab35f07c380ae8862e6c813ddde6ef60b6ee01",
   "replay.json": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
   "settings.json": "5dac47de522a2757dff994776a98e5523e3b150d572592589d6ba2d3f65dc38c",

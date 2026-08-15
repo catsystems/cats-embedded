@@ -508,6 +508,7 @@ void rebuildSnapshot() {
              ",\"configuration\":{\"dualReceiver\":" + std::string(state.configuration.dualReceiver ? "true" : "false") +
              ",\"imperialUnits\":" + std::string(state.configuration.imperialUnits ? "true" : "false") +
              ",\"neverStopLogging\":" + std::string(state.configuration.neverStopLogging ? "true" : "false") +
+             ",\"startupAnimation\":" + std::string(state.configuration.startupAnimation ? "true" : "false") +
              ",\"timeZoneOffset\":" + std::to_string(state.configuration.timeZoneOffset) +
              ",\"linkPhrase1\":" + quote(state.configuration.linkPhrase1) +
              ",\"linkPhrase2\":" + quote(state.configuration.linkPhrase2) +
@@ -525,7 +526,8 @@ void rebuildSnapshot() {
 
 void step() { controller.step(input, virtualClock.now); }
 
-void resetState(bool skipStartup) {
+void resetState(bool skipStartup, bool preserveConfiguration = false) {
+  const GsConfigSnapshot savedConfiguration = configStore.value;
   virtualClock.now = 0;
   virtualClock.hourValue = 0;
   virtualClock.minuteValue = 0;
@@ -535,6 +537,7 @@ void resetState(bool skipStartup) {
   navigation = Navigation{};
   logs = Logs{};
   configStore = ConfigStore{};
+  if (preserveConfiguration) configStore.value = savedConfiguration;
   device = Device{};
   controller.start();
   if (skipStartup) {
@@ -547,7 +550,7 @@ void resetState(bool skipStartup) {
 
 extern "C" {
 void gs_reset() { resetState(true); }
-void gs_restart() { resetState(false); }
+void gs_restart() { resetState(false, true); }
 void gs_advance(uint32_t milliseconds);
 void gs_press(const char* button) {
   if (button == nullptr) return;
@@ -629,6 +632,7 @@ void gs_set_configuration_json(const char* json) {
   bool boolean = false;
   if (numberField(json, "timeZoneOffset", integer)) configStore.value.timeZoneOffset = static_cast<int16_t>(integer);
   if (booleanField(json, "neverStopLogging", boolean)) configStore.value.neverStopLogging = boolean;
+  if (booleanField(json, "startupAnimation", boolean)) configStore.value.startupAnimation = boolean;
   if (booleanField(json, "dualReceiver", boolean)) configStore.value.dualReceiver = boolean;
   if (booleanField(json, "imperialUnits", boolean)) configStore.value.imperialUnits = boolean;
   rebuildSnapshot();

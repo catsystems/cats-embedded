@@ -10,6 +10,17 @@
     {"press": "back"},
     {"press": "back"},
     {"assert": {"activeScreen": "menu", "configuration.neverStopLogging": true, "emittedAction": "configuration_saved"}},
+    {"press": "ok"},
+    {"press": "right"},
+    {"press": "right"},
+    {"press": "down"},
+    {"press": "down"},
+    {"press": "down"},
+    {"press": "left"},
+    {"press": "back"},
+    {"press": "back"},
+    {"assert": {"activeScreen": "menu", "configuration.startupAnimation": false,
+                "emittedAction": "configuration_saved"}},
     {"snapshot": "settings"}
   ]
 }

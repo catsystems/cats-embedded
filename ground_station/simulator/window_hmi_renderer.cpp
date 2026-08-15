@@ -17,6 +17,7 @@ void WindowHmiRenderer::begin() { window_.begin(); }
 void WindowHmiRenderer::syncConfiguration(const GsConfigSnapshot& source) {
   systemConfig.config.timeZoneOffset = source.timeZoneOffset;
   systemConfig.config.neverStopLogging = source.neverStopLogging;
+  systemConfig.config.startupAnimation = source.startupAnimation;
   systemConfig.config.receiverMode = source.dualReceiver ? DUAL : SINGLE;
   systemConfig.config.unitSystem = source.imperialUnits ? UnitSystem::kImperial : UnitSystem::kMetric;
 
@@ -74,7 +75,11 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
   window_.begin();
 
   if (state.screen == "logo") {
-    window_.drawStartupIntroFrame(state.startupElapsedMs);
+    if (state.configuration.startupAnimation) {
+      window_.drawStartupIntroFrame(state.startupElapsedMs);
+    } else {
+      window_.logo();
+    }
     return;
   }
   if (state.screen == "bootloader") {

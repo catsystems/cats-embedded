@@ -1,0 +1,13 @@
+{
+  "initial": {"ready": false, "configuration": {"startupAnimation": false}},
+  "steps": [
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 0, "startupPhase": "static_logo",
+                "configuration.startupAnimation": false}},
+    {"snapshot": "static-logo"},
+    {"advance": 1999},
+    {"assert": {"activeScreen": "logo", "startupElapsedMs": 1999, "startupPhase": "static_logo"}},
+    {"advance": 1},
+    {"assert": {"activeScreen": "menu", "virtualTimeMs": 2000, "startupElapsedMs": 2000,
+                "startupPhase": "complete"}}
+  ]
+}

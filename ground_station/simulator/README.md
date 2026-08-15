@@ -26,6 +26,9 @@ The browser plays the four-second startup intro on initial load and whenever
 Reset is selected. Pause time and use the millisecond step control to inspect
 individual deterministic animation phases.
 
+Settings > Other > Startup Animation defaults to ON. When switched OFF and
+saved, Reset shows the legacy static CATS logo for two seconds instead.
+
 `fatfs-test` verifies that FatFs R0.16 can read and update an R0.13c storage
 image, create and remount a new volume, and reject corrupted media without
 writing to it.

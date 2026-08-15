@@ -78,4 +78,10 @@ const device_settings_t settingsTable[][4] = {{
                                                    TOGGLE,
                                                    {.lookup = TABLE_UNIT},
                                                    &systemConfig.config.unitSystem},
+                                                  {"Startup Animation",
+                                                   "Show animated startup sequence",
+                                                   "Off: Show static CATS logo",
+                                                   TOGGLE,
+                                                   {.lookup = TABLE_STARTUP_ANIMATION},
+                                                   &systemConfig.config.startupAnimation},
                                               }};

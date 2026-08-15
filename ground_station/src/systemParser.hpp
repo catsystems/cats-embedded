@@ -19,6 +19,7 @@ class SystemParser {
   bool setLinkPhrase2(const char* phrase);
   bool setTestingPhrase(const char* phrase);
   bool setNeverStopLoggingFlag(bool flag);
+  bool setStartupAnimationFlag(bool flag);
   bool setTimeZone(int16_t timezone);
   bool setTelemetryMode(bool mode);
   bool setMagCalib(mag_calib_t calib);
@@ -28,6 +29,7 @@ class SystemParser {
   bool getLinkPhrase2(char* phrase);
   bool getTestingPhrase(char* phrase);
   bool getNeverStopLoggingFlag(bool& flag);
+  bool getStartupAnimationFlag(bool& flag);
   bool getTimeZone(int16_t& timezone);
   bool getTelemetryMode(bool& mode);
   bool getMagCalib(mag_calib_t& calib);

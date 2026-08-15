@@ -13,7 +13,7 @@ let demoLogError = null;
 let fixtureStatus = null;
 let lastRealtimeMs = performance.now();
 let realtimeRemainderMs = 0;
-const simulatorBuildTag = 'startup-intro-20260812-2';
+const simulatorBuildTag = 'startup-option-20260815-1';
 
 const demoLogNames = ['log_001.csv', 'log_002.csv'];
 const csvHeader = 'link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n';

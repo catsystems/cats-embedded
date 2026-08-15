@@ -84,6 +84,7 @@ struct DeviceStatusSnapshot {
 struct GsConfigSnapshot {
   int16_t timeZoneOffset = 0;
   bool neverStopLogging = false;
+  bool startupAnimation = true;
   bool dualReceiver = false;
   std::string linkPhrase1;
   std::string linkPhrase2;
