@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import struct
 from pathlib import Path
 
 
@@ -67,18 +68,56 @@ def verify_qmc5883_compass() -> None:
     )
 
 
+def verify_uf2_update(path: Path) -> None:
+    data = path.read_bytes()
+    if len(data) == 0 or len(data) % 512 != 0:
+        raise RuntimeError(f"Invalid UF2 update size: {path}")
+
+    block_count = len(data) // 512
+    for block_index in range(block_count):
+        offset = block_index * 512
+        header = struct.unpack_from("<8I", data, offset)
+        trailer = struct.unpack_from("<I", data, offset + 508)[0]
+        if header[0:2] != (0x0A324655, 0x9E5D5157) or trailer != 0x0AB16F30:
+            raise RuntimeError(f"Invalid UF2 block framing: {path}")
+        if (header[2] & 0x2000) == 0 or header[4] != 256 or header[5] != block_index:
+            raise RuntimeError(f"Unexpected UF2 block layout: {path}")
+        if header[6] != block_count or header[7] != 0xBFDD4EEE:
+            raise RuntimeError(f"Unexpected ESP32-S2 UF2 metadata: {path}")
+
+
 def verify_bootloaders() -> None:
     expected = {
         "tinyuf2-espressif_saola_1_wroom-0.10.2_combined.bin":
             "f63f414562e66e5fa4305815a56eec1d2e8118dae03e18825fa76bd00b0492ca",
         "tinyuf2-espressif_saola_1_wrover-0.10.2_combined.bin":
             "86a7f31c4015a10744a931fc541824975bf95319f21fd64d83aaf5c42a1047e7",
+        "tinyuf2-espressif_saola_1_wroom-0.35.0_combined-ota.bin":
+            "2c61ed6ed4545cc79f27f2d4c356a0a6567a281675fdb7285dea3b266444337f",
+        "tinyuf2-espressif_saola_1_wrover-0.35.0_combined-ota.bin":
+            "12f95fd2814589422b94d943d1a8218da1887fff2b74987d96143d6dd145e51a",
+        "update-tinyuf2-espressif_saola_1_wroom-0.35.0.uf2":
+            "8d760c32b4c35eb9c23a61e102d43ab22a694e933a4c1e2c5728ff7bd847d23a",
+        "update-tinyuf2-espressif_saola_1_wrover-0.35.0.uf2":
+            "1bb601567b78adad890b68c4f99a6d572e57b3ada608988e11569798b6c0a9bb",
     }
     bootloader_root = GROUND_STATION / "bootloader"
     for filename, expected_digest in expected.items():
-        actual_digest = hashlib.sha256((bootloader_root / filename).read_bytes()).hexdigest()
+        path = bootloader_root / filename
+        actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual_digest != expected_digest:
             raise RuntimeError(f"Protected TinyUF2 image changed: {filename}")
+
+    expected_partition_digest = "48558625a6e1830373113b0afec542752420284730eae278c743a85ebdb804bd"
+    for variant in ("wroom", "wrover"):
+        combined = bootloader_root / f"tinyuf2-espressif_saola_1_{variant}-0.35.0_combined-ota.bin"
+        combined_data = combined.read_bytes()
+        partition_digest = hashlib.sha256(combined_data[0x8000:0x8C00]).hexdigest()
+        if partition_digest != expected_partition_digest:
+            raise RuntimeError(f"TinyUF2 {variant} image does not contain the Ground Station OTA partition table")
+        if b"0.35.0" not in combined_data:
+            raise RuntimeError(f"TinyUF2 {variant} image does not identify itself as 0.35.0")
+        verify_uf2_update(bootloader_root / f"update-tinyuf2-espressif_saola_1_{variant}-0.35.0.uf2")
 
 
 def main() -> None:
