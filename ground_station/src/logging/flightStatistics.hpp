@@ -155,7 +155,7 @@ class FlightLogAnalysis {
   };
   Working working[2]{};
 
-  static bool parseFields(char* line, int32_t fields[11]) {
+  static bool parseFields(const char* line, int32_t fields[11]) {
     const char* cursor = line;
     for (uint8_t index = 0; index < 11; ++index) {
       errno = 0;

@@ -297,6 +297,8 @@ bool SystemParser::saveFile(const char* path) {
       return false;
     }
   }
+  // FILE_WRITE is an SdFat macro composed from signed POSIX flag constants.
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto file = fatfs.open(filePath, FILE_WRITE);
   if (!file) {
     console.warning.println("[PARSER] Open file failed");
