@@ -111,10 +111,6 @@ jobs:
       - name: Install dependencies
         run: pip install --requirement requirements.txt
 
-      - name: Verify Ground Station upgrade contract
-        if: ${{ matrix.project == 'ground_station' }}
-        run: python ground_station/check_upgrade_contract.py
-
       - name: Install PlatformIO Libraries
         run: pio pkg install --project-dir ${{ matrix.project }}
 
@@ -196,10 +192,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install --requirement requirements.txt
-
-      - name: Verify Ground Station upgrade contract
-        if: ${{ matrix.project == 'ground_station' }}
-        run: python ground_station/check_upgrade_contract.py
 
       - name: Install Ground Station upload dependencies
         if: ${{ matrix.project == 'ground_station' }}

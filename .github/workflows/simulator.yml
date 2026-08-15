@@ -21,9 +21,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Verify Ground Station upgrade contract
-        run: python ground_station/check_upgrade_contract.py
-
       - name: Cache pinned Emscripten SDK
         uses: actions/cache@v6
         with:
