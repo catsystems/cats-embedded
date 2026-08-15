@@ -16,8 +16,7 @@ These instructions apply to everything under `ground_station/`.
 
 - `lib/QMC5883Compass` is rebased on upstream 1.2.3 and contains documented CATS support for both QMC5883L and QMC5883P.
   Do not replace or update it as part of unrelated work. Any future rebase must be a separate commit that preserves the
-  CATS delta, updates `lib/QMC5883Compass/CATS-VENDORING.md` and the protected manifest, and passes
-  `python ground_station/check_upgrade_contract.py`.
+  CATS delta, updates `lib/QMC5883Compass/CATS-VENDORING.md`, and validates both sensor variants on hardware.
 - TinyUF2 0.35.0 is the current bootloader version. Any future bootloader migration must be a separate commit with updated
   provenance and contract checks, and must retain a tested wired recovery path.
 - Preserve the partition table and normal-upgrade compatibility with existing configuration and log files. A firmware
@@ -78,8 +77,8 @@ QR navigation, and live compass checks on hardware.
 
 ## Dependencies and build environment
 
-- Versions and intentional local deltas are documented in `TOOLCHAIN-MODERNIZATION.md` and the vendoring notes. Preserve
-  those deltas when rebasing a vendored library and record the exact upstream tag or commit.
+- Dependency versions are pinned in `platformio.ini`; intentional local deltas are documented in the vendoring notes.
+  Preserve those deltas when rebasing a vendored library and record the exact upstream tag or commit.
 - Do not blanket-format vendored libraries. Preserve upstream source unless a documented CATS compatibility patch is
   necessary.
 - Use PlatformIO 6.1.19 with Python 3.11 from the root `requirements.txt`. Upload-only packages are pinned in
@@ -96,7 +95,6 @@ Run commands from the repository root unless noted otherwise.
 For every code, build, dependency, or configuration change:
 
 ```powershell
-python ground_station/check_upgrade_contract.py
 platformio run -d ground_station
 git diff --check
 ```

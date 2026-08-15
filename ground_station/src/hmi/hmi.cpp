@@ -273,8 +273,7 @@ void Hmi::recovery() {
 
   // A display transfer blocks button polling. Let the existing debounce logic
   // sample a held Link-selection button again before starting another transfer.
-  if (dualMode && recoveryQrLink < 0 &&
-      (digitalRead(kUpButtonPin) == LOW || digitalRead(kDownButtonPin) == LOW)) {
+  if (dualMode && recoveryQrLink < 0 && (digitalRead(kUpButtonPin) == LOW || digitalRead(kDownButtonPin) == LOW)) {
     return;
   }
 
@@ -975,7 +974,7 @@ void Hmi::usbStorage() {
   }
 }
 
-void Hmi::updateAutomaticUsbStorage(const RecorderStatus& recorderStatus) {
+void Hmi::updateAutomaticUsbStorage(const RecorderStatus &recorderStatus) {
   const bool connected = Utils::isConnected();
   if (!connected) {
     usbPreviouslyConnected = false;
