@@ -679,7 +679,7 @@ void Window::initRecovery(bool hasLastLocation) {
 
 void Window::updateRecovery(Navigation *navigation, bool hasLastLocation) {
   const EarthPoint3D target = navigation->getPointB();
-  updateRecoveryTarget(navigation, target, target.lat != 0.0F && target.lon != 0.0F, -1, false, hasLastLocation);
+  updateRecoveryTarget(navigation, target, LocationQr::IsValid(target.lat, target.lon), -1, false, hasLastLocation);
 }
 
 void Window::updateRecoveryTarget(Navigation *navigation, const EarthPoint3D &target, bool targetValid,
@@ -727,7 +727,7 @@ void Window::updateRecoveryTarget(Navigation *navigation, const EarthPoint3D &ta
   const EarthPoint3D home = navigation->getPointA();
   float distance_m = 0.0F;
   float azimuth = 0.0F;
-  const bool solutionValid = targetValid && home.lat != 0.0F && home.lon != 0.0F;
+  const bool solutionValid = targetValid && LocationQr::IsValid(home.lat, home.lon);
   if (solutionValid) {
     constexpr float kEarthRadiusM = 6378100.0F;
     const float dy = (target.lat - home.lat) * (PI_F / 180.0F) * kEarthRadiusM;

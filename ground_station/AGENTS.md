@@ -83,8 +83,13 @@ QR navigation, and live compass checks on hardware.
   necessary.
 - Use PlatformIO 6.1.19 with Python 3.11 from the root `requirements.txt`. Upload-only packages are pinned in
   `ground_station/requirements-upload.txt`; never install the unrelated Python package named `serial`.
+- On Windows, if `platformio` is not on `PATH`, use
+  `& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe"` and verify that it reports version 6.1.19. Do not
+  create a separate legacy environment just to make the command available.
 - Do not mix a legacy `PLATFORMIO_CORE_DIR` with the modern platform packages. Use a clean or branch-specific PlatformIO
   core when changing toolchains or when a package installation looks inconsistent.
+- If the pinned Emscripten compiler under `LOCALAPPDATA` reports `permission denied` in a managed environment, retry with
+  the required execution permission. Do not reinstall or modify the pinned SDK to work around an execution restriction.
 - Judge firmware growth from PlatformIO's flash/RAM report and the `.bin`, not UF2 file size. UF2 block encoding normally
   makes the UF2 roughly twice the binary size.
 
@@ -101,7 +106,8 @@ git diff --check
 
 For changed C/C++ files under `ground_station/src`, apply clang-format 17 before committing and inspect the resulting
 diff. CI's clang-format job is check-only: it reports differences but does not rewrite files. Do not apply the repository
-format to all of `ground_station/lib`.
+format to all of `ground_station/lib`. Check `clang-format --version` before use; an editor's formatting command does not
+guarantee version 17. If version 17 is unavailable, do not claim that the formatting check passed.
 
 For HMI, log, navigation, or shared-renderer changes:
 

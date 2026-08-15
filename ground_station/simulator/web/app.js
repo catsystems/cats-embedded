@@ -21,6 +21,7 @@ const fixtureDescriptions = {
   dual: 'Runs a completed two-rocket mission. Both links record liftoff through touchdown and both recovery targets have valid locations.',
   many: 'Loads 24 completed logs. Use it to check list scrolling, viewport edge arrows, and selection at the first and last log.',
   'missing-fix': 'Runs Dual Recovery with a valid location for Link 1 and no location for Link 2. Use it to check target selection and No location behavior.',
+  'zero-coordinate': 'Loads valid locations on the prime meridian and equator. Both must remain available as map QR codes.',
   never: 'Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until Finalize Log is confirmed.',
   'delete-failure': 'Loads a finalized log and injects a storage deletion error. The log must remain in the catalog and an error message should appear.',
   'usb-delete': 'Loads a finalized log while USB mass storage is connected. Delete Log must be blocked until USB is disconnected.',
@@ -94,6 +95,16 @@ async function applyFixture(name) {
         latitude: name === 'missing-fix' ? 0 : 33.7358, longitude: name === 'missing-fix' ? 0 : 132.4762,
         altitudeM, velocityMps, voltage: 4.0, pyroContinuity: 3, connected: true });
     }
+  } else if (name === 'zero-coordinate') {
+    sendJson('gs_set_navigation_json', {
+      homeLatitude: 0.0, homeLongitude: -30.0, rocketLatitude: 1.0, rocketLongitude: -30.0
+    });
+    sendJson('gs_set_logs_json', [{
+      name: 'zero-coordinate.csv',
+      csv: csvHeader +
+        '1,10,3,0,5000,0,100,20,42,0,0\n' +
+        '2,11,3,0,0,-300000,100,20,42,0,0\n'
+    }]);
   } else if (name === 'never' || name === 'finalize-failure') {
     sendJson('gs_set_logs_json', []);
     sendJson('gs_set_configuration_json', { dualReceiver: true, neverStopLogging: true });

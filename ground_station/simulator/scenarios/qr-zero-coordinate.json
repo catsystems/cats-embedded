@@ -1,0 +1,28 @@
+{
+  "initial": {
+    "ready": true,
+    "navigation": {
+      "homeLatitude": 0.0,
+      "homeLongitude": -30.0,
+      "rocketLatitude": 1.0,
+      "rocketLongitude": -30.0
+    },
+    "logs": [
+      {
+        "name": "zero-coordinate.csv",
+        "csv": "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n1,10,3,0,5000,0,100,20,42,0,0\n2,11,3,0,0,-300000,100,20,42,0,0\n"
+      }
+    ]
+  },
+  "steps": [
+    {"assert": {"recoverySolution.valid": true}},
+    {"press": "down"},
+    {"press": "ok"},
+    {"press": "ok"},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_1", "qrUrl": "https://www.google.com/maps/search/?api=1&query=0.5000%2C0.0000"}},
+    {"press": "right"},
+    {"assert": {"qrView": "log_link_2", "qrUrl": "https://www.google.com/maps/search/?api=1&query=0.0000%2C-30.0000"}},
+    {"snapshot": "zero-coordinate-qr"}
+  ]
+}

@@ -63,7 +63,7 @@ bool FormatCoordinate(float coordinate, char *text, size_t textSize) {
 }  // namespace
 
 bool IsValid(float latitude, float longitude) {
-  return std::isfinite(latitude) && std::isfinite(longitude) && latitude != 0.0F && longitude != 0.0F &&
+  return std::isfinite(latitude) && std::isfinite(longitude) && (latitude != 0.0F || longitude != 0.0F) &&
          latitude >= -90.0F && latitude <= 90.0F && longitude >= -180.0F && longitude <= 180.0F;
 }
 
