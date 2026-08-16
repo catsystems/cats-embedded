@@ -4,17 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CATS Ground Station Simulator</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <main>
     <h1>CATS Ground Station Simulator</h1>
-    <section class="toolbar">
-      <button id="pause" title="Freeze or resume the simulator's virtual clock">Pause time</button>
-      <button id="reset">Reset</button>
-      <label>Advance by <input id="step" type="number" min="1" value="100" aria-label="Virtual time step in milliseconds"> ms</label>
-      <button id="advance" title="Move virtual time forward by the selected amount">Advance time</button>
-      <label>Fixture
+    <section class="toolbar" aria-label="Simulator controls">
+      <div class="toolbar-group" aria-label="Playback controls">
+        <button id="pause" class="icon-button" aria-label="Pause virtual time" title="Pause virtual time"><span aria-hidden="true">⏸</span></button>
+        <button id="reset" class="icon-button" aria-label="Restart simulator" title="Restart simulator"><span aria-hidden="true">↻</span></button>
+      </div>
+      <div class="toolbar-group time-group">
+        <label class="compact-label" for="step">Step</label>
+        <div class="step-input">
+          <input id="step" type="number" min="1" value="100" aria-label="Virtual time step in milliseconds">
+          <span>ms</span>
+        </div>
+        <button id="advance" class="icon-button" aria-label="Advance virtual time" title="Advance virtual time"><span aria-hidden="true">⏭</span></button>
+      </div>
+      <div class="toolbar-group fixture-group">
+        <label class="compact-label" for="fixture">Fixture</label>
         <select id="fixture" aria-label="Simulator fixture preset">
           <option value="demo">Complete and partial logs</option>
           <option value="dual">Nominal dual-link mission</option>
@@ -28,9 +37,9 @@
           <option value="finalize-failure">Finalization failure</option>
           <option value="recorder-fault">Recorder write fault</option>
         </select>
-      </label>
-      <button id="apply-fixture">Apply fixture</button>
-      <button id="eject-usb" title="Simulate safely ejecting the removable drive on the PC">Eject USB drive</button>
+        <button id="apply-fixture" class="icon-button" aria-label="Apply fixture" title="Apply fixture"><span aria-hidden="true">✓</span></button>
+        <button id="eject-usb" class="icon-button" aria-label="Eject USB drive" title="Eject USB drive"><span aria-hidden="true">⏏</span></button>
+      </div>
     </section>
     <p class="toolbar-help">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
     <p id="fixture-description" class="fixture-description" aria-live="polite"></p>
@@ -58,6 +67,6 @@
     <p class="keyboard-help">Keyboard: arrows move · A, Enter, or Space selects · B or Escape goes back</p>
     <pre id="snapshot"></pre>
   </main>
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>

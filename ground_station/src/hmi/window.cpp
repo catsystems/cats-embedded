@@ -160,9 +160,10 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
     drawIntroCloud(static_cast<int16_t>(35 - drift / 2), 136, 1);
 
     if (phase == StartupIntro::Phase::kRocketFlight) {
-      const int16_t rocketX = static_cast<int16_t>(-30 + (245 * static_cast<int32_t>(elapsedMs)) /
+      // Match the 5:-9 rocket axis so the exhaust trails directly behind the flight path.
+      const int16_t rocketX = static_cast<int16_t>(20 + (172 * static_cast<int32_t>(elapsedMs)) /
                                                             StartupIntro::kRocketFlightEndMs);
-      const int16_t rocketY = static_cast<int16_t>(225 - (270 * static_cast<int32_t>(elapsedMs)) /
+      const int16_t rocketY = static_cast<int16_t>(265 - (310 * static_cast<int32_t>(elapsedMs)) /
                                                             StartupIntro::kRocketFlightEndMs);
       drawIntroRocket(rocketX, rocketY, elapsedMs / StartupIntro::kFrameIntervalMs);
     }

@@ -2,8 +2,8 @@
   "startup-intro.json": {
     "final": "93ca1eaed823a5d0b5798a79a8b5c16cfe1dd61373bbf5f6510589a4c751a391",
     "snapshots": {
-      "rocket-launch": "d42323c71c0de5b101dd343efd34e53a079d06785754d43e4d3f43b68f1f164c",
-      "rocket-through-clouds": "b7246a9a873df61857560bc10c290b690d7e5083958af9b7673c700596bc079b",
+      "rocket-launch": "2fb78bdc2cd56983938f805bfa48d3db503fba34271c70037954c5bc99b45eb8",
+      "rocket-through-clouds": "323fdb0dd2d1b04fb3e459a52600ed77327c7eb31e930bb5f375526073e82719",
       "rocket-exited": "b90707df9770540b9371aa93dbfa177b60be52a8b19186c6b9d9dabfea41ca28",
       "logo-descent": "fb416e6f6799be09247ede6f2f4af62947b3df1d55797ef0ccc81228a52a69e3",
       "logo-settle": "0f2ec313ce36907818711faf4ad24ed891303f226b7c42b31ed7f72c50a634b8",

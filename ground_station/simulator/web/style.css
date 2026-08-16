@@ -1,12 +1,22 @@
 :root { color-scheme: dark; font-family: system-ui, sans-serif; }
 body { margin: 0; background: #101214; color: #e8edf2; }
 main { width: min(960px, calc(100% - 16px)); margin: 24px auto; }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; align-items: stretch; }
+.toolbar-group { display: flex; align-items: center; gap: 7px; padding: 6px; background: #171b1f; border: 1px solid #35414a; border-radius: 8px; }
+.time-group { flex: 0 1 auto; }
+.fixture-group { flex: 1 1 400px; }
+.compact-label { margin: 0 2px 0 4px; color: #9ca8b3; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.step-input { display: flex; align-items: center; gap: 5px; color: #9ca8b3; }
+.step-input input { width: 76px; text-align: right; }
+.fixture-group select { min-width: 220px; flex: 1; }
 .toolbar-help, .keyboard-help { color: #9ca8b3; font-size: 14px; margin: 7px 0 12px; }
 .fixture-description { min-height: 2.6em; margin: 0 0 14px; padding: 8px 10px; box-sizing: border-box; color: #d9e1e8; background: #171b1f; border-left: 3px solid #f4b740; }
 .keyboard-help { color: #f4b740; }
 button, input, select { font: inherit; color: inherit; background: #20262c; border: 1px solid #5c6973; border-radius: 4px; padding: 6px 10px; }
 button:active { background: #384752; }
+.icon-button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: #f4b740; font-family: "Segoe UI Symbol", system-ui, sans-serif; font-size: 20px; line-height: 1; }
+.icon-button:hover { background: #29323a; border-color: #82919c; }
+.icon-button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #f4b740; outline-offset: 2px; }
 .device {
   position: relative;
   width: min(720px, 100%);
@@ -70,6 +80,8 @@ button:active { background: #384752; }
 pre { max-height: 350px; overflow: auto; background: #171b1f; padding: 12px; }
 
 @media (max-width: 620px) {
+  .toolbar-group, .fixture-group { flex: 1 1 100%; }
+  .fixture-group select { min-width: 0; }
   .device { margin-top: 40px; padding: 34px 22px 34px; border-radius: 13px 13px 25px 25px; }
   .antenna { top: -32px; width: 22px; height: 36px; }
   .antenna::after { left: -4px; width: 30px; height: 8px; }
