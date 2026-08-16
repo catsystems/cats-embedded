@@ -148,8 +148,14 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
       } else if (usbStorageSession_ && storageState == "fault") {
         usbStorageSession_ = false;
         usbStorageMessage_ = "Storage could not be remounted.";
-      } else if (usbStorageSession_ && pressed(HmiButton::Back) &&
-                 (storageState == "preparing" || storageState == "host")) {
+      } else if (usbStorageSession_ && storageState == "host" && pressed(HmiButton::Back)) {
+        usbStorageSession_ = false;
+        enter(Screen::Settings);
+        settingsPage_ = 0;
+        settingsSelection_ = 2;
+      } else if (usbStorageSession_ &&
+                 ((storageState == "host" && pressed(HmiButton::Ok)) ||
+                  (storageState == "preparing" && pressed(HmiButton::Back)))) {
         device_.requestFirmwareStorage();
       } else if (!usbStorageSession_ && pressed(HmiButton::Back)) {
         enter(Screen::Settings);

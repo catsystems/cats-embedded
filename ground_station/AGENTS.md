@@ -93,43 +93,34 @@ QR navigation, and live compass checks on hardware.
 - Judge firmware growth from PlatformIO's flash/RAM report and the `.bin`, not UF2 file size. UF2 block encoding normally
   makes the UF2 roughly twice the binary size.
 
-## Required checks
+## Before committing
 
-Run commands from the repository root unless noted otherwise.
-
-For every code, build, dependency, or configuration change:
+Run the automated Ground Station checks from this directory:
 
 ```powershell
-platformio run -d ground_station
-git diff --check
+.\gs-precommit.ps1
 ```
 
-For changed C/C++ files under `ground_station/src`, apply clang-format 17 before committing and inspect the resulting
-diff. CI's clang-format job is check-only: it reports differences but does not rewrite files. Do not apply the repository
-format to all of `ground_station/lib`. Check `clang-format --version` before use; an editor's formatting command does not
-guarantee version 17. If version 17 is unavailable, do not claim that the formatting check passed.
+The script formats changed C/C++ files under `src` with clang-format 17, checks the diff, builds the Windows firmware,
+generates the compilation database, runs the Linux build and clang-tidy check in WSL, and runs the deterministic and
+WebAssembly simulator checks. It also runs the FatFs compatibility test when FatFs files or fixtures changed.
 
-For HMI, log, navigation, or shared-renderer changes:
+The Windows and WSL environments must both provide PlatformIO 6.1.19. Set up the isolated WSL tools once from the
+repository root inside WSL:
 
-```powershell
-Push-Location ground_station
-.\gs-sim.ps1 test
-.\gs-sim.ps1 build
-Pop-Location
+```bash
+python3 -m venv ~/.cache/cats-gs-precommit/venv
+~/.cache/cats-gs-precommit/venv/bin/python -m pip install --requirement requirements.txt clang-format==17.0.6
 ```
 
-Review changed golden framebuffer images visually before accepting new hashes. A passing headless simulator does not
-prove that the browser build works: verify `gs-sim.js`, `gs-sim.wasm`, and a live runtime screen when browser behavior is
-part of the task.
+The script verifies these versions but does not install or update system or Python packages.
 
-For FatFs changes, also run from `ground_station/`:
+After the script passes, inspect the formatted and staged diffs and stage only the intended files. Do not commit `.pio/`,
+generated UF2/bin/elf files, generated `compile_commands.json`, or generated simulator JS/WASM.
 
-```powershell
-.\gs-sim.ps1 fatfs-test
-```
-
-When relevant, also generate the compilation database and run the configured clang-tidy check. Do not call a timed-out
-or warning-producing check successful.
+Automated checks do not replace visual review. For HMI or browser changes, inspect the affected simulator screens for
+clipping, overlap, spacing, alignment, transitions, and stale rendering. Review changed golden framebuffer images
+visually, and verify the live browser runtime when browser behavior changed.
 
 ## Hardware evidence
 

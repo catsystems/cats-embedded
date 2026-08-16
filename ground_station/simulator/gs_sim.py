@@ -27,11 +27,11 @@ from typing import Any
 WIDTH = 400
 HEIGHT = 240
 INTRO_FRAME_MS = 50
-ROCKET_FLIGHT_END_MS = 1700
-LOGO_DESCENT_START_MS = 1900
-LOGO_DESCENT_END_MS = 3350
-LOGO_SETTLE_END_MS = 3650
-BOOT_MS = 4000
+ROCKET_FLIGHT_END_MS = 1200
+LOGO_DESCENT_START_MS = 1400
+LOGO_DESCENT_END_MS = 2850
+LOGO_SETTLE_END_MS = 3150
+BOOT_MS = 3500
 STATIC_LOGO_MS = 2000
 MAXIMUM_BOOT_MS = 5000
 LONG_PRESS_MS = 500
@@ -486,7 +486,7 @@ class Simulator:
             if self.usb_storage_message:
                 self.render("USB Drive", self.usb_storage_message)
             elif storage_state == "host":
-                self.render("USB Drive", "Logs available on PC. Eject on PC or press B to disconnect.")
+                self.render("USB Drive", "Logs available on PC. Back (B). Disconnect (A).")
             else:
                 self.render("USB Drive", "Preparing USB drive...")
 
@@ -1004,7 +1004,13 @@ class Simulator:
         elif self.usb_storage_session and storage_state == "fault":
             self.usb_storage_session = False
             self.usb_storage_message = "Storage could not be remounted."
-        elif self.usb_storage_session and "back" in pressed and storage_state in ("preparing", "host"):
+        elif self.usb_storage_session and storage_state == "host" and "back" in pressed:
+            self.usb_storage_session = False
+            self.screen = "settings"
+            self.settings_page = 0
+            self.settings_selection = 2
+        elif self.usb_storage_session and ((storage_state == "host" and "ok" in pressed) or
+                                           (storage_state == "preparing" and "back" in pressed)):
             self.state["deviceStatus"]["usbStorageState"] = "firmware"
         elif not self.usb_storage_session and "back" in pressed:
             self.screen = "settings"

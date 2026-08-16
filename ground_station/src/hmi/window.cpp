@@ -1289,7 +1289,10 @@ void Window::initUsbStorage(bool active) {
   display.setFont(&FreeSansBold9pt7b);
   drawCentreString("Logs available on PC", 200, 205);
   display.setFont(&FreeSans9pt7b);
-  drawCentreString("Eject on PC or press B to disconnect", 200, 230);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  display.setCursor(245, 230);
+  display.print("Disconnect (A)");
   surface.present();
 }
 

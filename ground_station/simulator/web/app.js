@@ -13,7 +13,7 @@ let demoLogError = null;
 let fixtureStatus = null;
 let lastRealtimeMs = performance.now();
 let realtimeRemainderMs = 0;
-const simulatorBuildTag = 'startup-trajectory-20260815-1';
+const simulatorBuildTag = 'cat-island-fixtures-20260816-1';
 
 const demoLogNames = ['log_001.csv', 'log_002.csv'];
 const csvHeader = 'link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n';
@@ -26,7 +26,7 @@ const fixtureDescriptions = {
   never: 'Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until Finalize Log is confirmed.',
   'delete-failure': 'Loads a finalized log and injects a storage deletion error. The log must remain in the catalog and an error message should appear.',
   'usb-delete': 'Loads a finalized log while USB mass storage is connected. Delete Log must be blocked until USB is disconnected.',
-  'usb-storage': 'Connects USB while idle, automatically shares the logs, and opens Settings > General > USB Drive. Press B or use Eject USB drive to return storage to the Ground Station.',
+  'usb-storage': 'Connects USB while idle, automatically shares the logs, and opens Settings > General > USB Drive. Press B to return without disconnecting, or press A to return storage to the Ground Station.',
   'finalize-failure': 'Creates an active Never-mode log and injects a finalization error. The log must remain active after the failed attempt.',
   'recorder-fault': 'Injects a storage write failure as recording starts. Use it to check the recorder fault state and crossed logging indicator.'
 };

@@ -968,8 +968,16 @@ void Hmi::usbStorage() {
     }
   }
 
-  if (backButton.wasPressed() &&
-      (storageState == UsbStorageState::Preparing || storageState == UsbStorageState::HostOwned)) {
+  if (storageState == UsbStorageState::HostOwned && backButton.wasPressed()) {
+    usbStorageSession = false;
+    state = SETTINGS;
+    window.initSettings(settingSubMenu);
+    window.updateSettings(settingIndex);
+    return;
+  }
+
+  if ((storageState == UsbStorageState::HostOwned && okButton.wasPressed()) ||
+      (storageState == UsbStorageState::Preparing && backButton.wasPressed())) {
     Utils::requestFirmwareStorage();
     displayedUsbStorageState = UsbStorageState::Reclaiming;
     window.initDataMessage("USB Drive", "Closing USB drive...");
