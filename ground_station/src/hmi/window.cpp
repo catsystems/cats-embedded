@@ -52,7 +52,7 @@ void Window::logo() {
 
 void Window::drawIntroCloud(int16_t x, int16_t y, uint8_t scale) {
   static constexpr int8_t kCloudOutline[][2] = {
-      {0, 11}, {6, 11}, {7, 7}, {10, 4}, {14, 3}, {18, 6}, {19, 8},
+      {0, 11}, {6, 11}, {7, 7},  {10, 4}, {14, 3},  {18, 6},  {19, 8},
       {23, 8}, {25, 5}, {29, 4}, {33, 6}, {35, 10}, {40, 11}, {0, 11},
   };
   constexpr size_t kPointCount = sizeof(kCloudOutline) / sizeof(kCloudOutline[0]);
@@ -161,10 +161,10 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
 
     if (phase == StartupIntro::Phase::kRocketFlight) {
       // Match the 5:-9 rocket axis so the exhaust trails directly behind the flight path.
-      const int16_t rocketX = static_cast<int16_t>(20 + (172 * static_cast<int32_t>(elapsedMs)) /
-                                                            StartupIntro::kRocketFlightEndMs);
-      const int16_t rocketY = static_cast<int16_t>(265 - (310 * static_cast<int32_t>(elapsedMs)) /
-                                                            StartupIntro::kRocketFlightEndMs);
+      const int16_t rocketX =
+          static_cast<int16_t>(20 + (172 * static_cast<int32_t>(elapsedMs)) / StartupIntro::kRocketFlightEndMs);
+      const int16_t rocketY =
+          static_cast<int16_t>(265 - (310 * static_cast<int32_t>(elapsedMs)) / StartupIntro::kRocketFlightEndMs);
       drawIntroRocket(rocketX, rocketY, elapsedMs / StartupIntro::kFrameIntervalMs);
     }
 
@@ -181,14 +181,13 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
     int16_t logoY = 45;
     if (phase == StartupIntro::Phase::kLogoDescent) {
       const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentStartMs);
-      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoDescentEndMs -
-                                                    StartupIntro::kLogoDescentStartMs);
+      const int32_t duration =
+          static_cast<int32_t>(StartupIntro::kLogoDescentEndMs - StartupIntro::kLogoDescentStartMs);
       const int64_t easedNumerator = static_cast<int64_t>(progress) * (2 * duration - progress);
       logoY = static_cast<int16_t>(-155 + (202 * easedNumerator) / (static_cast<int64_t>(duration) * duration));
     } else if (phase == StartupIntro::Phase::kLogoSettle) {
       const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentEndMs);
-      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoSettleEndMs -
-                                                    StartupIntro::kLogoDescentEndMs);
+      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoSettleEndMs - StartupIntro::kLogoDescentEndMs);
       logoY = static_cast<int16_t>(47 - (2LL * progress * progress) / (static_cast<int64_t>(duration) * duration));
     }
     drawIntroLogo(logoY);
