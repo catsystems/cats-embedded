@@ -11,11 +11,11 @@ namespace StartupIntro {
 enum class Phase : uint8_t { kRocketFlight, kCloudTransition, kLogoDescent, kLogoSettle, kLogoHold, kComplete };
 
 inline constexpr uint32_t kFrameIntervalMs = 50;
-inline constexpr uint32_t kRocketFlightEndMs = 1700;
-inline constexpr uint32_t kLogoDescentStartMs = 1900;
-inline constexpr uint32_t kLogoDescentEndMs = 3350;
-inline constexpr uint32_t kLogoSettleEndMs = 3650;
-inline constexpr uint32_t kDurationMs = 4000;
+inline constexpr uint32_t kRocketFlightEndMs = 1200;
+inline constexpr uint32_t kLogoDescentStartMs = 1400;
+inline constexpr uint32_t kLogoDescentEndMs = 2850;
+inline constexpr uint32_t kLogoSettleEndMs = 3150;
+inline constexpr uint32_t kDurationMs = 3500;
 inline constexpr uint32_t kStaticLogoDurationMs = 2000;
 inline constexpr uint32_t kMaximumAllowedDurationMs = 5000;
 
