@@ -25,6 +25,7 @@ class IDisplay {
   virtual Adafruit_GFX& gfx() = 0;
   virtual void begin() = 0;
   virtual void clear() = 0;
+  virtual void clearBuffer() = 0;
   virtual void present() = 0;
 };
 
@@ -36,6 +37,7 @@ class FirmwareDisplay final : public IDisplay {
   Adafruit_GFX& gfx() override { return display; }
   void begin() override { display.begin(); }
   void clear() override { display.clearDisplay(); }
+  void clearBuffer() override { display.clearDisplayBuffer(); }
   void present() override { display.refresh(); }
 
  private:

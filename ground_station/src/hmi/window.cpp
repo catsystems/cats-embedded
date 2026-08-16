@@ -152,7 +152,7 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
 
   // Clear only the backing buffer. Sending the Sharp Memory LCD clear command
   // for every frame would introduce visible flashing before the refresh.
-  display.fillScreen(WHITE);
+  surface.clearBuffer();
 
   if (phase == StartupIntro::Phase::kRocketFlight || phase == StartupIntro::Phase::kCloudTransition) {
     const int16_t drift = static_cast<int16_t>(elapsedMs / 85U);
@@ -361,8 +361,6 @@ void Window::initMenu(int16_t index) {
     drawMenuBitmap(i, BLACK);
   }
   updateMenu(index);
-
-  surface.present();
 }
 
 void Window::updateMenu(int16_t index) {
@@ -1635,14 +1633,14 @@ void Window::updateSettings(int16_t index) {
 
   if (oldSettingsIndex >= 0) {
     if (oldSettingsIndex != index) {
-      highlightSetting(oldSettingsIndex, BLACK);
+      highlightSetting(oldSettingsIndex, BLACK, false);
     }
   } else {
     drawSettingsTriangles(subMenuSettingIndex, BLACK);
   }
 
   if (index >= 0) {
-    highlightSetting(index, WHITE);
+    highlightSetting(index, WHITE, true);
   } else {
     drawSettingsTriangles(subMenuSettingIndex, WHITE);
     display.fillRect(0, 178, 400, 62, WHITE);
@@ -1663,11 +1661,15 @@ void Window::drawSettingsTriangles(int16_t submenuIdx, int16_t color) {
   }
 }
 
-void Window::highlightSetting(int16_t index, uint16_t color) {
+void Window::highlightSetting(int16_t index, uint16_t color, bool updateDescription) {
   display.setFont(&FreeSans12pt7b);
   const auto yPos = static_cast<int16_t>(52 + 30 * index);
   display.fillRect(0, yPos, 400, 30, GetNegativeColor(color));
   addSettingEntry(index, &settingsTable[subMenuSettingIndex][index], color);
+
+  if (!updateDescription) {
+    return;
+  }
 
   display.fillRect(0, 178, 400, 62, WHITE);
   display.setFont(&FreeSans9pt7b);

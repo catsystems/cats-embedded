@@ -210,6 +210,65 @@ uint8_t Adafruit_SharpMem::getPixel(uint16_t x, uint16_t y) {
 
 /**************************************************************************/
 /*!
+    @brief Fills a rectangle in the backing buffer without drawing each pixel
+
+    @param[in] x The left edge
+    @param[in] y The top edge
+    @param[in] w The width
+    @param[in] h The height
+    @param color The color to set
+*/
+/**************************************************************************/
+void Adafruit_SharpMem::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
+                                 uint16_t color) {
+  if (rotation != 0) {
+    Adafruit_GFX::fillRect(x, y, w, h, color);
+    return;
+  }
+
+  if (w <= 0 || h <= 0 || x >= WIDTH || y >= HEIGHT || x + w <= 0 ||
+      y + h <= 0) {
+    return;
+  }
+
+  if (x < 0) {
+    w += x;
+    x = 0;
+  }
+  if (y < 0) {
+    h += y;
+    y = 0;
+  }
+  if (x + w > WIDTH) {
+    w = WIDTH - x;
+  }
+  if (y + h > HEIGHT) {
+    h = HEIGHT - y;
+  }
+
+  const int16_t end_x = x + w;
+  const uint8_t fill = color ? 0xff : 0x00;
+  for (int16_t row = y; row < y + h; ++row) {
+    int16_t column = x;
+    while (column < end_x && (column & 7) != 0) {
+      drawPixel(column++, row, color);
+    }
+
+    const int16_t whole_bytes = (end_x - column) / 8;
+    if (whole_bytes > 0) {
+      memset(sharpmem_buffer + (row * WIDTH + column) / 8, fill,
+             whole_bytes);
+      column += whole_bytes * 8;
+    }
+
+    while (column < end_x) {
+      drawPixel(column++, row, color);
+    }
+  }
+}
+
+/**************************************************************************/
+/*!
     @brief Clears the screen
 */
 /**************************************************************************/

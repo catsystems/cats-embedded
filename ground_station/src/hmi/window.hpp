@@ -118,7 +118,7 @@ class Window {
   void drawIntroLogo(int16_t y);
 
   void addSettingEntry(uint32_t settingIndex, const device_settings_t *setting, uint16_t color = BLACK);
-  void highlightSetting(int16_t index, uint16_t color);
+  void highlightSetting(int16_t index, uint16_t color, bool updateDescription);
 
   void highlightKeyboardKey(int32_t key, uint16_t color);
   void updateKeyboardText(char *text, uint16_t color);

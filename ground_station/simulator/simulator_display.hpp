@@ -14,6 +14,7 @@ class SimulatorDisplay final : public IDisplay {
   Adafruit_GFX& gfx() override { return canvas_; }
   void begin() override { canvas_.setRotation(0); }
   void clear() override { canvas_.fillScreen(1); }
+  void clearBuffer() override { canvas_.fillScreen(1); }
   void present() override { ++frameRevision_; }
 
   [[nodiscard]] uint32_t revision() const { return frameRevision_; }
