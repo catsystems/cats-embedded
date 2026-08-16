@@ -133,11 +133,11 @@ void Window::drawIntroLogo(int16_t y) {
 
   display.startWrite();
   for (int16_t outputY = 0; outputY < kOutputHeight; ++outputY) {
-    const int16_t sourceY = static_cast<int16_t>((outputY * 4) / 3);
+    const auto sourceY = static_cast<int16_t>((outputY * 4) / 3);
     for (int16_t outputX = 0; outputX < kOutputWidth; ++outputX) {
-      const int16_t sourceX = static_cast<int16_t>((outputX * 4) / 3);
-      const uint8_t sourceByte = cats_logo[sourceY * kSourceRowBytes + sourceX / 8];
-      if ((sourceByte & (0x80U >> (sourceX & 7))) != 0U) {
+      const auto sourceX = static_cast<int16_t>((outputX * 4) / 3);
+      const auto sourceByte = cats_logo[sourceY * kSourceRowBytes + sourceX / 8];
+      if ((static_cast<uint32_t>(sourceByte) & (0x80U >> (static_cast<uint16_t>(sourceX) % 8U))) != 0U) {
         display.writePixel(static_cast<int16_t>(kOutputX + outputX), static_cast<int16_t>(y + outputY), BLACK);
       }
     }
@@ -155,15 +155,15 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
   surface.clearBuffer();
 
   if (phase == StartupIntro::Phase::kRocketFlight || phase == StartupIntro::Phase::kCloudTransition) {
-    const int16_t drift = static_cast<int16_t>(elapsedMs / 85U);
+    const auto drift = static_cast<int16_t>(elapsedMs / 85U);
     drawIntroCloud(static_cast<int16_t>(258 - drift), 35, 2);
     drawIntroCloud(static_cast<int16_t>(35 - drift / 2), 136, 1);
 
     if (phase == StartupIntro::Phase::kRocketFlight) {
       // Match the 5:-9 rocket axis so the exhaust trails directly behind the flight path.
-      const int16_t rocketX =
+      const auto rocketX =
           static_cast<int16_t>(20 + (172 * static_cast<int32_t>(elapsedMs)) / StartupIntro::kRocketFlightEndMs);
-      const int16_t rocketY =
+      const auto rocketY =
           static_cast<int16_t>(265 - (310 * static_cast<int32_t>(elapsedMs)) / StartupIntro::kRocketFlightEndMs);
       drawIntroRocket(rocketX, rocketY, elapsedMs / StartupIntro::kFrameIntervalMs);
     }
@@ -174,26 +174,25 @@ void Window::drawStartupIntroFrame(uint32_t elapsedMs) {
   } else {
     const uint32_t cloudElapsed = elapsedMs - StartupIntro::kLogoDescentStartMs;
     const uint32_t cloudDuration = StartupIntro::kLogoSettleEndMs - StartupIntro::kLogoDescentStartMs;
-    const int16_t cloudTravel = static_cast<int16_t>((140U * std::min(cloudElapsed, cloudDuration)) / cloudDuration);
+    const auto cloudTravel = static_cast<int16_t>((140U * std::min(cloudElapsed, cloudDuration)) / cloudDuration);
     drawIntroCloud(static_cast<int16_t>(52 - cloudTravel), 45, 2);
     drawIntroCloud(static_cast<int16_t>(292 + cloudTravel), 139, 1);
 
     int16_t logoY = 45;
     if (phase == StartupIntro::Phase::kLogoDescent) {
-      const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentStartMs);
-      const int32_t duration =
-          static_cast<int32_t>(StartupIntro::kLogoDescentEndMs - StartupIntro::kLogoDescentStartMs);
+      const auto progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentStartMs);
+      const auto duration = static_cast<int32_t>(StartupIntro::kLogoDescentEndMs - StartupIntro::kLogoDescentStartMs);
       const int64_t easedNumerator = static_cast<int64_t>(progress) * (2 * duration - progress);
       logoY = static_cast<int16_t>(-155 + (202 * easedNumerator) / (static_cast<int64_t>(duration) * duration));
     } else if (phase == StartupIntro::Phase::kLogoSettle) {
-      const int32_t progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentEndMs);
-      const int32_t duration = static_cast<int32_t>(StartupIntro::kLogoSettleEndMs - StartupIntro::kLogoDescentEndMs);
+      const auto progress = static_cast<int32_t>(elapsedMs - StartupIntro::kLogoDescentEndMs);
+      const auto duration = static_cast<int32_t>(StartupIntro::kLogoSettleEndMs - StartupIntro::kLogoDescentEndMs);
       logoY = static_cast<int16_t>(47 - (2LL * progress * progress) / (static_cast<int64_t>(duration) * duration));
     }
     drawIntroLogo(logoY);
 
     if (phase == StartupIntro::Phase::kLogoDescent) {
-      const int16_t foregroundX = static_cast<int16_t>(170 - (220U * cloudElapsed) / cloudDuration);
+      const auto foregroundX = static_cast<int16_t>(170 - (220U * cloudElapsed) / cloudDuration);
       drawIntroCloud(foregroundX, 82, 2);
     }
   }

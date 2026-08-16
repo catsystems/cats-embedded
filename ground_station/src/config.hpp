@@ -25,15 +25,15 @@ struct mag_calib_t {
 inline constexpr uint32_t kMaxPhraseLen = 16;
 
 struct systemConfig_t {
-  int16_t timeZoneOffset;
-  bool neverStopLogging;
+  int16_t timeZoneOffset = 0;
+  bool neverStopLogging = false;
   bool startupAnimation = true;
-  ReceiverTelemetryMode_e receiverMode;
-  char linkPhrase1[kMaxPhraseLen + 1];
-  char linkPhrase2[kMaxPhraseLen + 1];
-  char testingPhrase[kMaxPhraseLen + 1];
-  mag_calib_t mag_calib;
-  UnitSystem unitSystem;
+  ReceiverTelemetryMode_e receiverMode = SINGLE;
+  char linkPhrase1[kMaxPhraseLen + 1] = {};
+  char linkPhrase2[kMaxPhraseLen + 1] = {};
+  char testingPhrase[kMaxPhraseLen + 1] = {};
+  mag_calib_t mag_calib{};
+  UnitSystem unitSystem = UnitSystem::kMetric;
 };
 
 class Config {
