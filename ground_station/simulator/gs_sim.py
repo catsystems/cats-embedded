@@ -412,8 +412,8 @@ class Simulator:
             self.draw_intro_cloud(258 - drift, 35, 2)
             self.draw_intro_cloud(35 - drift // 2, 136, 1)
             if phase == "rocket_flight":
-                rocket_x = -30 + 245 * elapsed // ROCKET_FLIGHT_END_MS
-                rocket_y = 225 - 270 * elapsed // ROCKET_FLIGHT_END_MS
+                rocket_x = 20 + 172 * elapsed // ROCKET_FLIGHT_END_MS
+                rocket_y = 265 - 310 * elapsed // ROCKET_FLIGHT_END_MS
                 self.draw_intro_rocket(rocket_x, rocket_y, frame_number)
             self.draw_intro_cloud(90 - drift, 83, 2)
         else:
