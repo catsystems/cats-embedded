@@ -114,6 +114,8 @@ python3 -m venv ~/.cache/cats-gs-precommit/venv
 ```
 
 The script verifies these versions but does not install or update system or Python packages.
+It also requires `rsync` and keeps an automatically synchronized working copy under
+`~/.cache/cats-gs-precommit/worktree` so Linux tools do not repeatedly read the project through `/mnt/c`.
 
 After the script passes, inspect the formatted and staged diffs and stage only the intended files. Do not commit `.pio/`,
 generated UF2/bin/elf files, generated `compile_commands.json`, or generated simulator JS/WASM.

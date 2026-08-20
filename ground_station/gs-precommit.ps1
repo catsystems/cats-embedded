@@ -43,7 +43,10 @@ function ConvertTo-WslPath {
 }
 
 function Invoke-WslScript {
-  param([Parameter(Mandatory = $true)][string]$Script)
+  param(
+    [Parameter(Mandatory = $true)][string]$Script,
+    [string[]]$Arguments = @()
+  )
 
   $temporaryScript = Join-Path ([System.IO.Path]::GetTempPath()) ("cats-gs-precommit-$([guid]::NewGuid()).sh")
   try {
@@ -51,7 +54,7 @@ function Invoke-WslScript {
     [System.IO.File]::WriteAllText($temporaryScript, $unixScript, [System.Text.UTF8Encoding]::new($false))
     $wslScript = ConvertTo-WslPath -WindowsPath $temporaryScript
 
-    & wsl.exe -- bash $wslScript
+    & wsl.exe -- bash $wslScript @Arguments
     if ($LASTEXITCODE -ne 0) {
       throw "The Ground Station Linux checks failed with exit code $LASTEXITCODE."
     }
@@ -130,38 +133,11 @@ Invoke-CommandChecked -FilePath $platformIo -Arguments @('run', '-d', $GroundSta
 Write-Host 'Generating the Windows compilation database...'
 Invoke-CommandChecked -FilePath $platformIo -Arguments @('run', '-d', $GroundStationRoot, '--target', 'compiledb')
 
-$lintScript = @'
-set -euo pipefail
-repo='__REPO_ROOT__'
-venv="$HOME/.cache/cats-gs-precommit/venv"
-build_root="$HOME/.cache/cats-gs-precommit/build"
-
-cd "$repo"
-export PLATFORMIO_BUILD_DIR="$build_root"
-
-"$venv/bin/platformio" pkg install --project-dir ground_station
-"$venv/bin/platformio" run -d ground_station
-"$venv/bin/platformio" run -d ground_station --target compiledb
-
-set +e
-lint_output="$(cd ground_station && "$venv/bin/platformio" check 2>&1)"
-lint_status=$?
-set -e
-printf '%s\n' "$lint_output"
-
-if (( lint_status != 0 )); then
-  exit "$lint_status"
-fi
-
-filtered_output="$(printf '%s\n' "$lint_output" | grep -vE 'clang-diagnostic-c\+\+17-extensions|clang-analyzer-valist.Uninitialized|/\.platformio/packages/' || true)"
-if grep -q 'warning' <<<"$filtered_output"; then
-  echo 'clang-tidy check failed: unexpected warning found.' >&2
-  exit 1
-fi
-'@.Replace('__REPO_ROOT__', $escapedWslRepoRoot)
+$lintArguments = @('--verify-sync', $wslRepoRoot)
+$lintScript = Get-Content -LiteralPath (Join-Path $GroundStationRoot 'gs-wsl-check.sh') -Raw
 
 Write-Host 'Running the Linux Ground Station build and clang-tidy check in WSL...'
-Invoke-WslScript -Script $lintScript
+Invoke-WslScript -Script $lintScript -Arguments $lintArguments
 
 Push-Location $GroundStationRoot
 try {
