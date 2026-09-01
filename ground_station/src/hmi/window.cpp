@@ -70,7 +70,11 @@ void Window::drawIntroRocket(int16_t centerX, int16_t centerY, uint32_t frameNum
     int16_t x;
     int16_t y;
   };
+  constexpr int16_t kScaleNumerator = 6;
+  constexpr int16_t kScaleDenominator = 5;
   const auto transform = [centerX, centerY](int16_t forward, int16_t sideways) -> Point {
+    forward = static_cast<int16_t>((forward * kScaleNumerator) / kScaleDenominator);
+    sideways = static_cast<int16_t>((sideways * kScaleNumerator) / kScaleDenominator);
     return {
         static_cast<int16_t>(centerX + (5 * forward + 9 * sideways) / 10),
         static_cast<int16_t>(centerY + (-9 * forward + 5 * sideways) / 10),
@@ -113,13 +117,24 @@ void Window::drawIntroRocket(int16_t centerX, int16_t centerY, uint32_t frameNum
   display.fillTriangle(finRight.x, finRight.y, finRightTip.x, finRightTip.y, finRightFront.x, finRightFront.y, BLACK);
 
   const int16_t flameWobble = (frameNumber % 2U == 0U) ? 2 : -2;
-  const Point flameRoot = transform(-16, 0);
-  const Point flameTip = transform(-34, flameWobble);
-  const Point flameFork = transform(-28, static_cast<int16_t>(-5 - flameWobble));
-  const Point flameForkRight = transform(-27, static_cast<int16_t>(5 + flameWobble));
-  display.drawLine(flameRoot.x, flameRoot.y, flameTip.x, flameTip.y, BLACK);
-  display.drawLine(flameRoot.x, flameRoot.y, flameFork.x, flameFork.y, BLACK);
-  display.drawLine(flameRoot.x, flameRoot.y, flameForkRight.x, flameForkRight.y, BLACK);
+  const Point flameBaseLeft = transform(-15, -4);
+  const Point flameBaseRight = transform(-15, 4);
+  const Point flameTip = transform(-38, flameWobble);
+  const Point flameShoulder = transform(-22, 0);
+  const Point flameForkLeft = transform(-29, static_cast<int16_t>(-7 - flameWobble));
+  const Point flameForkRight = transform(-28, static_cast<int16_t>(7 - flameWobble));
+  display.fillTriangle(flameBaseLeft.x, flameBaseLeft.y, flameBaseRight.x, flameBaseRight.y, flameTip.x, flameTip.y,
+                       BLACK);
+  display.fillTriangle(flameBaseLeft.x, flameBaseLeft.y, flameShoulder.x, flameShoulder.y, flameForkLeft.x,
+                       flameForkLeft.y, BLACK);
+  display.fillTriangle(flameBaseRight.x, flameBaseRight.y, flameShoulder.x, flameShoulder.y, flameForkRight.x,
+                       flameForkRight.y, BLACK);
+
+  const Point innerFlameLeft = transform(-17, -2);
+  const Point innerFlameRight = transform(-17, 2);
+  const Point innerFlameTip = transform(-29, flameWobble / 2);
+  display.fillTriangle(innerFlameLeft.x, innerFlameLeft.y, innerFlameRight.x, innerFlameRight.y, innerFlameTip.x,
+                       innerFlameTip.y, WHITE);
 }
 
 void Window::drawIntroLogo(int16_t y) {

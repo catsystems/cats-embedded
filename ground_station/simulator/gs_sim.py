@@ -368,6 +368,8 @@ class Simulator:
 
     def draw_intro_rocket(self, center_x: int, center_y: int, frame_number: int) -> None:
         def point(forward: int, sideways: int) -> tuple[int, int]:
+            forward = int(forward * 6 / 5)
+            sideways = int(sideways * 6 / 5)
             return (center_x + (5 * forward + 9 * sideways) // 10,
                     center_y + (-9 * forward + 5 * sideways) // 10)
 
@@ -383,9 +385,12 @@ class Simulator:
                            (point(-11, 7), point(-21, 16)), (point(-21, 16), point(-2, 8))):
             self.frame.line(*start, *end)
         wobble = 2 if frame_number % 2 == 0 else -2
-        self.frame.line(*point(-16, 0), *point(-34, wobble))
-        self.frame.line(*point(-16, 0), *point(-28, -5 - wobble))
-        self.frame.line(*point(-16, 0), *point(-27, 5 + wobble))
+        for sideways in range(-4, 5):
+            self.frame.line(*point(-15, sideways), *point(-38, wobble))
+        self.frame.line(*point(-15, -4), *point(-29, -7 - wobble))
+        self.frame.line(*point(-15, 4), *point(-28, 7 - wobble))
+        for sideways in range(-1, 2):
+            self.frame.line(*point(-17, sideways), *point(-29, wobble // 2), black=False)
 
     def render_intro(self) -> None:
         if not self.config().get("startupAnimation", True):
