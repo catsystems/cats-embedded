@@ -1,0 +1,13 @@
+{
+  "initial": {
+    "ready": true,
+    "links": [
+      {"connected": true, "telemetry": {"state": 3, "altitudeM": 120, "velocityMps": 42, "latitude": 33.7365, "longitude": 132.4881, "voltage": 4.1, "timestampDs": 10, "updated": true}}
+    ]
+  },
+  "steps": [
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"activeScreen": "live", "links.0.connected": true, "links.0.telemetry.state": 3}},
+    {"snapshot": "live-telemetry"}
+  ]
+}

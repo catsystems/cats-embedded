@@ -25,7 +25,7 @@ keeps deterministic fixture setup fast by advancing directly to the menu.
 Telemetry injection accepts state, timestamp, coordinates, altitude, velocity,
 voltage, continuity, connection/update state, LQ, RSSI, and SNR for either
 link. Navigation injection accepts home/rocket coordinates, compass north,
-azimuth, distance, and sensor/calibration values. Device injection accepts USB
+pitch, roll, azimuth, distance, and sensor/calibration values. Device injection accepts USB
 state, `usbStorageState` (`firmware`, `preparing`, `host`, or `fault`), plus
 recorder write, finalize, and delete failure flags.
 
@@ -36,3 +36,6 @@ They also expose `usbStorageState` and `usbStorageMessage` for the automatic
 idle-time USB Drive handoff flow.
 During startup they also expose `startupElapsedMs` and `startupPhase`.
 Configuration snapshots include `startupAnimation`, which defaults to `true`.
+Browser snapshots also expose the injected home and rocket coordinates plus
+`northRad`, `pitchRad`, and `rollRad` under `navigation`, so fixtures can verify
+the location and orientation sent through the WebAssembly boundary.
