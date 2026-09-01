@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "name": "Screens",
+      "rows": [
+        {"path": "Animated startup", "scenario": "startup-intro.json", "snapshot": "rocket-launch through logo-hold", "framebuffer": "Golden", "browser": "startup-rocket browser golden"},
+        {"path": "Static startup", "scenario": "startup-static.json", "snapshot": "static-logo", "framebuffer": "Golden", "browser": "—"},
+        {"path": "Main menu", "scenario": "menu.json", "snapshot": "menu", "framebuffer": "Golden", "browser": "menu browser golden"},
+        {"path": "Live telemetry", "scenario": "live.json", "snapshot": "live-telemetry", "framebuffer": "Deterministic", "browser": "Physical-controls smoke"},
+        {"path": "Recovery", "scenario": "qr-recovery.json", "snapshot": "recovery-link-2-qr", "framebuffer": "Golden", "browser": "Physical-controls smoke"},
+        {"path": "Testing", "scenario": "testing-timeout.json", "snapshot": "timeout", "framebuffer": "Golden", "browser": "—"},
+        {"path": "Data and flight statistics", "scenario": "log-management.json", "snapshot": "log-management", "framebuffer": "Deterministic", "browser": "Fixture smoke"},
+        {"path": "Sensors, compass, and calibration", "scenario": "sensors.json; sensors-orientation.json", "snapshot": "sensors-calibration-complete; orientation-east", "framebuffer": "Deterministic", "browser": "compass-orientation browser golden"},
+        {"path": "Settings", "scenario": "settings.json", "snapshot": "settings", "framebuffer": "Golden", "browser": "USB fixture flow"},
+        {"path": "USB Drive", "scenario": "usb-storage.json", "snapshot": "usb-storage-controls; usb-storage-handoff", "framebuffer": "Deterministic", "browser": "usb-storage browser golden"},
+        {"path": "Bootloader request", "scenario": "bootloader.json", "snapshot": "bootloader-requested", "framebuffer": "Deterministic", "browser": "—"}
+      ]
+    },
+    {
+      "name": "Data, recovery, and failure paths",
+      "rows": [
+        {"path": "Replay timing", "scenario": "replay.json", "snapshot": "replay", "framebuffer": "Golden", "browser": "—"},
+        {"path": "Recorded light-mode flight timing and units", "scenario": "light-demo fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "light-demo browser golden"},
+        {"path": "Recovery QR, dual link", "scenario": "qr-recovery.json", "snapshot": "recovery-link-2-qr", "framebuffer": "Golden", "browser": "Physical-controls smoke"},
+        {"path": "Data QR, dual link", "scenario": "qr-data.json", "snapshot": "data-link-2-qr", "framebuffer": "Golden", "browser": "—"},
+        {"path": "Missing recovery fix", "scenario": "qr-no-fix.json; missing-fix fixture", "snapshot": "no-fix-statistics", "framebuffer": "Golden", "browser": "Fixture smoke"},
+        {"path": "Equator or prime-meridian fix", "scenario": "qr-zero-coordinate.json; zero-coordinate fixture", "snapshot": "zero-coordinate-qr", "framebuffer": "Golden", "browser": "Fixture smoke"},
+        {"path": "More than 11 logs", "scenario": "log-management.json; many fixture", "snapshot": "log-management", "framebuffer": "Deterministic", "browser": "Fixture smoke"},
+        {"path": "Legacy CSV names", "scenario": "legacy-log-names.json", "snapshot": "legacy-log-names", "framebuffer": "Deterministic", "browser": "—"},
+        {"path": "Recording independent of screen", "scenario": "recording-independent.json", "snapshot": "screen-independent-recording", "framebuffer": "Deterministic", "browser": "—"},
+        {"path": "Automatic and Never-mode finalization", "scenario": "recording-modes.json; never fixture", "snapshot": "recording-modes", "framebuffer": "Deterministic", "browser": "Fixture smoke"},
+        {"path": "Malformed or partial log", "scenario": "demo fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},
+        {"path": "Deletion failure", "scenario": "delete-failure fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},
+        {"path": "USB blocks deletion", "scenario": "usb-delete fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},
+        {"path": "Finalization failure", "scenario": "finalize-failure fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},
+        {"path": "Recorder write failure", "scenario": "recorder-fault fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "recorder-fault browser golden"},
+        {"path": "USB remount failure", "scenario": "—", "snapshot": "—", "framebuffer": "Gap", "browser": "Gap", "gap": true}
+      ]
+    }
+  ]
+}

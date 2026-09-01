@@ -39,6 +39,7 @@ REPEAT_MS = 100
 BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
 MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
 SETTING_COUNTS = (4, 4, 3)
+CSV_HEADER = "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n"
 
 assert BOOT_MS <= MAXIMUM_BOOT_MS
 assert BOOT_MS % INTRO_FRAME_MS == 0
@@ -1286,6 +1287,127 @@ class Simulator:
         return snapshots
 
 
+def load_fixture_manifest(path: Path) -> dict[str, Any]:
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        fail(f"fixture manifest {path}:{error.lineno}:{error.colno}: invalid JSON: {error.msg}")
+    except OSError as error:
+        fail(f"cannot read fixture manifest '{path}': {error}")
+    fixtures = manifest.get("fixtures") if isinstance(manifest, dict) else None
+    if not isinstance(manifest, dict) or manifest.get("schemaVersion") != 1 or not isinstance(fixtures, list):
+        fail(f"fixture manifest {path}: unsupported schema")
+    ids = [fixture.get("id") for fixture in fixtures if isinstance(fixture, dict)]
+    if len(ids) != len(fixtures) or any(not isinstance(identifier, str) or not identifier for identifier in ids):
+        fail(f"fixture manifest {path}: every fixture needs an id")
+    if len(set(ids)) != len(ids):
+        fail(f"fixture manifest {path}: fixture ids must be unique")
+    return manifest
+
+
+def complete_fixture_log(name: str, offset: int, spec: dict[str, Any]) -> dict[str, str]:
+    rows = []
+    for link in (1, 2):
+        latitude = int(spec["baseLatitudeE4"]) + offset + link * 5
+        longitude = int(spec["baseLongitudeE4"]) + offset + link * 5
+        rows.extend((
+            f"{link},10,3,0,{latitude},{longitude},100,30,42,1,1",
+            f"{link},20,5,0,{latitude},{longitude},1000,0,41,1,1",
+            f"{link},30,6,0,{latitude},{longitude},400,-25,40,1,1",
+            f"{link},50,7,0,{latitude},{longitude},5,0,39,1,1",
+        ))
+    return {"name": name, "csv": CSV_HEADER + "\n".join(rows) + "\n"}
+
+
+def resolve_fixture_logs(spec: Any, base_dir: Path, light_mode: bool) -> list[dict[str, Any]]:
+    if isinstance(spec, list):
+        return copy.deepcopy(spec)
+    if not isinstance(spec, dict):
+        fail("fixture logs must be an array or object")
+    if "files" in spec:
+        files = spec.get("lightFiles") if light_mode and spec.get("lightFiles") else spec["files"]
+        logs = []
+        for filename in files:
+            path = base_dir / str(filename)
+            try:
+                logs.append({"name": path.name, "csv": path.read_text(encoding="utf-8")})
+            except OSError as error:
+                fail(f"cannot read fixture log '{path}': {error}")
+        return logs
+    if "generated" in spec:
+        generated = spec["generated"]
+        if not isinstance(generated, dict):
+            fail("fixture generated logs must be an object")
+        count = int(generated["count"])
+        start_index = int(generated["startIndex"])
+        return [complete_fixture_log(f"log_{start_index - offset:03d}.csv", offset, generated)
+                for offset in range(count)]
+    if "entries" in spec:
+        return [{"name": entry["name"], "csv": CSV_HEADER + "\n".join(entry["rows"]) + "\n"}
+                for entry in spec["entries"]]
+    fail("fixture logs need files, generated, or entries")
+
+
+def apply_fixture_to_simulator(sim: Simulator, fixture: dict[str, Any], base_dir: Path,
+                               light_mode: bool = False) -> None:
+    operations = fixture.get("operations")
+    if not isinstance(operations, list):
+        fail(f"fixture {fixture.get('id', '<unknown>')}: operations must be an array")
+    for index, step in enumerate(operations, 1):
+        if not isinstance(step, dict) or len(step) != 1:
+            fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: expected one operation")
+        operation, value = next(iter(step.items()))
+        if operation == "logs":
+            sim.set_initial({"logs": resolve_fixture_logs(value, base_dir, light_mode)})
+        elif operation in ("configuration", "navigation", "deviceStatus"):
+            if not isinstance(value, dict):
+                fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: {operation} must be an object")
+            sim.set_initial({operation: value})
+            if operation == "navigation":
+                sim.advance(0)
+        elif operation == "link":
+            if not isinstance(value, dict) or value.get("index") not in (1, 2) or not isinstance(value.get("value"), dict):
+                fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: link must have index and value")
+            link = sim.link(int(value["index"]) - 1)
+            payload = value["value"]
+            for field in ("connected", "enabled"):
+                if field in payload:
+                    link[field] = payload[field]
+            for field in ("state", "errors", "altitudeM", "velocityMps", "latitude", "longitude", "voltage",
+                          "pyroContinuity", "testingMode", "timestampDs", "lastUpdateMs", "updated"):
+                if field in payload:
+                    link["telemetry"][field] = payload[field]
+            for field in ("linkQuality", "rssi", "snr"):
+                if field in payload:
+                    link["info"][field] = payload[field]
+            link["telemetry"]["updated"] = True
+            link["info"]["updated"] = True
+            sim.advance(0)
+        elif operation == "tap":
+            sim.press(str(value))
+            sim.release(str(value))
+        elif operation == "hold":
+            if not isinstance(value, dict):
+                fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: hold must be an object")
+            sim.hold(str(value.get("button", "")), int(value.get("ms", 0)))
+        elif operation == "advance":
+            sim.advance(int(value))
+        else:
+            fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: unknown operation '{operation}'")
+    if light_mode and fixture.get("lightAdvanceMs"):
+        sim.advance(int(fixture["lightAdvanceMs"]))
+
+
+def run_fixture(manifest_path: Path, fixture_id: str, light_mode: bool = False) -> dict[str, Any]:
+    manifest = load_fixture_manifest(manifest_path)
+    fixture = next((item for item in manifest["fixtures"] if item["id"] == fixture_id), None)
+    if fixture is None:
+        fail(f"unknown simulator fixture '{fixture_id}'")
+    sim = Simulator(ready=not light_mode, base_dir=manifest_path.parent)
+    apply_fixture_to_simulator(sim, fixture, manifest_path.parent, light_mode)
+    return {"fixture": fixture_id, "snapshot": sim.snapshot(), "ok": True}
+
+
 def run_scenario(path: Path, write_snapshots: bool = False) -> dict[str, Any]:
     try:
         scenario = json.loads(path.read_text(encoding="utf-8"))
@@ -1320,8 +1442,8 @@ def deterministic_test(root: Path) -> int:
     except (OSError, json.JSONDecodeError) as error:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
-    for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "testing-timeout.json",
-                          "sensors-orientation.json", "settings.json", "replay.json",
+    for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "live.json", "testing-timeout.json",
+                          "sensors.json", "sensors-orientation.json", "settings.json", "bootloader.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json"):
@@ -1332,6 +1454,13 @@ def deterministic_test(root: Path) -> int:
             except (OSError, json.JSONDecodeError) as error:
                 print(f"cannot load simulator fixture {scenario_path}: {error}", file=sys.stderr)
                 return 1
+
+    fixture_manifest_path = scenario_dir.parent / "web" / "fixtures.json"
+    try:
+        fixture_manifest = load_fixture_manifest(fixture_manifest_path)
+    except ScenarioError as error:
+        print(f"cannot load shared simulator fixtures: {error}", file=sys.stderr)
+        return 1
 
     for name, case in cases:
         first_initial = copy.deepcopy(case["initial"])
@@ -1365,7 +1494,27 @@ def deterministic_test(root: Path) -> int:
                     print(f"golden snapshot failed: {name}/{snapshot_name}: expected {snapshot_hash}, "
                           f"got {actual_snapshots.get(snapshot_name)}", file=sys.stderr)
                     return 1
+    for fixture in fixture_manifest["fixtures"]:
+        try:
+            first = Simulator(base_dir=fixture_manifest_path.parent)
+            apply_fixture_to_simulator(first, fixture, fixture_manifest_path.parent)
+            second = Simulator(base_dir=fixture_manifest_path.parent)
+            apply_fixture_to_simulator(second, fixture, fixture_manifest_path.parent)
+        except ScenarioError as error:
+            print(f"shared fixture failed: {fixture['id']}: {error}", file=sys.stderr)
+            return 1
+        if (json.dumps(first.snapshot(), sort_keys=True) != json.dumps(second.snapshot(), sort_keys=True)
+                or first.frame.png() != second.frame.png()):
+            print(f"shared fixture determinism failed: {fixture['id']}", file=sys.stderr)
+            return 1
+    light_demo = run_fixture(fixture_manifest_path, "light-demo", light_mode=True)["snapshot"]
+    if (light_demo["activeScreen"] != "menu" or light_demo["logCount"] != 1
+            or light_demo["navigation"]["homeLatitude"] != 39.3899
+            or light_demo["navigation"]["homeLongitude"] != -8.2895):
+        print("shared light demo fixture failed", file=sys.stderr)
+        return 1
     print(f"gs-sim: {len(cases)} deterministic controller/scenario tests passed")
+    print(f"fixtures: {len(fixture_manifest['fixtures'])} browser/CLI fixtures passed")
     print(f"framebuffer: {len(first.frame.packed())} bytes, sha256={a['framebufferSha256']}")
     return 0
 
@@ -1376,12 +1525,21 @@ def main(argv: list[str]) -> int:
     run = sub.add_parser("run")
     run.add_argument("scenario", type=Path)
     run.add_argument("--write-snapshots", action="store_true")
+    fixture = sub.add_parser("fixture")
+    fixture.add_argument("fixture_id")
+    fixture.add_argument("--manifest", type=Path,
+                         default=Path(__file__).resolve().parent / "web" / "fixtures.json")
+    fixture.add_argument("--light", action="store_true")
     test = sub.add_parser("test")
     test.add_argument("--root", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
     try:
         if args.command == "test":
             return deterministic_test(args.root)
+        if args.command == "fixture":
+            result = run_fixture(args.manifest.resolve(), args.fixture_id, args.light)
+            print(json.dumps(result, sort_keys=True, indent=2))
+            return 0
         result = run_scenario(args.scenario.resolve(), args.write_snapshots)
         print(json.dumps(result, sort_keys=True, indent=2))
         return 0

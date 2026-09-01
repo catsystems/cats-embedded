@@ -1,0 +1,16 @@
+{
+  "initial": {"ready": true},
+  "steps": [
+    {"press": "right"}, {"release": "right"}, {"press": "down"}, {"release": "down"},
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"activeScreen": "sensors", "calibrationState": "idle"}},
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"calibrationState": "prepare"}},
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"calibrationState": "calibrating", "emittedAction": "calibration_started"}},
+    {"set": {"navigation.calibrationPercentage": 100.0}},
+    {"advance": 0},
+    {"assert": {"calibrationState": "concluded", "emittedAction": "calibration_completed"}},
+    {"snapshot": "sensors-calibration-complete"}
+  ]
+}

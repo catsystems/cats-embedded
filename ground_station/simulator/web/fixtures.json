@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "demo",
+      "label": "Complete and partial logs",
+      "description": "Loads one complete mission log and one damaged or partial log. Use it to check valid statistics, unavailable values shown as --, and safe malformed-row handling.",
+      "operations": [
+        {"logs": {"files": ["demo-logs/log_001.csv", "demo-logs/log_002.csv"]}},
+        {"navigation": {"homeLatitude": 33.6838649, "homeLongitude": 132.6331541, "rocketLatitude": 33.7365, "rocketLongitude": 132.4881, "northRad": 0.35}},
+        {"link": {"index": 1, "value": {"state": 2, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 18, "velocityMps": 0, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}}
+      ]
+    },
+    {
+      "id": "light-demo",
+      "label": "Recorded demo flight",
+      "description": "Replays a recorded dual-link flight at its original timestamp cadence.",
+      "lightAdvanceMs": 3500,
+      "lightPlaybackSpeed": 1,
+      "operations": [
+        {"logs": {"files": ["demo-logs/gs_log_main_1_1.csv"]}},
+        {"configuration": {"dualReceiver": true}},
+        {"navigation": {"homeLatitude": 39.3899, "homeLongitude": -8.2895, "rocketLatitude": 39.3899, "rocketLongitude": -8.2895, "northRad": 0.35}},
+        {"link": {"index": 1, "value": {"state": 2, "timestampDs": 5929, "latitude": 39.3899, "longitude": -8.2895, "altitudeM": 0, "velocityMps": 0, "voltage": 8.1, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 5929, "latitude": 39.3899, "longitude": -8.2895, "altitudeM": 0, "velocityMps": 0, "voltage": 8.1, "pyroContinuity": 3, "connected": true}}}
+      ]
+    },
+    {
+      "id": "dual",
+      "label": "Nominal dual-link mission",
+      "description": "Runs a completed two-rocket mission. Both links record liftoff through touchdown and both recovery targets have valid locations.",
+      "operations": [
+        {"logs": []},
+        {"configuration": {"dualReceiver": true, "neverStopLogging": false}},
+        {"navigation": {"homeLatitude": 33.6838649, "homeLongitude": 132.6331541, "northRad": 0.35}},
+        {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 120, "velocityMps": 42, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 110, "velocityMps": 39, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 5, "timestampDs": 20, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 5, "timestampDs": 20, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}}
+      ]
+    },
+    {
+      "id": "many",
+      "label": "More than 11 logs",
+      "description": "Loads 24 completed logs. Use it to check list scrolling, viewport edge arrows, and selection at the first and last log.",
+      "operations": [
+        {"logs": {"generated": {"count": 24, "startIndex": 124, "baseLatitudeE4": 337367, "baseLongitudeE4": 1324878}}}
+      ]
+    },
+    {
+      "id": "missing-fix",
+      "label": "One missing recovery fix",
+      "description": "Runs Dual Recovery with a valid location for Link 1 and no location for Link 2. Use it to check target selection and No location behavior.",
+      "operations": [
+        {"logs": []},
+        {"configuration": {"dualReceiver": true, "neverStopLogging": false}},
+        {"navigation": {"homeLatitude": 33.6838649, "homeLongitude": 132.6331541, "northRad": 0.35}},
+        {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 120, "velocityMps": 42, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 10, "latitude": 0, "longitude": 0, "altitudeM": 110, "velocityMps": 39, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 5, "timestampDs": 20, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 20, "latitude": 0, "longitude": 0, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 30, "latitude": 0, "longitude": 0, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 50, "latitude": 0, "longitude": 0, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}}
+      ]
+    },
+    {
+      "id": "zero-coordinate",
+      "label": "Equator and prime meridian fixes",
+      "description": "Loads valid locations on the prime meridian and equator. Both must remain available as map QR codes.",
+      "operations": [
+        {"navigation": {"homeLatitude": 0.0, "homeLongitude": -30.0, "rocketLatitude": 1.0, "rocketLongitude": -30.0}},
+        {"logs": {"entries": [{"name": "zero-coordinate.csv", "rows": ["1,10,3,0,5000,0,100,20,42,0,0", "2,11,3,0,0,-300000,100,20,42,0,0"]}]}}
+      ]
+    },
+    {
+      "id": "never",
+      "label": "Active Never recording",
+      "description": "Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until Finalize Log is confirmed.",
+      "operations": [
+        {"logs": []},
+        {"configuration": {"dualReceiver": true, "neverStopLogging": true}},
+        {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "connected": true}}}
+      ]
+    },
+    {
+      "id": "delete-failure",
+      "label": "Deletion failure",
+      "description": "Loads a finalized log and injects a storage deletion error. The log must remain in the catalog and an error message should appear.",
+      "operations": [
+        {"logs": {"generated": {"count": 1, "startIndex": 105, "baseLatitudeE4": 337367, "baseLongitudeE4": 1324878}}},
+        {"deviceStatus": {"deleteFailure": true}}
+      ]
+    },
+    {
+      "id": "usb-delete",
+      "label": "USB deletion block",
+      "description": "Loads a finalized log while USB mass storage is connected. Delete Log must be blocked until USB is disconnected.",
+      "operations": [
+        {"logs": {"generated": {"count": 1, "startIndex": 106, "baseLatitudeE4": 337367, "baseLongitudeE4": 1324878}}},
+        {"deviceStatus": {"usb": true, "usbStorageState": "host"}}
+      ]
+    },
+    {
+      "id": "usb-storage",
+      "label": "USB Drive active",
+      "description": "Connects USB while idle, automatically shares the logs, and opens Settings > General > USB Drive. Press B to return without disconnecting, or press A to return storage to the Ground Station.",
+      "operations": [
+        {"deviceStatus": {"usb": true, "usbStorageState": "firmware"}},
+        {"tap": "right"}, {"tap": "right"}, {"tap": "down"}, {"tap": "ok"},
+        {"tap": "down"}, {"tap": "down"}, {"tap": "down"}, {"tap": "ok"}
+      ]
+    },
+    {
+      "id": "finalize-failure",
+      "label": "Finalization failure",
+      "description": "Creates an active Never-mode log and injects a finalization error. The log must remain active after the failed attempt.",
+      "operations": [
+        {"logs": []},
+        {"configuration": {"dualReceiver": true, "neverStopLogging": true}},
+        {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "connected": true}}},
+        {"deviceStatus": {"finalizeFailure": true}}
+      ]
+    },
+    {
+      "id": "recorder-fault",
+      "label": "Recorder write fault",
+      "description": "Injects a storage write failure as recording starts. Use it to check the recorder fault state and crossed logging indicator.",
+      "operations": [
+        {"logs": []},
+        {"deviceStatus": {"recorderWriteFailure": true}},
+        {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}}
+      ]
+    }
+  ]
+}

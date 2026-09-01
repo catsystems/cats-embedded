@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Position = 0, Mandatory = $true)]
-  [ValidateSet('setup', 'build', 'fatfs-test', 'serve', 'run', 'test')]
+  [ValidateSet('setup', 'build', 'browser-test', 'fatfs-test', 'fixture', 'serve', 'run', 'test')]
   [string]$Command,
 
   [Parameter(Position = 1)]
@@ -155,6 +155,7 @@ function Build-WasmDirect {
     '-o',
     (Join-Path $SimulatorRoot 'web\gs-sim.js'),
     '-sWASM=1',
+    '-sSTACK_SIZE=262144',
     '-sMODULARIZE=1',
     '-sEXPORT_ES6=1',
     '-sENVIRONMENT=web',
@@ -179,6 +180,74 @@ function Build-WasmIfAvailable {
   if ($LASTEXITCODE -ne 0) { throw 'Unable to execute the Emscripten compiler.' }
   Write-Host $emccVersion[0]
   Build-WasmDirect
+}
+
+function Resolve-HeadlessBrowser {
+  $candidates = @(
+    (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+    (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\Application\msedge.exe'),
+    (Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Google\Chrome\Application\chrome.exe')
+  )
+  foreach ($candidate in $candidates) {
+    if (Test-Path -LiteralPath $candidate) { return $candidate }
+  }
+  throw 'Microsoft Edge or Google Chrome is required for browser-test.'
+}
+
+function Get-FreeTcpPort {
+  $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+  $listener.Start()
+  try { return ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port }
+  finally { $listener.Stop() }
+}
+
+function Invoke-BrowserRegressionTest {
+  $emcc = Get-EmscriptenExecutable -Name 'emcc'
+  if ($null -eq $emcc) { throw "Emscripten $PinnedEmscripten is required for browser-test." }
+  Initialize-EmscriptenEnvironment
+  Build-WasmDirect
+
+  $python = Resolve-Python
+  $browser = Resolve-HeadlessBrowser
+  $webRoot = Join-Path $SimulatorRoot 'web'
+  $testPort = Get-FreeTcpPort
+  $profileRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('cats-gs-browser-' + [guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $profileRoot | Out-Null
+  $server = Start-Process -FilePath $python -ArgumentList '-m', 'http.server', $testPort, '--directory', $webRoot -PassThru -WindowStyle Hidden
+  try {
+    $url = "http://127.0.0.1:$testPort/browser-tests.html"
+    $ready = $false
+    foreach ($attempt in 1..50) {
+      try {
+        Invoke-WebRequest -UseBasicParsing -Uri $url | Out-Null
+        $ready = $true
+        break
+      } catch {
+        Start-Sleep -Milliseconds 100
+      }
+    }
+    if (!$ready) { throw 'The browser-test web server did not start.' }
+
+    $browserArguments = @(
+      '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+      "--user-data-dir=$profileRoot", '--virtual-time-budget=10000', '--dump-dom', $url
+    )
+    $standardOutput = Join-Path $profileRoot 'browser-test.html'
+    $standardError = Join-Path $profileRoot 'browser-test.stderr'
+    $browserProcess = Start-Process -FilePath $browser -ArgumentList $browserArguments -RedirectStandardOutput $standardOutput -RedirectStandardError $standardError -PassThru -Wait -WindowStyle Hidden
+    if ($browserProcess.ExitCode -ne 0) { throw "Headless browser exited with code $($browserProcess.ExitCode)." }
+    $dom = Get-Content -LiteralPath $standardOutput -Raw
+    if ($dom -notmatch 'data-status="passed"') {
+      $result = [regex]::Match($dom, '<pre id="result"[^>]*>(.*?)</pre>', 'Singleline').Groups[1].Value
+      throw "Browser/WASM regression test failed: $result"
+    }
+    Write-Host 'browser/WASM: 9 regression checks passed'
+  } finally {
+    if (!$server.HasExited) { Stop-Process -Id $server.Id -Force }
+    Remove-Item -LiteralPath $profileRoot -Recurse -Force -ErrorAction SilentlyContinue
+  }
 }
 
 function Invoke-FatFsCompatibilityTest {
@@ -233,10 +302,15 @@ function Invoke-FatFsCompatibilityTest {
 switch ($Command) {
   'setup' { Setup-Simulator }
   'build' { Build-WasmIfAvailable }
+  'browser-test' { Invoke-BrowserRegressionTest }
   'fatfs-test' { Invoke-FatFsCompatibilityTest }
   'run' {
     if ([string]::IsNullOrWhiteSpace($Scenario)) { throw 'run requires a scenario JSON path.' }
     Invoke-Headless @('run', (Resolve-Path -LiteralPath $Scenario).Path, '--write-snapshots')
+  }
+  'fixture' {
+    if ([string]::IsNullOrWhiteSpace($Scenario)) { throw 'fixture requires a fixture id.' }
+    Invoke-Headless @('fixture', $Scenario, '--manifest', (Join-Path $SimulatorRoot 'web\fixtures.json'))
   }
   'test' {
     Invoke-Headless @('test', '--root', $RepoRoot)

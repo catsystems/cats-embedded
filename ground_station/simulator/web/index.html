@@ -4,12 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CATS Ground Station Simulator</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <script>
+    if (new URLSearchParams(window.location.search).get('mode') === 'light') {
+      document.documentElement.classList.add('light-mode');
+    }
+  </script>
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main>
     <h1>CATS Ground Station Simulator</h1>
-    <section class="toolbar" aria-label="Simulator controls">
+    <section class="light-toolbar light-only" aria-label="Demo controls">
+      <button id="light-reset" type="button">Play demo</button>
+      <button id="light-reboot" type="button">Reboot</button>
+    </section>
+    <section id="phone-sensor-panel" class="phone-sensor-panel" aria-labelledby="phone-sensor-title" hidden>
+      <div>
+        <strong id="phone-sensor-title">Try it with this phone</strong>
+        <p id="phone-sensor-status" aria-live="polite">Use your phone's motion, compass, and location sensors in the simulator.</p>
+        <p class="phone-sensor-privacy">Readings stay on this device.</p>
+      </div>
+      <button id="phone-sensor-toggle" type="button">Use phone sensors</button>
+    </section>
+    <section class="toolbar engineering-only" aria-label="Simulator controls">
       <div class="toolbar-group" aria-label="Playback controls">
         <button id="pause" class="icon-button" aria-label="Pause virtual time" title="Pause virtual time"><span aria-hidden="true">⏸</span></button>
         <button id="reset" class="icon-button" aria-label="Restart simulator" title="Restart simulator"><span aria-hidden="true">↻</span></button>
@@ -24,49 +41,51 @@
       </div>
       <div class="toolbar-group fixture-group">
         <label class="compact-label" for="fixture">Fixture</label>
-        <select id="fixture" aria-label="Simulator fixture preset">
-          <option value="demo">Complete and partial logs</option>
-          <option value="dual">Nominal dual-link mission</option>
-          <option value="many">More than 11 logs</option>
-          <option value="missing-fix">One missing recovery fix</option>
-          <option value="zero-coordinate">Equator and prime meridian fixes</option>
-          <option value="never">Active Never recording</option>
-          <option value="delete-failure">Deletion failure</option>
-          <option value="usb-delete">USB deletion block</option>
-          <option value="usb-storage">USB Drive active</option>
-          <option value="finalize-failure">Finalization failure</option>
-          <option value="recorder-fault">Recorder write fault</option>
-        </select>
+        <select id="fixture" aria-label="Simulator fixture preset"></select>
         <button id="apply-fixture" class="icon-button" aria-label="Apply fixture" title="Apply fixture"><span aria-hidden="true">✓</span></button>
         <button id="eject-usb" class="icon-button" aria-label="Eject USB drive" title="Eject USB drive"><span aria-hidden="true">⏏</span></button>
       </div>
     </section>
-    <p class="toolbar-help">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
-    <p id="fixture-description" class="fixture-description" aria-live="polite"></p>
-    <section class="device" aria-label="Ground station front panel">
-      <span class="antenna antenna-left" aria-hidden="true"></span>
-      <span class="antenna antenna-right" aria-hidden="true"></span>
-      <div class="screen-bezel">
-        <canvas id="display" width="400" height="240" tabindex="0" aria-label="Ground station display"></canvas>
-      </div>
-      <section class="controls" aria-label="Ground station controls">
-        <div class="dpad" aria-label="Directional pad">
-          <button class="dpad-up" data-button="up" aria-label="Up">▲</button>
-          <button class="dpad-left" data-button="left" aria-label="Left">◀</button>
-          <span class="dpad-center" aria-hidden="true"></span>
-          <button class="dpad-right" data-button="right" aria-label="Right">▶</button>
-          <button class="dpad-down" data-button="down" aria-label="Down">▼</button>
+    <p class="toolbar-help engineering-only">Pause freezes virtual time. Advance time runs exactly the selected number of milliseconds.</p>
+    <p id="fixture-description" class="fixture-description engineering-only" aria-live="polite"></p>
+    <div class="device-wrap">
+      <section class="device" aria-label="Ground station front panel">
+        <span class="antenna antenna-left" aria-hidden="true"></span>
+        <span class="antenna antenna-right" aria-hidden="true"></span>
+        <div class="screen-bezel">
+          <canvas id="display" width="400" height="240" tabindex="0" aria-label="Ground station display"></canvas>
         </div>
-        <div class="face-buttons" aria-label="A and B buttons">
-          <button class="face-button" data-button="back" aria-label="B, Back">B</button>
-          <button class="face-button" data-button="ok" aria-label="A, OK">A</button>
-        </div>
+        <section class="controls" aria-label="Ground station controls">
+          <div class="dpad" aria-label="Directional pad">
+            <button class="dpad-up" data-button="up" aria-label="Up">▲</button>
+            <button class="dpad-left" data-button="left" aria-label="Left">◀</button>
+            <span class="dpad-center" aria-hidden="true"></span>
+            <button class="dpad-right" data-button="right" aria-label="Right">▶</button>
+            <button class="dpad-down" data-button="down" aria-label="Down">▼</button>
+          </div>
+          <div class="face-buttons" aria-label="A and B buttons">
+            <button class="face-button" data-button="back" aria-label="B, Back">B</button>
+            <button class="face-button" data-button="ok" aria-label="A, OK">A</button>
+          </div>
+        </section>
       </section>
-    </section>
+    </div>
     <p id="status" role="status">Loading WebAssembly simulator...</p>
-    <p class="keyboard-help">Keyboard: arrows move · A, Enter, or Space selects · B or Escape goes back</p>
-    <pre id="snapshot"></pre>
+    <p class="keyboard-help engineering-only">Keyboard: arrows move · A, Enter, or Space selects · B or Escape goes back</p>
+    <pre id="snapshot" class="engineering-only"></pre>
+    <details class="coverage engineering-only">
+      <summary>Test coverage matrix</summary>
+      <p>Golden checks compare a stable framebuffer hash. Deterministic checks compare two independent runs byte for byte.</p>
+      <div class="coverage-scroll">
+        <table>
+          <thead>
+            <tr><th>GS screen or path</th><th>Scenario / fixture</th><th>Snapshot</th><th>Framebuffer</th><th>Browser/WASM</th></tr>
+          </thead>
+          <tbody id="coverage-body"></tbody>
+        </table>
+      </div>
+    </details>
   </main>
-  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="app.js?v=22"></script>
 </body>
 </html>
