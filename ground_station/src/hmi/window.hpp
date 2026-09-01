@@ -84,6 +84,8 @@ class Window {
   void updateSensorCalibrate(Navigation *navigation);
   void initSensorCalibrateDone();
   void updateSensors(Navigation *navigation);
+  void initSensorOrientation();
+  void updateSensorOrientation(Navigation *navigation);
 
   void initSettings(int16_t submenuIdx);
   void updateSettings(int16_t index);
@@ -108,6 +110,8 @@ class Window {
  private:
   void updateLiveData(TelemetryData *data, Navigation *navigation, int16_t index, uint16_t color);
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
+  void drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
+                      uint16_t color);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);
   void drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage);
@@ -157,7 +161,5 @@ class Window {
   bool upperCase{false};
   int32_t oldKey{0};
   uint32_t keyboardTextMaxLength{0};
-  float oldCalibrationPercentage = 0.0F;
-
   const char *eventName[9] = {"Ready", "Liftoff", "Burnout", "Apogee", "Main", "Touchdown", "Custom 1", "Custom 2"};
 };

@@ -43,6 +43,7 @@ void HmiController::start() {
   recoveryLocations_ = {};
   clearQr();
   liveDownrange_ = false;
+  sensorOrientation_ = false;
   keyboardActive_ = false;
   keyboardSelection_ = 0;
   keyboardUppercase_ = false;
@@ -198,6 +199,7 @@ void HmiController::enter(Screen screen) {
   }
   if (screen_ == Screen::Sensors) {
     calibrationState_ = CalibrationState::Idle;
+    sensorOrientation_ = false;
   }
   if (screen_ == Screen::Settings) {
     settingsPage_ = 0;
@@ -520,6 +522,14 @@ bool HmiController::showRecoveryLocation(size_t linkIndex) {
 void HmiController::sensorsStep(uint64_t nowMs) {
   switch (calibrationState_) {
     case CalibrationState::Idle:
+      if (pressed(HmiButton::Right) || pressed(HmiButton::Down)) {
+        sensorOrientation_ = true;
+        emit("sensor_view", 0, 1, "orientation");
+      }
+      if (pressed(HmiButton::Left) || pressed(HmiButton::Up)) {
+        sensorOrientation_ = false;
+        emit("sensor_view", 0, 0, "readings");
+      }
       if (pressed(HmiButton::Ok)) {
         calibrationState_ = CalibrationState::Prepare;
       }
@@ -535,6 +545,7 @@ void HmiController::sensorsStep(uint64_t nowMs) {
       }
       if (pressed(HmiButton::Back)) {
         calibrationState_ = CalibrationState::Idle;
+        sensorOrientation_ = false;
       }
       break;
     case CalibrationState::Calibrating:
@@ -551,6 +562,7 @@ void HmiController::sensorsStep(uint64_t nowMs) {
     case CalibrationState::Concluded:
       if (pressed(HmiButton::Ok) || pressed(HmiButton::Back)) {
         calibrationState_ = CalibrationState::Idle;
+        sensorOrientation_ = false;
         device_.requestFirmwareStorage();
         config_.save();
         automaticUsbSharePending_ = device_.snapshot().usb;
@@ -759,6 +771,7 @@ HmiSnapshot HmiController::snapshot() const {
   result.settingsState = keyboardActive_ ? "keyboard" : "list";
   result.inputState = "idle";
   result.liveView = liveDownrange_ ? "downrange" : "gnss";
+  result.sensorView = sensorOrientation_ ? "orientation" : "readings";
   for (const bool held : input_.held) {
     if (held) {
       result.inputState = "held";

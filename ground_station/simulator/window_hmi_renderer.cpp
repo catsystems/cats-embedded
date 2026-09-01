@@ -34,6 +34,7 @@ void WindowHmiRenderer::syncNavigation(const NavigationSnapshot& source) {
   navigation_.setPointA(source.homeLatitude, source.homeLongitude);
   navigation_.setPointB(source.rocketLatitude, source.rocketLongitude);
   navigation_.setOrientation(source.northRad, source.azimuthRad, source.elevationRad);
+  navigation_.setAttitude(source.pitchRad, source.rollRad);
   navigation_.setDistance(source.distanceM);
   navigation_.setAcceleration(source.ax, source.ay, source.az);
   navigation_.setGyroscope(source.gx, source.gy, source.gz);
@@ -205,8 +206,13 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     } else if (state.calibrationState == "concluded") {
       window_.initSensorCalibrateDone();
     } else {
-      window_.initSensors();
-      window_.updateSensors(&navigation_);
+      if (state.sensorView == "orientation") {
+        window_.initSensorOrientation();
+        window_.updateSensorOrientation(&navigation_);
+      } else {
+        window_.initSensors();
+        window_.updateSensors(&navigation_);
+      }
     }
   } else if (state.screen == "settings") {
     if (state.settingsState == "keyboard") {

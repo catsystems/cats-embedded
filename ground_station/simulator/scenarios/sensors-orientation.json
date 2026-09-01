@@ -1,0 +1,29 @@
+{
+  "initial": {
+    "ready": true,
+    "navigation": {
+      "northRad": 1.5707963,
+      "pitchRad": -0.2094395,
+      "rollRad": 0.1396263,
+      "mx": 940.0,
+      "my": 180.0,
+      "mz": -290.0
+    }
+  },
+  "steps": [
+    {"press": "down"}, {"release": "down"},
+    {"press": "right"}, {"release": "right"},
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"activeScreen": "sensors", "sensorView": "readings"}},
+    {"press": "right"}, {"release": "right"},
+    {"assert": {"sensorView": "orientation", "action": "sensor_view"}},
+    {"snapshot": "orientation-east"},
+    {"press": "left"}, {"release": "left"},
+    {"assert": {"sensorView": "readings"}},
+    {"press": "right"}, {"release": "right"},
+    {"press": "ok"}, {"release": "ok"},
+    {"assert": {"calibrationState": "prepare"}},
+    {"press": "back"}, {"release": "back"},
+    {"assert": {"calibrationState": "idle", "sensorView": "readings"}}
+  ]
+}

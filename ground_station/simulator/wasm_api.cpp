@@ -472,6 +472,7 @@ void rebuildSnapshot() {
   const HmiSnapshot state = controller.snapshot();
   snapshot = "{\"activeScreen\":" + quote(state.screen) +
              ",\"liveView\":" + quote(state.liveView) +
+             ",\"sensorView\":" + quote(state.sensorView) +
              ",\"testingState\":" + quote(state.testingState) +
              ",\"testingSelection\":" + std::to_string(state.testingSelection) +
              ",\"keyboardSelection\":" + std::to_string(state.keyboardSelection) +
@@ -513,6 +514,22 @@ void rebuildSnapshot() {
              ",\"linkPhrase1\":" + quote(state.configuration.linkPhrase1) +
              ",\"linkPhrase2\":" + quote(state.configuration.linkPhrase2) +
              ",\"testingPhrase\":" + quote(state.configuration.testingPhrase) + "}" +
+             ",\"navigation\":{\"homeLatitude\":" + std::to_string(state.navigation.homeLatitude) +
+             ",\"homeLongitude\":" + std::to_string(state.navigation.homeLongitude) +
+             ",\"rocketLatitude\":" + std::to_string(state.navigation.rocketLatitude) +
+             ",\"rocketLongitude\":" + std::to_string(state.navigation.rocketLongitude) +
+             ",\"northRad\":" + std::to_string(state.navigation.northRad) +
+             ",\"pitchRad\":" + std::to_string(state.navigation.pitchRad) +
+             ",\"rollRad\":" + std::to_string(state.navigation.rollRad) +
+             ",\"ax\":" + std::to_string(state.navigation.ax) +
+             ",\"ay\":" + std::to_string(state.navigation.ay) +
+             ",\"az\":" + std::to_string(state.navigation.az) +
+             ",\"gx\":" + std::to_string(state.navigation.gx) +
+             ",\"gy\":" + std::to_string(state.navigation.gy) +
+             ",\"gz\":" + std::to_string(state.navigation.gz) +
+             ",\"mx\":" + std::to_string(state.navigation.mx) +
+             ",\"my\":" + std::to_string(state.navigation.my) +
+             ",\"mz\":" + std::to_string(state.navigation.mz) + "}" +
              ",\"framebufferRevision\":" + std::to_string(state.framebufferRevision) +
              ",\"actions\":[";
   for (size_t index = 0; index < state.actions.size(); ++index) {
@@ -600,11 +617,22 @@ void gs_set_navigation_json(const char* json) {
   if (numberField(json, "calibrationPercentage", integer)) navigation.value.calibrationPercentage = static_cast<float>(integer);
   (void)decimalField(json, "distanceM", navigation.value.distanceM);
   (void)decimalField(json, "northRad", navigation.value.northRad);
+  (void)decimalField(json, "pitchRad", navigation.value.pitchRad);
+  (void)decimalField(json, "rollRad", navigation.value.rollRad);
   (void)decimalField(json, "homeLatitude", navigation.value.homeLatitude);
   (void)decimalField(json, "homeLongitude", navigation.value.homeLongitude);
   (void)decimalField(json, "rocketLatitude", navigation.value.rocketLatitude);
   (void)decimalField(json, "rocketLongitude", navigation.value.rocketLongitude);
   (void)decimalField(json, "azimuthRad", navigation.value.azimuthRad);
+  (void)decimalField(json, "ax", navigation.value.ax);
+  (void)decimalField(json, "ay", navigation.value.ay);
+  (void)decimalField(json, "az", navigation.value.az);
+  (void)decimalField(json, "gx", navigation.value.gx);
+  (void)decimalField(json, "gy", navigation.value.gy);
+  (void)decimalField(json, "gz", navigation.value.gz);
+  (void)decimalField(json, "mx", navigation.value.mx);
+  (void)decimalField(json, "my", navigation.value.my);
+  (void)decimalField(json, "mz", navigation.value.mz);
   step();
   rebuildSnapshot();
 }

@@ -60,6 +60,8 @@ class Hmi {
     CONCLUDED = 3,
   };
 
+  enum class SensorView : uint8_t { Readings, Orientation };
+
   State state = MENU;
 
   TestingState testingState = DISCLAIMER;
@@ -67,6 +69,7 @@ class Hmi {
   int16_t testingIndex = 0;
 
   CalibrationState calibrationState = IDLE;
+  SensorView sensorView = SensorView::Readings;
   uint32_t lastSensorRefresh = 0;
 
   Recorder recorder;
