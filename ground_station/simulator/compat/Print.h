@@ -21,7 +21,7 @@ class Print {
   size_t print(unsigned int value) { return print(std::to_string(value)); }
   size_t print(long value) { return print(std::to_string(value)); }
   size_t print(unsigned long value) { return print(std::to_string(value)); }
-  size_t print(float value) { return print(std::to_string(value)); }
+  size_t print(float value) { return print(value, 2); }
   size_t print(float value, int digits) {
     char buffer[64] = {};
     std::snprintf(buffer, sizeof(buffer), "%.*f", digits, static_cast<double>(value));

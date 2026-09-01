@@ -51,6 +51,8 @@ struct NavigationSnapshot {
   float rocketLatitude = 0.0F;
   float rocketLongitude = 0.0F;
   float northRad = 0.0F;
+  float pitchRad = 0.0F;
+  float rollRad = 0.0F;
   float azimuthRad = 0.0F;
   float distanceM = 0.0F;
   float elevationRad = 0.0F;
@@ -209,6 +211,7 @@ struct HmiSnapshot {
   std::string settingsState = "list";
   std::string inputState = "idle";
   std::string liveView = "gnss";
+  std::string sensorView = "readings";
   int16_t menuSelection = 0;
   int16_t testingSelection = 0;
   int16_t keyboardSelection = 0;
@@ -329,6 +332,7 @@ class HmiController {
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
   int8_t selectedRecoveryLink_ = 0;
   bool liveDownrange_ = false;
+  bool sensorOrientation_ = false;
   bool keyboardActive_ = false;
   int16_t keyboardSelection_ = 0;
   bool keyboardUppercase_ = false;

@@ -23,6 +23,17 @@ uint16_t GetNegativeColor(uint16_t color) {
   return BLACK;
 }
 
+void Window::drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
+                            uint16_t color) {
+  display.setTextColor(color);
+  display.setCursor(x, baseline);
+  display.print(std::fabs(value), 4);
+  const int16_t degreeX = static_cast<int16_t>(display.getCursorX() + 3);
+  display.drawCircle(degreeX, static_cast<int16_t>(baseline - 15), 2, color);
+  display.setCursor(static_cast<int16_t>(degreeX + 7), baseline);
+  display.print(value < 0.0F ? negativeHemisphere : positiveHemisphere);
+}
+
 void Window::begin() {
   surface.begin();
   surface.clear();
@@ -36,7 +47,6 @@ void Window::begin() {
   barBlinkStatus = false;
   oldMenuHighlight = 0;
   oldTestingIndex = 0;
-  oldCalibrationPercentage = 0.0F;
   livestate = LiveState::kShowGnss;
   old_bearing[0] = old_bearing[1] = 0.0F;
   old_downrange[0] = old_downrange[1] = 0;
@@ -510,7 +520,7 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     float bearing = navigation->computeBearing();
 
     display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
-    display.print(old_bearing[0]);
+    display.print(old_bearing[0], 1);
     display.print(" deg");
     old_bearing[0] = bearing;
 
@@ -529,7 +539,7 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     bearing = navigation->computeBearing();
 
     display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
-    display.print(old_bearing[1]);
+    display.print(old_bearing[1], 1);
     display.print(" deg");
     old_bearing[1] = bearing;
 
@@ -554,21 +564,10 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     display.drawBitmap(358, 125, right_arrow, 24, 24, BLACK);
   } else {
     // Set GNSS text to white
-    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 120);
-    display.print(data1->lat(), 4);
-    display.print(" N");
-
-    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
-    display.print(data1->lon(), 4);
-    display.print(" E");
-
-    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 120);
-    display.print(data2->lat(), 4);
-    display.print(" N");
-
-    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
-    display.print(data2->lon(), 4);
-    display.print(" E");
+    drawCoordinate(data1->lat(), 'N', 'S', static_cast<int16_t>(xOffset1 + first_row_offset), 120, WHITE);
+    drawCoordinate(data1->lon(), 'E', 'W', static_cast<int16_t>(xOffset1 + first_row_offset), 145, WHITE);
+    drawCoordinate(data2->lat(), 'N', 'S', static_cast<int16_t>(xOffset2 + first_row_offset), 120, WHITE);
+    drawCoordinate(data2->lon(), 'E', 'W', static_cast<int16_t>(xOffset2 + first_row_offset), 145, WHITE);
 
     // Set GNSS to white
     display.drawBitmap(3, 100, live_lat, 24, 24, WHITE);
@@ -701,13 +700,8 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
   }
 
   if (livestate == LiveState::kShowGnss) {
-    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
-    display.print(data->lat(), 4);
-    display.print(" N");
-
-    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
-    display.print(data->lon(), 4);
-    display.print(" E");
+    drawCoordinate(data->lat(), 'N', 'S', static_cast<int16_t>(xOffset + first_row_offset), 120, color);
+    drawCoordinate(data->lon(), 'E', 'W', static_cast<int16_t>(xOffset + first_row_offset), 145, color);
   } else {
     const auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
@@ -734,17 +728,17 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
 
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
     display.setTextColor(WHITE);
-    display.print(old_bearing[index]);
+    display.print(old_bearing[index], 1);
     display.print(" deg");
     display.setTextColor(color);
     display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
-    display.print(bearing);
+    display.print(bearing, 1);
     display.print(" deg");
     old_bearing[index] = bearing;
   }
 
   display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 170);
-  display.print(data->voltage());
+  display.print(data->voltage(), 1);
   display.print(" V");
 
   if (static_cast<bool>(data->pyroContinuity() & 0x01U)) {
@@ -1388,6 +1382,108 @@ void Window::initSensors() {
   display.print("Press A to calibrate");
   display.setCursor(220, 225);
   display.print("the compass");
+  display.setCursor(12, 225);
+  display.print("Right: compass");
+
+  surface.present();
+}
+
+void Window::initSensorOrientation() {
+  clearMainScreen();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&FreeSansBold12pt7b);
+  display.fillRect(0, 19, 400, 30, BLACK);
+  drawCentreString("Compass / 3D Orientation", 200, 42);
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(8, 233);
+  display.print("Left: sensors");
+  display.setCursor(285, 233);
+  display.print("A: calibrate");
+
+  surface.present();
+}
+
+void Window::updateSensorOrientation(Navigation *navigation) {
+  constexpr int16_t centerX = 105;
+  constexpr int16_t centerY = 132;
+  constexpr int16_t radius = 60;
+  float heading = navigation->getNorth();
+  while (heading < 0.0F) {
+    heading += 2.0F * PI_F;
+  }
+  while (heading >= 2.0F * PI_F) {
+    heading -= 2.0F * PI_F;
+  }
+  const float headingDegrees = heading * 180.0F / PI_F;
+  static constexpr const char *directions[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+  const uint8_t direction = static_cast<uint8_t>((headingDegrees + 22.5F) / 45.0F) & 7U;
+
+  display.fillRect(0, 49, 400, 163, WHITE);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  display.drawCircle(centerX, centerY, radius, BLACK);
+
+  for (uint8_t index = 0; index < 8; ++index) {
+    const float angle = static_cast<float>(index) * PI_F / 4.0F;
+    const float tickDepth = index % 2U == 0U ? 5.0F : 3.0F;
+    const int16_t outerX = static_cast<int16_t>(centerX + sinf(angle) * radius);
+    const int16_t outerY = static_cast<int16_t>(centerY - cosf(angle) * radius);
+    const int16_t innerX = static_cast<int16_t>(centerX + sinf(angle) * (radius - tickDepth));
+    const int16_t innerY = static_cast<int16_t>(centerY - cosf(angle) * (radius - tickDepth));
+    display.drawLine(innerX, innerY, outerX, outerY, BLACK);
+  }
+
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("N", centerX, 68);
+  drawCentreString("S", centerX, 208);
+  drawCentreString("W", 31, 139);
+  drawCentreString("E", 179, 139);
+
+  const float sine = sinf(heading);
+  const float cosine = cosf(heading);
+  const int16_t northTipX = static_cast<int16_t>(centerX + sine * 50.0F);
+  const int16_t northTipY = static_cast<int16_t>(centerY - cosine * 50.0F);
+  const int16_t northLeftX = static_cast<int16_t>(centerX - cosine * 6.0F);
+  const int16_t northLeftY = static_cast<int16_t>(centerY - sine * 6.0F);
+  const int16_t northRightX = static_cast<int16_t>(centerX + cosine * 6.0F);
+  const int16_t northRightY = static_cast<int16_t>(centerY + sine * 6.0F);
+  const int16_t southTipX = static_cast<int16_t>(centerX - sine * 30.0F);
+  const int16_t southTipY = static_cast<int16_t>(centerY + cosine * 30.0F);
+  display.drawLine(centerX, centerY, southTipX, southTipY, BLACK);
+  display.fillTriangle(northTipX, northTipY, northLeftX, northLeftY, northRightX, northRightY, BLACK);
+  display.fillCircle(centerX, centerY, 4, WHITE);
+  display.drawCircle(centerX, centerY, 4, BLACK);
+  display.fillCircle(centerX, centerY, 1, BLACK);
+
+  display.drawFastVLine(195, 62, 137, BLACK);
+
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(215, 78);
+  display.print("Mag heading");
+  display.setFont(&FreeSansBold12pt7b);
+  display.setCursor(215, 105);
+  display.print(headingDegrees, 1);
+  display.print(" deg ");
+  display.print(directions[direction]);
+
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(215, 137);
+  display.print("Pitch: ");
+  display.print(navigation->getPitch() * 180.0F / PI_F, 1);
+  display.print(" deg");
+  display.setCursor(215, 164);
+  display.print("Roll:  ");
+  display.print(navigation->getRoll() * 180.0F / PI_F, 1);
+  display.print(" deg");
+  const float magneticMagnitude =
+      sqrtf(navigation->getMX() * navigation->getMX() + navigation->getMY() * navigation->getMY() +
+            navigation->getMZ() * navigation->getMZ()) /
+      1000.0F;
+  display.setCursor(215, 191);
+  display.print("|M|:   ");
+  display.print(magneticMagnitude, 2);
 
   surface.present();
 }
@@ -1548,13 +1644,9 @@ void Window::updateSensorCalibrate(Navigation *navigation) {
   display.setFont(&FreeSansBold9pt7b);
   display.setTextSize(1);
 
-  // Show Progress
-  display.setTextColor(WHITE);
-  String t = "Progress: " + String(oldCalibrationPercentage) + "%";
-  drawCentreString(t, 200, 160);
-  oldCalibrationPercentage = navigation->getCalibrationPercentage();
+  display.fillRect(0, 140, 400, 35, WHITE);
   display.setTextColor(BLACK);
-  t = "Progress: " + String(oldCalibrationPercentage) + "%";
+  String t = "Progress: " + String(navigation->getCalibrationPercentage()) + "%";
   drawCentreString(t, 200, 160);
 }
 

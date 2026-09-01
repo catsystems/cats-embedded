@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -22,7 +23,11 @@ class String {
   String(unsigned int value) : value_(std::to_string(value)) {}
   String(long value) : value_(std::to_string(value)) {}
   String(unsigned long value) : value_(std::to_string(value)) {}
-  String(float value) : value_(std::to_string(value)) {}
+  String(float value) {
+    char buffer[32]{};
+    std::snprintf(buffer, sizeof(buffer), "%.2f", static_cast<double>(value));
+    value_ = buffer;
+  }
 
   [[nodiscard]] size_t length() const { return value_.size(); }
   [[nodiscard]] const char* c_str() const { return value_.c_str(); }

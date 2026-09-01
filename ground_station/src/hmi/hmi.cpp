@@ -652,6 +652,7 @@ void Hmi::data() {
 /* SENSORS */
 
 void Hmi::initSensors() {
+  sensorView = SensorView::Readings;
   lastSensorRefresh = 0;
   window.initSensors();
 }
@@ -671,11 +672,28 @@ void Hmi::sensors() {
         return;
       }
 
+      if (rightButton.wasPressed() || downButton.wasPressed()) {
+        sensorView = SensorView::Orientation;
+        window.initSensorOrientation();
+        lastSensorRefresh = 0;
+        return;
+      }
+      if (leftButton.wasPressed() || upButton.wasPressed()) {
+        sensorView = SensorView::Readings;
+        window.initSensors();
+        lastSensorRefresh = 0;
+        return;
+      }
+
       const uint32_t now = millis();
       if (now - lastSensorRefresh >= kSensorRefreshIntervalMs) {
         // A full framebuffer transfer blocks this task. Leave a
         // quiet interval between sensor redraws so button polling stays fast.
-        window.updateSensors(&navigation);
+        if (sensorView == SensorView::Orientation) {
+          window.updateSensorOrientation(&navigation);
+        } else {
+          window.updateSensors(&navigation);
+        }
         lastSensorRefresh = millis();
       }
       break;
@@ -688,6 +706,7 @@ void Hmi::sensors() {
       }
       if (backButton.wasPressed()) {
         calibrationState = IDLE;
+        sensorView = SensorView::Readings;
         window.initSensors();
       }
       break;
@@ -707,6 +726,7 @@ void Hmi::sensors() {
     case CONCLUDED:
       if (okButton.wasPressed() || backButton.wasPressed()) {
         calibrationState = IDLE;
+        sensorView = SensorView::Readings;
         if (claimStorageForFirmware()) {
           systemConfig.save();
           automaticUsbSharePending = Utils::isConnected();

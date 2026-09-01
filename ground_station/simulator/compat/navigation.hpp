@@ -17,6 +17,10 @@ class Navigation {
     azimuth_ = azimuth;
     elevation_ = elevation;
   }
+  void setAttitude(float pitch, float roll) {
+    pitch_ = pitch;
+    roll_ = roll;
+  }
   void setDistance(float distance) { distance_ = distance; }
   void setAcceleration(float x, float y, float z) { ax_ = x; ay_ = y; az_ = z; }
   void setGyroscope(float x, float y, float z) { gx_ = x; gy_ = y; gz_ = z; }
@@ -26,6 +30,8 @@ class Navigation {
   [[nodiscard]] EarthPoint3D getPointA() const { return pointA_; }
   [[nodiscard]] EarthPoint3D getPointB() const { return pointB_; }
   float getNorth() { return north_; }
+  float getPitch() { return pitch_; }
+  float getRoll() { return roll_; }
   float getAzimuth() { return azimuth_; }
   float getElevation() { return elevation_; }
   float getDistance() { return distance_; }
@@ -45,6 +51,8 @@ class Navigation {
   EarthPoint3D pointA_{};
   EarthPoint3D pointB_{};
   float north_ = 0.0F;
+  float pitch_ = 0.0F;
+  float roll_ = 0.0F;
   float azimuth_ = 0.0F;
   float elevation_ = 0.0F;
   float distance_ = 0.0F;

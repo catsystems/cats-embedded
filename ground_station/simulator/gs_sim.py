@@ -237,7 +237,8 @@ def defaults() -> dict[str, Any]:
              "info": {"linkQuality": 0, "rssi": 0, "snr": 0, "lastUpdateMs": 0, "updated": False}},
         ],
         "navigation": {"homeLatitude": 0.0, "homeLongitude": 0.0, "rocketLatitude": 0.0,
-                        "rocketLongitude": 0.0, "northRad": 0.0, "azimuthRad": 0.0, "distanceM": 0.0,
+                        "rocketLongitude": 0.0, "northRad": 0.0, "pitchRad": 0.0, "rollRad": 0.0,
+                        "azimuthRad": 0.0, "distanceM": 0.0,
                         "elevationRad": 0.0, "ax": 0.0, "ay": 0.0, "az": 1.0, "gx": 0.0, "gy": 0.0,
                         "gz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0, "calibrationPercentage": 0.0,
                         "calibrationState": 0, "updated": False},
@@ -288,6 +289,7 @@ class Simulator:
         self.screen = "logo"
         self.testing_state = "disclaimer"
         self.calibration_state = "idle"
+        self.sensor_view = "readings"
         self.settings_state = "list"
         self.menu_selection = 0
         self.settings_page = 0
@@ -479,7 +481,7 @@ class Simulator:
                     self.render("Data", "Flight logs")
             self.frame.text(12, 82, f"Selection: {self.data_selection}")
         elif self.screen == "sensors":
-            self.render("Sensors", self.calibration_state)
+            self.render("Sensors", self.calibration_state if self.calibration_state != "idle" else self.sensor_view)
         elif self.screen == "settings":
             title = f"Settings page {self.settings_page}"
             self.render(title, self.settings_state)
@@ -676,6 +678,7 @@ class Simulator:
         self.screen = "menu"
         self.testing_state = "disclaimer"
         self.calibration_state = "idle"
+        self.sensor_view = "readings"
         self.data_selection = 0
         self.data_statistics = False
         self.data_subview = "list"
@@ -697,6 +700,8 @@ class Simulator:
             self.emit("menu_selection", value=self.menu_selection)
         if "ok" in pressed or "center" in pressed:
             self.screen = MENU_SCREENS[self.menu_selection]
+            if self.screen == "sensors":
+                self.sensor_view = "readings"
             if self.screen == "data":
                 self.automatic_usb_share_pending = False
                 self.state["deviceStatus"]["usbStorageState"] = "firmware"
@@ -898,6 +903,12 @@ class Simulator:
 
     def sensors_step(self, pressed: set[str]) -> None:
         if self.calibration_state == "idle":
+            if "right" in pressed or "down" in pressed:
+                self.sensor_view = "orientation"
+                self.emit("sensor_view", value=1, text="orientation")
+            if "left" in pressed or "up" in pressed:
+                self.sensor_view = "readings"
+                self.emit("sensor_view", value=0, text="readings")
             if "ok" in pressed:
                 self.calibration_state = "prepare"
             if "back" in pressed:
@@ -909,6 +920,7 @@ class Simulator:
                 self.emit("calibration_started")
             if "back" in pressed:
                 self.calibration_state = "idle"
+                self.sensor_view = "readings"
         elif self.calibration_state == "calibrating":
             if "back" in pressed:
                 self.calibration_state = "idle"
@@ -919,6 +931,7 @@ class Simulator:
                 self.emit("calibration_completed")
         elif self.calibration_state == "concluded" and ({"ok", "back"} & pressed):
             self.calibration_state = "idle"
+            self.sensor_view = "readings"
             self.state["deviceStatus"]["usbStorageState"] = "firmware"
             self.automatic_usb_share_pending = bool(self.state["deviceStatus"].get("usb", False))
             self.emit("configuration_saved")
@@ -1173,6 +1186,7 @@ class Simulator:
             "activeScreen": self.screen,
             "testingState": self.testing_state,
             "calibrationState": self.calibration_state,
+            "sensorView": self.sensor_view,
             "settingsState": self.settings_state,
             "inputState": "held" if any(self.held.values()) else "idle",
             "menuSelection": self.menu_selection,
@@ -1307,7 +1321,7 @@ def deterministic_test(root: Path) -> int:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
     for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "testing-timeout.json",
-                          "settings.json", "replay.json",
+                          "sensors-orientation.json", "settings.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json"):
