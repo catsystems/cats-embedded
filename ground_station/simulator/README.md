@@ -48,7 +48,7 @@ On the Sensors screen, press Right or Down to open the compass/orientation
 view and Left or Up to return to the raw readings. Press A from either view to
 use the existing compass calibration flow.
 
-Settings > Other > Startup Animation defaults to ON. When switched OFF and
+Settings > Preferences > Startup Animation defaults to ON. When switched OFF and
 saved, Reset shows the legacy static CATS logo for two seconds instead.
 
 `fatfs-test` verifies that FatFs R0.16 can read and update an R0.13c storage
@@ -80,6 +80,6 @@ gaps that still need scenarios.
 
 USB mass storage is shared automatically whenever USB is connected and the
 recorder is idle. The firmware reclaims the filesystem before writing the
-first flight sample and shares it again after finalization. Settings > General
+first flight sample and shares it again after finalization. Settings > System
 > USB Drive shows the current state and can disconnect the drive manually.
 Simulate eject by setting `device.usbStorageState` back to `firmware`.

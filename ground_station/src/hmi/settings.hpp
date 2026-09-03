@@ -21,6 +21,8 @@ enum settings_button_action_e {
   BUTTON_ACTION_NONE = 0,
   BUTTON_ACTION_USB_STORAGE,
   BUTTON_ACTION_START_BOOTLOADER,
+  BUTTON_ACTION_SELF_TEST,
+  BUTTON_ACTION_VERSION,
 };
 
 struct settings_min_max_t {
@@ -63,7 +65,7 @@ const char* const unit_map[2] = {
 };
 
 const char* const logging_map[2] = {
-    "DOWN",
+    "LANDING",
     "NEVER",
 };
 
@@ -89,11 +91,14 @@ const lookup_table_entry_t lookup_tables[] = {
 };
 
 enum {
-  kSettingPages = 3,
+  SETTING_TELEMETRY = 0,
+  SETTING_PREFERENCES,
+  SETTING_SYSTEM,
+  kSettingPages,
 };
 
-const char* const settingPageName[kSettingPages] = {"General", "Telemetry", "Other"};
+const char* const settingPageName[kSettingPages] = {"Telemetry", "Preferences", "System"};
 
 extern const device_settings_t settingsTable[][4];
 
-const uint16_t settingsTableValueCount[kSettingPages] = {4, 4, 3};
+const uint16_t settingsTableValueCount[kSettingPages] = {4, 4, 4};

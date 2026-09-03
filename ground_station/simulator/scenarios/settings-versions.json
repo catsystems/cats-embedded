@@ -1,0 +1,142 @@
+{
+  "initial": {
+    "ready": true,
+    "links": [
+      {
+        "firmwareVersion": "1.1.3"
+      },
+      {
+        "firmwareVersion": "2.0.0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "assert": {
+        "telemetryVersion1": "1.1.3",
+        "telemetryVersion2": "2.0.0"
+      }
+    },
+    {
+      "press": "down"
+    },
+    {
+      "release": "down"
+    },
+    {
+      "press": "right"
+    },
+    {
+      "release": "right"
+    },
+    {
+      "press": "right"
+    },
+    {
+      "release": "right"
+    },
+    {
+      "press": "ok"
+    },
+    {
+      "release": "ok"
+    },
+    {
+      "press": "right"
+    },
+    {
+      "release": "right"
+    },
+    {
+      "press": "right"
+    },
+    {
+      "release": "right"
+    },
+    {
+      "press": "down"
+    },
+    {
+      "release": "down"
+    },
+    {
+      "assert": {
+        "telemetryVersion1": "1.1.3",
+        "telemetryVersion2": "2.0.0",
+        "settingsSelection": 0,
+        "settingsPage": 2
+      }
+    },
+    {
+      "set": {
+        "link1.firmwareVersion": "",
+        "link2.firmwareVersion": "2.0.1",
+        "configuration.dualReceiver": true
+      }
+    },
+    {
+      "press": "ok"
+    },
+    {
+      "release": "ok"
+    },
+    {
+      "advance": 4000
+    },
+    {
+      "assert": {
+        "telemetryVersion1": "1.1.3",
+        "telemetryVersion2": "2.0.0"
+      }
+    },
+    {
+      "press": "down"
+    },
+    {
+      "release": "down"
+    },
+    {
+      "press": "up"
+    },
+    {
+      "release": "up"
+    },
+    {
+      "assert": {
+        "telemetryVersion1": "1.1.3",
+        "telemetryVersion2": "2.0.0",
+        "settingsSelection": 0,
+        "settingsPage": 2
+      }
+    },
+    {
+      "press": "up"
+    },
+    {
+      "release": "up"
+    },
+    {
+      "assert": {
+        "settingsSelection": -1,
+        "settingsPage": 2
+      }
+    },
+    {
+      "press": "back"
+    },
+    {
+      "release": "back"
+    },
+    {
+      "press": "back"
+    },
+    {
+      "release": "back"
+    },
+    {
+      "assert": {
+        "activeScreen": "menu"
+      }
+    }
+  ]
+}

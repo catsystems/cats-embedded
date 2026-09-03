@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "hmi/startup_intro.hpp"
+#include "self_test.hpp"
 
 #include "clock.hpp"
 
@@ -43,6 +44,8 @@ struct LinkSnapshot {
   LinkInfoSnapshot info;
   bool enabled = true;
   bool connected = false;
+  std::string firmwareVersion;
+  uint32_t versionReplies = 0;
 };
 
 struct NavigationSnapshot {
@@ -81,6 +84,11 @@ struct DeviceStatusSnapshot {
   bool logging = false;
   bool recorderFault = false;
   std::string usbStorageState = "firmware";
+  uint8_t selfTestMissingReceiver = 0;
+  bool selfTestGnss = true;
+  bool selfTestSensorFailure = false;
+  bool selfTestStorageFailure = false;
+  uint8_t selfTestLq = 90;
 };
 
 struct GsConfigSnapshot {
@@ -166,6 +174,7 @@ class ITelemetryLink {
   virtual void disable() = 0;
   virtual void setLinkPhrase(const std::string& phrase) = 0;
   virtual void setTestingPhrase(const std::string& phrase) = 0;
+  virtual void requestVersion() = 0;
 };
 
 class INavigation {
@@ -209,6 +218,7 @@ struct HmiSnapshot {
   std::string testingState = "disclaimer";
   std::string calibrationState = "idle";
   std::string settingsState = "list";
+  std::array<std::string, 2> settingsVersions{};
   std::string inputState = "idle";
   std::string liveView = "gnss";
   std::string sensorView = "readings";
@@ -243,6 +253,8 @@ struct HmiSnapshot {
   RecoverySolutionSnapshot recoverySolution;
   std::vector<PlatformAction> actions;
   uint32_t framebufferRevision = 0;
+  SelfTest selfTest;
+  int16_t selfTestResultIndex = 0;
 };
 
 class IHmiRenderer {
@@ -265,7 +277,7 @@ class HmiController {
   void clearActions() { actions_.clear(); }
 
  private:
-  enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader, UsbStorage };
+  enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader, UsbStorage, SelfTest };
   enum class TestingState : uint8_t { Disclaimer, CanStart, CannotStart, Waiting, Failed, Started, ConfirmEvent };
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
   enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
@@ -286,6 +298,8 @@ class HmiController {
   void dataStep(uint64_t nowMs);
   void sensorsStep(uint64_t nowMs);
   void settingsStep(uint64_t nowMs);
+  void selfTestStep(uint64_t nowMs);
+  void selfTestRadio(SelfTest::RadioConfiguration configuration);
   void updateRecoveryLocations();
   bool showRecoveryLocation(size_t linkIndex);
   void emit(const char* type, uint8_t link = 0, int32_t value = 0, const std::string& text = {});
@@ -334,10 +348,19 @@ class HmiController {
   bool liveDownrange_ = false;
   bool sensorOrientation_ = false;
   bool keyboardActive_ = false;
+  uint64_t versionLastRequest_ = 0;
+  std::array<bool, 2> versionReadsComplete_{};
+  std::array<std::string, 2> settingsVersions_{};
   int16_t keyboardSelection_ = 0;
   bool keyboardUppercase_ = false;
   bool usbStorageSession_ = false;
   bool usbPreviouslyConnected_ = false;
   bool automaticUsbSharePending_ = false;
   std::string previousRecorderState_ = "idle";
+  SelfTest selfTest_{};
+  SelfTestInput selfTestInput_{};
+  int16_t selfTestResultIndex_ = 0;
+  uint64_t selfTestLastPacket_ = 0;
+  uint64_t selfTestLastFix_ = 0;
+  SelfTest::RadioConfiguration selfTestRadio_ = SelfTest::RadioConfiguration::Restore;
 };

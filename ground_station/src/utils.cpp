@@ -16,6 +16,8 @@
 #include "systemParser.hpp"
 #include "telemetry/telemetry.hpp"
 
+#include <ArduinoJson.h>
+
 // clang-format off: diskio.h uses the FatFs types declared by ff.h.
 // NOLINTNEXTLINE(llvm-include-order)
 #include "ff.h"
@@ -58,7 +60,58 @@ USBMSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
 FatFileSystem fatfs;
+extern Telemetry link1;
+extern Telemetry link2;
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+
+// Wait for startup reads without holding the storage mutex, so recording can cancel USB preparation.
+static bool readCachedVersions(JsonDocument &versions) {
+  Telemetry *links[] = {&link1, &link2};
+  constexpr const char *keys[] = {"telemetry_1", "telemetry_2"};
+  versions["ground_station"] = FIRMWARE_VERSION;
+  versions["telemetry_1"] = nullptr;
+  versions["telemetry_2"] = nullptr;
+  while (usbStorageState == UsbStorageState::Preparing && usbConnectionState == UsbConnectionState::Active) {
+    if (link1.versionReadComplete() && link2.versionReadComplete()) {
+      for (size_t i = 0; i < 2; ++i) {
+        const auto observation = links[i]->diagnostics();
+        if (observation.versionReplies != 0) versions[keys[i]] = JsonString(observation.version);
+      }
+      return true;
+    }
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+  return false;
+}
+
+// Called with storageAccessMutex held, before handing the volume to USB.
+static bool refreshVersionFile(const JsonDocument &versions) {
+  constexpr const char *path = "/version.json";
+  String version;
+  serializeJsonPretty(versions, version);
+  version += '\n';
+  auto file = fatfs.open(path, O_RDONLY);
+  bool matches = false;
+  bool readOnly = false;
+  if (file) {
+    matches = file.size() == version.length();
+    for (size_t i = 0; matches && i < version.length(); ++i) matches = file.read() == version[i];
+    readOnly = (file.attrib() & FS_ATTRIB_READ_ONLY) != 0;
+    file.close();
+  }
+  if (!matches) {
+    if (readOnly && !fatfs.attrib(path, 0)) return false;
+    file = fatfs.open(path, O_WRONLY | O_CREAT | O_TRUNC);
+    if (!file) return false;
+    const bool written = file.write(version.c_str(), version.length()) == version.length();
+    const bool closed = file.close();  // Flush the file before setting read-only.
+    if (!written || !closed) return false;
+    readOnly = false;
+  }
+  if (!readOnly && !fatfs.attrib(path, FS_ATTRIB_READ_ONLY)) return false;
+  constexpr const char *oldPath = "/version.txt";
+  return !fatfs.exists(oldPath) || (fatfs.attrib(oldPath, 0) && fatfs.remove(oldPath));
+}
 
 bool Utils::begin(uint32_t watchdogTimeout, const char *labelName, bool forceFormat) {
   bool status = true;
@@ -223,23 +276,27 @@ void Utils::update(void *pvParameter) {
     if (usbStorageState == UsbStorageState::Preparing) {
       if (currentState != UsbConnectionState::Active || storageAccessMutex == nullptr) {
         usbStorageState = UsbStorageState::Reclaiming;
-      } else if (xSemaphoreTake(storageAccessMutex, portMAX_DELAY) == pdTRUE) {
-        // FatFS::end() flushes its own sector cache into the flash driver's
-        // cache.  Sync the flash only after that flush, before exposing raw
-        // sectors to the host.
-        const bool unmounted = fatfs.end() != nullptr;
-        filesystemMounted = false;
-        const bool synced = unmounted && flash.syncBlocks();
-        if (synced) {
-          usbStorageState = UsbStorageState::HostOwned;
-          ref->mscReady = true;
-          usb_msc.mediaPresent(true);
-        } else {
-          // Reclaiming attempts a clean remount so a failed handoff does not
-          // leave firmware storage permanently unavailable.
-          usbStorageState = UsbStorageState::Reclaiming;
+      } else {
+        JsonDocument versions;
+        if (readCachedVersions(versions) && xSemaphoreTake(storageAccessMutex, portMAX_DELAY) == pdTRUE) {
+          if (usbStorageState == UsbStorageState::Preparing && usbConnectionState == UsbConnectionState::Active) {
+            if (!refreshVersionFile(versions)) console.warning.println("[UTILS] Could not refresh version.json");
+            // Flush and unmount before exposing raw sectors to the host.
+            const bool unmounted = fatfs.end() != nullptr;
+            filesystemMounted = false;
+            const bool synced = unmounted && flash.syncBlocks();
+            if (synced && usbStorageState == UsbStorageState::Preparing &&
+                usbConnectionState == UsbConnectionState::Active) {
+              usbStorageState = UsbStorageState::HostOwned;
+              ref->mscReady = true;
+              usb_msc.mediaPresent(true);
+            } else {
+              usbStorageState = UsbStorageState::Reclaiming;
+            }
+          }
+          xSemaphoreGive(storageAccessMutex);
         }
-        xSemaphoreGive(storageAccessMutex);
+        if (usbStorageState == UsbStorageState::Preparing) usbStorageState = UsbStorageState::Reclaiming;
       }
     }
 
@@ -491,7 +548,10 @@ static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t
     return -1;
   }
   const uint64_t endAddress = static_cast<uint64_t>(lba) * MSC_BLOCK_SIZE + offset + bufsize;
-  const bool read = endAddress <= flash.size() && msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
+  // Ownership can change while this callback waits for the mutex. A request
+  // queued by the host must not access flash after firmware has reclaimed it.
+  const bool read = usbStorageState == UsbStorageState::HostOwned && endAddress <= flash.size() &&
+                    msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
   xSemaphoreGive(storageAccessMutex);
   return read ? static_cast<int32_t>(bufsize) : -1;
 }
@@ -503,7 +563,8 @@ static int32_t coreMscWrite(uint32_t lba, uint32_t offset, uint8_t *buffer, uint
     return -1;
   }
   const uint64_t endAddress = static_cast<uint64_t>(lba) * MSC_BLOCK_SIZE + offset + bufsize;
-  const bool written = endAddress <= flash.size() && msc_write_range(lba, offset, buffer, bufsize);
+  const bool written = usbStorageState == UsbStorageState::HostOwned && endAddress <= flash.size() &&
+                       msc_write_range(lba, offset, buffer, bufsize);
   xSemaphoreGive(storageAccessMutex);
   return written ? static_cast<int32_t>(bufsize) : -1;
 }
@@ -515,7 +576,7 @@ static void msc_flush_cb() {
       xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return;
   }
-  flash.syncBlocks();
+  if (usbStorageState == UsbStorageState::HostOwned) flash.syncBlocks();
   xSemaphoreGive(storageAccessMutex);
   updated = true;
 }

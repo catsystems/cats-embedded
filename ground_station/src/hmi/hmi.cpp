@@ -84,6 +84,10 @@ void Hmi::fsm() {
       usbStorage();
       break;
 
+    case SELF_TEST:
+      selfTestStep();
+      break;
+
     default:
       break;
   }
@@ -742,6 +746,7 @@ void Hmi::sensors() {
 /* SETTINGS */
 
 void Hmi::initSettings() {
+  versionsSelected = false;
   settingSubMenu = 0;
   settingIndex = -1;
   window.initSettings(settingSubMenu);
@@ -848,7 +853,8 @@ void Hmi::settings() {
           break;
         }
         case STRING: {
-          if (okButton.wasPressed()) {
+          if (okButton.wasPressed() &&
+              (data_ptr != systemConfig.config.linkPhrase2 || systemConfig.config.receiverMode != SINGLE)) {
             memcpy(keyboardString, static_cast<char *>(data_ptr), kMaxPhraseLen);
             keyboardString[kMaxPhraseLen] = '\0';
 
@@ -867,7 +873,11 @@ void Hmi::settings() {
                 window.Bootloader();
                 Utils::startBootloader();
                 return;
+              case BUTTON_ACTION_SELF_TEST:
+                initSelfTest();
+                return;
               case BUTTON_ACTION_NONE:
+              case BUTTON_ACTION_VERSION:
                 break;
             }
           }
@@ -911,6 +921,33 @@ void Hmi::settings() {
       }
       window.initMenu(menuIndex);
     }
+  }
+  if (state == SETTINGS && !keyboardActive && settingIndex >= 0 &&
+      settingsTable[settingSubMenu][settingIndex].type == BUTTON &&
+      settingsTable[settingSubMenu][settingIndex].config.buttonAction == BUTTON_ACTION_VERSION) {
+    updateSettingVersions();
+  } else {
+    versionsSelected = false;
+  }
+}
+
+void Hmi::updateSettingVersions() {
+  Telemetry *links[] = {&link1, &link2};
+  bool redraw = !versionsSelected;
+  versionsSelected = true;
+  for (size_t i = 0; i < 2; ++i) {
+    const auto observation = links[i]->diagnostics();
+    const char *text = observation.versionReplies != 0
+                           ? observation.version
+                           : (links[i]->versionReadComplete() ? "No response" : "Reading...");
+    if (std::strcmp(displayedVersions[i], text) != 0) {
+      std::snprintf(displayedVersions[i], sizeof(displayedVersions[i]), "%s", text);
+      redraw = true;
+    }
+  }
+  if (redraw) {
+    window.settingsVersions(displayedVersions[0], displayedVersions[1]);
+    window.refresh();
   }
 }
 
@@ -1005,6 +1042,7 @@ void Hmi::usbStorage() {
 }
 
 void Hmi::updateAutomaticUsbStorage(const RecorderStatus &recorderStatus) {
+  if (state == SELF_TEST) return;
   const bool connected = Utils::isConnected();
   if (!connected) {
     usbPreviouslyConnected = false;
@@ -1083,7 +1121,7 @@ void Hmi::update(void *pvParameter) {
       // ref->window.updateBar(link1.data.ts());
     }
 
-    if (millis() - barUpdate >= 1000) {
+    if (ref->state != SELF_TEST && millis() - barUpdate >= 1000) {
       barUpdate = millis();
       const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
       if (!ref->isLogging && Utils::isFilesystemAvailable()) {

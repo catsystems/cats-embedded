@@ -5,6 +5,7 @@
 #pragma once
 
 #include "console.hpp"
+#include "self_test.hpp"
 #include "utils.hpp"
 
 // clang-format off
@@ -14,6 +15,7 @@
 #include <Wire.h>
 // clang-format on
 
+#include <atomic>
 #include <cmath>
 #include <memory>
 
@@ -50,6 +52,8 @@ class EarthPoint3D {
 class Navigation {
  public:
   bool begin();
+  void enableSelfTestSampling(bool enabled) { selfTestSampling = enabled; }
+  SelfTestSensorObservation selfTestSensors() const;
 
   void setPointA(EarthPoint3D point) { pointA = point; }
   void setPointA(float lat, float lon, float height = 0) { pointA = EarthPoint3D(lat, lon, height); }
@@ -142,6 +146,10 @@ class Navigation {
 
  private:
   bool initialized = false;
+  std::atomic<bool> selfTestSampling{false};
+  bool imuDetected{false};
+  mutable portMUX_TYPE sensorMux = portMUX_INITIALIZER_UNLOCKED;
+  SelfTestSensorObservation sensorObservation{};
   bool updated = false;
   calibration_state_e calibration = INV_CALIB;
 

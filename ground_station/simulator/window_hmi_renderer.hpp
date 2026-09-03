@@ -21,6 +21,7 @@ class WindowHmiRenderer final : public IHmiRenderer {
 
   SimulatorDisplay& display_;
   Window window_;
+  bool selfTestWasRendered_{false};
   Navigation navigation_;
   TelemetryData telemetry_[2]{};
   TelemetryInfo linkInfo_[2]{};

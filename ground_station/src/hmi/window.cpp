@@ -254,6 +254,10 @@ void Window::drawCentreString(String &buf, int16_t x, int16_t y) {
 }
 
 void Window::initBar() {
+  // Full-screen modes draw over this area. Rebuild both its background and
+  // cached values when returning to the normal status bar.
+  display.fillRect(0, 0, 400, 19, WHITE);
+  barNeedsRedraw = true;
   // Memory
   display.setFont(nullptr);
   display.drawBitmap(5, 1, bar_memory, 16, 16, BLACK);
@@ -270,7 +274,7 @@ void Window::initBar() {
 void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool location, bool time, uint32_t free_memory,
                        bool recorderFault) {
   // Logging
-  if (logging != oldBarLoggingStatus || recorderFault != oldBarRecorderFault) {
+  if (barNeedsRedraw || logging != oldBarLoggingStatus || recorderFault != oldBarRecorderFault) {
     display.fillRect(74, 0, 19, 18, WHITE);
     oldBarLoggingStatus = logging;
     oldBarRecorderFault = recorderFault;
@@ -291,7 +295,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   // Memory Usage
-  if (free_memory != oldBarFreeMemory) {
+  if (barNeedsRedraw || free_memory != oldBarFreeMemory) {
     display.setFont(nullptr);
     display.setTextSize(2);
 
@@ -307,7 +311,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
     drawCentreString(t, 50, 2);
   }
 
-  if ((clock.minute() != oldBarMinute || clock.hour() != oldBarHour) && time) {
+  if ((barNeedsRedraw || clock.minute() != oldBarMinute || clock.hour() != oldBarHour) && time) {
     display.setFont(nullptr);
     display.setTextSize(2);
 
@@ -335,7 +339,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   // USB
-  if (usb != oldBarUsbStatus) {
+  if (barNeedsRedraw || usb != oldBarUsbStatus) {
     oldBarUsbStatus = usb;
 
     display.fillRect(373, 5, 6, 8, WHITE);
@@ -360,6 +364,7 @@ void Window::updateBar(float batteryVoltage, bool usb, bool logging, bool locati
   }
 
   barBlinkStatus = !barBlinkStatus;
+  barNeedsRedraw = false;
 
   surface.present();
 }
@@ -1709,8 +1714,13 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *set
                            static_cast<int16_t>(y + 22), color);
     }
   } else if (setting->type == STRING) {
-    display.setFont(&FreeMonoBold12pt7b);
-    drawCentreString(static_cast<const char *>(setting->dataPtr), 285, y);
+    if (setting->dataPtr == systemConfig.config.linkPhrase2 && systemConfig.config.receiverMode == SINGLE) {
+      display.setFont(&FreeSans9pt7b);
+      drawCentreString("Dual mode only", 285, y);
+    } else {
+      display.setFont(&FreeMonoBold12pt7b);
+      drawCentreString(static_cast<const char *>(setting->dataPtr), 285, y);
+    }
     display.setFont(&FreeSans12pt7b);
   } else if (setting->type == NUMBER) {
     char buffer[8];
@@ -1748,6 +1758,13 @@ void Window::updateSettings(int16_t index) {
   }
 
   if (index >= 0) {
+    if (settingsTable[subMenuSettingIndex][index].dataPtr == &systemConfig.config.receiverMode) {
+      for (int16_t row = 0; row < settingsTableValueCount[subMenuSettingIndex]; ++row) {
+        if (settingsTable[subMenuSettingIndex][row].dataPtr == systemConfig.config.linkPhrase2) {
+          highlightSetting(row, BLACK, false);
+        }
+      }
+    }
     highlightSetting(index, WHITE, true);
   } else {
     drawSettingsTriangles(subMenuSettingIndex, WHITE);
@@ -1755,6 +1772,10 @@ void Window::updateSettings(int16_t index) {
   }
 
   oldSettingsIndex = index;
+  // The HMI fills in cached versions before presenting this selection.
+  if (index >= 0 && settingsTable[subMenuSettingIndex][index].type == BUTTON &&
+      settingsTable[subMenuSettingIndex][index].config.buttonAction == BUTTON_ACTION_VERSION)
+    return;
   surface.present();
 }
 
@@ -1779,6 +1800,11 @@ void Window::highlightSetting(int16_t index, uint16_t color, bool updateDescript
     return;
   }
 
+  const auto &setting = settingsTable[subMenuSettingIndex][index];
+  if (setting.type == BUTTON && setting.config.buttonAction == BUTTON_ACTION_VERSION) {
+    return;
+  }
+
   display.fillRect(0, 178, 400, 62, WHITE);
   display.setFont(&FreeSans9pt7b);
   display.setTextColor(BLACK);
@@ -1786,6 +1812,22 @@ void Window::highlightSetting(int16_t index, uint16_t color, bool updateDescript
   display.print(settingsTable[subMenuSettingIndex][index].description1);
   display.setCursor(10, 215);
   display.print(settingsTable[subMenuSettingIndex][index].description2);
+}
+
+void Window::settingsVersions(const char *telemetry1, const char *telemetry2) {
+  display.fillRect(0, 178, 400, 62, WHITE);
+  display.setFont(&FreeSans9pt7b);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  const char *labels[] = {"Ground Station:", "Telemetry 1:", "Telemetry 2:"};
+  const char *versions[] = {FIRMWARE_VERSION, telemetry1, telemetry2};
+  for (int16_t row = 0; row < 3; ++row) {
+    const auto y = static_cast<int16_t>(193 + row * 20);
+    display.setCursor(10, y);
+    display.print(labels[row]);
+    display.setCursor(165, y);
+    display.print(versions[row]);
+  }
 }
 
 const uint8_t kNumKeyboardChars = 38;
