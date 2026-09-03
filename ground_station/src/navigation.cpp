@@ -9,6 +9,32 @@
 
 constexpr uint8_t NAVIGATION_TASK_FREQUENCY = 50;
 
+namespace {
+// The compass library intentionally remains unchanged. Factory diagnostics use
+// checked reads on the navigation task, the sole owner of the sensor bus.
+bool readSensorRegisters(uint8_t address, uint8_t reg, uint8_t *bytes, uint8_t count) {
+  Wire.beginTransmission(address);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom(address, count) != count) return false;
+  for (uint8_t i = 0; i < count; ++i) bytes[i] = static_cast<uint8_t>(Wire.read());
+  return true;
+}
+uint8_t detectSelfTestCompass() {
+  uint8_t id = 0;
+  if (readSensorRegisters(0x0d, 0x0d, &id, 1) && id == 0xff) return 0x0d;
+  if (readSensorRegisters(0x2c, 0x00, &id, 1) && id == 0x80) return 0x2c;
+  return 0;
+}
+}  // namespace
+
+SelfTestSensorObservation Navigation::selfTestSensors() const {
+  portENTER_CRITICAL(&sensorMux);
+  const auto copy = sensorObservation;
+  portEXIT_CRITICAL(&sensorMux);
+  return copy;
+}
+
 bool Navigation::begin() {
   initialized = true;
 
@@ -16,7 +42,8 @@ bool Navigation::begin() {
 
   compass->init();
 
-  if (imu.begin(Wire, 0x6A) != 1) {
+  imuDetected = imu.begin(Wire, 0x6A) == 1;
+  if (!imuDetected) {
     console.warning.println("IMU init failed!");
   }
 
@@ -161,18 +188,53 @@ void Navigation::navigationTask(void *pvParameter) {
   TickType_t task_last_tick = xTaskGetTickCount();
 
   uint32_t count = 0;
+  bool wasSampling = false;
+  uint8_t compassAddress = 0;
+  uint32_t sensorSequence = 0;
 
   ref->get_saved_calib();
   ref->initFibonacciSphere();
 
   while (ref->initialized) {
+    const bool sampling = ref->selfTestSampling.load();
+    SelfTestSensorObservation sample{};
+    if (sampling) {
+      if (!wasSampling) compassAddress = detectSelfTestCompass();
+      sample.imuDetected = ref->imuDetected;
+      sample.magnetometer = compassAddress;
+      sample.accelerationFresh = ref->imu.accelerationAvailable() != 0;
+      sample.gyroFresh = ref->imu.gyroscopeAvailable() != 0;
+      uint8_t bytes[6]{};
+      sample.magnetometerFresh =
+          compassAddress != 0 &&
+          readSensorRegisters(compassAddress, compassAddress == 0x0d ? 0x00 : 0x01, bytes, sizeof(bytes));
+      if (sample.magnetometerFresh) {
+        for (size_t i = 0; i < 3; ++i) {
+          sample.magnetic[i] = static_cast<float>(static_cast<int16_t>(bytes[i * 2] | (bytes[i * 2 + 1] << 8U)));
+        }
+      }
+      sample.readError = !sample.magnetometerFresh;
+    }
+    wasSampling = sampling;
     ref->compass->read();
 
     ref->compass->readRaw(ref->raw_m);
     ref->transform(ref->raw_m, ref->m);
 
-    ref->imu.readAcceleration(ref->ax, ref->ay, ref->az);
-    ref->imu.readGyroscope(ref->gx, ref->gy, ref->gz);
+    const bool accelerationRead = ref->imu.readAcceleration(ref->ax, ref->ay, ref->az) != 0;
+    const bool gyroRead = ref->imu.readGyroscope(ref->gx, ref->gy, ref->gz) != 0;
+    if (sampling) {
+      sample.accelerationFresh &= accelerationRead;
+      sample.gyroFresh &= gyroRead;
+      sample.readError |= !accelerationRead || !gyroRead;
+      sample.acceleration = {ref->ax, ref->ay, ref->az};
+      sample.gyro = {ref->gx, ref->gy, ref->gz};
+      sample.sequence = ++sensorSequence;
+      sample.sampledAtMs = millis();
+      portENTER_CRITICAL(&ref->sensorMux);
+      ref->sensorObservation = sample;
+      portEXIT_CRITICAL(&ref->sensorMux);
+    }
 
     ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[0], ref->m[1], -ref->m[2]);
 

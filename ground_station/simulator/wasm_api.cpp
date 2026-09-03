@@ -36,11 +36,18 @@ class Link final : public ITelemetryLink {
   void disable() override { value.enabled = false; }
   void setLinkPhrase(const std::string& phrase) override { linkPhrase = phrase; }
   void setTestingPhrase(const std::string& phrase) override { testingPhrase = phrase; }
+  void requestVersion() override {
+    if (!versionReply.empty()) {
+      value.firmwareVersion = versionReply;
+      ++value.versionReplies;
+    }
+  }
 
   LinkSnapshot value{};
   uint8_t lastEvent = 0;
   std::string linkPhrase;
   std::string testingPhrase;
+  std::string versionReply = "1.1.3";
 };
 
 class Navigation final : public INavigation {
@@ -435,6 +442,9 @@ bool stringField(const char* json, const char* key, std::string& output) {
 void updateLink(Link& link, const char* json) {
   int32_t integer = 0;
   bool boolean = false;
+  if (stringField(json, "firmwareVersion", link.versionReply)) {
+    link.versionReply.resize(std::min<size_t>(16, link.versionReply.size()));
+  }
   if (numberField(json, "state", integer)) link.value.telemetry.state = static_cast<uint8_t>(integer);
   if (numberField(json, "errors", integer)) link.value.telemetry.errors = static_cast<uint8_t>(integer);
   if (numberField(json, "altitudeM", integer)) link.value.telemetry.altitudeM = integer;
@@ -471,6 +481,19 @@ std::string quote(const std::string& value) {
 void rebuildSnapshot() {
   const HmiSnapshot state = controller.snapshot();
   snapshot = "{\"activeScreen\":" + quote(state.screen) +
+             ",\"selfTestPhase\":" + std::to_string(static_cast<unsigned>(state.selfTest.phase)) +
+             ",\"selfTestWaiting\":" + std::string(state.selfTest.awaitingConfirmation ? "true" : "false") +
+             ",\"selfTestResult\":" + quote(SelfTest::resultName(state.selfTest.overall())) +
+             ",\"selfTestRadioStage\":" + std::to_string(state.selfTest.radioStage) +
+             ",\"selfTestButtons\":" + std::to_string(state.selfTest.completedButtons) +
+             ",\"selfTestChecks\":[" + [&state]() {
+               std::string output;
+               for (const auto& result : state.selfTest.results) {
+                 if (!output.empty()) output += ',';
+                 output += quote(SelfTest::resultName(result.result));
+               }
+               return output;
+             }() + "]" +
              ",\"liveView\":" + quote(state.liveView) +
              ",\"sensorView\":" + quote(state.sensorView) +
              ",\"testingState\":" + quote(state.testingState) +
@@ -479,6 +502,8 @@ void rebuildSnapshot() {
              ",\"keyboardUppercase\":" + std::string(state.keyboardUppercase ? "true" : "false") +
              ",\"calibrationState\":" + quote(state.calibrationState) +
              ",\"settingsState\":" + quote(state.settingsState) +
+             ",\"telemetryVersion1\":" + quote(state.settingsVersions[0]) +
+             ",\"telemetryVersion2\":" + quote(state.settingsVersions[1]) +
              ",\"dataStatistics\":" + std::string(state.dataStatistics ? "true" : "false") +
              ",\"currentDataSubview\":" + quote(state.currentDataSubview) +
              ",\"dataSelection\":" + std::to_string(state.dataSelection) +
@@ -558,6 +583,8 @@ void resetState(bool skipStartup, bool preserveConfiguration = false) {
   device = Device{};
   controller.start();
   if (skipStartup) {
+    virtualClock.now = 20;
+    step();
     virtualClock.now = StartupIntro::kDurationMs;
     step();
   }
@@ -649,6 +676,11 @@ void gs_set_device_status_json(const char* json) {
   if (!device.value.usb && device.value.usbStorageState == "host") device.value.usbStorageState = "firmware";
   (void)stringField(json, "usbStorageState", device.value.usbStorageState);
   if (booleanField(json, "gnss", boolean)) device.value.gnss = boolean;
+  if (booleanField(json, "selfTestGnss", boolean)) device.value.selfTestGnss = boolean;
+  if (booleanField(json, "selfTestSensorFailure", boolean)) device.value.selfTestSensorFailure = boolean;
+  if (booleanField(json, "selfTestStorageFailure", boolean)) device.value.selfTestStorageFailure = boolean;
+  if (numberField(json, "selfTestMissingReceiver", integer)) device.value.selfTestMissingReceiver = static_cast<uint8_t>(integer);
+  if (numberField(json, "selfTestLq", integer)) device.value.selfTestLq = static_cast<uint8_t>(integer);
   if (booleanField(json, "recorderWriteFailure", boolean)) logs.failWrite = boolean;
   if (booleanField(json, "deleteFailure", boolean)) logs.failDelete = boolean;
   if (booleanField(json, "finalizeFailure", boolean)) logs.failFinalize = boolean;
@@ -663,6 +695,9 @@ void gs_set_configuration_json(const char* json) {
   if (booleanField(json, "startupAnimation", boolean)) configStore.value.startupAnimation = boolean;
   if (booleanField(json, "dualReceiver", boolean)) configStore.value.dualReceiver = boolean;
   if (booleanField(json, "imperialUnits", boolean)) configStore.value.imperialUnits = boolean;
+  (void)stringField(json, "linkPhrase1", configStore.value.linkPhrase1);
+  (void)stringField(json, "linkPhrase2", configStore.value.linkPhrase2);
+  (void)stringField(json, "testingPhrase", configStore.value.testingPhrase);
   rebuildSnapshot();
 }
 void gs_set_logs_json(const char* json) {

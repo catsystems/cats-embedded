@@ -110,11 +110,11 @@
     {
       "id": "usb-storage",
       "label": "USB Drive active",
-      "description": "Connects USB while idle, automatically shares the logs, and opens Settings > General > USB Drive. Press B to return without disconnecting, or press A to return storage to the Ground Station.",
+      "description": "Connects USB while idle, automatically shares the logs, and opens Settings > System > USB Drive. Press B to return without disconnecting, or press A to return storage to the Ground Station.",
       "operations": [
         {"deviceStatus": {"usb": true, "usbStorageState": "firmware"}},
         {"tap": "right"}, {"tap": "right"}, {"tap": "down"}, {"tap": "ok"},
-        {"tap": "down"}, {"tap": "down"}, {"tap": "down"}, {"tap": "ok"}
+        {"tap": "right"}, {"tap": "right"}, {"tap": "down"}, {"tap": "down"}, {"tap": "ok"}
       ]
     },
     {

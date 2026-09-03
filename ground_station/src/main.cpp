@@ -82,14 +82,16 @@ void loop() {
   const float link2Lat = static_cast<float>(link2Data.lat) / 10000.0F;
   const float link2Lon = static_cast<float>(link2Data.lon) / 10000.0F;
 
-  // In single mode, both antennas track the same rocket
-  if (systemConfig.config.receiverMode == SINGLE) {
+  // Self-test exercises this same selection path with a temporary runtime mode.
+  // The stored configuration remains untouched.
+  if (hmi.receiverMode() == SINGLE) {
     const bool link1GpsValid = (link1Lat != 0) && (link1Lon != 0);
     const bool link2GpsValid = (link2Lat != 0) && (link2Lon != 0);
     // Check if data from link 1 is newer than link 2
     if (link1.data.getLastUpdateTime() > link2.data.getLastUpdateTime()) {
       // Stream data from Link 1
       if (link1LastTs != link1Data.timestamp) {
+        hmi.noteCombinedTelemetry();
         Utils::streamUsb(&link1, 1);
       }
 
@@ -102,6 +104,7 @@ void loop() {
     } else {
       // Stream data from Link 2
       if (link2LastTs != link2Data.timestamp) {
+        hmi.noteCombinedTelemetry();
         Utils::streamUsb(&link2, 2);
       }
 

@@ -30,7 +30,9 @@ enum transmission_mode_e {
 #define CMD_RX   0x31
 #define CMD_INFO 0x32
 
-#define CMD_GNSS_LOC  0x40
-#define CMD_GNSS_TIME 0x41
-#define CMD_GNSS_INFO 0x42
+#define CMD_GNSS_LOC     0x40
+#define CMD_GNSS_TIME    0x41
+#define CMD_GNSS_INFO    0x42
+#define CMD_TEMP_INFO    0x50
+#define CMD_VERSION_INFO 0x60
 // NOLINTEND(cppcoreguidelines-macro-usage)

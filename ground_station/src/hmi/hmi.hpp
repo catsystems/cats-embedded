@@ -26,6 +26,11 @@ class Hmi {
         window(display, systemConfig, clock) {}
 
   void begin();
+  ReceiverTelemetryMode_e receiverMode() const {
+    const int8_t mode = selfTestMode.load();
+    return mode < 0 ? systemConfig.config.receiverMode : (mode == 0 ? SINGLE : DUAL);
+  }
+  void noteCombinedTelemetry() { ++combinedTelemetryPackets; }
 
  private:
   static constexpr uint8_t kUpButtonPin = 3;
@@ -42,6 +47,7 @@ class Hmi {
     SENSORS = 5,
     SETTINGS = 6,
     USB_STORAGE = 7,
+    SELF_TEST = 8,
   };
 
   enum TestingState {
@@ -103,10 +109,27 @@ class Hmi {
   void sensors();
   void initSettings();
   void settings();
+  void updateSettingVersions();
+  bool versionsSelected{false};
+  char displayedVersions[2][17]{};
   void initUsbStorage();
   void usbStorage();
   void updateAutomaticUsbStorage(const RecorderStatus& recorderStatus);
   bool claimStorageForFirmware();
+  void initSelfTest();
+  void startSelfTest();
+  void selfTestStep();
+  SelfTestInput selfTestInput();
+  void applySelfTestRadio(SelfTest::RadioConfiguration configuration);
+  bool testStorage();
+  void leaveSelfTest();
+  SelfTest selfTest{};
+  std::atomic<int8_t> selfTestMode{-1};
+  std::atomic<uint32_t> combinedTelemetryPackets{0};
+  uint32_t selfTestLastDraw{0};
+  uint32_t selfTestBackSince{0};
+  int16_t selfTestResultIndex{0};
+  bool selfTestControlsOk{true};
 
   bool initialized = false;
   bool isLogging = false;

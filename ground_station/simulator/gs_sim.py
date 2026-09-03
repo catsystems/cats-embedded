@@ -38,7 +38,7 @@ LONG_PRESS_MS = 500
 REPEAT_MS = 100
 BUTTONS = ("up", "down", "left", "right", "center", "ok", "back")
 MENU_SCREENS = ("live", "recovery", "testing", "data", "sensors", "settings")
-SETTING_COUNTS = (4, 4, 3)
+SETTING_COUNTS = (4, 4, 4)
 CSV_HEADER = "link,ts[deciseconds],state,errors,lat[deg/10000],lon[deg/10000],altitude[m],velocity[m/s],battery[decivolts],pyro1,pyro2\n"
 
 assert BOOT_MS <= MAXIMUM_BOOT_MS
@@ -295,6 +295,11 @@ class Simulator:
         self.menu_selection = 0
         self.settings_page = 0
         self.settings_selection = -1
+        self.version_last_request = -1000
+        self.settings_versions = ["", ""]
+        self.version_replies = [None, None]
+        for link in self.state["links"]:
+            link.setdefault("firmwareVersion", "1.1.3")
         self.data_selection = 0
         self.data_statistics = False
         self.data_subview = "list"
@@ -487,6 +492,13 @@ class Simulator:
             title = f"Settings page {self.settings_page}"
             self.render(title, self.settings_state)
             self.frame.text(12, 82, f"Selection: {self.settings_selection}")
+            if self.settings_page == 2 and self.settings_selection == 0:
+                self.frame.text(12, 182, "Ground Station: simulator")
+                self.frame.text(12, 202, "Telemetry 1: " + self.settings_versions[0])
+                self.frame.text(12, 222, "Telemetry 2: " + self.settings_versions[1])
+        elif self.screen == "self_test":
+            self.render("Factory self-test", "Open the WebAssembly simulator to run this test.")
+            self.frame.text(12, 82, "Back (B)")
         elif self.screen == "bootloader":
             self.render("Bootloader", "Bootloader request emitted")
         elif self.screen == "usb_storage":
@@ -539,6 +551,15 @@ class Simulator:
             self.tick(set())
 
     def tick(self, explicit_pressed: set[str]) -> None:
+        timed_out = self.now_ms >= 8000
+        request = not timed_out and self.now_ms - self.version_last_request >= 1000
+        for index in range(2):
+            self.settings_versions[index] = self.version_replies[index] or ("No response" if timed_out else "Reading...")
+            if self.version_replies[index] is None and request:
+                self.emit("version_requested", link=index + 1)
+                self.version_replies[index] = self.link(index)["firmwareVersion"] or None
+        if request:
+            self.version_last_request = self.now_ms
         for index in range(2):
             telemetry = self.link(index)["telemetry"]
             location = (float(telemetry.get("latitude", 0.0)), float(telemetry.get("longitude", 0.0)))
@@ -563,7 +584,7 @@ class Simulator:
             self.settings_step(explicit_pressed)
         elif self.screen == "recovery":
             self.recovery_step(explicit_pressed)
-        elif self.screen == "bootloader" and "back" in explicit_pressed:
+        elif self.screen in ("bootloader", "self_test") and "back" in explicit_pressed:
             self.screen = "settings"
         elif self.screen == "usb_storage":
             self.usb_storage_step(explicit_pressed)
@@ -962,10 +983,10 @@ class Simulator:
             config = self.config()
             inc = "right" in pressed
             dec = "left" in pressed
-            if self.settings_page == 0 and self.settings_selection == 0:
+            if self.settings_page == 1 and self.settings_selection == 0:
                 if inc: config["neverStopLogging"] = True
                 if dec: config["neverStopLogging"] = False
-            elif self.settings_page == 0 and self.settings_selection == 2 and "ok" in pressed:
+            elif self.settings_page == 2 and self.settings_selection == 1 and "ok" in pressed:
                 self.usb_storage_message = ""
                 device = self.state["deviceStatus"]
                 if not device.get("usb", False):
@@ -982,22 +1003,24 @@ class Simulator:
                     self.emit("usb_storage_shared")
                 self.screen = "usb_storage"
                 return
-            elif self.settings_page == 0 and self.settings_selection == 3 and "ok" in pressed:
+            elif self.settings_page == 2 and self.settings_selection == 3 and "ok" in pressed:
                 self.screen = "bootloader"
                 self.emit("bootloader_requested")
-            elif self.settings_page == 1 and self.settings_selection == 0:
+            elif self.settings_page == 0 and self.settings_selection == 0:
                 if inc: config["dualReceiver"] = True
                 if dec: config["dualReceiver"] = False
-            elif self.settings_page == 1 and 1 <= self.settings_selection <= 3 and "ok" in pressed:
+            elif self.settings_page == 0 and 1 <= self.settings_selection <= 3 and "ok" in pressed and (self.settings_selection != 2 or config["dualReceiver"]):
                 self.settings_state = "keyboard"
                 self.keyboard_index = 0
-            elif self.settings_page == 2 and self.settings_selection == 0:
+            elif self.settings_page == 1 and self.settings_selection == 1:
                 config["timeZoneOffset"] = max(-12, min(12, config.get("timeZoneOffset", 0) + (1 if inc else -1 if dec else 0)))
-            elif self.settings_page == 2 and self.settings_selection == 1 and (inc or dec):
+            elif self.settings_page == 1 and self.settings_selection == 2 and (inc or dec):
                 config["imperialUnits"] = not config.get("imperialUnits", False)
-            elif self.settings_page == 2 and self.settings_selection == 2:
+            elif self.settings_page == 1 and self.settings_selection == 3:
                 if inc: config["startupAnimation"] = True
                 if dec: config["startupAnimation"] = False
+            elif self.settings_page == 2 and self.settings_selection == 2 and "ok" in pressed:
+                self.screen = "self_test"
 
         if "down" in pressed:
             self.settings_selection = min(SETTING_COUNTS[self.settings_page] - 1, self.settings_selection + 1)
@@ -1018,23 +1041,17 @@ class Simulator:
             self.usb_storage_session = False
             self.emit("usb_storage_reclaimed")
             self.screen = "settings"
-            self.settings_page = 0
-            self.settings_selection = 2
         elif self.usb_storage_session and storage_state == "fault":
             self.usb_storage_session = False
             self.usb_storage_message = "Storage could not be remounted."
         elif self.usb_storage_session and storage_state == "host" and "back" in pressed:
             self.usb_storage_session = False
             self.screen = "settings"
-            self.settings_page = 0
-            self.settings_selection = 2
         elif self.usb_storage_session and ((storage_state == "host" and "ok" in pressed) or
                                            (storage_state == "preparing" and "back" in pressed)):
             self.state["deviceStatus"]["usbStorageState"] = "firmware"
         elif not self.usb_storage_session and "back" in pressed:
             self.screen = "settings"
-            self.settings_page = 0
-            self.settings_selection = 2
 
     def set_value(self, path: str, value: Any) -> None:
         path = canonical_path(path)
@@ -1189,6 +1206,8 @@ class Simulator:
             "calibrationState": self.calibration_state,
             "sensorView": self.sensor_view,
             "settingsState": self.settings_state,
+            "telemetryVersion1": self.settings_versions[0],
+            "telemetryVersion2": self.settings_versions[1],
             "inputState": "held" if any(self.held.values()) else "idle",
             "menuSelection": self.menu_selection,
             "settingsPage": self.settings_page,
@@ -1443,7 +1462,7 @@ def deterministic_test(root: Path) -> int:
         print(f"cannot load golden snapshot manifest {golden_path}: {error}", file=sys.stderr)
         return 1
     for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "live.json", "testing-timeout.json",
-                          "sensors.json", "sensors-orientation.json", "settings.json", "bootloader.json", "replay.json",
+                          "sensors.json", "sensors-orientation.json", "settings.json", "settings-versions.json", "bootloader.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json"):

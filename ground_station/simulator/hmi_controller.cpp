@@ -5,6 +5,7 @@
 #include "hmi_controller.hpp"
 
 #include "hmi/location_qr.hpp"
+#include "hmi/settings.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -36,6 +37,9 @@ void HmiController::start() {
   menuSelection_ = 0;
   settingsPage_ = 0;
   settingsSelection_ = -1;
+  versionLastRequest_ = nowMs_ - 1000U;
+  versionReadsComplete_ = {};
+  settingsVersions_ = {"Reading...", "Reading..."};
   dataSelection_ = 0;
   testingSelection_ = 0;
   dataSubview_ = DataSubview::List;
@@ -47,6 +51,8 @@ void HmiController::start() {
   keyboardActive_ = false;
   keyboardSelection_ = 0;
   keyboardUppercase_ = false;
+  usbStorageSession_ = false;
+  usbStorageMessage_.clear();
   usbPreviouslyConnected_ = false;
   automaticUsbSharePending_ = false;
   previousRecorderState_ = logs_.recorderStatus().state;
@@ -55,6 +61,9 @@ void HmiController::start() {
   heldSince_.fill(0);
   lastRepeat_.fill(0);
   actions_.clear();
+  selfTest_ = SelfTest{};
+  selfTestInput_ = {};
+  selfTestResultIndex_ = 0;
   renderer_.begin();
   render();
 }
@@ -64,9 +73,29 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
   previousInput_ = input_;
   input_ = input;
 
+  // Model the telemetry tasks' bounded startup reads, independently of the current screen.
+  ITelemetryLink* links[] = {&link1_, &link2_};
+  const bool requestVersion = nowMs_ > startupStartedMs_ && nowMs_ - versionLastRequest_ >= 1000U;
+  for (size_t i = 0; i < 2; ++i) {
+    const auto link = links[i]->snapshot();
+    if (!versionReadsComplete_[i]) {
+      if (link.versionReplies != 0 || nowMs_ - startupStartedMs_ >= 8000U) {
+        versionReadsComplete_[i] = true;
+      } else if (requestVersion) {
+        links[i]->requestVersion();
+        emit("version_requested", static_cast<uint8_t>(i + 1));
+      }
+    }
+    settingsVersions_[i] = link.versionReplies != 0 ? link.firmwareVersion
+        : (versionReadsComplete_[i] ? "No response" : "Reading...");
+  }
+  if (requestVersion) versionLastRequest_ = nowMs_;
+
   updateRecoveryLocations();
-  ingestTelemetry();
-  updateAutomaticUsbStorage();
+  if (screen_ != Screen::SelfTest) {
+    ingestTelemetry();
+    updateAutomaticUsbStorage();
+  }
 
   for (size_t i = 0; i < input_.held.size(); ++i) {
     if (input_.held[i] && !previousInput_.held[i]) {
@@ -102,6 +131,9 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
       break;
     case Screen::Settings:
       settingsStep(nowMs_);
+      break;
+    case Screen::SelfTest:
+      selfTestStep(nowMs_);
       break;
     case Screen::Recovery:
       if (qrView_ == "none" && config_.config().dualReceiver &&
@@ -144,24 +176,18 @@ void HmiController::step(const HmiInput& input, uint64_t nowMs) {
         usbStorageSession_ = false;
         emit("usb_storage_reclaimed");
         enter(Screen::Settings);
-        settingsPage_ = 0;
-        settingsSelection_ = 2;
       } else if (usbStorageSession_ && storageState == "fault") {
         usbStorageSession_ = false;
         usbStorageMessage_ = "Storage could not be remounted.";
       } else if (usbStorageSession_ && storageState == "host" && pressed(HmiButton::Back)) {
         usbStorageSession_ = false;
         enter(Screen::Settings);
-        settingsPage_ = 0;
-        settingsSelection_ = 2;
       } else if (usbStorageSession_ &&
                  ((storageState == "host" && pressed(HmiButton::Ok)) ||
                   (storageState == "preparing" && pressed(HmiButton::Back)))) {
         device_.requestFirmwareStorage();
       } else if (!usbStorageSession_ && pressed(HmiButton::Back)) {
         enter(Screen::Settings);
-        settingsPage_ = 0;
-        settingsSelection_ = 2;
       }
       break;
     }
@@ -191,6 +217,7 @@ bool HmiController::repeated(HmiButton button, uint64_t nowMs) {
 }
 
 void HmiController::enter(Screen screen) {
+  const bool returningToSettings = screen_ == Screen::UsbStorage || screen_ == Screen::SelfTest || screen_ == Screen::Bootloader;
   screen_ = screen;
   clearQr();
   if (screen_ == Screen::Testing) {
@@ -202,8 +229,10 @@ void HmiController::enter(Screen screen) {
     sensorOrientation_ = false;
   }
   if (screen_ == Screen::Settings) {
-    settingsPage_ = 0;
-    settingsSelection_ = -1;
+    if (!returningToSettings) {
+      settingsPage_ = SETTING_TELEMETRY;
+      settingsSelection_ = -1;
+    }
     keyboardActive_ = false;
   }
   if (screen_ == Screen::Recovery) {
@@ -574,7 +603,7 @@ void HmiController::sensorsStep(uint64_t nowMs) {
 }
 
 void HmiController::settingsStep(uint64_t nowMs) {
-  const int16_t counts[3] = {4, 4, 3};
+  const int16_t counts[3] = {4, 4, 4};
   if (keyboardActive_) {
     const bool moveRight = pressed(HmiButton::Right) || repeated(HmiButton::Right, nowMs);
     const bool moveLeft = pressed(HmiButton::Left) || repeated(HmiButton::Left, nowMs);
@@ -642,28 +671,31 @@ void HmiController::settingsStep(uint64_t nowMs) {
       --settingsPage_;
     }
   } else {
+    const auto& setting = settingsTable[settingsPage_][settingsSelection_];
+    const auto action = setting.type == BUTTON ? setting.config.buttonAction : BUTTON_ACTION_NONE;
     const bool increment = pressed(HmiButton::Right) || repeated(HmiButton::Right, nowMs);
     const bool decrement = pressed(HmiButton::Left) || repeated(HmiButton::Left, nowMs);
-    if (settingsPage_ == 0 && settingsSelection_ == 0) {
+    if (settingsPage_ == SETTING_PREFERENCES && settingsSelection_ == 0) {
       if (increment) config_.config().neverStopLogging = true;
       if (decrement) config_.config().neverStopLogging = false;
-    } else if (settingsPage_ == 1 && settingsSelection_ == 0) {
+    } else if (settingsPage_ == SETTING_TELEMETRY && settingsSelection_ == 0) {
       if (increment) config_.config().dualReceiver = true;
       if (decrement) config_.config().dualReceiver = false;
-    } else if (settingsPage_ == 1 && settingsSelection_ >= 1 && settingsSelection_ <= 3 && pressed(HmiButton::Ok)) {
+    } else if (settingsPage_ == SETTING_TELEMETRY && settingsSelection_ >= 1 && settingsSelection_ <= 3 &&
+               (settingsSelection_ != 2 || config_.config().dualReceiver) && pressed(HmiButton::Ok)) {
       keyboardActive_ = true;
       keyboardSelection_ = 0;
       keyboardUppercase_ = false;
-    } else if (settingsPage_ == 2 && settingsSelection_ == 0) {
+    } else if (settingsPage_ == SETTING_PREFERENCES && settingsSelection_ == 1) {
       if (increment) config_.config().timeZoneOffset = std::min<int16_t>(12, config_.config().timeZoneOffset + 1);
       if (decrement) config_.config().timeZoneOffset = std::max<int16_t>(-12, config_.config().timeZoneOffset - 1);
-    } else if (settingsPage_ == 2 && settingsSelection_ == 1) {
+    } else if (settingsPage_ == SETTING_PREFERENCES && settingsSelection_ == 2) {
       if (pressed(HmiButton::Left) || pressed(HmiButton::Right)) config_.config().imperialUnits = !config_.config().imperialUnits;
-    } else if (settingsPage_ == 2 && settingsSelection_ == 2) {
+    } else if (settingsPage_ == SETTING_PREFERENCES && settingsSelection_ == 3) {
       if (increment) config_.config().startupAnimation = true;
       if (decrement) config_.config().startupAnimation = false;
     }
-    if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 2) {
+    if (pressed(HmiButton::Ok) && action == BUTTON_ACTION_USB_STORAGE) {
       usbStorageMessage_.clear();
       const DeviceStatusSnapshot device = device_.snapshot();
       if (!device.usb) {
@@ -681,7 +713,14 @@ void HmiController::settingsStep(uint64_t nowMs) {
       enter(Screen::UsbStorage);
       return;
     }
-    if (pressed(HmiButton::Ok) && settingsPage_ == 0 && settingsSelection_ == 3) {
+    if (pressed(HmiButton::Ok) && action == BUTTON_ACTION_SELF_TEST) {
+      selfTest_ = SelfTest{};
+      selfTestInput_ = {};
+      selfTestResultIndex_ = 0;
+      enter(Screen::SelfTest);
+      return;
+    }
+    if (pressed(HmiButton::Ok) && action == BUTTON_ACTION_START_BOOTLOADER) {
       enter(Screen::Bootloader);
       emit("bootloader_requested");
     }
@@ -744,7 +783,7 @@ void HmiController::render() {
 
 std::string HmiController::screenName() const {
   static constexpr const char* names[] = {"logo", "menu", "live", "recovery", "testing", "data", "sensors",
-                                           "settings", "bootloader", "usb_storage"};
+                                           "settings", "bootloader", "usb_storage", "self_test"};
   return names[static_cast<size_t>(screen_)];
 }
 
@@ -766,9 +805,12 @@ std::string HmiController::dataSubviewName() const {
 HmiSnapshot HmiController::snapshot() const {
   HmiSnapshot result;
   result.screen = screenName();
+  result.selfTest = selfTest_;
+  result.selfTestResultIndex = selfTestResultIndex_;
   result.testingState = testingName();
   result.calibrationState = calibrationName();
   result.settingsState = keyboardActive_ ? "keyboard" : "list";
+  result.settingsVersions = settingsVersions_;
   result.inputState = "idle";
   result.liveView = liveDownrange_ ? "downrange" : "gnss";
   result.sensorView = sensorOrientation_ ? "orientation" : "readings";

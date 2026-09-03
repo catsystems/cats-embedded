@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "config.hpp"
 #include "parser.hpp"
 #include "telemetryData.hpp"
@@ -28,6 +29,12 @@ class Telemetry {
   void exitTesting();
   void enterTesting();
   void triggerEvent(uint8_t event);
+  bool setSelfTestOverride(const char* phrase, bool enabled = true);
+  bool selfTestReady() const { return controlApplied.load() == controlRequested.load(); }
+  void requestVersion() { versionRequested = true; }
+  bool versionReadComplete() const { return versionReadDone.load(); }
+  SelfTestLinkObservation diagnostics() const { return parser.diagnostics(); }
+  void resetReceptionStats(uint32_t now) { parser.resetReceptionStats(now); }
 
   void disable() {
     if (linkInitialized) {
@@ -52,6 +59,18 @@ class Telemetry {
 
  private:
   HardwareSerial serial;
+  struct SelfTestControl {
+    char phrase[kMaxPhraseLen + 1]{};
+    bool active{false};
+    bool enabled{true};
+    uint32_t generation{0};
+  };
+  SelfTestControl selfTestControl{};
+  QueueHandle_t controlQueue{nullptr};
+  std::atomic<uint32_t> controlRequested{0};
+  std::atomic<uint32_t> controlApplied{0};
+  std::atomic<bool> versionRequested{false};
+  std::atomic<bool> versionReadDone{false};
 
   void initLink();
 

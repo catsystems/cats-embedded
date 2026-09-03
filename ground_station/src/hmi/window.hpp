@@ -11,6 +11,7 @@
 #include "display.hpp"
 #include "logging/flightStatistics.hpp"
 #include "navigation.hpp"
+#include "self_test.hpp"
 #include "settings.hpp"
 #include "startup_intro.hpp"
 #include "telemetry/telemetryData.hpp"
@@ -88,7 +89,9 @@ class Window {
   void updateSensorOrientation(Navigation *navigation);
 
   void initSettings(int16_t submenuIdx);
+  void drawSelfTest(const SelfTest &test, uint32_t now, int16_t selectedResult);
   void updateSettings(int16_t index);
+  void settingsVersions(const char *telemetry1, const char *telemetry2);
   void drawSettingsTriangles(int16_t submenuIdx, int16_t color);
 
   void initBox(const char *text);
@@ -147,6 +150,7 @@ class Window {
   bool oldBarRecorderFault = false;
   uint32_t oldBarFreeMemory = 0;
   bool barBlinkStatus = false;
+  bool barNeedsRedraw = false;
   TelemetryData teleData[2]{};
   TelemetryInfo infoData[2]{};
   LiveState livestate{LiveState::kShowGnss};

@@ -65,8 +65,8 @@ The Sharp Memory LCD is 400x240 and a full refresh blocks the HMI task long enou
   the existing debounce logic to observe it rather than refreshing again immediately.
 - Keep the 15 ms button debounce unless hardware evidence justifies changing it. Add hold-to-repeat only where repeated
   navigation is useful, such as long log lists.
-- Bind settings behavior through `settings_button_action_e`, never by a fragile row number. `Enter Bootloader` must remain
-  the final General settings item; `USB Drive` must invoke USB storage, not bootloader entry.
+- Bind settings behavior through `settings_button_action_e`, never by a fragile row number. `Update Firmware` must remain
+  the final System settings item; `USB Drive` must invoke USB storage, not bootloader entry.
 - Keep simulator behavior aligned with production HMI behavior. The simulator is not permission to introduce a second,
   independent implementation of a screen.
 - Whenever making visual changes, run the relevant simulator scenarios and inspect the rendered screens for clipping,
@@ -133,7 +133,7 @@ For USB, storage, startup, task-stack, display-driver, or toolchain changes, tes
 
 - immediate behavior after UF2 installation and behavior after a power cycle;
 - display output (no snow), buttons, and absence of restart loops;
-- Settings > USB Drive, leaving that screen, and the final Enter Bootloader item;
+- Settings > System > USB Drive, leaving that screen, and the final Update Firmware item;
 - entering the log list without a restart and seeing both current and legacy CSV names;
 - USB connect/eject/reconnect, recording reclaim, and retained configuration/logs;
 - both receiver modes, enabled-link LEDs, sensors, and recovery navigation when affected.

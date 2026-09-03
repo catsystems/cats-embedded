@@ -160,6 +160,7 @@ void Console::printStartupMessage() {
   stream.println("*                CATS Ground Station               *");
   stream.println("****************************************************");
   stream.println(CONSOLE_LOG);
+  stream.println(FIRMWARE_VERSION);
 }
 
 void Console::usbEventCallback(void* arg [[maybe_unused]], esp_event_base_t event_base, int32_t event_id,

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "packetSink.hpp"
+#include "self_test.hpp"
 #include "telemetryData.hpp"
 #include "telemetry_reg.hpp"
 
@@ -52,6 +53,10 @@ class Parser {
   void cmdGNSSLoc(uint8_t* args, uint32_t length);
   void cmdGNSSTime(uint8_t* args, uint32_t length);
   void cmdGNSSInfo(uint8_t* args, uint32_t length);
+  void cmdVersion(uint8_t* args, uint32_t length);
+  void cmdTemperature(uint8_t* args, uint32_t length);
+  SelfTestLinkObservation diagnostics() const;
+  void resetReceptionStats(uint32_t now);
 
  private:
   static int32_t getOpCodeIndex(uint8_t opCode);
@@ -62,6 +67,9 @@ class Parser {
   TelemetryTime* time{nullptr};
   ITelemetryPacketSink* sink{nullptr};
   uint8_t source{0};
+  mutable portMUX_TYPE diagnosticsMux = portMUX_INITIALIZER_UNLOCKED;
+  SelfTestLinkObservation observation{};
+  uint32_t lastByteMs{0};
 
   uint8_t buffer[MAX_CMD_BUFFER]{};
   uint32_t dataIndex = 0;
@@ -86,12 +94,14 @@ class Parser {
 };
 
 enum {
-  CMD_NUMBER = 5,
+  CMD_NUMBER = 7,
 };
 
 using cmd_fn = void (Parser::*)(uint8_t* args, uint32_t length);
 
-const cmd_fn commandFunction[] = {&Parser::cmdRX, &Parser::cmdInfo, &Parser::cmdGNSSLoc, &Parser::cmdGNSSTime,
-                                  &Parser::cmdGNSSInfo};
+const cmd_fn commandFunction[] = {&Parser::cmdRX,         &Parser::cmdInfo,     &Parser::cmdGNSSLoc,
+                                  &Parser::cmdGNSSTime,   &Parser::cmdGNSSInfo, &Parser::cmdVersion,
+                                  &Parser::cmdTemperature};
 
-const uint8_t cmdIndex[] = {CMD_RX, CMD_INFO, CMD_GNSS_LOC, CMD_GNSS_TIME, CMD_GNSS_INFO};
+const uint8_t cmdIndex[] = {CMD_RX,        CMD_INFO,         CMD_GNSS_LOC, CMD_GNSS_TIME,
+                            CMD_GNSS_INFO, CMD_VERSION_INFO, CMD_TEMP_INFO};

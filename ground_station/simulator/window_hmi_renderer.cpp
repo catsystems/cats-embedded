@@ -71,9 +71,11 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
   syncStatistics(state.flightStatistics[0], 0);
   syncStatistics(state.flightStatistics[1], 1);
 
-  // A complete draw from the same production Window methods keeps resets and
-  // repeated scenario runs independent of prior framebuffer history.
-  window_.begin();
+  // Preserve the actual framebuffer on exit from self-test. Clearing it here
+  // would hide stale-header bugs in the production transition.
+  const bool leavingSelfTest = selfTestWasRendered_ && state.screen != "self_test";
+  selfTestWasRendered_ = state.screen == "self_test";
+  if (!leavingSelfTest) window_.begin();
 
   if (state.screen == "logo") {
     if (state.configuration.startupAnimation) {
@@ -88,6 +90,10 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     return;
   }
 
+  if (state.screen == "self_test") {
+    window_.drawSelfTest(state.selfTest, static_cast<uint32_t>(state.virtualTimeMs), state.selfTestResultIndex);
+    return;
+  }
   window_.initBar();
 
   if (state.screen == "menu") {
@@ -225,6 +231,12 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     } else {
       window_.initSettings(state.settingsPage);
       window_.updateSettings(state.settingsSelection);
+      if (state.settingsSelection >= 0 &&
+          settingsTable[state.settingsPage][state.settingsSelection].type == BUTTON &&
+          settingsTable[state.settingsPage][state.settingsSelection].config.buttonAction == BUTTON_ACTION_VERSION) {
+        window_.settingsVersions(state.settingsVersions[0].c_str(), state.settingsVersions[1].c_str());
+        window_.refresh();
+      }
     }
   }
 
