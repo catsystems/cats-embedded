@@ -10,6 +10,10 @@
 constexpr uint8_t TASK_TELE_FREQ = 100;
 
 void Telemetry::begin() {
+  uartMutex = xSemaphoreCreateMutex();
+  if (uartMutex == nullptr) {
+    return;
+  }
   serial.begin(115200, SERIAL_8N1, rxPin, txPin);
   parser.init(&data, &info, &location, &time);
   controlQueue = xQueueCreate(1, sizeof(SelfTestControl));
@@ -94,6 +98,9 @@ void Telemetry::initLink() {
 }
 
 void Telemetry::exitTesting() {
+  if (!lockNormalWriter()) {
+    return;
+  }
   testingMsg.header = 0x72;
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 0;
@@ -103,9 +110,14 @@ void Telemetry::exitTesting() {
   vTaskDelay(50);
   setMode(BIDIRECTIONAL);
   requestExitTesting = true;
+  xSemaphoreGive(uartMutex);
 }
 
 void Telemetry::enterTesting() {
+  if (!lockNormalWriter()) {
+    return;
+  }
+  testingActive = true;
   testingMsg.header = 0x72;
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 1;
@@ -114,9 +126,13 @@ void Telemetry::enterTesting() {
   sendTXPayload(reinterpret_cast<uint8_t*>(&testingMsg), 15);
   vTaskDelay(50);
   setMode(BIDIRECTIONAL);
+  xSemaphoreGive(uartMutex);
 }
 
 void Telemetry::triggerEvent(uint8_t event) {
+  if (!lockNormalWriter()) {
+    return;
+  }
   testingMsg.header = 0x72;
   testingMsg.passcode = testingCrc;
   testingMsg.enable_pyros = 1;
@@ -125,6 +141,7 @@ void Telemetry::triggerEvent(uint8_t event) {
   sendTXPayload(reinterpret_cast<uint8_t*>(&testingMsg), 15);
   triggerAction = true;
   triggerActionStart = xTaskGetTickCount();
+  xSemaphoreGive(uartMutex);
 }
 
 void Telemetry::update(void* pvParameter) {
@@ -134,6 +151,29 @@ void Telemetry::update(void* pvParameter) {
 
   while (ref->initialized) {
     TickType_t task_last_tick = xTaskGetTickCount();
+
+    if (xSemaphoreTake(ref->uartMutex, pdMS_TO_TICKS(20)) != pdTRUE) {
+      continue;
+    }
+    if (ref->updateRequested || ref->quarantined) {
+      if (ref->updateRequested && !ref->updateGranted) {
+        for (size_t count = 0; count < 512 && ref->serial.available(); ++count) {
+          ref->parser.process(ref->serial.read());
+        }
+        if (!ref->safeForUpdateLocked()) {
+          xSemaphoreGive(ref->uartMutex);
+          vTaskDelay(pdMS_TO_TICKS(10));
+          continue;
+        }
+        ref->sendDisable();
+        ref->serial.flush();
+        ref->linkInitialized = false;
+        ref->updateGranted = true;
+      }
+      xSemaphoreGive(ref->uartMutex);
+      vTaskDelay(pdMS_TO_TICKS(10));
+      continue;
+    }
 
     if (ref->controlQueue != nullptr && xQueueReceive(ref->controlQueue, &ref->selfTestControl, 0) == pdPASS) {
       ref->newSetting = true;
@@ -167,6 +207,7 @@ void Telemetry::update(void* pvParameter) {
       ref->requestExitTesting = false;
       vTaskDelay(1000);
       ref->setMode(UNIDIRECTIONAL);
+      ref->testingActive = false;
     }
 
     if (ref->triggerAction && (ref->triggerActionStart + 1000) < xTaskGetTickCount()) {
@@ -179,12 +220,118 @@ void Telemetry::update(void* pvParameter) {
       ref->sendTXPayload(reinterpret_cast<uint8_t*>(&ref->testingMsg), 15);
     }
 
-    while (ref->serial.available()) {
+    for (size_t count = 0; count < 512 && ref->serial.available(); ++count) {
       ref->parser.process(ref->serial.read());
     }
 
+    xSemaphoreGive(ref->uartMutex);
+
     vTaskDelayUntil(&task_last_tick, static_cast<TickType_t>(1000) / TASK_TELE_FREQ);
   }
+}
+
+bool Telemetry::lockNormalWriter() {
+  if (uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
+    return false;
+  }
+  if (updateRequested || quarantined) {
+    xSemaphoreGive(uartMutex);
+    return false;
+  }
+  return true;
+}
+
+void Telemetry::disable() {
+  if (!lockNormalWriter()) {
+    return;
+  }
+  if (linkInitialized) {
+    sendDisable();
+    linkInitialized = false;
+  }
+  xSemaphoreGive(uartMutex);
+}
+
+void Telemetry::enable() {
+  if (!lockNormalWriter()) {
+    return;
+  }
+  if (!linkInitialized && linkPhrase[0] != 0) {
+    sendEnable();
+    linkInitialized = true;
+  }
+  xSemaphoreGive(uartMutex);
+}
+
+bool Telemetry::safeForUpdateLocked() const {
+  const auto packet = data.snapshot();
+  const bool recent = (xTaskGetTickCount() - data.getLastUpdateTime()) <= pdMS_TO_TICKS(2000);
+  const bool airborne = packet.state > 2 && packet.state < 7;
+  return initialized && !quarantined && !testingActive && !requestExitTesting && !triggerAction &&
+         !(recent && (airborne || packet.testing_mode));
+}
+
+bool Telemetry::safeForUpdate() {
+  if (uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
+    return false;
+  }
+  const bool safe = safeForUpdateLocked();
+  xSemaphoreGive(uartMutex);
+  return safe;
+}
+
+bool Telemetry::beginUpdate() {
+  if (uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
+    return false;
+  }
+  const bool safe = !updateRequested && safeForUpdateLocked();
+  if (safe) {
+    updateGranted = false;
+    updateRequested = true;
+  }
+  xSemaphoreGive(uartMutex);
+  if (!safe) {
+    return false;
+  }
+  const uint32_t started = millis();
+  while (!updateGranted && millis() - started < 2000) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  if (!updateGranted) {
+    // Cancellation is serialized with the grant; no delayed grant can escape.
+    if (xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) == pdTRUE) {
+      updateRequested = false;
+      updateGranted = false;
+      newSetting = true;
+      xSemaphoreGive(uartMutex);
+    }
+    return false;
+  }
+  return true;
+}
+
+void Telemetry::configureUpdateUart(bool rom) {
+  /* HardwareSerial::begin() updates data bits/parity/stop bits in place when
+   * the UART is already running. Keeping the pins attached prevents a low
+   * pulse on TX from poisoning the STM32 ROM's autobaud detection. */
+  serial.begin(115200, rom ? SERIAL_8E1 : SERIAL_8N1, rxPin, txPin);
+}
+
+void Telemetry::finishUpdate(bool healthy) {
+  if (xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
+    quarantined = true;
+    updateRequested = false;
+    return;
+  }
+  // The normal task has acknowledged and no longer touches the UART/parser.
+  configureUpdateUart(false);
+  parser.reset();
+  linkInitialized = false;
+  quarantined = !healthy;
+  newSetting = healthy;
+  updateGranted = false;
+  updateRequested = false;
+  xSemaphoreGive(uartMutex);
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static) uses serial

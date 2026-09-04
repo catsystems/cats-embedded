@@ -5,6 +5,7 @@
 #pragma once
 
 #include <atomic>
+
 #include "config.hpp"
 #include "parser.hpp"
 #include "telemetryData.hpp"
@@ -36,19 +37,17 @@ class Telemetry {
   SelfTestLinkObservation diagnostics() const { return parser.diagnostics(); }
   void resetReceptionStats(uint32_t now) { parser.resetReceptionStats(now); }
 
-  void disable() {
-    if (linkInitialized) {
-      sendDisable();
-      linkInitialized = false;
-    }
-  }
+  void disable();
+  void enable();
 
-  void enable() {
-    if (!linkInitialized) {
-      sendEnable();
-      linkInitialized = true;
-    }
-  }
+  // Acknowledged handoff: only the update worker may use this UART until
+  // finishUpdate(). No task suspension while a parser/setting write is active.
+  bool safeForUpdate();
+  bool beginUpdate();
+  void finishUpdate(bool healthy);
+  HardwareSerial& updateSerial() { return serial; }
+  void configureUpdateUart(bool rom);
+  bool isQuarantined() const { return quarantined; }
 
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
   TelemetryData data{};
@@ -71,6 +70,13 @@ class Telemetry {
   std::atomic<uint32_t> controlApplied{0};
   std::atomic<bool> versionRequested{false};
   std::atomic<bool> versionReadDone{false};
+  SemaphoreHandle_t uartMutex{nullptr};
+  std::atomic<bool> updateRequested{false};
+  std::atomic<bool> updateGranted{false};
+  std::atomic<bool> quarantined{false};
+  bool testingActive{false};
+  bool safeForUpdateLocked() const;
+  bool lockNormalWriter();
 
   void initLink();
 

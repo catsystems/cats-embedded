@@ -7,6 +7,8 @@
 #include "Common.hpp"
 #include "Parser.hpp"
 
+#include <cstring>
+
 void Parser::parse() {
   cmd_table[opCodeIndex].cmd(&buffer[2], dataIndex);
 
@@ -141,7 +143,12 @@ void Parser::cmdVersionNum([[maybe_unused]] uint8_t *args, [[maybe_unused]] uint
 }
 
 void Parser::cmdBootloader(uint8_t *args, uint32_t length) {
-  // UNUSED
+  static constexpr uint8_t kBootloaderRequest[BOOTLOADER_REQUEST_LENGTH] = {
+      'C', 'A', 'T', 'S', 'B', 'L', BOOTLOADER_PROTOCOL_VERSION, BOOTLOADER_REQUEST_GUARD};
+
+  if ((length == BOOTLOADER_REQUEST_LENGTH) && (memcmp(args, kBootloaderRequest, BOOTLOADER_REQUEST_LENGTH) == 0)) {
+    bootloader_requested = true;
+  }
 }
 
 void Parser::cmdRX(uint8_t *args, uint32_t length) {

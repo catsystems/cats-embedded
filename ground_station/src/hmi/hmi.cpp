@@ -39,6 +39,12 @@ void Hmi::begin() {
   recorder.enable();
   link1.setPacketSink(&recorder, 1);
   link2.setPacketSink(&recorder, 2);
+  static RadioUpdate::RadioFirmwareUpdater updater(recorder, link1, link2);
+  if (updater.begin()) {
+    radioUpdater = &updater;
+  } else {
+    console.warning.println("[HMI] Could not start radio update worker");
+  }
 
   window.begin();
   initialized = true;
@@ -86,6 +92,14 @@ void Hmi::fsm() {
 
     case SELF_TEST:
       selfTestStep();
+      break;
+
+    case FIRMWARE_UPDATE:
+      firmwareUpdate();
+      break;
+
+    case RADIO_UPDATE:
+      radioUpdate();
       break;
 
     default:
@@ -869,15 +883,15 @@ void Hmi::settings() {
               case BUTTON_ACTION_USB_STORAGE:
                 initUsbStorage();
                 return;
-              case BUTTON_ACTION_START_BOOTLOADER:
-                window.Bootloader();
-                Utils::startBootloader();
+              case BUTTON_ACTION_UPDATE_FIRMWARE:
+                initFirmwareUpdate();
                 return;
               case BUTTON_ACTION_SELF_TEST:
                 initSelfTest();
                 return;
-              case BUTTON_ACTION_NONE:
               case BUTTON_ACTION_VERSION:
+                break;
+              case BUTTON_ACTION_NONE:
                 break;
             }
           }
@@ -1041,8 +1055,145 @@ void Hmi::usbStorage() {
   }
 }
 
+void Hmi::initFirmwareUpdate() {
+  state = FIRMWARE_UPDATE;
+  firmwareUpdateIndex = 0;
+  window.initFirmwareUpdate(firmwareUpdateIndex);
+}
+
+void Hmi::firmwareUpdate() {
+  const int16_t oldIndex = firmwareUpdateIndex;
+  if (downButton.wasPressed() && firmwareUpdateIndex < 1) {
+    ++firmwareUpdateIndex;
+  }
+  if (upButton.wasPressed() && firmwareUpdateIndex > 0) {
+    --firmwareUpdateIndex;
+  }
+  if (backButton.wasPressed()) {
+    state = SETTINGS;
+    settingSubMenu = SETTING_SYSTEM;
+    settingIndex = 3;
+    window.initSettings(settingSubMenu);
+    window.updateSettings(settingIndex);
+    return;
+  }
+  if (okButton.wasPressed()) {
+    if (firmwareUpdateIndex == 0) {
+      window.Bootloader();
+      Utils::startBootloader();
+    } else {
+      initRadioUpdate();
+    }
+    return;
+  }
+  if (firmwareUpdateIndex != oldIndex) {
+    window.initFirmwareUpdate(firmwareUpdateIndex);
+  }
+}
+
+void Hmi::initRadioUpdate() {
+  state = RADIO_UPDATE;
+  automaticUsbSharePending = false;
+  leaveRadioUpdate = false;
+  radioUpdateRevision = UINT32_MAX;
+  radioUpdateIndex = 0;
+  radioUpdateWindowStart = 0;
+  if (radioUpdater == nullptr || !radioUpdater->browse()) {
+    window.initDataMessage("Radio Update", "Update worker unavailable");
+  }
+}
+
+void Hmi::drawRadioUpdateList(const RadioUpdate::Snapshot &snapshot) {
+  window.initRadioUpdateList();
+  const size_t end = std::min(snapshot.fileCount, radioUpdateWindowStart + 8U);
+  char filename[RadioUpdate::kNameSize]{};
+  for (size_t index = radioUpdateWindowStart; index < end; ++index) {
+    if (radioUpdater->filename(index, filename, sizeof(filename))) {
+      window.radioUpdateFileName(filename, static_cast<uint8_t>(index - radioUpdateWindowStart),
+                                 index == radioUpdateIndex);
+    }
+  }
+  window.refresh();
+}
+
+void Hmi::radioUpdate() {
+  if (radioUpdater == nullptr) {
+    if (backButton.wasPressed()) {
+      state = FIRMWARE_UPDATE;
+      firmwareUpdateIndex = 1;
+      window.initFirmwareUpdate(firmwareUpdateIndex);
+    }
+    return;
+  }
+  RadioUpdate::Snapshot snapshot = radioUpdater->snapshot();
+  if (snapshot.phase == RadioUpdate::Phase::Browsing && !snapshot.busy && snapshot.fileCount > 0) {
+    if (downButton.wasPressed() && radioUpdateIndex + 1U < snapshot.fileCount) {
+      ++radioUpdateIndex;
+      if (radioUpdateIndex >= radioUpdateWindowStart + 8U) {
+        radioUpdateWindowStart = radioUpdateIndex - 7U;
+      }
+      drawRadioUpdateList(snapshot);
+      return;
+    }
+    if (upButton.wasPressed() && radioUpdateIndex > 0) {
+      --radioUpdateIndex;
+      if (radioUpdateIndex < radioUpdateWindowStart) {
+        radioUpdateWindowStart = radioUpdateIndex;
+      }
+      drawRadioUpdateList(snapshot);
+      return;
+    }
+    if (okButton.wasPressed()) {
+      (void)radioUpdater->select(radioUpdateIndex);
+      return;
+    }
+  } else if (snapshot.phase == RadioUpdate::Phase::Confirm && !snapshot.busy && okButton.wasPressed()) {
+    (void)radioUpdater->program();
+    return;
+  }
+
+  const bool mayLeave =
+      !snapshot.busy &&
+      (snapshot.phase == RadioUpdate::Phase::Browsing || snapshot.phase == RadioUpdate::Phase::Confirm ||
+       snapshot.phase == RadioUpdate::Phase::Failed || snapshot.phase == RadioUpdate::Phase::Complete);
+  if (mayLeave && backButton.wasPressed()) {
+    leaveRadioUpdate = true;
+    (void)radioUpdater->close();
+    return;
+  }
+  if (leaveRadioUpdate && snapshot.phase == RadioUpdate::Phase::Idle && !snapshot.busy) {
+    leaveRadioUpdate = false;
+    automaticUsbSharePending = Utils::isConnected();
+    state = FIRMWARE_UPDATE;
+    firmwareUpdateIndex = 1;
+    window.initFirmwareUpdate(firmwareUpdateIndex);
+    return;
+  }
+  if (snapshot.revision == radioUpdateRevision) {
+    return;
+  }
+  radioUpdateRevision = snapshot.revision;
+  if (snapshot.phase == RadioUpdate::Phase::Browsing) {
+    drawRadioUpdateList(snapshot);
+  } else if (snapshot.phase == RadioUpdate::Phase::Confirm) {
+    window.initRadioUpdateConfirm(snapshot.filename, snapshot.image.size, snapshot.image.crc);
+  } else if (snapshot.phase == RadioUpdate::Phase::Complete || snapshot.phase == RadioUpdate::Phase::Failed) {
+    const char *link1Status = snapshot.results[0].success
+                                  ? snapshot.results[0].version
+                                  : (snapshot.results[0].entryRequested ? "QUARANTINED" : "not updated");
+    const char *link2Status = snapshot.results[1].success
+                                  ? snapshot.results[1].version
+                                  : (snapshot.results[1].entryRequested ? "QUARANTINED" : "not updated");
+    window.radioUpdateResult(snapshot.phase == RadioUpdate::Phase::Complete, snapshot.error, link1Status, link2Status);
+  } else {
+    window.radioUpdateProgress(RadioUpdate::phaseName(snapshot.phase), snapshot.link, snapshot.percent);
+  }
+}
+
 void Hmi::updateAutomaticUsbStorage(const RecorderStatus &recorderStatus) {
-  if (state == SELF_TEST) return;
+  if (state == SELF_TEST || state == RADIO_UPDATE) {
+    return;
+  }
   const bool connected = Utils::isConnected();
   if (!connected) {
     usbPreviouslyConnected = false;

@@ -15,6 +15,7 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 uint16_t GetNegativeColor(uint16_t color) {
   if (color == BLACK) {
@@ -1307,6 +1308,129 @@ void Window::initUsbStorage(bool active) {
   display.print("Back (B)");
   display.setCursor(245, 230);
   display.print("Disconnect (A)");
+  surface.present();
+}
+
+void Window::initFirmwareUpdate(int16_t index) {
+  clearMainScreen();
+  drawPageHeader("Update Firmware", false, false);
+
+  const char *names[] = {"Ground Station", "Radio Receivers"};
+  for (int16_t row = 0; row < 2; ++row) {
+    const int16_t y = static_cast<int16_t>(52 + 30 * row);
+    display.fillRect(0, y, 400, 30, row == index ? BLACK : WHITE);
+    display.setFont(&FreeSans12pt7b);
+    display.setTextColor(row == index ? WHITE : BLACK);
+    display.setCursor(10, y + 23);
+    display.print(names[row]);
+  }
+
+  display.drawLine(0, 112, 400, 112, BLACK);
+  display.setFont(&FreeSans9pt7b);
+  display.setTextColor(BLACK);
+  if (index == 0) {
+    display.setCursor(10, 143);
+    display.print("Restart into the USB updater");
+    display.setCursor(10, 163);
+    display.print("Connect to a computer before continuing");
+  } else {
+    display.setCursor(10, 143);
+    display.print("Install a telemetry .bin on both receivers");
+    display.setCursor(10, 163);
+    display.print("Copy it to /telemetry_firmware and eject USB");
+  }
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  display.setCursor(260, 230);
+  display.print("Select (A)");
+  surface.present();
+}
+
+void Window::initRadioUpdateList() {
+  clearMainScreen();
+  drawPageHeader("Update GS Radios", false, false);
+  display.setFont(&FreeSans9pt7b);
+  display.setTextColor(BLACK);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  display.setCursor(260, 230);
+  display.print("Select (A)");
+}
+
+void Window::radioUpdateFileName(const char *filename, uint8_t row, bool selected) {
+  const int16_t y = static_cast<int16_t>(50 + 20 * row);
+  display.fillRect(0, y, 400, 20, selected ? BLACK : WHITE);
+  display.setFont(&FreeSans9pt7b);
+  display.setTextColor(selected ? WHITE : BLACK);
+  display.setCursor(10, y + 15);
+  display.print(filename);
+}
+
+void Window::initRadioUpdateConfirm(const char *filename, uint32_t size, uint32_t crc) {
+  clearMainScreen();
+  drawPageHeader("Confirm Radio Update", false, false);
+  char visibleName[43]{};
+  strncpy(visibleName, filename, sizeof(visibleName) - 1);
+  if (strlen(filename) >= sizeof(visibleName)) {
+    memcpy(visibleName + sizeof(visibleName) - 5, "...", 4);
+  }
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSans9pt7b);
+  drawCentreString(visibleName, 200, 70);
+  char identity[64]{};
+  snprintf(identity, sizeof(identity), "%lu bytes  CRC32 %08lX", static_cast<unsigned long>(size),
+           static_cast<unsigned long>(crc));
+  drawCentreString(identity, 200, 91);
+  drawCentreString("Only use production telemetry firmware", 200, 117);
+  drawCentreString("intended for this Ground Station.", 200, 137);
+  drawCentreString("Wrong firmware may require ST-Link recovery.", 200, 157);
+  display.setFont(&FreeSansBold9pt7b);
+  drawCentreString("Do not disconnect power during this update.", 200, 184);
+  display.setFont(&FreeSans9pt7b);
+  drawCentreString("An interruption may require ST-Link recovery.", 200, 204);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
+  display.setCursor(263, 230);
+  display.print("Install (A)");
+  surface.present();
+}
+
+void Window::radioUpdateProgress(const char *phase, uint8_t link, uint8_t percent) {
+  clearMainScreen();
+  drawPageHeader("Updating GS Radios", false, false);
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSansBold12pt7b);
+  char label[64]{};
+  if (link > 0) {
+    snprintf(label, sizeof(label), "Link %u: %s", link, phase);
+  } else {
+    strncpy(label, phase, sizeof(label) - 1);
+  }
+  drawCentreString(label, 200, 105);
+  display.drawRect(38, 132, 324, 26, BLACK);
+  display.fillRect(42, 136, static_cast<int16_t>(316U * percent / 100U), 18, BLACK);
+  display.setFont(&FreeSans9pt7b);
+  snprintf(label, sizeof(label), "%u%%", percent);
+  drawCentreString(label, 200, 184);
+  drawCentreString("Do not disconnect power", 200, 224);
+  surface.present();
+}
+
+void Window::radioUpdateResult(bool success, const char *message, const char *version1, const char *version2) {
+  clearMainScreen();
+  drawPageHeader(success ? "Radio Update Complete" : "Radio Update Stopped", false, false);
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSansBold12pt7b);
+  drawCentreString(success ? "Both radios verified" : "See recovery status below", 200, 88);
+  display.setFont(&FreeSans9pt7b);
+  drawCentreString(message, 200, 118);
+  char value[80]{};
+  snprintf(value, sizeof(value), "Link 1: %s", version1[0] != '\0' ? version1 : "not updated");
+  drawCentreString(value, 200, 146);
+  snprintf(value, sizeof(value), "Link 2: %s", version2[0] != '\0' ? version2 : "not updated");
+  drawCentreString(value, 200, 168);
+  display.setCursor(10, 230);
+  display.print("Back (B)");
   surface.present();
 }
 

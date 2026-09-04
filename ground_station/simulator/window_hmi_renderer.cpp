@@ -51,11 +51,11 @@ void WindowHmiRenderer::syncLink(const LinkSnapshot& source, size_t index) {
 }
 
 void WindowHmiRenderer::syncStatistics(const FlightStatisticsSnapshot& source, size_t index) {
-  statistics_[index].set(source.maxAltitudeM, source.timeToApogeeS, source.maxVelocityMps,
-                         source.drogueDescentRateMps, source.mainDescentRateMps, source.lastLatitude,
-                         source.lastLongitude, source.flightTimeS, source.maxAltitudeValid,
-                         source.timeToApogeeValid, source.maxVelocityValid, source.drogueRateValid,
-                         source.mainRateValid, source.lastLocationValid, source.flightTimeValid);
+  statistics_[index].set(source.maxAltitudeM, source.timeToApogeeS, source.maxVelocityMps, source.drogueDescentRateMps,
+                         source.mainDescentRateMps, source.lastLatitude, source.lastLongitude, source.flightTimeS,
+                         source.maxAltitudeValid, source.timeToApogeeValid, source.maxVelocityValid,
+                         source.drogueRateValid, source.mainRateValid, source.lastLocationValid,
+                         source.flightTimeValid);
 }
 
 void WindowHmiRenderer::drawStatusBar(const DeviceStatusSnapshot& status) {
@@ -110,10 +110,9 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     }
   } else if (state.screen == "recovery") {
     if (state.qrView == "recovery_link_1") {
-      window_.showLocationQr(state.recoveryLocations[0].lastLatitude, state.recoveryLocations[0].lastLongitude,
-                             "[Link 1] Last Location", true,
-                             LocationQr::IsValid(state.recoveryLocations[1].lastLatitude,
-                                                 state.recoveryLocations[1].lastLongitude));
+      window_.showLocationQr(
+          state.recoveryLocations[0].lastLatitude, state.recoveryLocations[0].lastLongitude, "[Link 1] Last Location",
+          true, LocationQr::IsValid(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude));
     } else if (state.qrView == "recovery_link_2") {
       window_.showLocationQr(state.recoveryLocations[1].lastLatitude, state.recoveryLocations[1].lastLongitude,
                              "[Link 2] Last Location", true, false);
@@ -127,9 +126,8 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
       window_.initRecovery(hasLastLocation);
       if (state.configuration.dualReceiver) {
         const EarthPoint3D target(state.recoverySolution.latitude, state.recoverySolution.longitude);
-        window_.updateRecoveryTarget(&navigation_, target,
-                                     LocationQr::IsValid(target.lat, target.lon), state.selectedRecoveryLink, true,
-                                     hasLastLocation);
+        window_.updateRecoveryTarget(&navigation_, target, LocationQr::IsValid(target.lat, target.lon),
+                                     state.selectedRecoveryLink, true, hasLastLocation);
       } else {
         window_.updateRecovery(&navigation_, hasLastLocation);
       }
@@ -144,11 +142,13 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     } else if (state.testingState == "waiting") {
       window_.initTestingWait();
     } else if (state.testingState == "failed") {
-      const bool connectionLost = std::any_of(state.actions.begin(), state.actions.end(), [](const PlatformAction& action) {
-        return action.type == "testing_connection_lost";
-      });
-      if (connectionLost) window_.initTestingLost();
-      else window_.initTestingFailed();
+      const bool connectionLost =
+          std::any_of(state.actions.begin(), state.actions.end(),
+                      [](const PlatformAction& action) { return action.type == "testing_connection_lost"; });
+      if (connectionLost)
+        window_.initTestingLost();
+      else
+        window_.initTestingFailed();
     } else {
       window_.initTestingReady();
       window_.updateTesting(state.testingSelection);
@@ -156,24 +156,22 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     }
   } else if (state.screen == "data") {
     if (state.qrView == "log_link_1") {
-      window_.showLocationQr(state.flightStatistics[0].lastLatitude, state.flightStatistics[0].lastLongitude,
-                             "[Link 1] Last Location", true,
-                             LocationQr::IsValid(state.flightStatistics[1].lastLatitude,
-                                                 state.flightStatistics[1].lastLongitude));
+      window_.showLocationQr(
+          state.flightStatistics[0].lastLatitude, state.flightStatistics[0].lastLongitude, "[Link 1] Last Location",
+          true, LocationQr::IsValid(state.flightStatistics[1].lastLatitude, state.flightStatistics[1].lastLongitude));
     } else if (state.qrView == "log_link_2") {
       window_.showLocationQr(state.flightStatistics[1].lastLatitude, state.flightStatistics[1].lastLongitude,
                              "[Link 2] Last Location", true, false);
     } else if (state.currentDataSubview == "details" && !state.logs.empty()) {
-      const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)),
-                                               state.logs.size() - 1U);
-      window_.dataShowFlightStatistics(statistics_[0], statistics_[1], state.logs[selected].name.c_str(),
-                                       LocationQr::IsValid(state.flightStatistics[0].lastLatitude,
-                                                           state.flightStatistics[0].lastLongitude) ||
-                                           LocationQr::IsValid(state.flightStatistics[1].lastLatitude,
-                                                               state.flightStatistics[1].lastLongitude));
+      const size_t selected =
+          std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), state.logs.size() - 1U);
+      window_.dataShowFlightStatistics(
+          statistics_[0], statistics_[1], state.logs[selected].name.c_str(),
+          LocationQr::IsValid(state.flightStatistics[0].lastLatitude, state.flightStatistics[0].lastLongitude) ||
+              LocationQr::IsValid(state.flightStatistics[1].lastLatitude, state.flightStatistics[1].lastLongitude));
     } else if (state.currentDataSubview == "options" && !state.logs.empty()) {
-      const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)),
-                                               state.logs.size() - 1U);
+      const size_t selected =
+          std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), state.logs.size() - 1U);
       window_.initDataOptions(state.logs[selected].name.c_str(), state.logs[selected].active);
     } else if ((state.currentDataSubview == "confirm_finalize" || state.currentDataSubview == "confirm_delete") &&
                !state.logs.empty()) {
@@ -189,12 +187,14 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
         window_.listFileName(label.c_str(), static_cast<uint16_t>(index - state.logScrollOffset));
       }
       if (!state.logs.empty()) {
-        const size_t selected = std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), state.logs.size() - 1U);
+        const size_t selected =
+            std::min<size_t>(static_cast<size_t>(std::max<int16_t>(0, state.dataSelection)), state.logs.size() - 1U);
         std::string label = state.logs[selected].name + (state.logs[selected].active ? "  [ACTIVE]" : "");
         window_.dataHighlight(label.c_str(), static_cast<uint16_t>(selected - state.logScrollOffset), true);
       }
-      window_.dataScrollIndicators(state.logScrollOffset > 0U, end < state.logs.size(),
-                                   state.logs.empty() ? -1 : static_cast<int16_t>(state.dataSelection - state.logScrollOffset));
+      window_.dataScrollIndicators(
+          state.logScrollOffset > 0U, end < state.logs.size(),
+          state.logs.empty() ? -1 : static_cast<int16_t>(state.dataSelection - state.logScrollOffset));
       window_.refresh();
     }
   } else if (state.screen == "usb_storage") {
@@ -202,6 +202,21 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
       window_.initDataMessage("USB Drive", state.usbStorageMessage.c_str());
     } else {
       window_.initUsbStorage(state.device.usbStorageState == "host");
+    }
+  } else if (state.screen == "firmware_update") {
+    window_.initFirmwareUpdate(state.firmwareUpdateSelection);
+  } else if (state.screen == "radio_update") {
+    const char* filename = state.radioFirmware.empty() ? "" : state.radioFirmware[0].c_str();
+    if (state.radioUpdateState == "browse") {
+      window_.initRadioUpdateList();
+      if (!state.radioFirmware.empty()) window_.radioUpdateFileName(filename, 0, true);
+      window_.refresh();
+    } else if (state.radioUpdateState == "confirm") {
+      window_.initRadioUpdateConfirm(filename, 37120, 0x11223344);
+    } else if (state.radioUpdateState == "complete") {
+      window_.radioUpdateResult(true, "Update verified", "1.2.0", "1.2.0");
+    } else {
+      window_.radioUpdateProgress("Writing", state.radioUpdateLink, state.radioUpdatePercent);
     }
   } else if (state.screen == "sensors") {
     if (state.calibrationState == "prepare") {

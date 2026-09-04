@@ -74,10 +74,10 @@ const device_settings_t settingsTable[][4] = {
          {.buttonAction = BUTTON_ACTION_SELF_TEST},
          nullptr},
         {"Update Firmware",
-         "Press A to restart the GS for a USB update",
-         "Connect to a computer before continuing",
+         "Update the Ground Station or its radios",
+         "Press A to choose an update target",
          BUTTON,
-         {.buttonAction = BUTTON_ACTION_START_BOOTLOADER},
+         {.buttonAction = BUTTON_ACTION_UPDATE_FIRMWARE},
          nullptr},
     },
 };

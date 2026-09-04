@@ -47,6 +47,8 @@ class Recorder : public ITelemetryPacketSink {
   void onTelemetryPacket(const packedRXMessage& packet, uint8_t source) override;
   RecorderStatus getStatus() const;
   bool shareWithMassStorage();
+  bool pauseForRadioUpdate();
+  void resumeAfterRadioUpdate();
   bool sync();
   bool finalize(FinalizeReason reason = FinalizeReason::UserRequested);
   bool deleteLog(const char* name);
@@ -55,7 +57,15 @@ class Recorder : public ITelemetryPacketSink {
   const char* getDirectory() const { return directory; }
 
  private:
-  enum class CommandType : uint8_t { Sample, Finalize, Sync, CatalogRefresh, Delete, ShareMassStorage };
+  enum class CommandType : uint8_t {
+    Sample,
+    Finalize,
+    Sync,
+    CatalogRefresh,
+    Delete,
+    ShareMassStorage,
+    PauseRadioUpdate
+  };
   struct Command {
     CommandType type{CommandType::Sample};
     packedRXMessage data{};
@@ -71,6 +81,8 @@ class Recorder : public ITelemetryPacketSink {
 
   bool initialized{false};
   std::atomic<bool> enabled{false};
+  std::atomic<bool> radioUpdatePaused{false};
+  bool radioPauseRequested{false};
   bool fileCreated{false};
   bool armed{true};
   bool neverStopLogging{false};

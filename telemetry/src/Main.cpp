@@ -41,6 +41,7 @@ static void MX_USART1_UART_Init();
 static void MX_USART2_UART_Init();
 static void MX_DMA_Init();
 static void MX_TIM2_Init();
+[[noreturn]] static void EnterSystemBootloader();
 
 /**
  * @brief  The application entry point.
@@ -50,6 +51,13 @@ int main() {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick.
    */
   HAL_Init();
+
+  /* ROM bootloader revisions before B4 can leave RCC configuration behind when
+   * launching the application with GO. Start from the reset clock state in both
+   * reset and bootloader-launch paths. */
+  if (HAL_RCC_DeInit() != HAL_OK) {
+    Error_Handler();
+  }
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -69,18 +77,20 @@ int main() {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) fine to cast since char is 8 bits on this platform
   const auto *code_version = reinterpret_cast<const uint8_t *>(telemetry_code_version);
 
+  Parser parser;
+
+  /* Start both circular DMA receivers before the GNSS startup delay. Vega can
+   * already be transmitting during this period, and leaving USART2 idle would
+   * latch an overrun before the application reaches its main loop. */
+  Serial<64> serial2(&huart2);
+  Serial<256> serial1(&huart1);
+
   /* Wait for the GNSS module to initialize*/
   HAL_Delay(4000);
 
   /* Set the GNSS module to 115200 baud and put in airbourne mode*/
   gpsSetup();
 
-  Parser parser;
-
-  /* Initalize the communication to Host */
-  Serial<64> serial2(&huart2);
-  /* Initalize the communication to GNSS Module */
-  Serial<256> serial1(&huart1);
   /* Initalize Thermistor */
   Thermistor<3434> thermistor(&hadc1);
 
@@ -107,6 +117,25 @@ int main() {
     /* Check if we received data from the host */
     if (serial2.available()) {
       parser.process(serial2.read());
+    }
+
+    if (bootloader_requested) {
+      link.disableTransmission();
+
+      uartOutBuffer[0] = CMD_BOOTLOADER;
+      uartOutBuffer[1] = BOOTLOADER_ACK_LENGTH;
+      uartOutBuffer[2] = BOOTLOADER_PROTOCOL_VERSION;
+      uartOutBuffer[3] = 0x79;
+      uartOutBuffer[4] = crc8(uartOutBuffer, 4);
+
+      if (HAL_UART_Transmit(&huart2, uartOutBuffer, 5, 100) != HAL_OK) {
+        bootloader_requested = false;
+        continue;
+      }
+      while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) == RESET) {
+      }
+      HAL_Delay(10);
+      EnterSystemBootloader();
     }
 
     /* Transmit Link Information*/
@@ -211,6 +240,52 @@ int main() {
       HAL_UART_Transmit(&huart2, uartOutBuffer, code_version_size + 3, 2);
       send_version_num = false;
     }
+  }
+}
+
+[[noreturn]] static void EnterSystemBootloader() {
+  constexpr uint32_t kSystemMemoryBase = 0x1FFF0000U;
+
+  HAL_UART_DMAStop(&huart1);
+  HAL_UART_DMAStop(&huart2);
+  HAL_ADC_Stop_DMA(&hadc1);
+  HAL_TIM_Base_Stop_IT(&htim2);
+
+  HAL_UART_DeInit(&huart1);
+  HAL_UART_DeInit(&huart2);
+  HAL_ADC_DeInit(&hadc1);
+  HAL_SPI_DeInit(&hspi1);
+  HAL_TIM_Base_DeInit(&htim2);
+
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
+
+  HAL_RCC_DeInit();
+  HAL_DeInit();
+
+  __disable_irq();
+  NVIC->ICER[0] = 0xFFFFFFFFU;
+  NVIC->ICPR[0] = 0xFFFFFFFFU;
+
+  /* Jump through the physical system-memory vectors. B3/B4 ROM revisions
+   * reset SYSCFG during startup, so their entry must not depend on remapping
+   * system memory at address zero. */
+
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  const uint32_t system_stack = *reinterpret_cast<const uint32_t *>(kSystemMemoryBase);
+  const uint32_t system_entry = *reinterpret_cast<const uint32_t *>(kSystemMemoryBase + 4U);
+  auto system_bootloader = reinterpret_cast<void (*)()>(system_entry);
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+
+  __set_CONTROL(0U);
+  __set_MSP(system_stack);
+  __DSB();
+  __ISB();
+  __enable_irq();
+  system_bootloader();
+
+  while (true) {
   }
 }
 

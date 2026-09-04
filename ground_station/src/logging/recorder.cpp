@@ -42,7 +42,7 @@ bool Recorder::begin() {
 }
 
 void Recorder::onTelemetryPacket(const packedRXMessage& packet, uint8_t source) {
-  if (!initialized || !enabled || source < 1 || source > 2) {
+  if (!initialized || !enabled || radioUpdatePaused || source < 1 || source > 2) {
     return;
   }
   Command command{};
@@ -250,6 +250,26 @@ bool Recorder::shareWithMassStorage() {
   return submitAndWait(command);
 }
 
+bool Recorder::pauseForRadioUpdate() {
+  portENTER_CRITICAL(&statusMux);
+  radioPauseRequested = true;
+  portEXIT_CRITICAL(&statusMux);
+  Command command{};
+  command.type = CommandType::PauseRadioUpdate;
+  const bool result = submitAndWait(command);
+  if (!result) {
+    resumeAfterRadioUpdate();
+  }
+  return result;
+}
+
+void Recorder::resumeAfterRadioUpdate() {
+  portENTER_CRITICAL(&statusMux);
+  radioPauseRequested = false;
+  radioUpdatePaused = false;
+  portEXIT_CRITICAL(&statusMux);
+}
+
 bool Recorder::sync() {
   Command command{};
   command.type = CommandType::Sync;
@@ -274,7 +294,7 @@ void Recorder::recordTask(void* pvParameter) {
     }
     bool result = true;
     if (command.type == CommandType::Sample) {
-      if (!ref->enabled) {
+      if (!ref->enabled || ref->radioUpdatePaused) {
         continue;
       }
       const auto bit = static_cast<uint8_t>(1U << (command.source - 1U));
@@ -310,6 +330,15 @@ void Recorder::recordTask(void* pvParameter) {
           }
         }
       }
+    } else if (command.type == CommandType::PauseRadioUpdate) {
+      // All earlier samples have been processed. A queued liftoff can make this
+      // fail, instead of allowing an apparently idle UI to interrupt recording.
+      portENTER_CRITICAL(&ref->statusMux);
+      result = ref->radioPauseRequested && !ref->fileCreated && ref->status.state == RecorderState::Idle;
+      ref->radioUpdatePaused = result;
+      portEXIT_CRITICAL(&ref->statusMux);
+    } else if (ref->radioUpdatePaused) {
+      result = false;
     } else if (command.type == CommandType::Finalize) {
       result = ref->finalizeFile(command.reason);
     } else if (command.type == CommandType::Sync) {

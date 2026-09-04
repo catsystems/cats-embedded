@@ -40,6 +40,8 @@ class Utils {
   static bool claimFirmwareStorage(uint32_t timeoutMs = 3000);
   static UsbStorageState getMassStorageState();
   static bool isFilesystemAvailable();
+  static bool beginRadioUpdateStorage();
+  static void endRadioUpdateStorage();
   static int32_t getFlashMemoryUsage();
   static void streamUsb(Telemetry *link, uint8_t link_idx);
   static bool format(const char *labelName);

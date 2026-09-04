@@ -215,7 +215,20 @@ lint_project() {
   fi
 }
 
+test_rom_bootloader() {
+  local test_binary="$build_dir/rom-bootloader-test"
+  mkdir -p "$build_dir"
+  g++ -std=c++20 -Wall -Wextra -Werror -Wno-sign-compare \
+    -I"$project_root/src" \
+    "$project_root/tests/rom_bootloader_test.cpp" \
+    "$project_root/src/update/rom_bootloader.cpp" \
+    "$project_root/src/telemetry/crc.cpp" \
+    -o "$test_binary"
+  "$test_binary"
+}
+
 timed dependencies prepare_dependencies
+timed rom-bootloader-test test_rom_bootloader
 timed build build_project
 timed lint lint_project
 

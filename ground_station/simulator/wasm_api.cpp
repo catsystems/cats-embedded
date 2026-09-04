@@ -516,6 +516,10 @@ void rebuildSnapshot() {
              ",\"menuSelection\":" + std::to_string(state.menuSelection) +
              ",\"settingsPage\":" + std::to_string(state.settingsPage) +
              ",\"settingsSelection\":" + std::to_string(state.settingsSelection) +
+             ",\"firmwareUpdateSelection\":" + std::to_string(state.firmwareUpdateSelection) +
+             ",\"radioUpdateState\":" + quote(state.radioUpdateState) +
+             ",\"radioUpdateLink\":" + std::to_string(state.radioUpdateLink) +
+             ",\"radioUpdatePercent\":" + std::to_string(state.radioUpdatePercent) +
              ",\"recorderState\":" + quote(state.recorder.state) +
              ",\"activeFilename\":" + quote(state.recorder.activeFilename) +
              ",\"recordedRowCount\":" + std::to_string(state.recorder.writtenRows) +

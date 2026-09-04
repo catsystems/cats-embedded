@@ -236,6 +236,12 @@ struct HmiSnapshot {
   std::string dataMessageTitle;
   std::string dataMessageText;
   std::string usbStorageMessage;
+  int16_t firmwareUpdateSelection = 0;
+  std::string radioUpdateState = "browse";
+  std::vector<std::string> radioFirmware{"telemetry-1.2.0.bin"};
+  int16_t radioFirmwareSelection = 0;
+  uint8_t radioUpdateLink = 0;
+  uint8_t radioUpdatePercent = 0;
   std::string qrView = "none";
   std::string qrUrl;
   uint64_t virtualTimeMs = 0;
@@ -277,12 +283,27 @@ class HmiController {
   void clearActions() { actions_.clear(); }
 
  private:
-  enum class Screen : uint8_t { Logo, Menu, Live, Recovery, Testing, Data, Sensors, Settings, Bootloader, UsbStorage, SelfTest };
+  enum class Screen : uint8_t {
+    Logo,
+    Menu,
+    Live,
+    Recovery,
+    Testing,
+    Data,
+    Sensors,
+    Settings,
+    Bootloader,
+    UsbStorage,
+    SelfTest,
+    FirmwareUpdate,
+    RadioUpdate
+  };
   enum class TestingState : uint8_t { Disclaimer, CanStart, CannotStart, Waiting, Failed, Started, ConfirmEvent };
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
   enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
 
   static constexpr uint64_t kTestingTimeoutMs = 10000;
+  static constexpr uint64_t kRadioUpdateLinkDurationMs = 2000;
   static constexpr uint64_t kLongPressMs = 500;
   static constexpr size_t kKeyboardMaxLength = 16;
 
@@ -300,6 +321,8 @@ class HmiController {
   void settingsStep(uint64_t nowMs);
   void selfTestStep(uint64_t nowMs);
   void selfTestRadio(SelfTest::RadioConfiguration configuration);
+  void firmwareUpdateStep();
+  void radioUpdateStep();
   void updateRecoveryLocations();
   bool showRecoveryLocation(size_t linkIndex);
   void emit(const char* type, uint8_t link = 0, int32_t value = 0, const std::string& text = {});
@@ -363,4 +386,8 @@ class HmiController {
   uint64_t selfTestLastPacket_ = 0;
   uint64_t selfTestLastFix_ = 0;
   SelfTest::RadioConfiguration selfTestRadio_ = SelfTest::RadioConfiguration::Restore;
+  int16_t firmwareUpdateSelection_ = 0;
+  std::string radioUpdateState_ = "browse";
+  int16_t radioFirmwareSelection_ = 0;
+  uint64_t radioUpdateStartedMs_ = 0;
 };

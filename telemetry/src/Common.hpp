@@ -9,4 +9,5 @@
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 extern Transmission link;
 extern bool send_version_num;
+extern bool bootloader_requested;
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

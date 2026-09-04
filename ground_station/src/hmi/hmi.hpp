@@ -8,6 +8,7 @@
 #include "clock.hpp"
 #include "config.hpp"
 #include "logging/recorder.hpp"
+#include "update/radio_firmware_updater.hpp"
 #include "window.hpp"
 
 #include <vector>
@@ -48,6 +49,8 @@ class Hmi {
     SETTINGS = 6,
     USB_STORAGE = 7,
     SELF_TEST = 8,
+    FIRMWARE_UPDATE = 9,
+    RADIO_UPDATE = 10,
   };
 
   enum TestingState {
@@ -79,6 +82,7 @@ class Hmi {
   uint32_t lastSensorRefresh = 0;
 
   Recorder recorder;
+  RadioUpdate::RadioFirmwareUpdater* radioUpdater{nullptr};
 
   uint16_t oldTimeStamp = 0;
 
@@ -114,6 +118,11 @@ class Hmi {
   char displayedVersions[2][17]{};
   void initUsbStorage();
   void usbStorage();
+  void initFirmwareUpdate();
+  void firmwareUpdate();
+  void initRadioUpdate();
+  void radioUpdate();
+  void drawRadioUpdateList(const RadioUpdate::Snapshot& snapshot);
   void updateAutomaticUsbStorage(const RecorderStatus& recorderStatus);
   bool claimStorageForFirmware();
   void initSelfTest();
@@ -178,4 +187,9 @@ class Hmi {
   bool usbPreviouslyConnected = false;
   bool automaticUsbSharePending = false;
   uint32_t lastAutomaticUsbShareAttempt = 0;
+  uint32_t radioUpdateRevision = UINT32_MAX;
+  int16_t firmwareUpdateIndex = 0;
+  size_t radioUpdateIndex = 0;
+  size_t radioUpdateWindowStart = 0;
+  bool leaveRadioUpdate = false;
 };

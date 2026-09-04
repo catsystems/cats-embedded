@@ -93,6 +93,9 @@ SystemParser::SystemParser() = default;
  * @return false on error
  */
 bool SystemParser::loadFile(const char* path) {
+  if (!Utils::isFilesystemAvailable()) {
+    return false;
+  }
   if (path == nullptr || path[0] == '\0') {
     console.warning.println("[PARSER] Invalid file path");
     return false;
@@ -289,6 +292,9 @@ bool SystemParser::getUnitSystem(UnitSystem& unit_system) {
  * @return false on error
  */
 bool SystemParser::saveFile(const char* path) {
+  if (!Utils::isFilesystemAvailable()) {
+    return false;
+  }
   if (path != nullptr) {
     filePath = path;
   }
