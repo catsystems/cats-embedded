@@ -29,6 +29,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <atomic>
 #include <cstring>
 
 constexpr uint8_t BOOT_BUTTON = 0;
@@ -56,6 +57,7 @@ static volatile UsbConnectionState usbConnectionState = UsbConnectionState::Disc
 static volatile UsbStorageState usbStorageState = UsbStorageState::FirmwareOwned;
 static volatile bool filesystemMounted = true;
 static SemaphoreHandle_t storageAccessMutex = nullptr;
+static std::atomic<bool> radioUpdateStorage{false};
 USBMSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
@@ -339,7 +341,7 @@ bool Utils::requestMassStorage() {
     return false;
   }
   const bool available = usbConnectionState == UsbConnectionState::Active &&
-                         usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted;
+                         usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted && !radioUpdateStorage;
   if (available) {
     usbStorageState = UsbStorageState::Preparing;
   }
@@ -367,9 +369,29 @@ bool Utils::claimFirmwareStorage(uint32_t timeoutMs) {
 
 UsbStorageState Utils::getMassStorageState() { return usbStorageState; }
 
-bool Utils::isFilesystemAvailable() { return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted; }
+bool Utils::isFilesystemAvailable() {
+  return usbStorageState == UsbStorageState::FirmwareOwned && filesystemMounted && !radioUpdateStorage;
+}
+
+bool Utils::beginRadioUpdateStorage() {
+  if (storageAccessMutex == nullptr || xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+    return false;
+  }
+  // Never reclaim a host-owned volume implicitly. The user must eject it first.
+  const bool available = isFilesystemAvailable();
+  if (available) {
+    radioUpdateStorage = true;
+  }
+  xSemaphoreGive(storageAccessMutex);
+  return available;
+}
+
+void Utils::endRadioUpdateStorage() { radioUpdateStorage = false; }
 
 bool Utils::format(const char *labelName) {
+  if (!isFilesystemAvailable()) {
+    return false;
+  }
   static FATFS elmchanFatfs;
   static uint8_t workbuf[4096];  // Working buffer for f_fdisk function.
 

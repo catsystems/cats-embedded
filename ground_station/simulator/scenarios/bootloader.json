@@ -12,6 +12,8 @@
     {"press": "down"}, {"release": "down"},
     {"press": "down"}, {"release": "down"},
     {"press": "ok"}, {"release": "ok"},
+    {"assert": {"activeScreen": "firmware_update", "firmwareUpdateSelection": 0}},
+    {"press": "ok"}, {"release": "ok"},
     {"assert": {"activeScreen": "bootloader", "emittedAction": "bootloader_requested"}},
     {"snapshot": "bootloader-requested"}
   ]

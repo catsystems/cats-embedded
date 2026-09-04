@@ -426,7 +426,10 @@ async function run() {
     tap(wasm, 'down');
     captureSelfTest('Settings - System update');
     tap(wasm, 'ok');
-    assert(snapshot(wasm).activeScreen === 'bootloader' && snapshot(wasm).actions.some(action => action.type === 'bootloader_requested'), 'Update Firmware invokes the existing bootloader');
+    assert(snapshot(wasm).activeScreen === 'firmware_update' && snapshot(wasm).firmwareUpdateSelection === 0, 'Update Firmware opens the target chooser');
+    captureSelfTest('Update Firmware - Ground Station');
+    tap(wasm, 'ok');
+    assert(snapshot(wasm).activeScreen === 'bootloader' && snapshot(wasm).actions.some(action => action.type === 'bootloader_requested'), 'Ground Station invokes the existing bootloader');
   });
 
   await test('settings versions: startup cache, bounded retries and navigation', async () => {

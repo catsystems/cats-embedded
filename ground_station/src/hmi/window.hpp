@@ -78,6 +78,12 @@ class Window {
   void initDataOptions(const char *logName, bool active);
   void initDataMessage(const char *title, const char *message);
   void initUsbStorage(bool active);
+  void initFirmwareUpdate(int16_t index);
+  void initRadioUpdateList();
+  void radioUpdateFileName(const char *filename, uint8_t row, bool selected);
+  void initRadioUpdateConfirm(const char *filename, uint32_t size, uint32_t crc);
+  void radioUpdateProgress(const char *phase, uint8_t link, uint8_t percent);
+  void radioUpdateResult(bool success, const char *message, const char *version1, const char *version2);
 
   void initSensors();
   void initSensorPrepareCalibrate();

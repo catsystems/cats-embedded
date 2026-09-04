@@ -305,6 +305,9 @@ class Simulator:
         self.data_subview = "list"
         self.usb_storage_session = False
         self.usb_storage_message = ""
+        self.firmware_update_selection = 0
+        self.radio_update_state = "browse"
+        self.radio_update_started_ms = 0
         self.usb_previously_connected = False
         self.automatic_usb_share_pending = False
         self.previous_recorder_state = "idle"
@@ -509,6 +512,21 @@ class Simulator:
                 self.render("USB Drive", "Logs available on PC. Back (B). Disconnect (A).")
             else:
                 self.render("USB Drive", "Preparing USB drive...")
+        elif self.screen == "firmware_update":
+            target = "Ground Station" if self.firmware_update_selection == 0 else "Radio Receivers"
+            self.render("Update Firmware", target)
+        elif self.screen == "radio_update":
+            if self.radio_update_state == "browse":
+                self.render("Update GS Radios", "telemetry-1.2.0.bin")
+            elif self.radio_update_state == "confirm":
+                self.render("Confirm Radio Update", "Do not disconnect power")
+            elif self.radio_update_state == "complete":
+                self.render("Radio Update Complete", "Both radios verified. Back (B).")
+            else:
+                elapsed = self.now_ms - self.radio_update_started_ms
+                link = 1 if elapsed < 2000 else 2
+                percent = min(99, (elapsed % 2000) * 100 // 2000)
+                self.render("Updating GS Radios", f"Link {link} Writing {percent}%")
 
     def press(self, button: str) -> None:
         button = self.normalize_button(button)
@@ -584,10 +602,17 @@ class Simulator:
             self.settings_step(explicit_pressed)
         elif self.screen == "recovery":
             self.recovery_step(explicit_pressed)
-        elif self.screen in ("bootloader", "self_test") and "back" in explicit_pressed:
+        elif self.screen == "bootloader" and "back" in explicit_pressed:
+            self.firmware_update_selection = 0
+            self.screen = "firmware_update"
+        elif self.screen == "self_test" and "back" in explicit_pressed:
             self.screen = "settings"
         elif self.screen == "usb_storage":
             self.usb_storage_step(explicit_pressed)
+        elif self.screen == "firmware_update":
+            self.firmware_update_step(explicit_pressed)
+        elif self.screen == "radio_update":
+            self.radio_update_step(explicit_pressed)
         for name in explicit_pressed:
             if self.held.get(name):
                 self.last_repeat[name] = self.now_ms
@@ -976,7 +1001,7 @@ class Simulator:
 
         if self.settings_selection < 0:
             if "right" in pressed:
-                self.settings_page = min(2, self.settings_page + 1)
+                self.settings_page = min(len(SETTING_COUNTS) - 1, self.settings_page + 1)
             if "left" in pressed:
                 self.settings_page = max(0, self.settings_page - 1)
         else:
@@ -1004,8 +1029,8 @@ class Simulator:
                 self.screen = "usb_storage"
                 return
             elif self.settings_page == 2 and self.settings_selection == 3 and "ok" in pressed:
-                self.screen = "bootloader"
-                self.emit("bootloader_requested")
+                self.firmware_update_selection = 0
+                self.screen = "firmware_update"
             elif self.settings_page == 0 and self.settings_selection == 0:
                 if inc: config["dualReceiver"] = True
                 if dec: config["dualReceiver"] = False
@@ -1021,7 +1046,6 @@ class Simulator:
                 if dec: config["startupAnimation"] = False
             elif self.settings_page == 2 and self.settings_selection == 2 and "ok" in pressed:
                 self.screen = "self_test"
-
         if "down" in pressed:
             self.settings_selection = min(SETTING_COUNTS[self.settings_page] - 1, self.settings_selection + 1)
         if "up" in pressed:
@@ -1034,6 +1058,51 @@ class Simulator:
                 self.automatic_usb_share_pending = bool(self.state["deviceStatus"].get("usb", False))
                 self.emit("configuration_saved")
                 self.to_menu()
+
+    def firmware_update_step(self, pressed: set[str]) -> None:
+        if "down" in pressed:
+            self.firmware_update_selection = 1
+        if "up" in pressed:
+            self.firmware_update_selection = 0
+        if "back" in pressed:
+            self.screen = "settings"
+            self.settings_page = 2
+            self.settings_selection = 3
+            return
+        if "ok" not in pressed:
+            return
+        if self.firmware_update_selection == 0:
+            self.screen = "bootloader"
+            self.emit("bootloader_requested")
+            return
+        self.radio_update_state = "browse"
+        self.radio_update_started_ms = 0
+        self.screen = "radio_update"
+        self.emit("radio_update_browse")
+
+    def radio_update_step(self, pressed: set[str]) -> None:
+        if self.radio_update_state == "browse":
+            if "ok" in pressed:
+                self.radio_update_state = "confirm"
+            elif "back" in pressed:
+                self.firmware_update_selection = 1
+                self.screen = "firmware_update"
+        elif self.radio_update_state == "confirm":
+            if "back" in pressed:
+                self.radio_update_state = "browse"
+            elif "ok" in pressed:
+                self.radio_update_state = "updating"
+                self.radio_update_started_ms = self.now_ms
+                self.emit("radio_update_started")
+        elif self.radio_update_state == "updating":
+            if self.now_ms - self.radio_update_started_ms >= 4000:
+                self.radio_update_state = "complete"
+                self.emit("radio_update_complete")
+        elif self.radio_update_state == "complete" and "back" in pressed:
+            self.radio_update_state = "browse"
+            self.radio_update_started_ms = 0
+            self.firmware_update_selection = 1
+            self.screen = "firmware_update"
 
     def usb_storage_step(self, pressed: set[str]) -> None:
         storage_state = self.state["deviceStatus"].get("usbStorageState", "firmware")
@@ -1202,6 +1271,12 @@ class Simulator:
             azimuth = math.atan2(dx, dy)
         return {
             "activeScreen": self.screen,
+            "firmwareUpdateSelection": self.firmware_update_selection,
+            "radioUpdateState": self.radio_update_state,
+            "radioUpdateLink": (1 if self.now_ms - self.radio_update_started_ms < 2000 else 2)
+            if self.radio_update_state == "updating" else (2 if self.radio_update_state == "complete" else 0),
+            "radioUpdatePercent": min(99, ((self.now_ms - self.radio_update_started_ms) % 2000) * 100 // 2000)
+            if self.radio_update_state == "updating" else (100 if self.radio_update_state == "complete" else 0),
             "testingState": self.testing_state,
             "calibrationState": self.calibration_state,
             "sensorView": self.sensor_view,
@@ -1465,7 +1540,7 @@ def deterministic_test(root: Path) -> int:
                           "sensors.json", "sensors-orientation.json", "settings.json", "settings-versions.json", "bootloader.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
                           "recording-independent.json", "recording-modes.json", "log-management.json",
-                          "legacy-log-names.json", "usb-storage.json"):
+                          "legacy-log-names.json", "usb-storage.json", "radio-update.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():
             try:
