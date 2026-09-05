@@ -1,7 +1,7 @@
 {
   "menu": "2102f0f91cd0c03176ee70f679063cdc9fb95593e64c401b88149c4316c5c117",
   "startupRocket": "c8db9d72adcd669e7f60cb33e213e1f05c9f4eecead98bf8d2510d254163ae64",
-  "lightDemo": "775ecaa079f4bd1dd7130ff0f962de512dec16dace84b5e91bb36b39619d426a",
+  "lightDemo": "4f619bbbf53bda15a3e7d7a7f3e152808b01f6f65aa24f8624f4a12f8e5228af",
   "recovery": "eda5a41b5f22562e8628f879dbe04f9e3d7e929d54157840398fe49b2dca0a56",
   "compassOrientation": "6d5a84bc0813d49a491c11b1dbd3924046aa5ac43bcf8767dc4738e15eb1954a",
   "phoneHeading0": "41742a8683e13fcebfa75265c01050a76aacaa7dcd4bc0e148ac991c22128d2e",
@@ -14,7 +14,7 @@
   "phoneHeading315": "98f68820f68cf7049458c78f7a68dd5e46bbd6c4ace40efc98a67061eca69e4b",
   "usbStorage": "cd4a76e556b38614ce3194c15fb40de92c012ab78f128d9624d4c3043047c089",
   "recorderFault": "32219f426fded5eafe2a0a5199c593e94d9e858f5bb973190bcd71ce76e5ca2c",
-  "liveAheadRight": "6cd2afcd9a1e1a24441dd99a8e49acc954ff8d626f859f831462b01ebf813cfc",
-  "liveLeftAhead": "166c4d1acf0932c9bdd7b2f71aa0922cdc1da2daa6ccd0eae633e2c72349b0fb",
-  "liveBehindLeft": "1e768ec62806a82f9ac29065753054d017014ad95337a811bd09b92e6e9c3b0f"
+  "liveAheadRight": "1cfb144c6e9a8c51eac0a67ef329e83f1f2bc56b7c79e9a117f3793d3962bf65",
+  "liveLeftAhead": "0b4cce4e33c9e93fe44c5e36e8ac0a178e1f9b16ab7704775116aba5480ace08",
+  "liveBehindLeft": "7c1cba8d8e141bcacb76a3bc538ed3f973d7464cc29ecff42ca3c23ddc780198"
 }
