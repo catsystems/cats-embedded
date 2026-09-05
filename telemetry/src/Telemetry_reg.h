@@ -58,7 +58,5 @@ typedef struct modulation_settings_s {
 
 #define CMD_BOOTLOADER 0x80
 
-#define BOOTLOADER_REQUEST_LENGTH   8U
 #define BOOTLOADER_ACK_LENGTH       2U
 #define BOOTLOADER_PROTOCOL_VERSION 1U
-#define BOOTLOADER_REQUEST_GUARD    0xA5U
