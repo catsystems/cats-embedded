@@ -2,7 +2,7 @@
   "initial": {
     "ready": true,
     "navigation": {
-      "northRad": 1.5707963,
+      "northRad": -1.5707963,
       "pitchRad": -0.2094395,
       "rollRad": 0.1396263,
       "mx": 940.0,

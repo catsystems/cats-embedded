@@ -19,11 +19,11 @@ class Hmi {
       : recorder(dir),
         upButton(kUpButtonPin, kButtonDebounceMs),
         downButton(kDownButtonPin, kButtonDebounceMs),
-        leftButton(2, kButtonDebounceMs),
-        rightButton(5, kButtonDebounceMs),
+        leftButton(kLeftButtonPin, kButtonDebounceMs),
+        rightButton(kRightButtonPin, kButtonDebounceMs),
         centerButton(1, kButtonDebounceMs),
         okButton(7, kButtonDebounceMs),
-        backButton(6, kButtonDebounceMs),
+        backButton(kBackButtonPin, kButtonDebounceMs),
         window(display, systemConfig, clock) {}
 
   void begin();
@@ -36,8 +36,12 @@ class Hmi {
  private:
   static constexpr uint8_t kUpButtonPin = 3;
   static constexpr uint8_t kDownButtonPin = 4;
+  static constexpr uint8_t kLeftButtonPin = 2;
+  static constexpr uint8_t kRightButtonPin = 5;
+  static constexpr uint8_t kBackButtonPin = 6;
   static constexpr uint32_t kButtonDebounceMs = 15;
   static constexpr uint32_t kSensorRefreshIntervalMs = 200;
+  static constexpr uint32_t kLiveRefreshIntervalMs = 200;
 
   enum State {
     MENU = 0,
@@ -80,6 +84,7 @@ class Hmi {
   CalibrationState calibrationState = IDLE;
   SensorView sensorView = SensorView::Readings;
   uint32_t lastSensorRefresh = 0;
+  uint32_t lastLiveRefresh = 0;
 
   Recorder recorder;
   RadioUpdate::RadioFirmwareUpdater* radioUpdater{nullptr};
@@ -97,6 +102,7 @@ class Hmi {
   void menu();
   void initLive();
   void live();
+  bool liveButtonPending() const;
   void initRecovery();
   void recovery();
   void updateRecoveryLocations();

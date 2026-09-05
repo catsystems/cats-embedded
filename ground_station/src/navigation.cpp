@@ -3,6 +3,8 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "navigation.hpp"
+
+#include <Preferences.h>
 #include "config.hpp"
 #include "console.hpp"
 #include "utils.hpp"
@@ -35,6 +37,26 @@ SelfTestSensorObservation Navigation::selfTestSensors() const {
   return copy;
 }
 
+bool Navigation::saveGyroCalibration(const std::array<float, 3> &bias) {
+  if (!std::all_of(bias.begin(), bias.end(), [](float value) {
+        return std::isfinite(value) && std::fabs(value) <= SelfTestProfile::kMaximumGyroBias;
+      }))
+    return false;
+  // Factory offsets live in NVS, independently of the user-editable USB filesystem.
+  Preferences preferences;
+  if (!preferences.begin("cats-gyro", false)) return false;
+  std::array<float, 3> verified{};
+  const bool saved = preferences.putBytes("bias-v1", bias.data(), sizeof(bias)) == sizeof(bias) &&
+                     preferences.getBytes("bias-v1", verified.data(), sizeof(verified)) == sizeof(verified) &&
+                     verified == bias;
+  preferences.end();
+  if (!saved) return false;
+  portENTER_CRITICAL(&sensorMux);
+  gyroBias = bias;
+  portEXIT_CRITICAL(&sensorMux);
+  return true;
+}
+
 bool Navigation::begin() {
   initialized = true;
 
@@ -45,6 +67,18 @@ bool Navigation::begin() {
   imuDetected = imu.begin(Wire, 0x6A) == 1;
   if (!imuDetected) {
     console.warning.println("IMU init failed!");
+  }
+
+  Preferences preferences;
+  if (preferences.begin("cats-gyro", true)) {
+    std::array<float, 3> saved{};
+    if (preferences.getBytesLength("bias-v1") == sizeof(saved) &&
+        preferences.getBytes("bias-v1", saved.data(), sizeof(saved)) == sizeof(saved) &&
+        std::all_of(saved.begin(), saved.end(), [](float value) {
+          return std::isfinite(value) && std::fabs(value) <= SelfTestProfile::kMaximumGyroBias;
+        }))
+      gyroBias = saved;
+    preferences.end();
   }
 
   filter.begin(NAVIGATION_TASK_FREQUENCY);
@@ -223,12 +257,20 @@ void Navigation::navigationTask(void *pvParameter) {
 
     const bool accelerationRead = ref->imu.readAcceleration(ref->ax, ref->ay, ref->az) != 0;
     const bool gyroRead = ref->imu.readGyroscope(ref->gx, ref->gy, ref->gz) != 0;
+    const std::array<float, 3> rawGyro{ref->gx, ref->gy, ref->gz};
+    portENTER_CRITICAL(&ref->sensorMux);
+    const auto bias = ref->gyroBias;
+    portEXIT_CRITICAL(&ref->sensorMux);
+    ref->gx -= bias[0];
+    ref->gy -= bias[1];
+    ref->gz -= bias[2];
     if (sampling) {
       sample.accelerationFresh &= accelerationRead;
       sample.gyroFresh &= gyroRead;
       sample.readError |= !accelerationRead || !gyroRead;
       sample.acceleration = {ref->ax, ref->ay, ref->az};
       sample.gyro = {ref->gx, ref->gy, ref->gz};
+      sample.rawGyro = rawGyro;
       sample.sequence = ++sensorSequence;
       sample.sampledAtMs = millis();
       portENTER_CRITICAL(&ref->sensorMux);
@@ -236,7 +278,9 @@ void Navigation::navigationTask(void *pvParameter) {
       portEXIT_CRITICAL(&ref->sensorMux);
     }
 
-    ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[0], ref->m[1], -ref->m[2]);
+    // Align magnetic axes with the IMU before fusion. The quarter-turn belongs
+    // after calibration, which remains in the magnetometer's native axes.
+    ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[1], -ref->m[0], -ref->m[2]);
 
     ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
 

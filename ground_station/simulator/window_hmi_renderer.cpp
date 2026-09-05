@@ -46,7 +46,7 @@ void WindowHmiRenderer::syncLink(const LinkSnapshot& source, size_t index) {
   telemetry_[index].set(std::min<uint8_t>(7, source.telemetry.state), source.telemetry.errors,
                         source.telemetry.altitudeM, source.telemetry.velocityMps, source.telemetry.latitude,
                         source.telemetry.longitude, source.telemetry.voltage, source.telemetry.pyroContinuity,
-                        source.telemetry.testingMode);
+                        source.telemetry.testingMode, static_cast<uint32_t>(source.telemetry.lastUpdateMs));
   linkInfo_[index].set(source.info.linkQuality, source.info.rssi, source.info.snr);
 }
 
@@ -108,6 +108,7 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
         window_.updateLive(&telemetry_[index], &navigation_, &linkInfo_[index], static_cast<int16_t>(index));
       }
     }
+    window_.updateLiveNavigation(telemetry_[0], telemetry_[1], &navigation_);
   } else if (state.screen == "recovery") {
     if (state.qrView == "recovery_link_1") {
       window_.showLocationQr(

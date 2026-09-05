@@ -31,6 +31,9 @@ void HmiController::selfTestStep(uint64_t nowMs) {
   const auto device = device_.snapshot();
   selfTestInput_.buttonsHeld = selfTestInput_.buttonsPressed = 0;
   selfTestInput_.usbConnected = device.usb;
+  selfTestInput_.usbStorageReady = device.usbStorageState == "host";
+  selfTestInput_.usbStorageFault = device.usbStorageState == "fault";
+  selfTestInput_.usbReadCount = device.usbReadCount;
   selfTestInput_.batteryVoltage = device.batteryVoltage;
   selfTestInput_.linksReady = true;
   for (size_t i = 0; i < 7; ++i) {
@@ -73,6 +76,7 @@ void HmiController::selfTestStep(uint64_t nowMs) {
       radio.maxGapMs = std::max(radio.maxGapMs, now - radio.lastPacketMs);
       radio.lastPacketMs = now;
       radio.lqSum += device.selfTestLq;
+      radio.minimumSnr = std::min(radio.minimumSnr, device.selfTestSnr);
       received = true;
     }
     if (received && selfTestRadio_ >= SelfTest::RadioConfiguration::Single && now % 100 < 60) ++selfTestInput_.combinedPackets;
@@ -96,13 +100,19 @@ void HmiController::selfTestStep(uint64_t nowMs) {
   sensor.magnetometer = device.selfTestSensorFailure ? 0 : 0x0d;
   sensor.readError = device.selfTestSensorFailure;
   sensor.acceleration = {nav.ax, nav.ay, nav.az};
-  sensor.gyro = {nav.gx, nav.gy, nav.gz};
+  sensor.rawGyro = {nav.gx, nav.gy, nav.gz};
+  for (size_t i = 0; i < 3; ++i) sensor.gyro[i] = sensor.rawGyro[i] - device.gyroBias[i];
   sensor.magnetic = {nav.mx, nav.my, nav.mz};
   // A default field allows a stationary healthy fixture; motion still requires
   // explicit navigation injections, so the motion test cannot pass by waiting.
   if (nav.mx == 0 && nav.my == 0 && nav.mz == 0) sensor.magnetic = {500, 300, 700};
 
   selfTest_.update(now, selfTestInput_);
+  std::array<float, 3> bias{};
+  if (selfTest_.takeGyroCalibration(bias))
+    selfTest_.completeGyroCalibration(device_.saveGyroCalibration(bias), now, selfTestInput_);
+  if (selfTest_.takeUsbStorageRequest() && !device_.requestMassStorage())
+    selfTest_.setResult(SelfTest::Check::Usb, SelfTest::Result::Fail, "Could not share USB storage");
   const auto radio = selfTest_.takeRadioConfiguration();
   if (radio != SelfTest::RadioConfiguration::None) selfTestRadio(radio);
   if (selfTest_.takeVersionRequest()) {

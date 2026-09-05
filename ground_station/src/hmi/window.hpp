@@ -57,6 +57,7 @@ class Window {
   void updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index);
   void updateLive(TelemetryData *data, Navigation *navigation, int16_t index);
   void UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state);
+  bool updateLiveNavigation(const TelemetryData &data1, const TelemetryData &data2, Navigation *navigation);
 
   void initRecovery(bool hasLastLocation);
   void updateRecovery(Navigation *navigation, bool hasLastLocation);
@@ -117,7 +118,7 @@ class Window {
   static constexpr uint8_t kUnderscoreIdx = 37;
 
  private:
-  void updateLiveData(TelemetryData *data, Navigation *navigation, int16_t index, uint16_t color);
+  void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
   void drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
                       uint16_t color);
@@ -160,8 +161,7 @@ class Window {
   TelemetryData teleData[2]{};
   TelemetryInfo infoData[2]{};
   LiveState livestate{LiveState::kShowGnss};
-  float old_bearing[2] = {0.0F, 0.0F};
-  int32_t old_downrange[2] = {0, 0};
+  char liveNavigationText[2][2][24]{};
 
   int16_t oldSettingsIndex{0};
   int16_t subMenuSettingIndex{0};

@@ -15,7 +15,12 @@ SelfTestInput Hmi::selfTestInput() {
   input.links = {link1.diagnostics(), link2.diagnostics()};
   input.linksReady = selfTestControlsOk && link1.selfTestReady() && link2.selfTestReady();
   input.sensors = navigation.selfTestSensors();
-  input.usbConnected = Utils::isConnected();
+  // The operator starts on battery with USB unplugged. An active bus invalidates
+  // that check; suspension alone cannot establish the board's power source.
+  input.usbConnected = Utils::isUsbActive();
+  input.usbStorageReady = Utils::getMassStorageState() == UsbStorageState::HostOwned;
+  input.usbStorageFault = Utils::getMassStorageState() == UsbStorageState::Fault;
+  input.usbReadCount = Utils::usbReadCount();
   input.batteryVoltage = static_cast<float>(analogRead(18)) * 0.00062F;
   input.combinedPackets = combinedTelemetryPackets.load();
   Button* buttons[] = {&upButton, &downButton, &leftButton, &rightButton, &centerButton, &okButton, &backButton};
@@ -148,6 +153,11 @@ void Hmi::selfTestStep() {
   const auto previousPhase = selfTest.phase;
   const bool wasWaiting = selfTest.awaitingConfirmation;
   selfTest.update(now, selfTestInput());
+  std::array<float, 3> gyroBias{};
+  if (selfTest.takeGyroCalibration(gyroBias))
+    selfTest.completeGyroCalibration(navigation.saveGyroCalibration(gyroBias), now, selfTestInput());
+  if (selfTest.takeUsbStorageRequest() && !recorder.shareWithMassStorage())
+    selfTest.setResult(SelfTest::Check::Usb, SelfTest::Result::Fail, "Could not share USB storage");
   const auto radio = selfTest.takeRadioConfiguration();
   if (radio != SelfTest::RadioConfiguration::None) applySelfTestRadio(radio);
   if (selfTest.takeVersionRequest()) {

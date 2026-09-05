@@ -15,6 +15,7 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 uint16_t GetNegativeColor(uint16_t color) {
@@ -49,8 +50,7 @@ void Window::begin() {
   oldMenuHighlight = 0;
   oldTestingIndex = 0;
   livestate = LiveState::kShowGnss;
-  old_bearing[0] = old_bearing[1] = 0.0F;
-  old_downrange[0] = old_downrange[1] = 0;
+  std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
   connected[0] = connected[1] = false;
   lastTeleData[0] = lastTeleData[1] = 0;
   dataAge[0] = dataAge[1] = 0;
@@ -441,6 +441,8 @@ void Window::drawMenuHighlight(int16_t index, bool highlight) {
 
 void Window::initLive() {
   clearMainScreen();
+  livestate = LiveState::kShowGnss;
+  std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
 
   display.drawLine(199, 18, 199, 240, BLACK);
   display.drawLine(200, 18, 200, 240, BLACK);
@@ -497,106 +499,86 @@ void Window::initLive() {
 }
 
 void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state) {
-  if (livestate == state) {
-    return;
+  if (livestate == state) return;
+  const bool showGnss = state == LiveState::kShowGnss;
+  TelemetryData data[] = {*data1, *data2};  // Presentation getters only consume these copies.
+  for (int16_t index = 0; index < 2; ++index) {
+    const int16_t x = index * 200;
+    display.fillRect(x + 28, 99, 130, 50, WHITE);
+    display.fillRect(x + 3, 100, 24, 49, WHITE);
+    display.fillRect(x + 158, 100, 24, 49, WHITE);
+    display.drawBitmap(x + 3, 100, showGnss ? live_lat : down_range, 24, 24, BLACK);
+    display.drawBitmap(x + 3, 125, showGnss ? live_lon : compass, 24, 24, BLACK);
+    display.drawBitmap(x + 158, 100, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
+    display.drawBitmap(x + 158, 125, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
+    if (showGnss && !data[index].testingMode()) {
+      display.setFont(&FreeSans12pt7b);
+      drawCoordinate(data[index].lat(), 'N', 'S', x + 28, 120, BLACK);
+      drawCoordinate(data[index].lon(), 'E', 'W', x + 28, 145, BLACK);
+    }
   }
-
   livestate = state;
-  const auto xOffset1 = static_cast<int16_t>(0 * 200);
-  const auto xOffset2 = static_cast<int16_t>(1 * 200);
-  const int32_t first_row_offset = 28;
-
-  display.setFont(&FreeSans12pt7b);
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-
-  if (livestate == LiveState::kShowGnss) {
-    // Set Downrange text of FC 1 to white
-    auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
-    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 120);
-    if (config.config.unitSystem == UnitSystem::kMetric) {
-      display.print(old_downrange[0]);
-      display.print(" m");
-    } else {
-      display.print(Utils::MetersToFeet(old_downrange[0]));
-      display.print(" ft");
-    }
-    old_downrange[0] = downrange_m;
-
-    float bearing = navigation->computeBearing();
-
-    display.setCursor(static_cast<int16_t>(xOffset1 + first_row_offset), 145);
-    display.print(old_bearing[0], 1);
-    display.print(" deg");
-    old_bearing[0] = bearing;
-
-    // Set Downrange text of FC 2 to white
-    downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
-    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 120);
-    if (config.config.unitSystem == UnitSystem::kMetric) {
-      display.print(old_downrange[1]);
-      display.print(" m");
-    } else {
-      display.print(Utils::MetersToFeet(old_downrange[1]));
-      display.print(" ft");
-    }
-    old_downrange[1] = downrange_m;
-
-    bearing = navigation->computeBearing();
-
-    display.setCursor(static_cast<int16_t>(xOffset2 + first_row_offset), 145);
-    display.print(old_bearing[1], 1);
-    display.print(" deg");
-    old_bearing[1] = bearing;
-
-    // Set DownRange to white
-    display.drawBitmap(3, 100, down_range, 24, 24, WHITE);
-    display.drawBitmap(3, 125, compass, 24, 24, WHITE);
-    display.drawBitmap(203, 100, down_range, 24, 24, WHITE);
-    display.drawBitmap(203, 125, compass, 24, 24, WHITE);
-    display.drawBitmap(158, 100, left_arrow, 24, 24, WHITE);
-    display.drawBitmap(158, 125, left_arrow, 24, 24, WHITE);
-    display.drawBitmap(358, 100, left_arrow, 24, 24, WHITE);
-    display.drawBitmap(358, 125, left_arrow, 24, 24, WHITE);
-
-    // Set GNSS to black
-    display.drawBitmap(3, 100, live_lat, 24, 24, BLACK);
-    display.drawBitmap(3, 125, live_lon, 24, 24, BLACK);
-    display.drawBitmap(203, 100, live_lat, 24, 24, BLACK);
-    display.drawBitmap(203, 125, live_lon, 24, 24, BLACK);
-    display.drawBitmap(158, 100, right_arrow, 24, 24, BLACK);
-    display.drawBitmap(158, 125, right_arrow, 24, 24, BLACK);
-    display.drawBitmap(358, 100, right_arrow, 24, 24, BLACK);
-    display.drawBitmap(358, 125, right_arrow, 24, 24, BLACK);
-  } else {
-    // Set GNSS text to white
-    drawCoordinate(data1->lat(), 'N', 'S', static_cast<int16_t>(xOffset1 + first_row_offset), 120, WHITE);
-    drawCoordinate(data1->lon(), 'E', 'W', static_cast<int16_t>(xOffset1 + first_row_offset), 145, WHITE);
-    drawCoordinate(data2->lat(), 'N', 'S', static_cast<int16_t>(xOffset2 + first_row_offset), 120, WHITE);
-    drawCoordinate(data2->lon(), 'E', 'W', static_cast<int16_t>(xOffset2 + first_row_offset), 145, WHITE);
-
-    // Set GNSS to white
-    display.drawBitmap(3, 100, live_lat, 24, 24, WHITE);
-    display.drawBitmap(3, 125, live_lon, 24, 24, WHITE);
-    display.drawBitmap(203, 100, live_lat, 24, 24, WHITE);
-    display.drawBitmap(203, 125, live_lon, 24, 24, WHITE);
-    display.drawBitmap(158, 100, right_arrow, 24, 24, WHITE);
-    display.drawBitmap(158, 125, right_arrow, 24, 24, WHITE);
-    display.drawBitmap(358, 100, right_arrow, 24, 24, WHITE);
-    display.drawBitmap(358, 125, right_arrow, 24, 24, WHITE);
-
-    // Set DownRange to black
-    display.drawBitmap(3, 100, down_range, 24, 24, BLACK);
-    display.drawBitmap(3, 125, compass, 24, 24, BLACK);
-    display.drawBitmap(203, 100, down_range, 24, 24, BLACK);
-    display.drawBitmap(203, 125, compass, 24, 24, BLACK);
-    display.drawBitmap(158, 100, left_arrow, 24, 24, BLACK);
-    display.drawBitmap(158, 125, left_arrow, 24, 24, BLACK);
-    display.drawBitmap(358, 100, left_arrow, 24, 24, BLACK);
-    display.drawBitmap(358, 125, left_arrow, 24, 24, BLACK);
-  }
-
+  std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
+  updateLiveNavigation(*data1, *data2, navigation);
   surface.present();
+}
+
+bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryData &data2, Navigation *navigation) {
+  if (livestate != LiveState::kShowDownRange) return false;
+  // Copy before using presentation getters, preserving incoming packet flags.
+  TelemetryData data[] = {data1, data2};
+  const EarthPoint3D targets[] = {EarthPoint3D(data[0].lat(), data[0].lon()),
+                                  EarthPoint3D(data[1].lat(), data[1].lon())};
+  const bool validTarget[] = {LocationQr::IsValid(targets[0].lat, targets[0].lon),
+                              LocationQr::IsValid(targets[1].lat, targets[1].lon)};
+  const auto home = navigation->getPointA();
+  const bool validHome = LocationQr::IsValid(home.lat, home.lon);
+  const float north = navigation->getNorth();
+  // Single mode tracks one rocket through the most recent receiver with GPS.
+  size_t singleTarget = data1.getLastUpdateTime() > data2.getLastUpdateTime() ? 0 : 1;
+  if (!validTarget[singleTarget]) singleTarget = 1 - singleTarget;
+  bool changed = false;
+  for (size_t index = 0; index < 2; ++index) {
+    const size_t targetIndex = config.config.receiverMode == DUAL ? index : singleTarget;
+    char values[2][24]{};
+    if (validHome && validTarget[targetIndex] && !data[index].testingMode()) {
+      const auto target = targets[targetIndex];
+      constexpr float radians = PI_F / 180.0F;
+      constexpr float earthRadiusM = 6378100.0F;
+      const float dy = (target.lat - home.lat) * radians * earthRadiusM;
+      const float dx =
+          std::remainder(target.lon - home.lon, 360.0F) * radians * std::cos(home.lat * radians) * earthRadiusM;
+      const auto distance = static_cast<int32_t>(std::round(std::hypot(dx, dy)));
+      const bool metric = config.config.unitSystem == UnitSystem::kMetric;
+      std::snprintf(values[0], sizeof(values[0]), "%ld %s",
+                    static_cast<long>(metric ? distance : Utils::MetersToFeet(distance)), metric ? "m" : "ft");
+      // Screen drawing uses a -90 degree offset; a turn angle starts straight ahead at zero.
+      if ((dx != 0 || dy != 0) && std::isfinite(north)) {
+        float bearing = std::round(std::remainder((std::atan2(dx, dy) + north) / radians, 360.0F) * 10.0F) / 10.0F;
+        if (bearing <= -180.0F) bearing = 180.0F;
+        if (bearing == 0) bearing = 0.0F;  // Avoid displaying negative zero after rounding.
+        std::snprintf(values[1], sizeof(values[1]), "%.1f", static_cast<double>(bearing));
+      }
+    }
+    for (size_t row = 0; row < 2; ++row) {
+      if (std::strcmp(values[row], liveNavigationText[index][row]) == 0) continue;
+      const auto x = static_cast<int16_t>(index * 200 + 28);
+      const auto y = static_cast<int16_t>(99 + row * 25);
+      display.fillRect(x, y, 130, 25, WHITE);
+      display.setFont(&FreeSans12pt7b);
+      display.setTextSize(1);
+      display.setTextColor(BLACK);
+      display.setCursor(x, y + 21);
+      display.print(values[row]);
+      if (row == 1 && values[row][0] != '\0') {
+        // Match the GPS degree symbol and keep every pixel inside the cleared row.
+        display.drawCircle(static_cast<int16_t>(display.getCursorX() + 3), y + 6, 2, BLACK);
+      }
+      std::strcpy(liveNavigationText[index][row], values[row]);
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 void Window::updateLive(TelemetryInfo *info, int16_t index) {
@@ -625,7 +607,7 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryIn
   data->clear();
   info->clear();
 
-  updateLiveData(&teleData[index], navigation, index, WHITE);
+  updateLiveData(&teleData[index], index, WHITE);
   updateLiveInfo(&infoData[index], index, BLACK);
 
   // display.fillRect(10,19,190,200, WHITE);
@@ -635,7 +617,8 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryIn
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], navigation, index, BLACK);
+  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveNavigation(teleData[0], teleData[1], navigation);
   updateLiveInfo(&infoData[index], index, WHITE);
 }
 
@@ -649,7 +632,7 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t ind
   // Clear update flag
   data->clear();
 
-  updateLiveData(&teleData[index], navigation, index, WHITE);
+  updateLiveData(&teleData[index], index, WHITE);
 
   // display.fillRect(10,19,190,200, WHITE);
 
@@ -657,7 +640,8 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t ind
 
   dataAge[index] = 0;
 
-  updateLiveData(&teleData[index], navigation, index, BLACK);
+  updateLiveData(&teleData[index], index, BLACK);
+  updateLiveNavigation(teleData[0], teleData[1], navigation);
 }
 
 const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST", "DROGUE", "MAIN", "DOWN"};
@@ -665,7 +649,7 @@ const char *const stateName[] = {"INVALID", "CALIB", "READY", "THRUST", "COAST",
 const char *const errorName[] = {"No Config",   "Log Full",         "Filter Error",
                                  "Overheating", "Continuity Error", "Calibration Error"};
 
-void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t index, uint16_t color) {
+void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) {
   const auto xOffset = static_cast<int16_t>(index * 200);
 
   display.setFont(&FreeSans12pt7b);
@@ -708,39 +692,6 @@ void Window::updateLiveData(TelemetryData *data, Navigation *navigation, int16_t
   if (livestate == LiveState::kShowGnss) {
     drawCoordinate(data->lat(), 'N', 'S', static_cast<int16_t>(xOffset + first_row_offset), 120, color);
     drawCoordinate(data->lon(), 'E', 'W', static_cast<int16_t>(xOffset + first_row_offset), 145, color);
-  } else {
-    const auto downrange_m = static_cast<int32_t>(std::roundf(navigation->getDistance()));
-    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
-    if (config.config.unitSystem == UnitSystem::kMetric) {
-      display.setTextColor(WHITE);
-      display.print(old_downrange[index]);
-      display.print(" m");
-      display.setTextColor(color);
-      display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
-      display.print(downrange_m);
-      display.print(" m");
-    } else {
-      display.setTextColor(WHITE);
-      display.print(Utils::MetersToFeet(old_downrange[index]));
-      display.print(" ft");
-      display.setTextColor(color);
-      display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 120);
-      display.print(Utils::MetersToFeet(downrange_m));
-      display.print(" ft");
-    }
-    old_downrange[index] = downrange_m;
-
-    const float bearing = navigation->computeBearing();
-
-    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
-    display.setTextColor(WHITE);
-    display.print(old_bearing[index], 1);
-    display.print(" deg");
-    display.setTextColor(color);
-    display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 145);
-    display.print(bearing, 1);
-    display.print(" deg");
-    old_bearing[index] = bearing;
   }
 
   display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 170);
@@ -1538,14 +1489,15 @@ void Window::updateSensorOrientation(Navigation *navigation) {
   constexpr int16_t centerX = 105;
   constexpr int16_t centerY = 132;
   constexpr int16_t radius = 60;
-  float heading = navigation->getNorth();
-  while (heading < 0.0F) {
-    heading += 2.0F * PI_F;
+  float northAngle = navigation->getNorth();
+  while (northAngle < 0.0F) {
+    northAngle += 2.0F * PI_F;
   }
-  while (heading >= 2.0F * PI_F) {
-    heading -= 2.0F * PI_F;
+  while (northAngle >= 2.0F * PI_F) {
+    northAngle -= 2.0F * PI_F;
   }
-  const float headingDegrees = heading * 180.0F / PI_F;
+  // The north pointer rotates opposite to the clockwise heading of the device.
+  const float headingDegrees = (northAngle > 0.0F ? 2.0F * PI_F - northAngle : 0.0F) * 180.0F / PI_F;
   static constexpr const char *directions[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
   const uint8_t direction = static_cast<uint8_t>((headingDegrees + 22.5F) / 45.0F) & 7U;
 
@@ -1570,8 +1522,8 @@ void Window::updateSensorOrientation(Navigation *navigation) {
   drawCentreString("W", 31, 139);
   drawCentreString("E", 179, 139);
 
-  const float sine = sinf(heading);
-  const float cosine = cosf(heading);
+  const float sine = sinf(northAngle);
+  const float cosine = cosf(northAngle);
   const int16_t northTipX = static_cast<int16_t>(centerX + sine * 50.0F);
   const int16_t northTipY = static_cast<int16_t>(centerY - cosine * 50.0F);
   const int16_t northLeftX = static_cast<int16_t>(centerX - cosine * 6.0F);
@@ -1838,13 +1790,8 @@ void Window::addSettingEntry(uint32_t settingIndex, const device_settings_t *set
                            static_cast<int16_t>(y + 22), color);
     }
   } else if (setting->type == STRING) {
-    if (setting->dataPtr == systemConfig.config.linkPhrase2 && systemConfig.config.receiverMode == SINGLE) {
-      display.setFont(&FreeSans9pt7b);
-      drawCentreString("Dual mode only", 285, y);
-    } else {
-      display.setFont(&FreeMonoBold12pt7b);
-      drawCentreString(static_cast<const char *>(setting->dataPtr), 285, y);
-    }
+    display.setFont(&FreeMonoBold12pt7b);
+    drawCentreString(static_cast<const char *>(setting->dataPtr), 285, y);
     display.setFont(&FreeSans12pt7b);
   } else if (setting->type == NUMBER) {
     char buffer[8];

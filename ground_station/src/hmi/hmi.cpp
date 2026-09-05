@@ -153,13 +153,47 @@ void Hmi::menu() {
 
 /* LIVE */
 
-void Hmi::initLive() { window.initLive(); }
+void Hmi::initLive() {
+  window.initLive();
+  lastLiveRefresh = millis();
+}
+
+bool Hmi::liveButtonPending() const {
+  return (digitalRead(kLeftButtonPin) == LOW) != leftButton.isPressed() ||
+         (digitalRead(kRightButtonPin) == LOW) != rightButton.isPressed() ||
+         (digitalRead(kBackButtonPin) == LOW) != backButton.isPressed();
+}
 
 void Hmi::live() {
-  bool updated = false;
+  // Honour navigation before a full LCD transfer can delay button polling.
+  if (backButton.wasPressed()) {
+    state = MENU;
+    window.initMenu(menuIndex);
+    return;
+  }
+  if (rightButton.wasPressed()) {
+    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowDownRange);
+    lastLiveRefresh = millis();
+    return;
+  }
+  if (leftButton.wasPressed()) {
+    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowGnss);
+    lastLiveRefresh = millis();
+    return;
+  }
 
+  // Leave time to debounce a press or release before another blocking LCD transfer.
+  // Coalesce telemetry and navigation updates so packet arrivals cannot starve polling.
+  if (liveButtonPending() || millis() - lastLiveRefresh < kLiveRefreshIntervalMs) {
+    return;
+  }
+
+  bool updated = false;
   if (link1.data.isUpdated() && link1.info.isUpdated()) {
     window.updateLive(&link1.data, &navigation, &link1.info, 0);
+    updated = true;
+  } else if (link1.data.isUpdated()) {
+    window.updateLive(&link1.data, &navigation, 0);
     updated = true;
   } else if (link1.info.isUpdated()) {
     window.updateLive(&link1.info, 0);
@@ -169,29 +203,18 @@ void Hmi::live() {
   if (link2.data.isUpdated() && link2.info.isUpdated()) {
     window.updateLive(&link2.data, &navigation, &link2.info, 1);
     updated = true;
+  } else if (link2.data.isUpdated()) {
+    window.updateLive(&link2.data, &navigation, 1);
+    updated = true;
   } else if (link2.info.isUpdated()) {
     window.updateLive(&link2.info, 1);
     updated = true;
   }
 
+  updated |= window.updateLiveNavigation(link1.data, link2.data, &navigation);
   isLogging = recorder.getStatus().state == RecorderState::Recording;
-
-  if (updated) {
-    window.refresh();
-  }
-
-  if (rightButton.wasPressed()) {
-    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowDownRange);
-  }
-
-  if (leftButton.wasPressed()) {
-    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowGnss);
-  }
-
-  if (backButton.wasPressed()) {
-    state = MENU;
-    window.initMenu(menuIndex);
-  }
+  if (updated) window.refresh();
+  lastLiveRefresh = millis();
 }
 
 /* RECOVERY */
@@ -1272,7 +1295,7 @@ void Hmi::update(void *pvParameter) {
       // ref->window.updateBar(link1.data.ts());
     }
 
-    if (ref->state != SELF_TEST && millis() - barUpdate >= 1000) {
+    if (ref->state != SELF_TEST && millis() - barUpdate >= 1000 && (ref->state != LIVE || !ref->liveButtonPending())) {
       barUpdate = millis();
       const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
       if (!ref->isLogging && Utils::isFilesystemAvailable()) {

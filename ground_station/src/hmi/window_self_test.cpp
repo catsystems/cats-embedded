@@ -71,11 +71,12 @@ void Window::drawSelfTest(const SelfTest& test, uint32_t now, int16_t selectedRe
   char line[80]{};
   if (!test.finished()) text(51, test.instruction());
   if (!test.started()) {
-    text(84, "1. Ground Station: GNSS, sensors, storage");
-    text(110, "2. Telemetry: two test Vegas");
-    text(136, "3. Manual: confirm before each check");
-    text(175, "Results are shown on this screen.");
-    text(199, "Normal settings and calibration are retained.");
+    text(78, "0. Gyro calibration: keep still");
+    text(102, "1. Ground Station: GNSS, sensors, storage");
+    text(126, "2. Telemetry: two test Vegas and LEDs");
+    text(150, "3. Manual: confirm before each check");
+    text(181, "Gyro offsets are saved for future starts.");
+    text(202, "Settings and compass calibration are kept.");
     leftHint = "Back (B)";
     rightHint = "Start (A)";
   } else if (test.finished()) {
@@ -118,42 +119,41 @@ void Window::drawSelfTest(const SelfTest& test, uint32_t now, int16_t selectedRe
         text(117, "Tilt and rotate around all three axes.");
         break;
       case SelfTest::Phase::Buttons:
-        text(90, "Press and release all seven buttons.");
+        text(90, "Press and release all six buttons.");
         text(117, "The Start press does not count.");
         break;
       case SelfTest::Phase::Display:
         text(90, "Four patterns will fill the display.");
-        text(117, "Watch for missing pixels, lines or noise.");
+        text(117, "Each pattern stays for four seconds.");
         text(154, "Afterward: A = good, B = fault.");
         break;
-      case SelfTest::Phase::Leds:
-        text(90, "Keep both test Vegas powered on.");
-        text(117, "Watch receiver 1, then receiver 2 blink.");
-        text(154, "Afterward: A = good, B = fault.");
-        break;
-      case SelfTest::Phase::Unplug:
-        text(90, "After Start, unplug USB.");
-        text(117, "Keep the power switch on.");
-        text(154, "The GS must run on battery for 5 seconds.");
-        break;
-      case SelfTest::Phase::Reconnect:
-        text(90, "After Start, reconnect USB to the PC.");
-        text(117, "If already connected, unplug it first.");
+      case SelfTest::Phase::Usb:
+        text(90, "After Start, connect USB to the PC.");
+        text(117, "The GS will share its USB drive.");
+        text(154, "Open the CATS GS drive on the computer.");
         break;
       default:
         break;
     }
     text(211, "Waiting for your confirmation.");
+  } else if (test.phase == SelfTest::Phase::GyroCalibration) {
+    text(87, "Measuring the three stationary offsets.");
+    text(115, "Keep still for five seconds.");
+    text(143, "Movement restarts the measurement.");
+    const int16_t progress = static_cast<int16_t>(std::min<uint32_t>(test.gyroCalibrationSamples, 250U) * 360U / 250U);
+    display.drawRect(19, 164, 362, 18, BLACK);
+    display.fillRect(20, 165, progress, 16, BLACK);
+    text(211, "Offsets are saved when measurement passes.");
   } else if (test.phase == SelfTest::Phase::Hardware || test.phase == SelfTest::Phase::Telemetry) {
     const SelfTest::Check hardware[] = {SelfTest::Check::Gnss, SelfTest::Check::Stationary, SelfTest::Check::Magnetic,
-                                        SelfTest::Check::Storage};
+                                        SelfTest::Check::Storage, SelfTest::Check::Battery};
     const SelfTest::Check telemetry[] = {SelfTest::Check::Firmware1,    SelfTest::Check::Firmware2,
                                          SelfTest::Check::Dual,         SelfTest::Check::Swapped,
                                          SelfTest::Check::Single,       SelfTest::Check::Receiver1Only,
                                          SelfTest::Check::Receiver2Only};
     const bool isHardware = test.phase == SelfTest::Phase::Hardware;
     const auto* checks = isHardware ? hardware : telemetry;
-    const size_t count = isHardware ? 4 : 7;
+    const size_t count = isHardware ? 5 : 7;
     for (size_t row = 0; row < count; ++row) {
       const auto baseline = static_cast<int16_t>(77 + row * 19);
       text(baseline, SelfTest::checkName(checks[row]));
@@ -180,38 +180,26 @@ void Window::drawSelfTest(const SelfTest& test, uint32_t now, int16_t selectedRe
       rightHint = "Skip (A)";
     } else if (test.phase == SelfTest::Phase::Buttons) {
       const char* names[] = {"Up", "Down", "Left", "Right", "Center", "A", "B"};
+      int16_t y = 76;
       for (size_t i = 0; i < 7; ++i) {
+        if ((SelfTest::kRequiredButtons & (1U << i)) == 0) continue;
         std::snprintf(line, sizeof(line), "[%c] %s", test.completedButtons & (1U << i) ? '+' : ' ', names[i]);
-        text(static_cast<int16_t>(76 + i * 18), line);
+        text(y, line);
+        y += 18;
       }
       text(207, "Next check waits for confirmation.");
     } else if (test.phase == SelfTest::Phase::Display) {
       text(95, "Watch four full-screen patterns.");
       text(120, "Check for missing pixels, lines or noise.");
-      if (test.phaseElapsedMs(now) >= 10000U) {
+      if (test.phaseElapsedMs(now) >= SelfTestProfile::kDisplayEndMs) {
         text(190, "Hold B for 2 seconds to cancel.");
         leftHint = "Display fault (B)";
         rightHint = "Looks good (A)";
       }
-    } else if (test.phase == SelfTest::Phase::Leds) {
-      text(95, "Each receiver is enabled in turn.");
-      text(120, "Its LED should blink as packets arrive.");
-      if (test.phaseElapsedMs(now) >= 12000U) {
-        text(190, "Hold B for 2 seconds to cancel.");
-        leftHint = "LED fault (B)";
-        rightHint = "Both worked (A)";
-      }
-    } else if (test.phase == SelfTest::Phase::Battery) {
-      std::snprintf(line, sizeof(line), "Battery: %.2f V", static_cast<double>(test.batteryMinimum));
-      display.setFont(&FreeSansBold12pt7b);
-      drawCentreString(line, 200, 120);
-      display.setFont(&FreeSans9pt7b);
-    } else if (test.phase == SelfTest::Phase::Unplug) {
-      text(100, "Battery operation is checked next.");
-      text(130, "Skipping leaves this check not tested.");
-      rightHint = "Skip (A)";
-    } else if (test.phase == SelfTest::Phase::Reconnect) {
-      text(100, "Waiting for USB to reconnect.");
+    } else if (test.phase == SelfTest::Phase::Usb) {
+      text(100, "Open the CATS GS drive on the computer.");
+      text(130, "Pass requires a read from the computer.");
+      text(160, "The connection alone does not pass.");
       rightHint = "Skip (A)";
     }
   }

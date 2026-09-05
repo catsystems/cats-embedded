@@ -54,6 +54,7 @@ class Navigation {
   bool begin();
   void enableSelfTestSampling(bool enabled) { selfTestSampling = enabled; }
   SelfTestSensorObservation selfTestSensors() const;
+  bool saveGyroCalibration(const std::array<float, 3> &bias);
 
   void setPointA(EarthPoint3D point) { pointA = point; }
   void setPointA(float lat, float lon, float height = 0) { pointA = EarthPoint3D(lat, lon, height); }
@@ -150,6 +151,7 @@ class Navigation {
   bool imuDetected{false};
   mutable portMUX_TYPE sensorMux = portMUX_INITIALIZER_UNLOCKED;
   SelfTestSensorObservation sensorObservation{};
+  std::array<float, 3> gyroBias{};  // Degrees/s, protected by sensorMux.
   bool updated = false;
   calibration_state_e calibration = INV_CALIB;
 

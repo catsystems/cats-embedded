@@ -110,6 +110,7 @@ void Parser::cmdInfo(uint8_t *args, uint32_t length) {
   auto &stats = observation.radio;
   ++stats.infoSamples;
   stats.lqSum += args[0];
+  stats.minimumSnr = std::min(stats.minimumSnr, static_cast<int8_t>(args[2]));
   portEXIT_CRITICAL(&diagnosticsMux);
 }
 

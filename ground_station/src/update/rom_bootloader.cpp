@@ -171,8 +171,8 @@ bool RomBootloader::enter(LinkResult& result) {
   }
   port.wait(100);
   port.drain();
-  uint8_t request[] = {kBootCommand, 8, 'C', 'A', 'T', 'S', 'B', 'L', 1, 0xA5, 0};
-  request[10] = crc8(request, 10);
+  uint8_t request[] = {kBootCommand, 0, 0};
+  request[2] = crc8(request, 2);
   result.entryRequested = true;  // An ACK can be lost after the application has jumped.
   uint8_t response[2]{};
   size_t length = 0;

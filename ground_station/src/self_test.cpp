@@ -21,7 +21,7 @@ void SelfTest::start(uint32_t now, const SelfTestInput& input) {
   initialFixCount = input.links[1].fixCount;
   initialUtcSeconds = input.links[1].utcSeconds;
   sensorSequence = input.sensors.sequence;
-  enter(Phase::Hardware, now);
+  enter(Phase::GyroCalibration, now);
 }
 
 void SelfTest::setResult(Check item, Result result, const char* reason) {
@@ -41,8 +41,7 @@ void SelfTest::enter(Phase next, uint32_t now) {
   phaseStartedAt = now;
   blockedButtons = 0x7f;
   awaitingConfirmation = next == Phase::Telemetry || next == Phase::Motion || next == Phase::Buttons ||
-                         next == Phase::Display || next == Phase::Leds || next == Phase::Unplug ||
-                         next == Phase::Reconnect;
+                         next == Phase::Display || next == Phase::Usb;
 }
 
 void SelfTest::observeVersions(uint32_t now, const SelfTestInput& input) {
@@ -71,7 +70,7 @@ void SelfTest::observeGnss(uint32_t now, const SelfTestInput& input) {
     if (valid && gps.fixCount - initialFixCount >= 5 && now - gps.lastFixMs < 1500U && gps.timeUpdates > 0 &&
         now - gps.lastTimeMs < 2000U && gps.utcSeconds != initialUtcSeconds) {
       setResult(Check::Gnss, Result::Pass, "Fresh fixes and advancing GNSS time");
-    } else if (now - startedAt >= SelfTestProfile::kGnssTimeoutMs) {
+    } else if (now - phaseStartedAt >= SelfTestProfile::kGnssTimeoutMs) {
       setResult(Check::Gnss, Result::Fail, "No fresh fix: retest with open sky");
     }
   }
@@ -82,6 +81,83 @@ void SelfTest::resetStationary() {
   accelSum = accelSquareSum = 0;
   gyroSum.fill(0);
   gyroSquareSum.fill(0);
+}
+
+void SelfTest::resetGyroCalibration() {
+  gyroCalibrationSamples = 0;
+  gyroCalibrationBias.fill(0);
+}
+
+void SelfTest::observeGyroCalibration(uint32_t now, const SelfTestSensorObservation& s) {
+  if (gyroCalibrationPending) return;
+  if (now - s.sampledAtMs > 100U) {
+    resetGyroCalibration();
+    return;
+  }
+  if (s.sequence == sensorSequence) return;
+  sensorSequence = s.sequence;
+  const bool valid = s.imuDetected && s.accelerationFresh && s.gyroFresh && finite(s.acceleration) && finite(s.rawGyro);
+  const float gravity = magnitude(s.acceleration);
+  if (!valid || gravity < 0.8F || gravity > 1.2F || !std::all_of(s.rawGyro.begin(), s.rawGyro.end(), [](float value) {
+        return std::fabs(value) <= SelfTestProfile::kMaximumGyroBias;
+      })) {
+    resetGyroCalibration();
+    return;
+  }
+  if (gyroCalibrationSamples != 0 && s.sampledAtMs - gyroCalibrationLastSample > 100U) resetGyroCalibration();
+  gyroCalibrationLastSample = s.sampledAtMs;
+  if (gyroCalibrationSamples == 0) {
+    gyroCalibrationStartedAt = now;
+    calibrationAccelMin = calibrationAccelMax = s.acceleration;
+    calibrationGyroMin = calibrationGyroMax = s.rawGyro;
+  }
+  for (size_t i = 0; i < 3; ++i) {
+    calibrationAccelMin[i] = std::min(calibrationAccelMin[i], s.acceleration[i]);
+    calibrationAccelMax[i] = std::max(calibrationAccelMax[i], s.acceleration[i]);
+    calibrationGyroMin[i] = std::min(calibrationGyroMin[i], s.rawGyro[i]);
+    calibrationGyroMax[i] = std::max(calibrationGyroMax[i], s.rawGyro[i]);
+    // Reject movement throughout the window, including tilt at constant total gravity.
+    if (calibrationAccelMax[i] - calibrationAccelMin[i] > 0.1F ||
+        calibrationGyroMax[i] - calibrationGyroMin[i] > 0.5F) {
+      resetGyroCalibration();
+      return;
+    }
+  }
+  for (size_t i = 0; i < 3; ++i) gyroCalibrationBias[i] += s.rawGyro[i];
+  ++gyroCalibrationSamples;
+  if (now - gyroCalibrationStartedAt >= SelfTestProfile::kGyroCalibrationMs && gyroCalibrationSamples >= 200U) {
+    for (auto& value : gyroCalibrationBias) value /= static_cast<float>(gyroCalibrationSamples);
+    gyroCalibrationPending = gyroCalibrationRequested = true;
+  }
+}
+
+bool SelfTest::takeGyroCalibration(std::array<float, 3>& bias) {
+  if (!gyroCalibrationRequested) return false;
+  bias = gyroCalibrationBias;
+  gyroCalibrationRequested = false;
+  return true;
+}
+
+void SelfTest::completeGyroCalibration(bool saved, uint32_t now, const SelfTestInput& input) {
+  if (phase != Phase::GyroCalibration) return;
+  setResult(Check::GyroCalibration, saved ? Result::Pass : Result::Fail,
+            saved                    ? "Stationary offsets saved for future starts"
+            : gyroCalibrationPending ? "Could not save gyro offsets"
+                                     : "No stable gyro calibration within 30 seconds");
+  gyroCalibrationPending = gyroCalibrationRequested = false;
+  resetStationary();
+  sensorSequence = input.sensors.sequence;
+  initialFixCount = input.links[1].fixCount;
+  initialUtcSeconds = input.links[1].utcSeconds;
+  batteryVoltageValid = plausibleBattery(input.batteryVoltage);
+  batteryUsbSeen = input.usbConnected;
+  enter(Phase::Hardware, now);
+}
+
+bool SelfTest::takeUsbStorageRequest() {
+  const bool requested = usbStorageRequest;
+  usbStorageRequest = false;
+  return requested;
 }
 
 void SelfTest::observeSensors(uint32_t now, const SelfTestSensorObservation& s) {
@@ -166,23 +242,24 @@ void SelfTest::updateRadio(uint32_t now, const SelfTestInput& input) {
   const uint32_t duration = radioStage < 3 ? SelfTestProfile::kRadioWindowMs : SelfTestProfile::kFailoverWindowMs;
   if (now - measurementStartedAt < duration) return;
   const uint32_t measuredMs = now - measurementStartedAt;
+  const uint32_t minimumPackets = (measuredMs * SelfTestProfile::kMinimumPacketsPerSecond + 999U) / 1000U;
   const uint32_t combinedPackets = input.combinedPackets - combinedBaseline;
   bool passed = true;
   for (size_t i = 0; i < 2; ++i) {
     if ((radioStage == 3 && i == 1) || (radioStage == 4 && i == 0)) continue;
     auto stats = input.links[i].radio;
     stats.maxGapMs = std::max(stats.maxGapMs, stats.packets == 0 ? measuredMs : now - stats.lastPacketMs);
-    passed &= stats.packets >= measuredMs * SelfTestProfile::kMinimumPacketsPerSecond / 1000 &&
-              stats.maxGapMs <= SelfTestProfile::kMaximumGapMs && stats.infoSamples > 0 &&
-              stats.lqSum / stats.infoSamples >= SelfTestProfile::kMinimumMeanLq;
+    passed &= stats.packets >= minimumPackets && stats.maxGapMs <= SelfTestProfile::kMaximumGapMs &&
+              stats.infoSamples > 0 && stats.lqSum / stats.infoSamples >= SelfTestProfile::kMinimumMeanLq &&
+              stats.minimumSnr > SelfTestProfile::kSnrThreshold;
   }
   if (radioStage >= 2) {
     combinedMaxGap = std::max(combinedMaxGap, now - lastCombinedAt);
-    passed &= combinedPackets >= measuredMs * SelfTestProfile::kMinimumPacketsPerSecond / 1000 &&
-              combinedMaxGap <= SelfTestProfile::kMaximumGapMs;
+    passed &= combinedPackets >= minimumPackets && combinedMaxGap <= SelfTestProfile::kMaximumGapMs;
   }
-  setResult(kRadioChecks[radioStage], passed ? Result::Pass : Result::Fail,
-            passed ? "Packet rate, gaps and quality within limits" : "Low packet rate, quality or reception gap");
+  setResult(
+      kRadioChecks[radioStage], passed ? Result::Pass : Result::Fail,
+      passed ? "Packet rate, gaps, quality and SNR within limits" : "Packet rate, quality, SNR or gap outside limits");
   completeRadio(now);
 }
 
@@ -222,19 +299,29 @@ void SelfTest::update(uint32_t now, const SelfTestInput& input) {
         lastVersionRequest = radioStartedAt = now;
         radioRequest = RadioConfiguration::Dual;
         radioChanged = true;
-      } else if (phase == Phase::Leds) {
-        radioRequest = RadioConfiguration::Receiver1Only;
-        radioChanged = true;
-      } else if (phase == Phase::Reconnect) {
-        usbDisconnected = !input.usbConnected;
       }
     }
     return;
   }
   if (phase == Phase::Hardware || phase == Phase::Motion) observeSensors(now, input.sensors);
   switch (phase) {
+    case Phase::GyroCalibration:
+      observeGyroCalibration(now, input.sensors);
+      if (!gyroCalibrationPending && now - phaseStartedAt >= 30000U) completeGyroCalibration(false, now, input);
+      break;
     case Phase::Hardware:
       observeGnss(now, input);
+      if (check(Check::Battery).result == Result::Pending) {
+        batteryVoltageValid &= plausibleBattery(input.batteryVoltage);
+        batteryUsbSeen |= input.usbConnected;
+        if (now - phaseStartedAt >= 5000U) {
+          const bool passed = batteryVoltageValid && !batteryUsbSeen;
+          setResult(Check::Battery, passed ? Result::Pass : Result::Fail,
+                    batteryUsbSeen ? "USB active during battery check: rerun unplugged"
+                    : passed       ? "Five seconds on battery"
+                                   : "Battery voltage outside 3.0-4.35 V");
+        }
+      }
       if (now - phaseStartedAt >= 30000U) {
         if (check(Check::Stationary).result == Result::Pending)
           setResult(Check::Stationary, Result::Fail, "No stable fresh IMU measurement");
@@ -242,7 +329,7 @@ void SelfTest::update(uint32_t now, const SelfTestInput& input) {
           setResult(Check::Magnetic, Result::Fail, "No valid magnetometer samples");
       }
       if (check(Check::Gnss).result != Result::Pending && check(Check::Stationary).result != Result::Pending &&
-          check(Check::Magnetic).result != Result::Pending)
+          check(Check::Magnetic).result != Result::Pending && check(Check::Battery).result != Result::Pending)
         enter(Phase::Telemetry, now);
       break;
     case Phase::Telemetry:
@@ -260,10 +347,10 @@ void SelfTest::update(uint32_t now, const SelfTestInput& input) {
       }
       break;
     case Phase::Buttons:
-      pressedButtons |= pressed;
+      pressedButtons |= pressed & kRequiredButtons;
       completedButtons |= pressedButtons & static_cast<uint8_t>(~input.buttonsHeld);
-      if (completedButtons == 0x7f) {
-        setResult(Check::Buttons, Result::Pass, "All seven buttons pressed and released");
+      if (completedButtons == kRequiredButtons) {
+        setResult(Check::Buttons, Result::Pass, "All six buttons pressed and released");
         enter(Phase::Display, now);
       } else if (now - phaseStartedAt >= 60000U) {
         setResult(Check::Buttons, Result::Fail, "Missing button press or release");
@@ -271,25 +358,11 @@ void SelfTest::update(uint32_t now, const SelfTestInput& input) {
       }
       break;
     case Phase::Display:
-      if (now - phaseStartedAt >= 10000U && (pressed & (kA | kB)) != 0) {
+      if (now - phaseStartedAt >= SelfTestProfile::kDisplayEndMs && (pressed & (kA | kB)) != 0) {
         const bool passed = (pressed & kA) != 0;
         setResult(Check::Display, passed ? Result::Pass : Result::Fail,
                   passed ? "Operator confirmed all patterns" : "Operator reported display fault");
-        enter(Phase::Leds, now);
-      }
-      break;
-    case Phase::Leds:
-      if (!ledSecond && now - phaseStartedAt >= 6000U) {
-        ledSecond = true;
-        radioRequest = RadioConfiguration::Receiver2Only;
-      }
-      if (now - phaseStartedAt >= 12000U && (pressed & (kA | kB)) != 0) {
-        const bool passed = (pressed & kA) != 0;
-        setResult(Check::Leds, passed ? Result::Pass : Result::Fail,
-                  passed ? "Operator confirmed each receiver LED" : "Operator reported LED fault");
-        radioRequest = RadioConfiguration::Restore;
-        afterRestore = Phase::Unplug;
-        enter(Phase::Restoring, now);
+        enter(Phase::Usb, now);
       }
       break;
     case Phase::Restoring:
@@ -305,34 +378,23 @@ void SelfTest::update(uint32_t now, const SelfTestInput& input) {
         finish(now);
       }
       break;
-    case Phase::Unplug:
-      if (!input.usbConnected) {
-        batteryMinimum = input.batteryVoltage;
-        enter(Phase::Battery, now);
-      } else if ((pressed & kA) != 0) {
-        setResult(Check::Battery, Result::Incomplete, "Battery operation skipped");
-        setResult(Check::Usb, Result::Incomplete, "USB reconnect skipped");
+    case Phase::Usb:
+      if (input.usbConnected && !usbStorageRequested) {
+        usbReadBaseline = input.usbReadCount;
+        usbStorageRequest = usbStorageRequested = true;
+      }
+      if (input.usbStorageFault || check(Check::Usb).result == Result::Fail) {
+        setResult(Check::Usb, Result::Fail, "Could not share USB storage");
         finish(now);
-      }
-      break;
-    case Phase::Battery:
-      batteryMinimum = std::min(batteryMinimum, input.batteryVoltage);
-      if (input.usbConnected)
-        enter(Phase::Unplug, now);
-      else if (now - phaseStartedAt >= 5000U) {
-        const bool passed = plausibleBattery(batteryMinimum);
-        setResult(Check::Battery, passed ? Result::Pass : Result::Fail,
-                  passed ? "Five seconds on battery" : "Battery voltage outside 3.0-4.35 V");
-        enter(Phase::Reconnect, now);
-      }
-      break;
-    case Phase::Reconnect:
-      usbDisconnected |= !input.usbConnected;
-      if (usbDisconnected && input.usbConnected) {
-        setResult(Check::Usb, Result::Pass, "USB enumerated after battery operation");
+      } else if (usbStorageRequested && input.usbConnected && input.usbStorageReady &&
+                 input.usbReadCount != usbReadBaseline) {
+        setResult(Check::Usb, Result::Pass, "Computer read the shared USB drive");
+        finish(now);
+      } else if (now - phaseStartedAt >= 30000U) {
+        setResult(Check::Usb, Result::Fail, "No USB drive read within 30 seconds");
         finish(now);
       } else if ((pressed & kA) != 0) {
-        setResult(Check::Usb, Result::Incomplete, "USB reconnect skipped");
+        setResult(Check::Usb, Result::Incomplete, "USB drive check skipped");
         finish(now);
       }
       break;
@@ -375,16 +437,19 @@ bool SelfTest::takeVersionRequest() {
   return value;
 }
 uint8_t SelfTest::displayPattern(uint32_t now) const {
-  if (awaitingConfirmation || phase != Phase::Display || now - phaseStartedAt < 2000U || now - phaseStartedAt >= 10000U)
+  if (awaitingConfirmation || phase != Phase::Display || now - phaseStartedAt < SelfTestProfile::kDisplayLeadInMs ||
+      now - phaseStartedAt >= SelfTestProfile::kDisplayEndMs)
     return 0;
-  return static_cast<uint8_t>(1U + (now - phaseStartedAt - 2000U) / 2000U);
+  return static_cast<uint8_t>(1U + (now - phaseStartedAt - SelfTestProfile::kDisplayLeadInMs) /
+                                       SelfTestProfile::kDisplayPatternMs);
 }
 const char* SelfTest::resultName(Result result) {
   static constexpr const char* names[] = {"WAIT", "PASS", "FAIL", "NOT TESTED"};
   return names[static_cast<size_t>(result)];
 }
 const char* SelfTest::checkName(Check item) {
-  static constexpr const char* names[] = {"Telemetry 1 firmware",
+  static constexpr const char* names[] = {"Gyroscope calibration",
+                                          "Telemetry 1 firmware",
                                           "Telemetry 2 firmware",
                                           "Onboard GNSS",
                                           "Stationary IMU",
@@ -398,44 +463,38 @@ const char* SelfTest::checkName(Check item) {
                                           "Sensor movement",
                                           "Buttons",
                                           "Display",
-                                          "Receiver LEDs",
                                           "Battery operation",
-                                          "USB reconnect",
+                                          "USB drive",
                                           "Settings restored"};
   return names[static_cast<size_t>(item)];
 }
 const char* SelfTest::title() const {
-  static constexpr const char* names[] = {"Factory self-test",   "1. Ground Station",  "2. Telemetry",
-                                          "3.1 Sensor movement", "3.2 Buttons",        "3.3 Display",
-                                          "3.4 Receiver LEDs",   "Restoring settings", "3.5 Battery",
-                                          "3.5 Battery",         "3.6 USB reconnect",  "Self-test results"};
+  static constexpr const char* names[] = {
+      "Factory self-test", "0. Gyro calibration", "1. Ground Station",  "2. Telemetry",  "3.1 Sensor movement",
+      "3.2 Buttons",       "3.3 Display",         "Restoring settings", "3.4 USB drive", "Self-test results"};
   return names[static_cast<size_t>(phase)];
 }
 const char* SelfTest::instruction() const {
   if (awaitingConfirmation) return "Ready to start - press A when ready.";
   switch (phase) {
     case Phase::Ready:
-      return "Rest on the bench with access to the sky.";
+      return "Start on battery with USB disconnected.";
+    case Phase::GyroCalibration:
+      return "Keep completely still on the bench.";
     case Phase::Hardware:
       return "Keep still. Checks run automatically.";
     case Phase::Telemetry:
-      return "Testing both telemetry receivers.";
+      return "Watch receiver LEDs during reception.";
     case Phase::Motion:
       return "Tilt and turn around each axis.";
     case Phase::Buttons:
       return "Press and release each button, including B.";
     case Phase::Display:
       return "Inspect black, white and checker patterns.";
-    case Phase::Leds:
-      return ledSecond ? "Receiver 2 LED should blink." : "Receiver 1 LED should blink.";
     case Phase::Restoring:
       return "Restoring normal receiver settings.";
-    case Phase::Unplug:
-      return "Disconnect USB; keep the power switch on.";
-    case Phase::Battery:
-      return "Keep USB disconnected for 5 seconds.";
-    case Phase::Reconnect:
-      return usbDisconnected ? "Connect USB to the computer." : "Unplug USB, then reconnect it.";
+    case Phase::Usb:
+      return usbStorageRequested ? "Waiting for the computer to read the drive." : "Connect USB to the computer.";
     case Phase::Finished:
       return "Use up/down to view each result.";
   }

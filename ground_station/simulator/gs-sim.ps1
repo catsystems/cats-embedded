@@ -246,7 +246,9 @@ function Invoke-BrowserRegressionTest {
       $result = [regex]::Match($dom, '<pre id="result"[^>]*>(.*?)</pre>', 'Singleline').Groups[1].Value
       throw "Browser/WASM regression test failed: $result"
     }
-    Write-Host 'browser/WASM: 9 regression checks passed'
+    $reportJson = [regex]::Match($dom, '<pre id="result"[^>]*>(.*?)</pre>', 'Singleline').Groups[1].Value
+    $report = [System.Net.WebUtility]::HtmlDecode($reportJson) | ConvertFrom-Json
+    Write-Host "browser/WASM: $($report.results.Count) regression checks passed"
   } finally {
     if (!$server.HasExited) { Stop-Process -Id $server.Id -Force }
     Remove-Item -LiteralPath $profileRoot -Recurse -Force -ErrorAction SilentlyContinue

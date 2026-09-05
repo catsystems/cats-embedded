@@ -58,6 +58,7 @@ static volatile UsbStorageState usbStorageState = UsbStorageState::FirmwareOwned
 static volatile bool filesystemMounted = true;
 static SemaphoreHandle_t storageAccessMutex = nullptr;
 static std::atomic<bool> radioUpdateStorage{false};
+static std::atomic<uint32_t> successfulUsbReads{0};
 USBMSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
@@ -336,6 +337,10 @@ bool Utils::isUpdated(bool clearFlag) {
 
 bool Utils::isConnected() { return usbConnectionState != UsbConnectionState::Disconnected; }
 
+bool Utils::isUsbActive() { return usbConnectionState == UsbConnectionState::Active; }
+
+uint32_t Utils::usbReadCount() { return successfulUsbReads.load(); }
+
 bool Utils::requestMassStorage() {
   if (storageAccessMutex == nullptr || xSemaphoreTake(storageAccessMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
     return false;
@@ -574,6 +579,7 @@ static int32_t coreMscRead(uint32_t lba, uint32_t offset, void *buffer, uint32_t
   // queued by the host must not access flash after firmware has reclaimed it.
   const bool read = usbStorageState == UsbStorageState::HostOwned && endAddress <= flash.size() &&
                     msc_read_range(lba, offset, static_cast<uint8_t *>(buffer), bufsize);
+  if (read && bufsize != 0) ++successfulUsbReads;
   xSemaphoreGive(storageAccessMutex);
   return read ? static_cast<int32_t>(bufsize) : -1;
 }

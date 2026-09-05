@@ -35,6 +35,8 @@ class Utils {
   static void feedWatchdog();
   static bool isUpdated(bool clearFlag = true);
   static bool isConnected();
+  static bool isUsbActive();
+  static uint32_t usbReadCount();
   static bool requestMassStorage();
   static void requestFirmwareStorage();
   static bool claimFirmwareStorage(uint32_t timeoutMs = 3000);
