@@ -282,7 +282,8 @@ void RadioFirmwareUpdater::updateBoth() {
     if (held[index]) {
       // A missing entry ACK is ambiguous: that application may already be in
       // ROM. Quarantine it, while restoring untouched and verified links.
-      links[index]->finishUpdate(!results[index].entryRequested || results[index].success);
+      links[index]->finishUpdate(!results[index].entryRequested || results[index].success,
+                                 results[index].success ? results[index].version : nullptr);
     }
   }
   release();

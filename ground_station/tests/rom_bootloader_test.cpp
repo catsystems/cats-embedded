@@ -34,7 +34,7 @@ class FakePort final : public Port {
  public:
   bool write(const uint8_t* data, size_t size) override {
     if (!rom) {
-      if (size == 11 && data[0] == 0x80) {
+      if (size == 3 && data[0] == 0x80 && data[1] == 0 && data[2] == crc8(data, 2)) {
         const uint8_t frame[] = {0x80, 2, 1, 0x79, 0x42};
         queue(frame, sizeof(frame) - 1);
         const uint8_t content[] = {0x80, 2, 1, 0x79};

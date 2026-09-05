@@ -227,8 +227,15 @@ test_rom_bootloader() {
   "$test_binary"
 }
 
+test_self_test() {
+  local test_binary="$build_dir/self-test"
+  g++ -std=c++20 -Wall -Wextra -Werror -I"$project_root/src" \
+    "$project_root/tests/self_test.cpp" "$project_root/src/self_test.cpp" -o "$test_binary"
+  "$test_binary"
+}
 timed dependencies prepare_dependencies
 timed rom-bootloader-test test_rom_bootloader
+timed self-test test_self_test
 timed build build_project
 timed lint lint_project
 

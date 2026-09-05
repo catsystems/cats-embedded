@@ -344,6 +344,12 @@ class Device final : public IDeviceStatus {
     return true;
   }
   void requestFirmwareStorage() override { value.usbStorageState = "firmware"; }
+  bool saveGyroCalibration(const std::array<float, 3>& bias) override {
+    if (value.selfTestGyroSaveFailure) return false;
+    value.gyroBias = bias;
+    ++value.gyroSaveCount;
+    return true;
+  }
   DeviceStatusSnapshot value;
 };
 
@@ -466,6 +472,8 @@ void updateLink(Link& link, const char* json) {
     link.value.telemetry.updated = true;
     link.value.info.updated = true;
   }
+  if (link.value.telemetry.updated) link.value.telemetry.lastUpdateMs = virtualClock.now;
+  if (link.value.info.updated) link.value.info.lastUpdateMs = virtualClock.now;
 }
 
 std::string quote(const std::string& value) {
@@ -486,6 +494,9 @@ void rebuildSnapshot() {
              ",\"selfTestResult\":" + quote(SelfTest::resultName(state.selfTest.overall())) +
              ",\"selfTestRadioStage\":" + std::to_string(state.selfTest.radioStage) +
              ",\"selfTestButtons\":" + std::to_string(state.selfTest.completedButtons) +
+             ",\"gyroBias\":[" + std::to_string(state.device.gyroBias[0]) + "," +
+                std::to_string(state.device.gyroBias[1]) + "," + std::to_string(state.device.gyroBias[2]) + "]" +
+             ",\"gyroSaveCount\":" + std::to_string(state.device.gyroSaveCount) +
              ",\"selfTestChecks\":[" + [&state]() {
                std::string output;
                for (const auto& result : state.selfTest.results) {
@@ -574,6 +585,7 @@ void step() { controller.step(input, virtualClock.now); }
 
 void resetState(bool skipStartup, bool preserveConfiguration = false) {
   const GsConfigSnapshot savedConfiguration = configStore.value;
+  const auto savedGyroBias = device.value.gyroBias;
   virtualClock.now = 0;
   virtualClock.hourValue = 0;
   virtualClock.minuteValue = 0;
@@ -585,6 +597,7 @@ void resetState(bool skipStartup, bool preserveConfiguration = false) {
   configStore = ConfigStore{};
   if (preserveConfiguration) configStore.value = savedConfiguration;
   device = Device{};
+  if (preserveConfiguration) device.value.gyroBias = savedGyroBias;
   controller.start();
   if (skipStartup) {
     virtualClock.now = 20;
@@ -685,6 +698,9 @@ void gs_set_device_status_json(const char* json) {
   if (booleanField(json, "selfTestStorageFailure", boolean)) device.value.selfTestStorageFailure = boolean;
   if (numberField(json, "selfTestMissingReceiver", integer)) device.value.selfTestMissingReceiver = static_cast<uint8_t>(integer);
   if (numberField(json, "selfTestLq", integer)) device.value.selfTestLq = static_cast<uint8_t>(integer);
+  if (numberField(json, "selfTestSnr", integer)) device.value.selfTestSnr = static_cast<int8_t>(integer);
+  if (numberField(json, "usbReadCount", integer)) device.value.usbReadCount = static_cast<uint32_t>(integer);
+  if (booleanField(json, "selfTestGyroSaveFailure", boolean)) device.value.selfTestGyroSaveFailure = boolean;
   if (booleanField(json, "recorderWriteFailure", boolean)) logs.failWrite = boolean;
   if (booleanField(json, "deleteFailure", boolean)) logs.failDelete = boolean;
   if (booleanField(json, "finalizeFailure", boolean)) logs.failFinalize = boolean;

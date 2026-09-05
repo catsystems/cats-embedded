@@ -7,6 +7,8 @@
 #include "console.hpp"
 #include "crc.hpp"
 
+#include <algorithm>
+
 constexpr uint8_t TASK_TELE_FREQ = 100;
 
 void Telemetry::begin() {
@@ -317,7 +319,7 @@ void Telemetry::configureUpdateUart(bool rom) {
   serial.begin(115200, rom ? SERIAL_8E1 : SERIAL_8N1, rxPin, txPin);
 }
 
-void Telemetry::finishUpdate(bool healthy) {
+void Telemetry::finishUpdate(bool healthy, const char* verifiedVersion) {
   if (xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
     quarantined = true;
     updateRequested = false;
@@ -326,6 +328,15 @@ void Telemetry::finishUpdate(bool healthy) {
   // The normal task has acknowledged and no longer touches the UART/parser.
   configureUpdateUart(false);
   parser.reset();
+  if (healthy && verifiedVersion != nullptr) {
+    // Publish the verified reply before storage is shared again. The updater
+    // consumed it while the normal parser was paused; startup reads are over.
+    uint8_t version[16]{};
+    const size_t length = std::min(strlen(verifiedVersion), sizeof(version));
+    memcpy(version, verifiedVersion, length);
+    parser.cmdVersion(version, length);
+    versionReadDone = true;
+  }
   linkInitialized = false;
   quarantined = !healthy;
   newSetting = healthy;

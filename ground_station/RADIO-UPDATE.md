@@ -35,6 +35,9 @@ new ROM session, but an interruption during final vector activation can require 
 programming result is ambiguous is quarantined until Ground Station restart or repair. This is the unavoidable safety
 limitation of using the factory ROM instead of a resident custom bootloader.
 
-Receiver applications predating the guarded `CMD_BOOTLOADER` implementation need a one-time ST-Link installation of a
+The bootloader-entry request is `CMD_BOOTLOADER`, a zero payload length, and the usual frame CRC8. The receiver rejects
+requests with a nonzero payload length and acknowledges entry before jumping to the ROM bootloader.
+
+Receiver applications predating the `CMD_BOOTLOADER` implementation need a one-time ST-Link installation of a
 ROM-capable production telemetry build. Units provisioned with the earlier protected custom-loader proof of concept need
 a separate provisioning procedure. Older Vega firmware remains compatible with the ROM-capable telemetry application.

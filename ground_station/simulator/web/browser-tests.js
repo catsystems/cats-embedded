@@ -148,7 +148,7 @@ async function run() {
   await test('compass orientation view', async () => {
     wasm.ccall('gs_reset', null, [], []);
     wasm.ccall('gs_set_navigation_json', null, ['string'], [JSON.stringify({
-      northRad: Math.PI / 2,
+      northRad: -Math.PI / 2,
       pitchRad: -Math.PI / 15,
       rollRad: Math.PI / 22.5,
       mx: 940,
@@ -164,6 +164,71 @@ async function run() {
     assert(state.sensorView === 'orientation', `expected orientation, got ${state.sensorView}`);
     actualHashes.compassOrientation = await framebufferHash(wasm);
     captureSelfTest('Compass status bar');
+  });
+
+  await test('phone compass headings through the browser controls', async () => {
+    const frame = document.createElement('iframe');
+    frame.src = './index.html';
+    frame.style.cssText = 'width:1000px;height:700px';
+    document.body.append(frame);
+    const waitFor = async condition => {
+      for (let attempt = 0; attempt < 200; ++attempt) {
+        if (condition()) return;
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      throw new Error('Phone compass page did not reach the expected state');
+    };
+    try {
+      await waitFor(() => frame.contentDocument?.querySelector('#status')?.textContent.includes('simulator ready'));
+      const page = frame.contentWindow;
+      const document = frame.contentDocument;
+      const state = () => JSON.parse(document.querySelector('#snapshot').textContent);
+      document.querySelector('#pause').click();
+      document.querySelector('#step').value = '4000';
+      document.querySelector('#advance').click();
+      const press = button => {
+        const control = document.querySelector(`[data-button="${button}"]`);
+        control.dispatchEvent(new page.Event('pointerdown', {cancelable: true}));
+        control.dispatchEvent(new page.Event('pointerup', {cancelable: true}));
+      };
+      for (const button of ['down', 'right', 'ok', 'right']) press(button);
+      assert(state().sensorView === 'orientation', 'phone page opens the production compass view');
+      // Exercise the real event handler without accessing host sensors or location.
+      Object.defineProperty(page.navigator, 'geolocation', {value: {watchPosition: () => 1, clearWatch: () => {}}});
+      for (const type of ['DeviceMotionEvent', 'DeviceOrientationEvent']) {
+        Object.defineProperty(page, type, {value: {requestPermission: async () => 'granted'}});
+      }
+      document.querySelector('#phone-sensor-toggle').click();
+      await waitFor(() => document.querySelector('#phone-sensor-toggle').textContent === 'Stop phone sensors');
+      for (const heading of [0, 45, 90, 135, 180, 225, 270, 315]) {
+        const event = new page.Event('deviceorientation');
+        // Cover Safari compass headings and absolute-orientation alpha values.
+        const properties = heading % 90 === 0 ? {webkitCompassHeading: heading}
+          : {absolute: true, alpha: (360 - heading) % 360};
+        for (const [name, value] of Object.entries(properties)) Object.defineProperty(event, name, {value});
+        page.dispatchEvent(event);
+        await new Promise(resolve => setTimeout(resolve, 220));
+        document.querySelector('#step').value = '20';
+        document.querySelector('#advance').click();
+        const expectedNorth = Math.atan2(Math.sin(-heading * Math.PI / 180), Math.cos(-heading * Math.PI / 180));
+        assertClose(state().navigation.northRad, expectedNorth, 0.00001, `phone heading ${heading}`);
+        const canvas = document.querySelector('#display');
+        const pixels = canvas.getContext('2d').getImageData(215, 82, 185, 28);
+        const digest = await crypto.subtle.digest('SHA-256', pixels.data);
+        actualHashes[`phoneHeading${heading}`] = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+        const figure = globalThis.document.createElement('figure');
+        const caption = globalThis.document.createElement('figcaption');
+        caption.textContent = `Phone compass ${heading} degrees`;
+        const capture = globalThis.document.createElement('canvas');
+        capture.width = 400; capture.height = 240;
+        capture.getContext('2d').drawImage(canvas, 0, 0);
+        figure.append(caption, capture);
+        globalThis.document.body.append(figure);
+      }
+      document.querySelector('#phone-sensor-toggle').click();
+    } finally {
+      frame.remove();
+    }
   });
 
   await test('all declarative fixtures', async () => {
@@ -203,7 +268,7 @@ async function run() {
   function openSelfTest(faults = {}) {
     wasm.ccall('gs_reset', null, [], []);
     wasm.ccall('gs_set_configuration_json', null, ['string'], [JSON.stringify({linkPhrase1: 'normal-1', linkPhrase2: 'normal-2'})]);
-    wasm.ccall('gs_set_device_status_json', null, ['string'], [JSON.stringify({usb: true, batteryVoltage: 3.8, ...faults})]);
+    wasm.ccall('gs_set_device_status_json', null, ['string'], [JSON.stringify({usb: false, batteryVoltage: 3.8, ...faults})]);
     for (const button of ['down', 'right', 'right', 'ok', 'right', 'right', 'down', 'down', 'down', 'ok']) tap(wasm, button);
     assert(snapshot(wasm).activeScreen === 'self_test', 'Settings > System > Self-Test opens');
   }
@@ -261,23 +326,66 @@ async function run() {
     assert(state.selfTestPhase === activePhase && !state.selfTestWaiting, `${label} starts only on A`);
   }
 
-  await test('factory self-test: three phases and confirmation before every manual check', async () => {
+  await test('factory self-test: saved gyro calibration and failure reporting', async () => {
+    openSelfTest();
+    wasm.ccall('gs_set_sensor_json', null, ['string'], ['{"gx":1.2,"gy":-0.6,"gz":0.3}']);
+    tap(wasm, 'ok');
+    advanceSelfTest(6500);
+    let state = snapshot(wasm);
+    assert(state.selfTestChecks[0] === 'PASS' && state.gyroSaveCount === 1, 'step 0 saves the stationary offsets once');
+    const expected = [1.2, -0.6, 0.3];
+    state.gyroBias.forEach((value, axis) => assert(Math.abs(value - expected[axis]) < 0.001, `gyro bias axis ${axis}`));
+    wasm.ccall('gs_restart', null, [], []);
+    state = snapshot(wasm);
+    state.gyroBias.forEach((value, axis) => assert(Math.abs(value - expected[axis]) < 0.001, `saved bias survives restart, axis ${axis}`));
+    openSelfTest({selfTestGyroSaveFailure: true});
+    tap(wasm, 'ok'); advanceSelfTest(12000);
+    state = snapshot(wasm);
+    assert(state.selfTestChecks[0] === 'FAIL' && state.gyroSaveCount === 0, 'save failure cannot report calibrated');
+  });
+
+  await test('factory self-test: initial battery check rejects USB and low voltage', async () => {
+    for (const fault of [{usb: true}, {batteryVoltage: 2.9}]) {
+      openSelfTest(fault);
+      tap(wasm, 'ok'); advanceSelfTest(6000);
+      let state = snapshot(wasm);
+      assert(state.selfTestPhase === 2 && state.selfTestChecks[15] === 'WAIT', 'battery runs with the initial sensors');
+      advanceSelfTest(6000);
+      state = snapshot(wasm);
+      assert(state.selfTestChecks[15] === 'FAIL', `battery rejects ${JSON.stringify(fault)}`);
+      assert(state.selfTestPhase === 3 && state.selfTestWaiting, 'battery failure still reaches the telemetry prompt');
+    }
+  });
+
+  await test('factory self-test: strict SNR reception limit', async () => {
+    for (const snr of [-5, -4]) {
+      openSelfTest({selfTestSnr: snr});
+      tap(wasm, 'ok'); advanceSelfTest(12000);
+      tap(wasm, 'ok'); advanceSelfTest(140000);
+      assert(snapshot(wasm).selfTestChecks[6] === (snr > -5 ? 'PASS' : 'FAIL'), `SNR ${snr} dB uses a strict greater-than limit`);
+    }
+  });
+
+  await test('factory self-test: calibration, automatic phases and manual confirmation gates', async () => {
     openSelfTest();
     captureSelfTest('Self-test entry');
     tap(wasm, 'ok');
     advanceSelfTest(800);
+    captureSelfTest('Step 0 - gyro calibration');
+    advanceSelfTest(5100);
     captureSelfTest('Phase 1 - Ground Station');
-    advanceSelfTest(3200);
+    advanceSelfTest(6200);
     let state = snapshot(wasm);
+    assert(state.selfTestChecks[15] === 'PASS', 'battery is checked automatically before telemetry');
     assert(!state.actions.some(action => action.type === 'self_test_radio'), 'Phase 1 does not change radio settings');
-    confirmSelfTestStep(2, 'Phase 2 - ready for telemetry');
+    confirmSelfTestStep(3, 'Phase 2 - ready for telemetry');
     advanceSelfTest(8000);
     captureSelfTest('Phase 2 - telemetry running');
     advanceSelfTest(64000);
     state = snapshot(wasm);
-    assert(state.selfTestChecks.slice(0, 11).every(value => value === 'PASS'), `automatic results: ${state.selfTestChecks}`);
+    assert(state.selfTestChecks.slice(0, 12).every(value => value === 'PASS'), `automatic results: ${state.selfTestChecks}`);
     assert(state.configuration.linkPhrase1 === 'normal-1' && state.configuration.linkPhrase2 === 'normal-2', 'test phrases never alter saved config');
-    confirmSelfTestStep(3, '3.1 - ready for sensor movement');
+    confirmSelfTestStep(4, '3.1 - ready for sensor movement');
     captureSelfTest('Sensor movement running');
     for (let axis = 0; axis < 3; ++axis) {
       for (const sign of [-1, 1]) {
@@ -287,54 +395,45 @@ async function run() {
         wasm.ccall('gs_set_sensor_json', null, ['string'], [JSON.stringify(sample)]);
       }
     }
-    confirmSelfTestStep(4, '3.2 - ready for buttons');
+    confirmSelfTestStep(5, '3.2 - ready for buttons');
     assert(snapshot(wasm).selfTestButtons === 0, 'Start press and release do not count as a tested button');
     wasm.ccall('gs_press', null, ['string'], ['up']);
     assert(snapshot(wasm).selfTestButtons === 0, 'a press without release does not pass');
     wasm.ccall('gs_release', null, ['string'], ['up']);
     captureSelfTest('Button press and release check');
-    for (const button of ['down', 'left', 'right', 'center', 'ok', 'back']) tap(wasm, button);
-    confirmSelfTestStep(5, '3.3 - ready for display');
+    for (const button of ['down', 'left', 'right', 'ok', 'back']) tap(wasm, button);
+    assert(snapshot(wasm).selfTestChecks[13] === 'PASS', 'six physical buttons complete the check without center');
+    confirmSelfTestStep(6, '3.3 - ready for display');
     advanceSelfTest(2100);
     captureSelfTest('Display - black pattern');
-    advanceSelfTest(2000);
+    advanceSelfTest(4000);
     captureSelfTest('Display - white pattern');
-    advanceSelfTest(2000);
+    advanceSelfTest(4000);
     captureSelfTest('Display - checkerboard');
-    advanceSelfTest(2000);
+    advanceSelfTest(4000);
     captureSelfTest('Display - inverse checkerboard');
-    advanceSelfTest(2000);
+    advanceSelfTest(4000);
     captureSelfTest('Display confirmation');
     wasm.ccall('gs_press', null, ['string'], ['ok']);
     advanceSelfTest(15000);
-    assert(snapshot(wasm).selfTestWaiting, 'holding display confirmation cannot start the LED check');
+    assert(snapshot(wasm).selfTestWaiting, 'holding display confirmation cannot start the USB check');
     wasm.ccall('gs_release', null, ['string'], ['ok']);
-    confirmSelfTestStep(6, '3.4 - ready for receiver LEDs');
-    advanceSelfTest(12100);
-    captureSelfTest('Receiver LED confirmation');
-    tap(wasm, 'ok');
-    captureSelfTest('Restoring settings');
-    advanceSelfTest(2600);
-    assert(snapshot(wasm).selfTestPhase === 8, 'normal receiver settings restored before battery test');
-    wasm.ccall('gs_set_device_status_json', null, ['string'], ['{"usb":false}']);
-    confirmSelfTestStep(8, '3.5 - ready for battery', 9);
-    advanceSelfTest(2000);
-    captureSelfTest('Battery operation');
-    advanceSelfTest(3200);
-    assert(snapshot(wasm).selfTestPhase === 10, 'five battery seconds precede reconnect');
-    wasm.ccall('gs_set_device_status_json', null, ['string'], ['{"usb":true}']);
-    confirmSelfTestStep(10, '3.6 - ready for USB reconnect');
+    assert(snapshot(wasm).selfTestPhase === 8, 'display is followed directly by the USB check');
+    confirmSelfTestStep(8, '3.4 - ready for USB drive');
     advanceSelfTest(1000);
-    assert(snapshot(wasm).selfTestPhase === 10, 'connecting before Start cannot pass reconnect');
-    wasm.ccall('gs_set_device_status_json', null, ['string'], ['{"usb":false}']);
-    advanceSelfTest(20);
+    assert(snapshot(wasm).selfTestPhase === 8, 'USB check waits for a connection');
     wasm.ccall('gs_set_device_status_json', null, ['string'], ['{"usb":true}']);
+    advanceSelfTest(20);
+    state = snapshot(wasm);
+    assert(state.selfTestPhase === 8 && state.usbStorageState === 'host', 'USB drive is shared before passing');
+    captureSelfTest('USB - waiting for computer read');
+    wasm.ccall('gs_set_device_status_json', null, ['string'], ['{"usbReadCount":1}']);
     advanceSelfTest(20);
     state = snapshot(wasm);
     assert(state.selfTestResult === 'PASS' && state.selfTestChecks.length === 18, `complete test: ${state.selfTestChecks}`);
     assert(state.usbStorageState === 'host', 'normal storage sharing resumes after the test');
     captureSelfTest('Completed result');
-    for (let index = 0; index < 11; ++index) tap(wasm, 'down');
+    for (let index = 0; index < 12; ++index) tap(wasm, 'down');
     captureSelfTest('Movement result detail');
     for (let index = 0; index < 6; ++index) tap(wasm, 'down');
     captureSelfTest('Restoration result detail');
@@ -346,36 +445,36 @@ async function run() {
 
   await test('factory self-test: missing receiver cannot be hidden by the other', async () => {
     openSelfTest({selfTestMissingReceiver: 1});
-    tap(wasm, 'ok'); advanceSelfTest(4000);
+    tap(wasm, 'ok'); advanceSelfTest(12000);
     tap(wasm, 'ok'); advanceSelfTest(140000);
     const state = snapshot(wasm);
-    assert(state.selfTestChecks[0] === 'FAIL' && state.selfTestChecks[1] === 'PASS', 'independent firmware replies');
-    assert(state.selfTestChecks[5] === 'FAIL' && state.selfTestChecks[7] === 'FAIL', 'both dual and single expose missing receiver');
-    assert(state.selfTestChecks[9] === 'PASS', 'receiver 2 still tested independently');
-    assert(state.selfTestPhase === 3 && state.selfTestWaiting, 'failures still reach the first manual confirmation');
+    assert(state.selfTestChecks[1] === 'FAIL' && state.selfTestChecks[2] === 'PASS', 'independent firmware replies');
+    assert(state.selfTestChecks[6] === 'FAIL' && state.selfTestChecks[8] === 'FAIL', 'both dual and single expose missing receiver');
+    assert(state.selfTestChecks[10] === 'PASS', 'receiver 2 still tested independently');
+    assert(state.selfTestPhase === 4 && state.selfTestWaiting, 'failures still reach the first manual confirmation');
   });
 
   await test('factory self-test: GNSS and storage failures never become passes', async () => {
     openSelfTest({selfTestGnss: false, selfTestStorageFailure: true});
-    tap(wasm, 'ok'); advanceSelfTest(121000);
+    tap(wasm, 'ok'); advanceSelfTest(127000);
     let state = snapshot(wasm);
-    assert(state.selfTestChecks[2] === 'FAIL', 'GNSS timeout fails acquisition');
-    assert(state.selfTestChecks[10] === 'FAIL', 'storage failure is visible');
-    assert(state.selfTestPhase === 2 && state.selfTestWaiting, 'telemetry waits for its own confirmation');
+    assert(state.selfTestChecks[3] === 'FAIL', 'GNSS timeout fails acquisition');
+    assert(state.selfTestChecks[11] === 'FAIL', 'storage failure is visible');
+    assert(state.selfTestPhase === 3 && state.selfTestWaiting, 'telemetry waits for its own confirmation');
     tap(wasm, 'ok'); advanceSelfTest(72000);
     state = snapshot(wasm);
-    assert(state.selfTestPhase === 3 && state.selfTestWaiting, 'manual checks wait after independent telemetry checks');
-    assert(state.selfTestChecks[2] === 'FAIL' && state.selfTestChecks[10] === 'FAIL', 'later checks preserve Phase 1 failures');
+    assert(state.selfTestPhase === 4 && state.selfTestWaiting, 'manual checks wait after independent telemetry checks');
+    assert(state.selfTestChecks[3] === 'FAIL' && state.selfTestChecks[11] === 'FAIL', 'later checks preserve Phase 1 failures');
   });
 
   await test('factory self-test: cancellation cannot pass and restores configuration', async () => {
-    openSelfTest(); tap(wasm, 'ok'); advanceSelfTest(4000);
-    tap(wasm, 'ok'); advanceSelfTest(4000);
+    openSelfTest(); tap(wasm, 'ok'); advanceSelfTest(12000);
+    tap(wasm, 'ok'); advanceSelfTest(12000);
     wasm.ccall('gs_hold', null, ['string', 'number'], ['back', 2100]);
     advanceSelfTest(2600);
     const state = snapshot(wasm);
-    assert(state.selfTestPhase === 11 && state.selfTestResult === 'FAIL', `cancellation phase=${state.selfTestPhase} result=${state.selfTestResult} checks=${state.selfTestChecks}`);
-    assert(state.selfTestChecks[11] === 'NOT TESTED', 'unfinished manual checks remain not tested');
+    assert(state.selfTestPhase === 9 && state.selfTestResult === 'FAIL', `cancellation phase=${state.selfTestPhase} result=${state.selfTestResult} checks=${state.selfTestChecks}`);
+    assert(state.selfTestChecks[12] === 'NOT TESTED', 'unfinished manual checks remain not tested');
     assert(state.actions.some(action => action.type === 'self_test_restored'), 'restore requested');
     assert(state.configuration.linkPhrase1 === 'normal-1', 'normal phrase retained');
     captureSelfTest('Cancelled result');
@@ -494,6 +593,82 @@ async function run() {
     advanceSelfTest(1000);
     assert(snapshot(wasm).telemetryVersion1 === '1.1.3' && snapshot(wasm).telemetryVersion2 === '2.0.0', 'normal cold boot delay is covered');
     assert(requests(1) === 6 && requests(2) === 6, 'startup stops retrying after delayed replies');
+  });
+
+  await test('live guidance: signed angles, dual targets and missing coordinates', async () => {
+    const setNavigation = values => wasm.ccall('gs_set_navigation_json', null, ['string'], [JSON.stringify(values)]);
+    const setLink = (link, values) => wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(link), JSON.stringify(values)]);
+    const pixels = (link, row) => {
+      const bytes = framebuffer(wasm);
+      const output = [];
+      for (let y = 99 + row * 25; y < 124 + row * 25; ++y) {
+        for (let x = 28 + link * 200; x < 158 + link * 200; ++x) {
+          const bit = y * 400 + x;
+          output.push((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
+        }
+      }
+      return output;
+    };
+    const equal = (a, b) => a.every((value, index) => value === b[index]);
+    const blank = link => [0, 1].every(row => pixels(link, row).every(value => value === 1));
+    wasm.ccall('gs_reset', null, [], []);
+    wasm.ccall('gs_set_configuration_json', null, ['string'], ['{"dualReceiver":true}']);
+    setNavigation({homeLatitude: 47, homeLongitude: 8, northRad: 0});
+    // Keep both packet streams idle. Only sensor/GPS changes drive subsequent frames.
+    setLink(1, {latitude: 47.001, longitude: 8, connected: true, updated: false});
+    setLink(2, {latitude: 47, longitude: 8.002, connected: true, updated: false});
+    tap(wasm, 'ok'); tap(wasm, 'right');
+    assert(snapshot(wasm).activeScreen === 'live', 'live screen opens');
+    const initialDistance = [pixels(0, 0), pixels(1, 0)];
+    assert(!equal(initialDistance[0], initialDistance[1]), 'each link gets its own GPS distance');
+    const ahead = pixels(0, 1), right = pixels(1, 1);
+    assert(!equal(ahead, right), 'north and east targets have different turn angles');
+    captureSelfTest('Live - ahead 0 and right 90');
+    actualHashes.liveAheadRight = await framebufferHash(wasm);
+    setNavigation({northRad: -Math.PI / 2});
+    advanceSelfTest(220);
+    assert(equal(pixels(1, 1), ahead), 'turning east puts the eastern rocket straight ahead');
+    assert(!equal(pixels(0, 1), right), 'the northern rocket is now left, with a negative angle');
+    assert(initialDistance.every((value, link) => equal(value, pixels(link, 0))), 'rotation leaves GPS distances unchanged');
+    captureSelfTest('Live - left -90 and ahead 0');
+    actualHashes.liveLeftAhead = await framebufferHash(wasm);
+    setNavigation({northRad: -Math.PI});
+    advanceSelfTest(220);
+    captureSelfTest('Live - behind 180 and left -90');
+    actualHashes.liveBehindLeft = await framebufferHash(wasm);
+    setNavigation({northRad: Math.PI});
+    assert(await framebufferHash(wasm) === actualHashes.liveBehindLeft, 'both representations of behind render positive 180');
+    const otherBearing = pixels(1, 1), otherDistance = pixels(1, 0);
+    setLink(1, {latitude: 0, longitude: 0, updated: false});
+    assert(blank(0), 'missing rocket coordinates clear both fields');
+    assert(equal(otherBearing, pixels(1, 1)) && equal(otherDistance, pixels(1, 0)), 'missing Link 1 GPS does not affect Link 2');
+    captureSelfTest('Live - Link 1 GPS missing');
+    setNavigation({homeLatitude: 0, homeLongitude: 0});
+    assert(blank(0) && blank(1), 'missing GS coordinates clear both panels');
+    captureSelfTest('Live - GS GPS missing');
+    setNavigation({homeLatitude: 47.002, homeLongitude: 8, northRad: 0});
+    advanceSelfTest(220);
+    assert(!equal(otherDistance, pixels(1, 0)), 'moving the GS updates distance without rocket packets');
+    setLink(2, {latitude: 91, longitude: 8, updated: false});
+    assert(blank(1), 'out-of-range coordinates do not produce a bearing');
+
+    // Single mode preserves receiver redundancy, selecting the newest available GPS.
+    wasm.ccall('gs_set_configuration_json', null, ['string'], ['{"dualReceiver":false}']);
+    setNavigation({homeLatitude: 47, homeLongitude: 8, northRad: 0});
+    setLink(1, {latitude: 47.001, longitude: 8});
+    advanceSelfTest(20);
+    setLink(2, {latitude: 47, longitude: 8.002});
+    assert(equal(pixels(0, 1), right) && equal(pixels(1, 1), right), 'single mode shares the newest receiver position');
+    advanceSelfTest(20);
+    setLink(1, {latitude: 47.001, longitude: 8});
+    assert(equal(pixels(0, 1), ahead) && equal(pixels(1, 1), ahead), 'single mode follows the other receiver when it becomes newer');
+    setLink(1, {latitude: 0, longitude: 0});
+    assert(equal(pixels(0, 1), right) && equal(pixels(1, 1), right), 'single mode falls back to the receiver that has GPS');
+    setLink(2, {latitude: 0, longitude: 0});
+    assert(blank(0) && blank(1), 'single mode has no stale target when neither receiver has GPS');
+    for (const name of ['liveAheadRight', 'liveLeftAhead', 'liveBehindLeft']) {
+      assert(actualHashes[name] === goldens[name], `${name}: expected ${goldens[name]}, got ${actualHashes[name]}`);
+    }
   });
 
   const failed = results.filter(result => !result.passed);

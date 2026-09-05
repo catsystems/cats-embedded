@@ -89,6 +89,11 @@ struct DeviceStatusSnapshot {
   bool selfTestSensorFailure = false;
   bool selfTestStorageFailure = false;
   uint8_t selfTestLq = 90;
+  int8_t selfTestSnr = 10;
+  bool selfTestGyroSaveFailure = false;
+  std::array<float, 3> gyroBias{};
+  uint32_t gyroSaveCount = 0;
+  uint32_t usbReadCount = 0;
 };
 
 struct GsConfigSnapshot {
@@ -211,6 +216,7 @@ class IDeviceStatus {
   [[nodiscard]] virtual DeviceStatusSnapshot snapshot() const = 0;
   virtual bool requestMassStorage() = 0;
   virtual void requestFirmwareStorage() = 0;
+  virtual bool saveGyroCalibration(const std::array<float, 3>& bias) = 0;
 };
 
 struct HmiSnapshot {

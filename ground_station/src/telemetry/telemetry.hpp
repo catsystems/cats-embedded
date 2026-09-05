@@ -44,7 +44,7 @@ class Telemetry {
   // finishUpdate(). No task suspension while a parser/setting write is active.
   bool safeForUpdate();
   bool beginUpdate();
-  void finishUpdate(bool healthy);
+  void finishUpdate(bool healthy, const char* verifiedVersion = nullptr);
   HardwareSerial& updateSerial() { return serial; }
   void configureUpdateUart(bool rom);
   bool isQuarantined() const { return quarantined; }
