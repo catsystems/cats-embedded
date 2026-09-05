@@ -30,9 +30,7 @@ void Window::drawCoordinate(float value, char positiveHemisphere, char negativeH
   display.setTextColor(color);
   display.setCursor(x, baseline);
   display.print(std::fabs(value), 4);
-  const int16_t degreeX = static_cast<int16_t>(display.getCursorX() + 3);
-  display.drawCircle(degreeX, static_cast<int16_t>(baseline - 15), 2, color);
-  display.setCursor(static_cast<int16_t>(degreeX + 7), baseline);
+  display.print(' ');
   display.print(value < 0.0F ? negativeHemisphere : positiveHemisphere);
 }
 
@@ -571,8 +569,8 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
       display.setCursor(x, y + 21);
       display.print(values[row]);
       if (row == 1 && values[row][0] != '\0') {
-        // Match the GPS degree symbol and keep every pixel inside the cleared row.
-        display.drawCircle(static_cast<int16_t>(display.getCursorX() + 3), y + 6, 2, BLACK);
+        // Keep the larger degree symbol inside the cleared row.
+        display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), y + 6, 3, BLACK);
       }
       std::strcpy(liveNavigationText[index][row], values[row]);
       changed = true;
