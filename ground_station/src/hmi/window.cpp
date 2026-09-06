@@ -1441,6 +1441,7 @@ void Window::initSensors() {
 
   display.fillRect(200, 19, 200, 30, BLACK);
   drawCentreString("GNSS", 300, 42);
+  display.fillTriangle(386, 33, 378, 25, 378, 41, WHITE);
 
   display.setTextColor(BLACK);
   display.setFont(&FreeSansBold9pt7b);
@@ -1451,7 +1452,10 @@ void Window::initSensors() {
   display.print("[G]");
 
   display.setCursor(120, 65);
-  display.print("[deg/s]");
+  display.print("[");
+  display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), 54, 3, BLACK);
+  display.setCursor(static_cast<int16_t>(display.getCursorX() + 10), 65);
+  display.print("/s]");
 
   display.setCursor(87, 170);
   display.print("[-]");
@@ -1460,23 +1464,15 @@ void Window::initSensors() {
   display.print("Press A to calibrate");
   display.setCursor(220, 225);
   display.print("the compass");
-  display.setCursor(12, 225);
-  display.print("Right: compass");
 
   surface.present();
 }
 
 void Window::initSensorOrientation() {
   clearMainScreen();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont(&FreeSansBold12pt7b);
-  display.fillRect(0, 19, 400, 30, BLACK);
-  drawCentreString("Compass / 3D Orientation", 200, 42);
+  drawPageHeader("Compass / 3D Orientation", true, false);
   display.setTextColor(BLACK);
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(8, 233);
-  display.print("Left: sensors");
   display.setCursor(285, 233);
   display.print("A: calibrate");
 
@@ -1544,18 +1540,20 @@ void Window::updateSensorOrientation(Navigation *navigation) {
   display.setFont(&FreeSansBold12pt7b);
   display.setCursor(215, 105);
   display.print(headingDegrees, 1);
-  display.print(" deg ");
+  display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), 90, 3, BLACK);
+  display.setCursor(static_cast<int16_t>(display.getCursorX() + 13), 105);
   display.print(directions[direction]);
 
+  const float pitchDegrees = navigation->getPitch() * 180.0F / PI_F;
   display.setFont(&FreeSans9pt7b);
   display.setCursor(215, 137);
   display.print("Pitch: ");
-  display.print(navigation->getPitch() * 180.0F / PI_F, 1);
-  display.print(" deg");
+  display.print(pitchDegrees, 1);
+  display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), 125, 3, BLACK);
   display.setCursor(215, 164);
   display.print("Roll:  ");
   display.print(navigation->getRoll() * 180.0F / PI_F, 1);
-  display.print(" deg");
+  display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), 152, 3, BLACK);
   const float magneticMagnitude =
       sqrtf(navigation->getMX() * navigation->getMX() + navigation->getMY() * navigation->getMY() +
             navigation->getMZ() * navigation->getMZ()) /
@@ -1563,6 +1561,19 @@ void Window::updateSensorOrientation(Navigation *navigation) {
   display.setCursor(215, 191);
   display.print("|M|:   ");
   display.print(magneticMagnitude, 2);
+
+  // Positive pitch moves the ball up; keep it inside the scale at +/-90 degrees.
+  constexpr int16_t pitchX = 378;
+  constexpr int16_t pitchTravel = 52;
+  const float boundedPitch = fmaxf(-90.0F, fminf(90.0F, pitchDegrees));
+  const auto pitchY = static_cast<int16_t>(centerY - lroundf(boundedPitch * pitchTravel / 90.0F));
+  drawCentreString("UP", pitchX, 65);
+  drawCentreString("DN", pitchX, 208);
+  display.drawRoundRect(pitchX - 12, centerY - pitchTravel - 8, 25, 2 * pitchTravel + 17, 6, BLACK);
+  display.drawFastVLine(pitchX, centerY - pitchTravel, 2 * pitchTravel + 1, BLACK);
+  display.drawFastHLine(pitchX - 11, centerY, 23, BLACK);
+  display.fillCircle(pitchX, pitchY, 7, WHITE);
+  display.fillCircle(pitchX, pitchY, 5, BLACK);
 
   surface.present();
 }
