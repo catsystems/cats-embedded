@@ -1460,8 +1460,6 @@ void Window::initSensors() {
   display.print("Press A to calibrate");
   display.setCursor(220, 225);
   display.print("the compass");
-  display.setCursor(12, 225);
-  display.print("Right: compass");
 
   surface.present();
 }
