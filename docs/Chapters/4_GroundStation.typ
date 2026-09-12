@@ -4,7 +4,7 @@
 
 The Ground Station is the counterpart to the CATS Vega. It receives data from the flight computer and sends commands to it. It displays the rocket's position, velocity, system health, and other important information in real time. This chapter explains how to use the Ground Station and describes its operating principle.
 
-#cats-figure(image("../images/How To Use/Groundstation/Ground_Station.jpg", width: 80%), caption: [Ground Station])
+#cats-figure(doc-image("How To Use/Groundstation/Ground_Station.jpg", width: 80%), caption: [Ground Station])
 
 == Hardware
 
@@ -59,7 +59,7 @@ This section covers the basic use of the Ground Station. For more advanced infor
 
 #pagebreak()
 
-#cats-figure(image("../images/How To Use/Groundstation/Ground_Station_Live_Data.jpg", width: 80%), caption: [Live Data of the Ground Station.])
+#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_Live_Data.jpg", width: 80%), caption: [Live Data of the Ground Station.])
 
 The current flight-computer status appears at the top of the screen. The rocket's altitude, vertical velocity, GNSS coordinates, battery voltage, pyro continuity, and errors appear below it.
 
@@ -157,7 +157,7 @@ The serial stream emits one line per newly received telemetry packet. All units 
 ]
 )
 
-#cats-figure(image("../images/How To Use/Groundstation/Ground_Station_USB_Streaming.png", width: 95%), caption: [Ground Station telemetry data from both radio links streamed over the USB serial port.])
+#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_USB_Streaming.png", width: 95%), caption: [Ground Station telemetry data from both radio links streamed over the USB serial port.])
 
 #pagebreak()
 
@@ -169,7 +169,7 @@ The Ground Station is powered by a Li-ion 18650 battery. A fully charged battery
 
 Like the CATS Vega, the Ground Station is recognized as a mass-storage device when connected to a computer. Open the device folder and drag the recorded logs to your preferred location. Ground Station logs are stored as `.csv` files.
 
-#cats-figure(image("../images/How To Use/Groundstation/Ground_Station_Logs.png", width: 95%), caption: [Ground station data when connecting the ground station to the user computer.])
+#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_Logs.png", width: 95%), caption: [Ground station data when connecting the ground station to the user computer.])
 
 #pagebreak()
 
@@ -177,6 +177,6 @@ Like the CATS Vega, the Ground Station is recognized as a mass-storage device wh
 
 #metadata(none) <sec-gs_updates> To update the Ground Station software, enter #gls("DFU", cap: false) mode. First, connect the Ground Station to your computer. In the Settings panel, select Bootloader. A large USB symbol appears on the screen, and a mass-storage device named SAOLA1RBOOT appears on the computer. Drag the firmware file into this folder to overwrite the old file. #linebreak() You can also enter the bootloader using the hardware controls. Remove the Ground Station casing and connect the Ground Station to your computer. Quickly press the reset button, followed by the boot button. The SAOLA1RBOOT mass-storage device will appear on your computer. Drag the firmware file onto the device. #linebreak() Firmware filenames end in `.UF2`. The latest Ground Station firmware can be downloaded from our repository.
 
-#cats-figure(image("../images/How To Use/Groundstation/Ground_Station_DFU.png", width: 95%), caption: [SAOLA1RBOOT mass storage device when successfully changing to the #gls("DFU", cap: false) Mode])
+#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_DFU.png", width: 95%), caption: [SAOLA1RBOOT mass storage device when successfully changing to the #gls("DFU", cap: false) Mode])
 
 #pagebreak()

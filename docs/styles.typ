@@ -4,6 +4,34 @@
 #let dark-blue = rgb("#1f4e78")
 #let light-red = rgb("#ffabab")
 #let dark-red = rgb("#800000")
+#let web-image-root = "https://raw.githubusercontent.com/catsystems/cats-embedded/main/docs/images/"
+
+#let doc-image(path, width: auto, alt: "") = context {
+  if target() == "html" {
+    html.img(
+      src: web-image-root + path.replace(" ", "%20"),
+      alt: alt,
+      loading: "lazy",
+      decoding: "async",
+    )
+  } else {
+    image("images/" + path, width: width)
+  }
+}
+
+#let source-note(url, label-name: none) = context {
+  if target() == "html" {
+    let result = html.elem("sup", attrs: (class: "web-footnote"))[
+      #html.elem("a", attrs: (href: url, aria-label: "Source"))[source]
+    ]
+    if label-name == none { result } else { [#result #label(label-name)] }
+  } else {
+    footnote[
+      #if label-name != none { [#metadata(none) #label(label-name)] }
+      #link(url)[#url]
+    ]
+  }
+}
 
 #let reference-numbers = (
   "fn:note1": "1",
@@ -144,6 +172,7 @@
 }
 
 #let glossary-pages(key) = context {
+  if target() == "html" { return none }
   let uses = query(metadata).filter(item => item.value == ("glossary-use", key))
   let pages = uses.map(item => (counter(page).at(item.location()).first(), item.location()))
   let unique = pages.fold((), (acc, pair) => {
@@ -166,71 +195,150 @@
     strong(box(entry.at(1))),
     [#(entry.at(2)).#glossary-pages(entry.at(0))],
   )).flatten()
-  table(
-    columns: (2.7cm, 1fr),
-    column-gutter: 6pt,
-    row-gutter: row-gap,
-    inset: 0pt,
-    stroke: none,
-    align: (left + top, left + top),
-    ..cells,
-  )
+  if target() == "html" {
+    html.elem("dl", attrs: (class: "glossary"))[
+      #for entry in visible {
+        html.elem("dt", entry.at(1))
+        html.elem("dd", entry.at(2))
+      }
+    ]
+  } else {
+    table(
+      columns: (2.7cm, 1fr),
+      column-gutter: 6pt,
+      row-gutter: row-gap,
+      inset: 0pt,
+      stroke: none,
+      align: (left + top, left + top),
+      ..cells,
+    )
+  }
 }
 
-#let note(body) = block(
-  width: 100%,
-  inset: 10pt,
-  radius: 6pt,
-  fill: light-blue,
-  stroke: 1.5pt + dark-blue,
-  above: 8pt,
-  below: 8pt,
-  body,
-)
+#let note(body) = context {
+  if target() == "html" {
+    html.elem("aside", attrs: (class: "notice note"), body)
+  } else {
+    block(
+      width: 100%,
+      inset: 10pt,
+      radius: 6pt,
+      fill: light-blue,
+      stroke: 1.5pt + dark-blue,
+      above: 8pt,
+      below: 8pt,
+      body,
+    )
+  }
+}
 
-#let warning(body) = block(
-  width: 100%,
-  inset: 10pt,
-  radius: 6pt,
-  fill: light-red,
-  stroke: 1.5pt + dark-red,
-  above: 8pt,
-  below: 8pt,
-  body,
-)
+#let warning(body) = context {
+  if target() == "html" {
+    html.elem("aside", attrs: (class: "notice warning"), body)
+  } else {
+    block(
+      width: 100%,
+      inset: 10pt,
+      radius: 6pt,
+      fill: light-red,
+      stroke: 1.5pt + dark-red,
+      above: 8pt,
+      below: 8pt,
+      body,
+    )
+  }
+}
 
 #let figure-counter = counter("cats-figure")
 #let table-counter = counter("cats-table")
 
 #let cats-figure(body, caption: none, continued: false) = {
   if not continued { figure-counter.step() }
-  block(width: 100%, breakable: false, above: 8pt, below: 8pt)[
-    #align(center, body)
-    #if caption != none {
-      v(5pt)
-      align(center)[#text(size: 8pt)[Figure #context figure-counter.display(): #caption]]
+  context {
+    if target() == "html" {
+      html.elem("figure", attrs: (class: "manual-figure"))[
+        #body
+        #if caption != none {
+          html.elem("figcaption")[Figure #figure-counter.display(): #caption]
+        }
+      ]
+    } else {
+      block(width: 100%, breakable: false, above: 8pt, below: 8pt)[
+        #align(center, body)
+        #if caption != none {
+          v(5pt)
+          align(center)[#text(size: 8pt)[Figure #context figure-counter.display(): #caption]]
+        }
+      ]
     }
-  ]
+  }
 }
 
 #let cats-table(body, caption: none, continued: false, breakable: false) = {
   if not continued { table-counter.step() }
-  block(width: 100%, breakable: breakable, above: 7pt, below: 7pt)[
-    #set par(justify: false, leading: 0.5em, spacing: 0.8em)
-    #set text(hyphenate: false)
-    #body
-    #if caption != none {
-      v(4pt)
-      align(center)[#text(size: 8pt)[Table #context table-counter.display(): #caption]]
+  context {
+    if target() == "html" {
+      html.elem("figure", attrs: (class: "manual-table"))[
+        #body
+        #if caption != none {
+          html.elem("figcaption")[Table #table-counter.display(): #caption]
+        }
+      ]
+    } else {
+      block(width: 100%, breakable: breakable, above: 7pt, below: 7pt)[
+        #set par(justify: false, leading: 0.5em, spacing: 0.8em)
+        #set text(hyphenate: false)
+        #body
+        #if caption != none {
+          v(4pt)
+          align(center)[#text(size: 8pt)[Table #context table-counter.display(): #caption]]
+        }
+      ]
     }
-  ]
+  }
 }
 
-#let subfigure(body, caption, letter) = block(width: 100%)[
-  #align(center, body)
-  #v(3pt)
-  #align(center)[#text(size: 8pt)[(#letter) #caption]]
-]
+#let subfigure(body, caption, letter, width: 100%, label-name: none) = context {
+  let result = if target() == "html" {
+    html.elem("figure", attrs: (class: "manual-subfigure"))[
+      #body
+      #html.elem("figcaption")[(#letter) #caption]
+    ]
+  } else {
+    align(center)[#block(width: width)[
+      #align(center, body)
+      #v(3pt)
+      #align(center)[#text(size: 8pt)[(#letter) #caption]]
+    ]]
+  }
+  if label-name == none {
+    result
+  } else {
+    [#result #label(label-name)]
+  }
+}
+
+#let responsive-split(left, right, columns: (63%, 1fr, 33%)) = context {
+  if target() == "html" {
+    html.elem("div", attrs: (class: "responsive-split"))[
+      #html.elem("div")[#left]
+      #html.elem("div")[#right]
+    ]
+  } else {
+    grid(columns: columns, left, [], right)
+  }
+}
+
+#let figure-stack(..children) = context {
+  let items = children.pos()
+  if target() == "html" {
+    html.elem("div", attrs: (class: "figure-stack"))[
+      #for item in items { html.elem("div", item) }
+    ]
+  } else {
+    stack(dir: ttb, spacing: 8pt, ..items)
+  }
+}
 
 #let normal-header = context {
   set par(spacing: 1.65em)

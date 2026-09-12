@@ -8,7 +8,7 @@
 
 This section provides a brief overview of the software architecture. It is intended for advanced users with some programming experience; understanding it is not required to use the flight computer.#linebreak() The software is implemented in C++ and uses #gls("FreeRTOS", cap: false) as its foundation. The hardware is initialized first, after which the tasks are started. Figure #xref("fig:SoftwareOverview") shows the running tasks.
 
-#cats-figure(image("../images/Working Principle/Software_Overview_Vega.png", width: 100%), caption: [Illustration of the different FreeRTOS tasks interacting with each other and the hardware. The black circle 'Settings' is just a memory region that is being accessed by different tasks.]) <fig-SoftwareOverview>
+#cats-figure(doc-image("Working Principle/Software_Overview_Vega.png", width: 100%), caption: [Illustration of the different FreeRTOS tasks interacting with each other and the hardware. The black circle 'Settings' is just a memory region that is being accessed by different tasks.]) <fig-SoftwareOverview>
 
 The following list briefly describes each task.
 
@@ -51,7 +51,7 @@ The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency
 
 *Hopping Pattern*#linebreak()#v(-1.8pt) The link phrase defines the hopping pattern. It is hashed with a #gls("crc", cap: false)-32 algorithm, and the resulting value seeds a pseudo-random number generator. The generator runs 20 times to define the hopping pattern. As a result, a given link phrase always produces the same pattern. The transmitter and receiver must use the same link phrase to communicate.#linebreak()#linebreak()#v(1.8pt)
 
-#cats-figure(image("../images/Working Principle/fhss.png", width: 100%), caption: [#gls("fhss", cap: false) transmission example]) <fig-fhss>
+#cats-figure(doc-image("Working Principle/fhss.png", width: 100%), caption: [#gls("fhss", cap: false) transmission example]) <fig-fhss>
 
 *Synchronization*#linebreak()#v(-1.8pt) The receiver waits on the first frequency until it receives a synchronization packet. This packet contains the link #gls("crc", cap: false), which identifies the transmission source. If the remote #gls("crc", cap: false) matches the local value, the receiver hops to the next frequency and waits for data. Each data packet contains a checksum for validating its contents. The receiver measures the interval between packets and hops to the next frequency when a packet is not received within the estimated interval. It can perform 30 hops without receiving a packet before synchronization is lost. If the connection is lost, the receiver returns to the first frequency.
 

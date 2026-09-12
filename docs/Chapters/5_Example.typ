@@ -25,13 +25,13 @@ The liftoff acceleration is simulated to be 70 $m/s^2$ (Fig. #xref("fig:ExampleS
 
 Configure these settings on the flight computer, then connect the battery, switch, and pyrotechnic charges to Pyro Channels 1 and 2. The completed CATS Vega setup should match Fig. #xref("fig:HWsimpleExample").
 
-#cats-figure(image("../images/Examples/HWSimpleExample.png", width: 100%), caption: [CATS Vega with a battery, switch, Pyro 1 and Pyro 2 connected.]) <fig-HWsimpleExample>
+#cats-figure(doc-image("Examples/HWSimpleExample.png", width: 100%), caption: [CATS Vega with a battery, switch, Pyro 1 and Pyro 2 connected.]) <fig-HWsimpleExample>
 
 #cats-figure(
-  stack(dir: ttb, spacing: 8pt,
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_simple_Config.png", width: 100%), [Configuration Tab (simple example).], "a") <fig-ExampleSimpleConfig>]]],
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_simple_Events.jpg", width: 100%), [Event Tab (simple example).], "b") <fig-ExampleSimpleEvents>]]],
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_simple_Timers.jpg", width: 100%), [Timer Tab (simple example).], "c") <fig-ExampleSimpleTimers>]]]
+  figure-stack(
+    [#subfigure(doc-image("Examples/Config_simple_Config.png", width: 100%), [Configuration Tab (simple example).], "a", width: 75%, label-name: "fig-ExampleSimpleConfig")],
+    [#subfigure(doc-image("Examples/Config_simple_Events.jpg", width: 100%), [Event Tab (simple example).], "b", width: 75%, label-name: "fig-ExampleSimpleEvents")],
+    [#subfigure(doc-image("Examples/Config_simple_Timers.jpg", width: 100%), [Timer Tab (simple example).], "c", width: 75%, label-name: "fig-ExampleSimpleTimers")]
   ),
   caption: [Configurator screenshots for the simple example configuration.],
   continued: false,
@@ -72,13 +72,13 @@ The low-level #gls("I/O", cap: false) is turned on at burnout (Fig. #xref("fig:E
 
 Configure these settings on the flight computer, then connect the battery, switch, solenoid valve to #gls("pyro", cap: false) Channel 1, camera to #gls("pyro", cap: false) Channel 2, and #gls("servo", cap: false) to #gls("servo", cap: true) Channel 1. The completed CATS Vega setup should match Fig. #xref("fig:HWadvancedExample").
 
-#cats-figure(image("../images/Examples/HWAdvancedExample.png", width: 100%), caption: [CATS Vega with a battery, switch, solenoid valve, camera and servo connected.]) <fig-HWadvancedExample>
+#cats-figure(doc-image("Examples/HWAdvancedExample.png", width: 100%), caption: [CATS Vega with a battery, switch, solenoid valve, camera and servo connected.]) <fig-HWadvancedExample>
 
 #cats-figure(
-  stack(dir: ttb, spacing: 8pt,
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_advanced_config.png", width: 100%), [Configuration Tab (advanced example).], "a") <fig-ExampleAdvancedConfig>]]],
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_advanced_events.jpg", width: 100%), [Event Tab (advanced example).], "b") <fig-ExampleAdvancedEvents>]]],
-    [#align(center)[#block(width: 75%)[#subfigure(image("../images/Examples/Config_advanced_timers.jpg", width: 100%), [Timer Tab (advanced example).], "c") <fig-ExampleAdvancedTimers>]]]
+  figure-stack(
+    [#subfigure(doc-image("Examples/Config_advanced_config.png", width: 100%), [Configuration Tab (advanced example).], "a", width: 75%, label-name: "fig-ExampleAdvancedConfig")],
+    [#subfigure(doc-image("Examples/Config_advanced_events.jpg", width: 100%), [Event Tab (advanced example).], "b", width: 75%, label-name: "fig-ExampleAdvancedEvents")],
+    [#subfigure(doc-image("Examples/Config_advanced_timers.jpg", width: 100%), [Timer Tab (advanced example).], "c", width: 75%, label-name: "fig-ExampleAdvancedTimers")]
   ),
   caption: [Configurator screenshots for the advanced example configuration.],
   continued: false,

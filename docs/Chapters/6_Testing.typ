@@ -45,17 +45,17 @@ Make sure that the link phrase and testing phrase match those configured on the 
   [
 Open the Testing menu on the Ground Station.
 
-#cats-figure(image("../images/Testing/GroundStation_MainMenu.jpg", width: 70%), caption: [Ground Station Main Menu.]) <fig-GSTestingMainMenu>
+#cats-figure(doc-image("Testing/GroundStation_MainMenu.jpg", width: 70%), caption: [Ground Station Main Menu.]) <fig-GSTestingMainMenu>
 ],
   [
 Read the disclaimer carefully and arm testing mode. *Attention:* After this step, executing events will trigger the connected mechanisms. Follow all safety guidelines.
 
-#cats-figure(image("../images/Testing/GroundStation_Arm_Testing_Mode.jpg", width: 70%), caption: [Arming the test mode.]) <fig-GSTestingArming>
+#cats-figure(doc-image("Testing/GroundStation_Arm_Testing_Mode.jpg", width: 70%), caption: [Arming the test mode.]) <fig-GSTestingArming>
 ],
   [
 A pop-up indicates that testing mode is being activated. Wait until it disappears.
 
-#cats-figure(image("../images/Testing/GroundStation_Wait_Testing_Mode.jpg", width: 70%), caption: [Waiting for testing mode to activate.]) <fig-GSTestingWaitingArming>
+#cats-figure(doc-image("Testing/GroundStation_Wait_Testing_Mode.jpg", width: 70%), caption: [Waiting for testing mode to activate.]) <fig-GSTestingWaitingArming>
 ],
   [
 The flight computer should emit the "Armed Testing" beeping pattern. See Section #xref("sec:BeepingPatterns") for more information.
@@ -63,12 +63,12 @@ The flight computer should emit the "Armed Testing" beeping pattern. See Section
   [
 Select the event that you want to trigger.
 
-#cats-figure(image("../images/Testing/GroundStation_Event_Menu.jpg", width: 70%), caption: [Selection of the Event to be triggered.]) <fig-GSTestingEventMenu>
+#cats-figure(doc-image("Testing/GroundStation_Event_Menu.jpg", width: 70%), caption: [Selection of the Event to be triggered.]) <fig-GSTestingEventMenu>
 ],
   [
 Select the event and confirm.
 
-#cats-figure(image("../images/Testing/GroundStation_Trigger_Event.jpg", width: 70%), caption: [Confirming to trigger the desired Event.]) <fig-GSTestingEventTriggering>
+#cats-figure(doc-image("Testing/GroundStation_Trigger_Event.jpg", width: 70%), caption: [Confirming to trigger the desired Event.]) <fig-GSTestingEventTriggering>
 ]
 )
 

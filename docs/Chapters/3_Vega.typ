@@ -4,7 +4,7 @@
 
 This section describes how the flight computer works and how to configure it for a flight. The How to Use section explains its basic features. For more detailed information, refer to Section #xref("sec:AdvancedInfo").
 
-#cats-figure(image("../images/How To Use/Vega/Vega_HW.jpeg", width: 60%), caption: [CATS Vega])
+#cats-figure(doc-image("How To Use/Vega/Vega_HW.jpeg", width: 60%), caption: [CATS Vega])
 
 == Hardware
 
@@ -63,7 +63,7 @@ This section describes how the flight computer works and how to configure it for
 
 This section provides a quick hardware overview and shows the location of each port. The numbered markers in Figure #xref("fig:VegaHWSpecs") correspond to the following list.#linebreak()#v(-1.8pt)
 
-#grid(columns: (63%, 1fr, 33%), [
+#responsive-split(columns: (63%, 1fr, 33%), [
 #enum(tight: false,
   [
 *Switch Port*; Connect a manual switch between the two terminals.
@@ -105,8 +105,8 @@ This section provides a quick hardware overview and shows the location of each p
 *Antenna Connector*; Connect an antenna here so that the CATS Vega can transmit data to the Ground Station.
 ]
 )
-], [], [
-#cats-figure(image("../images/How To Use/Vega/VEGA-Hardware-optimized.png", width: 100%), caption: [CATS Vega board hardware specifications]) <fig-VegaHWSpecs>
+], [
+#cats-figure(doc-image("How To Use/Vega/VEGA-Hardware-optimized.png", width: 100%), caption: [CATS Vega board hardware specifications]) <fig-VegaHWSpecs>
 ])
 
 == Working Principle
@@ -117,7 +117,7 @@ This section briefly introduces the operating principles needed to understand th
 
 #metadata(none) <sec-FSM> The finite state machine (#gls("FSM", cap: false)), shown in Figure #xref("fig:FSM"), controls the outputs of the Vega flight computer. When the flight computer is turned on, it starts in the Calibrating state. Every flight follows the sequence of states shown in Figure #xref("fig:FSM"). Whenever a state transition occurs, the associated event is triggered.
 
-#cats-figure(image("../images/Working Principle/Finite_State_Machine.png", width: 13cm), caption: [Finite State Machine controlling the CATS software.]) <fig-FSM>
+#cats-figure(doc-image("Working Principle/Finite_State_Machine.png", width: 13cm), caption: [Finite State Machine controlling the CATS software.]) <fig-FSM>
 
 Each event can trigger one or more actions, such as a #gls("pyro", cap: false) channel, #gls("servo", cap: false) channel, or timer. Use the Configurator to assign actions to events, as described in Section #xref("sec:DescriptionOfConfigurator").
 
@@ -222,11 +222,11 @@ Now that the hardware and software have been introduced, this section explains h
 
 === Connection to Your Computer
 
-Before connecting your CATS Vega to your computer, download the Configurator from our #link("https://github.com/catsystems/cats-configurator/releases/")[releases page]. Drivers are usually not required. If your computer does not recognize the device, refer to the troubleshooting steps in our #link("https://github.com/catsystems/cats-embedded/wiki/Installation")[wiki]#footnote[#link("https://github.com/catsystems/cats-embedded/wiki/Installation")[https://github.com/catsystems/cats-embedded/wiki/Installation]].
+Before connecting your CATS Vega to your computer, download the Configurator from our #link("https://github.com/catsystems/cats-configurator/releases/")[releases page]. Drivers are usually not required. If your computer does not recognize the device, refer to the troubleshooting steps in our #link("https://github.com/catsystems/cats-embedded/wiki/Installation")[wiki]#source-note("https://github.com/catsystems/cats-embedded/wiki/Installation").
 
 === Description of the Configurator
 
-#metadata(none) <sec-DescriptionOfConfigurator> The Configurator allows you to configure the CATS System from your computer. Download the latest stable version from the #link("https://github.com/catsystems/cats-configurator/releases/")[releases page]#footnote[#link("https://github.com/catsystems/cats-configurator/releases/")[https://github.com/catsystems/cats-configurator/releases]]. Release candidates are marked accordingly and should be used only to test new features.#linebreak()#v(-1.8pt) *Home Tab*#linebreak()#v(-1.8pt) The Home tab appears when the Configurator starts. If the flight computer is already connected to your computer, select the correct communication port (label 2 in Figure #xref("fig:GUIHome")) and select Connect. If the connection times out, confirm that you selected the correct device. If several flight computers are connected, make sure that you are configuring the intended one. Until a flight computer is connected, the other tabs remain disabled (label 6), and the Configurator indicates that no board is connected (labels 5 and 7).#linebreak() If the required communication port does not appear in the dropdown menu, select Refresh (label 1). If the port still does not appear, refer to our #link("https://github.com/catsystems/cats-embedded/wiki/Installation")[wiki] for troubleshooting steps.#linebreak()
+#metadata(none) <sec-DescriptionOfConfigurator> The Configurator allows you to configure the CATS System from your computer. Download the latest stable version from the #link("https://github.com/catsystems/cats-configurator/releases/")[releases page]#source-note("https://github.com/catsystems/cats-configurator/releases"). Release candidates are marked accordingly and should be used only to test new features.#linebreak()#v(-1.8pt) *Home Tab*#linebreak()#v(-1.8pt) The Home tab appears when the Configurator starts. If the flight computer is already connected to your computer, select the correct communication port (label 2 in Figure #xref("fig:GUIHome")) and select Connect. If the connection times out, confirm that you selected the correct device. If several flight computers are connected, make sure that you are configuring the intended one. Until a flight computer is connected, the other tabs remain disabled (label 6), and the Configurator indicates that no board is connected (labels 5 and 7).#linebreak() If the required communication port does not appear in the dropdown menu, select Refresh (label 1). If the port still does not appear, refer to our #link("https://github.com/catsystems/cats-embedded/wiki/Installation")[wiki] for troubleshooting steps.#linebreak()
 
 #cats-table(
   table(
@@ -257,11 +257,11 @@ Before connecting your CATS Vega to your computer, download the Configurator fro
   breakable: false,
 ) <tab-HomeTabOverview>
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_Home.jpg", width: 100%), caption: [Home Menu.]) <fig-GUIHome>
+#cats-figure(doc-image("How To Use/Configurator/GUI_Home.jpg", width: 100%), caption: [Home Menu.]) <fig-GUIHome>
 
 *Configuration Tab*#linebreak()#v(-1.8pt) This tab displays the flight computer's status and allows you to configure its parameters. Figure #xref("fig:GUIConfig") shows the Configuration tab, and the following table explains each label.
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_Config.png", width: 100%), caption: [Configuration Menu.]) <fig-GUIConfig>
+#cats-figure(doc-image("How To Use/Configurator/GUI_Config.png", width: 100%), caption: [Configuration Menu.]) <fig-GUIConfig>
 
 #cats-table(
   table(
@@ -373,11 +373,11 @@ Before connecting your CATS Vega to your computer, download the Configurator fro
 *Note:* The custom events can only be triggered as described below in the Timers section.
 ]
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_Events.jpg", width: 100%), caption: [Event Menu.]) <fig-GUIEvents>
+#cats-figure(doc-image("How To Use/Configurator/GUI_Events.jpg", width: 100%), caption: [Event Menu.]) <fig-GUIEvents>
 
 #pagebreak()
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_EventSel.jpg", width: 100%), caption: [Configuring an Event in the Event Menu.]) <fig-GUIEventSel>
+#cats-figure(doc-image("How To Use/Configurator/GUI_EventSel.jpg", width: 100%), caption: [Configuring an Event in the Event Menu.]) <fig-GUIEventSel>
 
 *Timers*#linebreak()#v(-1.8pt) Use this tab to configure the four available timers. Enable or disable each timer with the yellow button in the upper-right corner of its panel. #linebreak() After enabling a timer (Timer 1 in Figure #xref("fig:GUITimers")), configure its start event, duration in milliseconds, and end event. In the example, the start event is #gls("liftoff", cap: true), the duration is 10000 ms, and the end event is #gls("apogee", cap: true). At liftoff, a 10-second timer starts and triggers the #gls("apogee", cap: false) event when it expires. This triggers the event without placing the flight computer in the Apogee state.#linebreak()
 
@@ -389,20 +389,20 @@ Before connecting your CATS Vega to your computer, download the Configurator fro
 
 #pagebreak()
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_Timers.jpg", width: 100%), caption: [Timer Menu.]) <fig-GUITimers>
+#cats-figure(doc-image("How To Use/Configurator/GUI_Timers.jpg", width: 100%), caption: [Timer Menu.]) <fig-GUITimers>
 
 *CLI*#linebreak()#v(-1.8pt) The CLI tab allows the user to send commands directly to the CATS board. Section #xref("sec:CLI") explains all supported commands. Figure #xref("fig:GUICLI") shows the CLI.
 
-#cats-figure(image("../images/How To Use/Configurator/GUI_CLI.jpg", width: 100%), caption: [Command Line Interface.]) <fig-GUICLI>
+#cats-figure(doc-image("How To Use/Configurator/GUI_CLI.jpg", width: 100%), caption: [Command Line Interface.]) <fig-GUICLI>
 
 === Mounting
 
-#grid(columns: (60%, 1fr, 33%), [
-The CATS Vega *does not* require a specific mounting orientation. The system automatically detects the gravity vector for internal state estimation, so you can mount the board in any orientation.#linebreak() The board has a length of 100 mm, a width of 33 mm and a total height of 15 mm. Three mounting holes secure the system to the rocket. The mounting holes are spaced 60 mm by 27 mm and are designed for M3 screws. Use spacers to prevent the electronics from touching the rocket. Download the system's 3D files from our #link("https://github.com/catsystems/cats-hardware/tree/main/CATS-Vega/3D")[GitHub repository]#footnote[#link("https://github.com/catsystems/cats-hardware/tree/main/CATS-Vega/3D")[https://github.com/catsystems/cats-hardware/tree/main/CATS-Vega/3D]].#linebreak() For reliable radio reception during flight, pay close attention to the area surrounding each antenna. Install the CATS flight computer in a radio-transparent section of the rocket, such as fiberglass or cardboard. Do not install it in a carbon-fiber section, which blocks #gls("RF", cap: false) signals. Ensure that the onboard #gls("patch antenna", cap: false) has a clear view of the sky for optimal #gls("GNSS", cap: false) reception, and keep the telemetry antenna away from metal objects.
+#responsive-split(columns: (60%, 1fr, 33%), [
+The CATS Vega *does not* require a specific mounting orientation. The system automatically detects the gravity vector for internal state estimation, so you can mount the board in any orientation.#linebreak() The board has a length of 100 mm, a width of 33 mm and a total height of 15 mm. Three mounting holes secure the system to the rocket. The mounting holes are spaced 60 mm by 27 mm and are designed for M3 screws. Use spacers to prevent the electronics from touching the rocket. Download the system's 3D files from our #link("https://github.com/catsystems/cats-hardware/tree/main/CATS-Vega/3D")[GitHub repository]#source-note("https://github.com/catsystems/cats-hardware/tree/main/CATS-Vega/3D").#linebreak() For reliable radio reception during flight, pay close attention to the area surrounding each antenna. Install the CATS flight computer in a radio-transparent section of the rocket, such as fiberglass or cardboard. Do not install it in a carbon-fiber section, which blocks #gls("RF", cap: false) signals. Ensure that the onboard #gls("patch antenna", cap: false) has a clear view of the sky for optimal #gls("GNSS", cap: false) reception, and keep the telemetry antenna away from metal objects.
 
 After power-up, the system detects the up direction once it is stable. A beeping pattern and the Ground Station indicate when the flight computer enters the #gls("Ready", cap: false) state. In this state, the flight computer is armed and waiting for #gls("liftoff", cap: false). Do not move the rocket, and follow all safety guidelines. At this stage, the flight computer can be disarmed only by switching it off. For more information about calibration, refer to Sections #xref("sec:EstAlg") and #xref("sec:FSM").#linebreak()
-], [], [
-#cats-figure(image("../images/How To Use/Vega/Mounting_Img.png", width: 80%), caption: [CATS Vega board with the mounting hole and dimensions.])
+], [
+#cats-figure(doc-image("How To Use/Vega/Mounting_Img.png", width: 80%), caption: [CATS Vega board with the mounting hole and dimensions.])
 ])
 
 #warning[
@@ -592,7 +592,7 @@ Launch your rocket!
 
 After the flight, connect the board to a computer with a USB-C cable. The flight computer appears as a USB drive, allowing you to drag and drop the flight data onto your desktop. You can also drag the flight log directly into the Configurator to plot it.#linebreak()
 
-#cats-figure(image("../images/How To Use/Vega/StorageVega.png", width: 100%), caption: [USB drive when the CATS Vega is plugged into the user computer.])
+#cats-figure(doc-image("How To Use/Vega/StorageVega.png", width: 100%), caption: [USB drive when the CATS Vega is plugged into the user computer.])
 
 === Visualizing the Flight Data
 
@@ -600,11 +600,11 @@ After the flight, connect the board to a computer with a USB-C cable. The flight
 
 === Software Updates
 
-#metadata(none) <sec-softwareupdates> The software is continuously improved, so install each new update when it is released. Updates are announced on our #link("https://discord.gg/r7ErmSNvsy")[Discord server]#footnote[#link("https://discord.gg/r7ErmSNvsy")[https://discord.gg/r7ErmSNvsy]]. To update the software, follow these steps:
+#metadata(none) <sec-softwareupdates> The software is continuously improved, so install each new update when it is released. Updates are announced on our #link("https://discord.gg/r7ErmSNvsy")[Discord server]#source-note("https://discord.gg/r7ErmSNvsy"). To update the software, follow these steps:
 
 #enum(tight: false,
   [
-Download and install the #link("https://www.st.com/en/development-tools/stm32cubeprog.html")[STM Programmer]#footnote[#link("https://www.st.com/en/development-tools/stm32cubeprog.html")[https://www.st.com/en/development-tools/stm32cubeprog.html]] (STM32CubeProg).
+Download and install the #link("https://www.st.com/en/development-tools/stm32cubeprog.html")[STM Programmer]#source-note("https://www.st.com/en/development-tools/stm32cubeprog.html") (STM32CubeProg).
 ],
   [
 Connect the CATS Vega with a USB-C cable.
@@ -637,7 +637,7 @@ Confirm that the upper-right corner shows that the programmer is connected to th
 In the left navigation panel, select Erasing & Programming (Figure #xref("fig:SWUpdateProgram")).
 ],
   [
-In the File path field, select the firmware file to flash (the filename ends in `.bin`). The latest release of the CATS software is available #link("https://github.com/catsystems/cats-embedded/releases")[here]#footnote[#link("https://github.com/catsystems/cats-embedded/releases")[https://github.com/catsystems/cats-embedded/releases]] (Figure #xref("fig:SWUpdateProgram")).
+In the File path field, select the firmware file to flash (the filename ends in `.bin`). The latest release of the CATS software is available #link("https://github.com/catsystems/cats-embedded/releases")[here]#source-note("https://github.com/catsystems/cats-embedded/releases") (Figure #xref("fig:SWUpdateProgram")).
 ],
   [
 Select Start Programming (Figure #xref("fig:SWUpdateProgram")).
@@ -658,26 +658,26 @@ You've successfully updated the software!
 ]
 
 #cats-figure(
-  stack(dir: ttb, spacing: 8pt,
-    [#align(center)[#block(width: 100%)[#subfigure(image("../images/How To Use/SoftwareUpdate/Programmer-Init.jpg", width: 100%), [Open the dropdown menu and select USB. The panel shown in the next image opens on the right.], "a") <fig-SWUpdateInit>]]],
-    [#align(center)[#block(width: 100%)[#subfigure(image("../images/How To Use/SoftwareUpdate/Programmer-USB.png", width: 100%), [Select the displayed USB port in the Port field, then select Connect.], "b") <fig-SWUpdateUSB>]]]
+  figure-stack(
+    [#subfigure(doc-image("How To Use/SoftwareUpdate/Programmer-Init.jpg", width: 100%), [Open the dropdown menu and select USB. The panel shown in the next image opens on the right.], "a", label-name: "fig-SWUpdateInit")],
+    [#subfigure(doc-image("How To Use/SoftwareUpdate/Programmer-USB.png", width: 100%), [Select the displayed USB port in the Port field, then select Connect.], "b", label-name: "fig-SWUpdateUSB")]
   ),
   caption: [Flashing new software to the board.],
   continued: false,
 )
 
 #cats-figure(
-  stack(dir: ttb, spacing: 8pt,
-    [#align(center)[#block(width: 100%)[#subfigure(image("../images/How To Use/SoftwareUpdate/Programmer-Connected.png", width: 100%), [Confirm that the Connected status appears in the upper-right corner.], "c") <fig-SWUpdateConnected>]]],
-    [#align(center)[#block(width: 100%)[#subfigure(image("../images/How To Use/SoftwareUpdate/Programmer-Erase-Programm.png", width: 100%), [Select Erasing & Programming on the left. Use Browse to select the appropriate `.bin` file, then select Start Programming.], "d") <fig-SWUpdateProgram>]]]
+  figure-stack(
+    [#subfigure(doc-image("How To Use/SoftwareUpdate/Programmer-Connected.png", width: 100%), [Confirm that the Connected status appears in the upper-right corner.], "c", label-name: "fig-SWUpdateConnected")],
+    [#subfigure(doc-image("How To Use/SoftwareUpdate/Programmer-Erase-Programm.png", width: 100%), [Select Erasing & Programming on the left. Use Browse to select the appropriate `.bin` file, then select Start Programming.], "d", label-name: "fig-SWUpdateProgram")]
   ),
   caption: [Flashing new software to the board (cont.).],
   continued: true,
 )
 
 #cats-figure(
-  stack(dir: ttb, spacing: 8pt,
-    [#align(center)[#block(width: 100%)[#subfigure(image("../images/How To Use/SoftwareUpdate/Programmer_Finished.JPG", width: 100%), [This message appears when the firmware has been flashed successfully.], "e") <fig-SWUpdateProgramFinished>]]]
+  figure-stack(
+    [#subfigure(doc-image("How To Use/SoftwareUpdate/Programmer_Finished.JPG", width: 100%), [This message appears when the firmware has been flashed successfully.], "e", label-name: "fig-SWUpdateProgramFinished")]
   ),
   caption: [Flashing new software to the board (cont.).],
   continued: true,
@@ -701,19 +701,19 @@ You've successfully updated the software!
   [*Pattern*],
   [Bootup],
   [The flight computer has booted up.],
-  [#image("../images/How To Use/Beeping_Patterns/Beep-Bootup.png", width: 50%)],
+  [#doc-image("How To Use/Beeping_Patterns/Beep-Bootup.png", width: 50%, alt: "Bootup beeping pattern")],
   [#gls("Calibrating", cap: false) $arrow.r$ #gls("Ready", cap: false)],
   [The flight computer has switched from the #gls("Calibrating", cap: false) state to the #gls("Ready", cap: false) state.],
-  [#image("../images/How To Use/Beeping_Patterns/Beep-Moving-Ready.png", width: 50%)],
+  [#doc-image("How To Use/Beeping_Patterns/Beep-Moving-Ready.png", width: 50%, alt: "Calibrating to ready beeping pattern")],
   [#gls("Ready", cap: false)],
   [Calibration was successful, and the flight computer is in the #gls("Ready", cap: false) state.],
-  [#image("../images/How To Use/Beeping_Patterns/Beep-Ready.png", width: 50%)],
+  [#doc-image("How To Use/Beeping_Patterns/Beep-Ready.png", width: 50%, alt: "Ready beeping pattern")],
   [Testing],
   [The flight computer is in testing mode. This pattern sounds only after the computer is rebooted.],
-  [#image("../images/How To Use/Beeping_Patterns/Beep-Testing.png", width: 50%)],
+  [#doc-image("How To Use/Beeping_Patterns/Beep-Testing.png", width: 50%, alt: "Testing beeping pattern")],
   [Testing Armed],
   [The flight computer is in the armed testing state.],
-  [#image("../images/How To Use/Beeping_Patterns/Beep-Testing-Armed.png", width: 50%)],
+  [#doc-image("How To Use/Beeping_Patterns/Beep-Testing-Armed.png", width: 50%, alt: "Testing armed beeping pattern")],
   table.hline(y: 2, stroke: 0.5pt + black)
 ),
   caption: [Overview of state beeping patterns.],
