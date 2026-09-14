@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const htmlPath = "docs/generated/manual.html";
 const html = readFileSync(htmlPath, "utf8");
+const webSource = readFileSync("docs/Web.typ", "utf8");
 const chapterFiles = readdirSync("docs/Chapters")
   .filter((name) => name.endsWith(".typ"))
   .map((name) => readFileSync(`docs/Chapters/${name}`, "utf8"))
@@ -13,15 +14,20 @@ function requireCondition(condition, message) {
 }
 
 requireCondition(html.includes('<link rel="canonical" href="https://catsystems.io/manual">'), "Missing manual canonical URL");
-requireCondition(html.includes("Version 2.1.2"), "Missing manual version");
+requireCondition(html.includes("Last updated: 14 September 2026"), "Missing last-updated date");
+requireCondition(!html.includes("Version 2.1.2"), "Obsolete manual version remains");
+requireCondition(!html.includes("Revision History"), "Obsolete revision history remains");
 requireCondition(html.includes('<article class="manual-article">'), "Missing semantic manual article");
 requireCondition(html.includes("<math"), "Equations were not exported as MathML");
-requireCondition(html.includes("CATS%20User%20Manual.pdf"), "Missing PDF download");
 requireCondition(!/<script\b/i.test(html), "Scripts are forbidden in the generated manual");
+requireCondition(!webSource.includes("html.style"), "Manual styling must come from CATS Flights");
 requireCondition(!/<form\b/i.test(html), "Forms are forbidden in the generated manual");
 requireCondition(!/\son[a-z]+\s*=/i.test(html), "Event-handler attributes are forbidden in the generated manual");
 requireCondition(!/data:image/i.test(html), "Images must not be embedded in the generated manual");
 requireCondition(!/(?:src|href)="(?:\.\.?\/|images\/)/i.test(html), "Generated manual contains a local asset path");
+requireCondition(!html.includes("CATS Vega flight computer and Ground Station"), "Obsolete manual subtitle remains");
+requireCondition(!html.includes('class="site-header"'), "Generated manual contains a duplicate site header");
+requireCondition(!html.includes('class="mobile-contents"'), "Generated manual contains duplicate responsive navigation");
 
 const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]));
 const anchors = [...html.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]);
@@ -29,6 +35,7 @@ const missingAnchors = [...new Set(anchors.filter((anchor) => !ids.has(anchor)))
 requireCondition(missingAnchors.length === 0, `Broken internal links: ${missingAnchors.join(", ")}`);
 const sourceHeadingCount = (chapterFiles.match(/^=+\s+/gm) ?? []).length + (chapterFiles.match(/#heading\(level:/g) ?? []).length;
 const articleHtml = html.slice(html.indexOf('<article class="manual-article">'), html.indexOf("</article>"));
+requireCondition(!/href="#gls-/i.test(articleHtml), "Glossary terms must render as plain text");
 const generatedHeadingCount = (articleHtml.match(/<h[1-6]\b/g) ?? []).length - 1;
 requireCondition(generatedHeadingCount === sourceHeadingCount, `Heading mismatch: ${generatedHeadingCount}/${sourceHeadingCount}`);
 

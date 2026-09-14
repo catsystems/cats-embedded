@@ -1,4 +1,5 @@
 // Shared layout and semantic helpers for the CATS User Manual.
+#let manual-last-updated = "14 September 2026"
 #let cats-orange = rgb("#f0870f")
 #let light-blue = rgb("#ddebf7")
 #let dark-blue = rgb("#1f4e78")
@@ -168,7 +169,7 @@
 #let gls(key, cap: false) = {
   let value = glossary-names.at(key, default: [#key])
   metadata(("glossary-use", key))
-  link(glossary-labels.at(key))[#if cap { upper(value.slice(0, 1)) + value.slice(1) } else { value }]
+  if cap { upper(value.slice(0, 1)) + value.slice(1) } else { value }
 }
 
 #let glossary-pages(key) = context {
@@ -182,7 +183,7 @@
     h(0.35em)
     unique.enumerate().map(pair => {
       if pair.first() > 0 { text(", ") }
-      link(pair.last().last())[#str(pair.last().first())]
+      str(pair.last().first())
     }).join()
   }
 }

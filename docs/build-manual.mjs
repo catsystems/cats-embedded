@@ -32,5 +32,5 @@ if (version.status !== 0 || !version.stdout.trim().startsWith("typst 0.15.1")) {
 mkdirSync("docs/generated", { recursive: true });
 
 const common = ["--root", "docs", "--font-path", "docs/fonts", "--ignore-system-fonts"];
-typst(["compile", "--creation-timestamp", "1786303398", ...common, "docs/Main.typ", "CATS User Manual.pdf"]);
+typst(["compile", "--creation-timestamp", "1789344000", ...common, "docs/Main.typ", "CATS User Manual.pdf"]);
 typst(["compile", "--features", "html", ...common, "docs/Web.typ", "docs/generated/manual.html"], expectedHtmlWarning);
