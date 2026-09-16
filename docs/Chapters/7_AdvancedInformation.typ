@@ -132,9 +132,9 @@ For more information about the visualizer script, run:
 
 #pagebreak()
 
-== Description of the CLI
+== Common CLI Commands
 
-#metadata(none) <sec-CLI> This section describes all commands available in the CLI. To access the CLI, connect the board to your computer, connect through the Configurator, and open the CLI tab. #linebreak() In the list below, square brackets #text(font: "DejaVu Sans Mono", size: 0.9em)[\[ \]] indicate an optional argument, while angle brackets \< \> identify a parameter name.#linebreak() After changing the configuration through the CLI, verify it with the #text(font: "DejaVu Sans Mono", size: 0.9em)[config] command.
+#metadata(none) <sec-CLI> The CLI is intended for advanced inspection, recovery, and configuration. To access it, connect the Vega through the Configurator and open *CLI*. The commands and parameters below are the most useful ones; run #text(font: "DejaVu Sans Mono", size: 0.9em)[help] for the authoritative list provided by the connected firmware. Square brackets #text(font: "DejaVu Sans Mono", size: 0.9em)[\[ \]] indicate an optional argument, while angle brackets \< \> identify a parameter name.#linebreak() After changing configuration values, run #text(font: "DejaVu Sans Mono", size: 0.9em)[save] and verify the result with #text(font: "DejaVu Sans Mono", size: 0.9em)[config].
 
 #cats-table(
   table(
@@ -145,7 +145,7 @@ For more information about the visualizer script, run:
   fill: (x, y) => if calc.even(y) { luma(90%) } else { white },
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[bl]],
   [Put the board into DFU mode],
-  [Needed for software updates (refer to Section #xref("sec:softwareupdates"))],
+  [For advanced recovery. Normal firmware updates use the Configurator workflow in Chapter #xref("sec:FirmwareUpdates").],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[cd]],
   [Change the current working directory],
   [],
@@ -170,16 +170,16 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[flash\_stop\_write]],
   [Stop writing to flash],
   [For testing purposes only; do not use],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_dump \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_dump \<flight\_number\>]],
   [Print a specific flight in binary format],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_parse \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_parse \<flight\_number\>]],
   [Print a specific flight in a human-readable format],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[get \[\< variable\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[get \[command\_name\]]],
   [Get a variable value, described in Table #xref("tab:CLICommandsSetGet")],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[help \[\< command name\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[help \[search string\]]],
   [Display all commands with a description],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[lfs\_format]],
@@ -188,7 +188,7 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[log\_enable]],
   [Enable log output on the terminal],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ls \[\< path\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ls]],
   [List all files in the current working directory],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[reboot]],
@@ -197,16 +197,16 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_info]],
   [Get information about flash usage],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[rm \[\< path\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[rm \<file\_name\>]],
   [Remove a file],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[save]],
   [Save flight configuration],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[set \[\< variable\> =\< value\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[set \[\<command\_name\>=\<value\>\]]],
   [Set a variable, described in Table #xref("tab:CLICommandsSetGet")],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[stats \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[stats \<flight\_number\>]],
   [Print flight statistics],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[status]],
@@ -216,14 +216,12 @@ For more information about the visualizer script, run:
   [Show the firmware version],
   []
 ),
-  caption: [Exhaustive List of #gls("CLI", cap: false) Commands],
+  caption: [Common #gls("CLI", cap: false) commands],
   continued: false,
   breakable: true,
 ) <tab-CLICommands>
 
-#pagebreak()
-
-#heading(level: 3, outlined: false)[Get and Set Commands]
+#heading(level: 3, outlined: false)[Common Configuration Parameters]
 
 The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] command or changed with the #text(font: "DejaVu Sans Mono", size: 0.9em)[set] command. Changes are saved to the flight computer's configuration only after the #text(font: "DejaVu Sans Mono", size: 0.9em)[save] command is run.
 
@@ -282,6 +280,9 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_ready]],
   [Set the actions associated with the ready event],
   [Do not use!],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_liftoff]],
+  [Set the actions associated with the liftoff event],
+  [Prefer the Configurator's Events & Timers page.],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_burnout]],
   [Set the actions associated with the burnout event],
   [Do not use!],
@@ -315,6 +316,9 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_power\_level]],
   [Set the telemetry power level],
   [],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_enable]],
+  [Enable or disable telemetry],
+  [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_adaptive\_power]],
   [Enable or disable adaptive power for the telemetry power level],
   [Adaptive power mode boosts output power to maximum when the flight computer is in _THRUSTING_ mode and returns it to the user-set value when _TOUCHDOWN_ is registered.],
@@ -329,9 +333,12 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [A bit mask corresponding to the #link("https://github.com/catsystems/cats-embedded/blob/674192f757e7b1cd11fc023cafc6ea9dcf132f5f/flight_computer/src/flash/recorder.hpp#L35")[#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_entry\_type\_e]] enum],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_speed]],
   [Set the desired sampling period for recording],
-  []
+  [],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[test\_mode]],
+  [Enable or disable testing mode],
+  [A reboot is required after saving the change.]
 ),
-  caption: [Exhaustive List of parameters used in the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] and #text(font: "DejaVu Sans Mono", size: 0.9em)[set] Commands],
+  caption: [Common parameters used with the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] and #text(font: "DejaVu Sans Mono", size: 0.9em)[set] commands],
   continued: false,
   breakable: true,
 ) <tab-CLICommandsSetGet>

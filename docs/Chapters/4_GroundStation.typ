@@ -10,7 +10,7 @@ The Ground Station is the counterpart to the CATS Vega. It receives data from th
 
 === Overview
 
-The Ground Station is built around an ESP32-S2 microcontroller and features a transflective display that remains readable in bright sunlight. The onboard flash can store up to 1 MB of data, enough to track over an hour of flight data.
+The Ground Station is built around an ESP32-S2 microcontroller and features a transflective display that remains readable in bright sunlight. It has 4 MB of internal flash, including a 1 MB FAT data partition for logs and firmware-transfer files.
 
 #pagebreak()
 
@@ -26,7 +26,7 @@ The Ground Station is built around an ESP32-S2 microcontroller and features a tr
   [Microcontroller],
   [ESP32-S2],
   [Flash Memory],
-  [1 MB],
+  [4 MB internal; 1 MB data partition],
   [Battery],
   [Li-Ion 18650],
   [Power Consumption],
@@ -53,70 +53,135 @@ This section covers the basic use of the Ground Station. For more advanced infor
 
 === Explanation of All Menus
 
-#metadata(none) <sec-explanMenus> Use the joystick to move left, right, up, and down. Press the A button to open a menu or select an option, and press the B button to go back.#linebreak()#linebreak()#v(1.8pt)
+#metadata(none) <sec-explanMenus> Use the joystick to move left, right, up, and down. Press A to open a menu, select an item, or confirm an action. Press B to go back. Arrows and hints at the edges of the display indicate when another page or action is available.
 
-*Live Data*#linebreak()#v(-1.8pt) The Live Data screen shows all data received from the Vega flight computer, together with information about the data-link quality.
+#cats-figure(
+  doc-image("How To Use/Groundstation/GS_Main_Menu.png", width: 80%, outline: true, alt: "Ground Station main menu rendered by the simulator"),
+  caption: [Ground Station main menu],
+)
 
-#pagebreak()
+==== Live
 
-#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_Live_Data.jpg", width: 80%), caption: [Live Data of the Ground Station.])
+The Live screen shows telemetry from the connected Vega or Vegas. It displays flight state, altitude, vertical velocity, battery voltage, pyro continuity, errors, and radio-link information. Press Left for the GNSS view and Right for the downrange view. The downrange view uses the Ground Station's own GNSS position to show the rocket's relative direction and distance.
 
-The current flight-computer status appears at the top of the screen. The rocket's altitude, vertical velocity, GNSS coordinates, battery voltage, pyro continuity, and errors appear below it.
-
-At the bottom, information about the telemetry link is displayed:
+The link indicators include:
 
 #list(tight: false,
   [
-*AGE* - The packet age in seconds. If no packet is received for 5 seconds, the link disconnects.
+*AGE* - Time since the last received packet. A link is treated as disconnected after five seconds without a packet.
 ],
   [
-*SNR* - Signal-to-noise ratio in dB. The link can remain active down to an SNR of -15 dB. A low SNR indicates substantial radio interference at your location.
+*SNR* - Signal-to-noise ratio in dB. Lower values indicate a noisier radio environment.
 ],
   [
-*LQ* - Link quality as a percentage: the ratio of packets received to packets expected during the last 3 seconds.
+*LQ* - Percentage of expected packets received during the recent measurement window.
 ],
   [
-*RSSI* - Received signal-strength indication in dBm. The link can remain active down to an RSSI of -110 dBm. As a rule of thumb, RSSI decreases by 6 dB each time the distance doubles.
+*RSSI* - Received signal strength in dBm. More negative values indicate a weaker received signal.
 ]
 )
 
-*Recovery*#linebreak()#v(-1.8pt) The Recovery screen helps you locate the rocket after it lands. It uses the rocket's last known GNSS location, or its current location if the connection is still active. The Ground Station's onboard sensors calculate the distance and direction to the rocket. For accurate direction guidance, calibrate the device's compass outdoors near the launch site and away from large metal objects. The calibration procedure will be explained in a later version of this manual. #linebreak() The Recovery screen shows the #gls("GNSS", cap: false) coordinates of the Ground Station and the rocket, as well as the distance to the rocket. Follow the arrow to locate the rocket.#linebreak()#linebreak()#v(1.8pt)
+#cats-figure(
+  responsive-split(
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Live_Telemetry.png", width: 100%, outline: true, alt: "Ground Station live telemetry screen"), [GNSS telemetry from both receivers in Single mode.], "a")],
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Live_Downrange.png", width: 100%, outline: true, alt: "Ground Station live downrange screen"), [Relative downrange distance and direction.], "b")],
+    columns: (46%, 1fr, 46%),
+  ),
+  caption: [Ground Station Live views],
+)
 
-*Testing*#linebreak()#v(-1.8pt) The Testing screen is used to perform manual tests. Refer to Section #xref("sec:Testing") for a detailed explanation of testing mode and how to use it.#linebreak()#linebreak()#v(1.8pt)
+==== Recovery
 
-#block(breakable: false)[
-*Data*#linebreak()#v(-1.8pt) Not yet implemented.#linebreak()#linebreak()#v(1.8pt)
-]
+The Recovery screen guides you toward the last valid GNSS position received from the rocket. It shows the selected rocket, distance, relative direction, and whether a usable location is available. Calibrate the Ground Station compass outdoors near the launch site and away from large metal objects before relying on direction guidance.
 
-*Sensors*#linebreak()#v(-1.8pt) The Sensors screen displays raw data from the onboard IMU, magnetometer, and GNSS module. It also allows you to calibrate the magnetometer.#linebreak() Calibrate the magnetometer if the compass on the Recovery screen does not point north. On the Sensors screen, press A and follow the instructions. Slowly rotate the Ground Station in every direction while the progress appears on the screen. When progress reaches 100%, the calibration is complete and is saved on the Ground Station.#linebreak()#linebreak()#v(1.8pt)
+In Dual receiver mode, press Up or Down to choose Link 1 or Link 2. Press Right to show a QR code for the selected last location; scan it with a phone to open the coordinates in a mapping application. If the other link also has a valid location, press Right again to switch QR-code pages. Press Left to return to direction guidance.
 
-*Settings*#linebreak()#v(-1.8pt) The Ground Station settings are mostly self-explanatory, and tooltips are provided for every option. The current software version supports the following settings:
+#cats-figure(
+  responsive-split(
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Recovery.png", width: 100%, outline: true, alt: "Ground Station recovery direction screen"), [Direction and distance to the last received location.], "a")],
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Recovery_QR.png", width: 100%, outline: true, alt: "Ground Station recovery location QR code"), [QR code for transferring the selected last location.], "b")],
+    columns: (46%, 1fr, 46%),
+  ),
+  caption: [Ground Station Recovery views],
+)
 
-#list(tight: false,
-  [
-*Timezone*: Choose your local timezone to display the correct time.
-],
-  [
-*Stop Logging*: Choose whether the Ground Station stops logging after touchdown or continues logging indefinitely.
-],
-  [
-*Version*: Ground Station software version number.
-],
-  [
-*Bootloader*: Start the bootloader for software updates, as described in Section #xref("sec:gs_updates").
-],
-  [
-*Telemetry Mode*: Select Single or Dual mode, as described in Section #xref("sec:telemetrymode").
-],
-  [
-*Link Phrase 1*: Set the phrase that must match the link phrase configured on the CATS Vega.
-],
-  [
-*Link Phrase 2*: Set the phrase that must match the second CATS Vega when tracking two flight computers. This setting is not used in Single mode.
-],
-  [
-*Testing Phrase*: Set the phrase that must match the testing phrase configured on the CATS Vega. This phrase is required to use the testing mode described in Section #xref("sec:Testing").
-]
+==== Testing
+
+The Testing screen arms testing mode and manually triggers configured flight events. Triggered events execute their assigned actions. Read Section #xref("sec:Testing") completely before using this screen.
+
+==== Data
+
+The Data screen lists logs stored on the Ground Station. An active recording is marked as active. Select a log to view its duration, maximum altitude and velocity, flight state, and recorded locations. When a valid location is available, open its QR-code page to transfer the coordinates to a phone.
+
+The options page can finalize the active log or delete a completed log after confirmation. Disconnect the Ground Station USB drive before deleting a log. Finalizing stops the active recording and closes its files; deleting permanently removes the selected completed log.
+
+#cats-figure(
+  responsive-split(
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Data_Logs.png", width: 100%, outline: true, alt: "Ground Station list of recorded flight logs"), [Select a stored Ground Station flight log.], "a")],
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Data_Details.png", width: 100%, outline: true, alt: "Ground Station flight-log statistics"), [Review recorded statistics and last locations.], "b")],
+    columns: (46%, 1fr, 46%),
+  ),
+  caption: [Ground Station Data views],
+)
+
+==== Sensors
+
+The Sensors screen shows raw IMU, magnetometer, and GNSS readings. Press Right or Down to open the Compass / 3D Orientation page, which shows the Ground Station's heading, pitch, and roll. Press Left or Up to return to raw readings.
+
+Press A to start compass calibration and follow the on-screen instructions. Rotate the Ground Station slowly through multiple orientations, away from large metal objects and magnets. When calibration reaches 100%, confirm the result to save it.
+
+#cats-figure(
+  responsive-split(
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Sensors_Readings.png", width: 100%, outline: true, alt: "Ground Station raw IMU and GNSS sensor readings"), [Raw IMU, magnetometer, and GNSS readings.], "a")],
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Sensors_Orientation.png", width: 100%, outline: true, alt: "Ground Station compass and 3D orientation screen"), [Compass heading, pitch, and roll.], "b")],
+    columns: (46%, 1fr, 46%),
+  ),
+  caption: [Ground Station Sensors views],
+)
+
+==== Settings
+
+Settings are divided into three pages. Move Left or Right while no setting is selected to change pages.
+
+#cats-table(
+  table(
+  columns: (0.22fr, 0.3fr, 0.48fr,),
+  inset: (x: 4pt, y: 4.5pt),
+  align: (x, y) => left + top,
+  stroke: 0.35pt + luma(45%),
+  fill: (x, y) => if calc.even(y) { luma(90%) } else { white },
+  [Page], [Setting], [Purpose],
+  [Telemetry], [Receiver Mode], [Single uses both receivers for one Vega; Dual assigns one Vega to each receiver.],
+  [Telemetry], [Link Phrase 1], [Phrase used by both receivers in Single mode or the left receiver in Dual mode.],
+  [Telemetry], [Link Phrase 2], [Phrase used by the right receiver in Dual mode.],
+  [Telemetry], [Test Phrase], [Phrase required to arm Vega testing mode.],
+  [Preferences], [Stop Logging], [Stop at landing or continue until manually finalized.],
+  [Preferences], [Time Zone], [Local offset from UTC.],
+  [Preferences], [Units], [Metric or imperial display units; recorded data remains metric.],
+  [Preferences], [Startup Animation], [Animated startup or static CATS logo.],
+  [System], [Firmware Versions], [Ground Station and both receiver-firmware versions.],
+  [System], [USB Drive], [View or disconnect the shared USB storage.],
+  [System], [Self-Test], [Factory-oriented automatic and guided hardware checks.],
+  [System], [Update Firmware], [Update the Ground Station application or both radio receivers.],
+  table.hline(y: 1, stroke: 0.5pt + black)
+),
+  caption: [Ground Station settings],
+  continued: false,
+  breakable: true,
+) <tab-GSSettings>
+
+#cats-figure(
+  responsive-split(
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Settings_Telemetry.png", width: 100%, outline: true, alt: "Ground Station Telemetry settings page"), [Telemetry settings.], "a")],
+    [#subfigure(doc-image("How To Use/Groundstation/GS_Settings_Preferences.png", width: 100%, outline: true, alt: "Ground Station Preferences settings page"), [Display and recording preferences.], "b")],
+    columns: (46%, 1fr, 46%),
+  ),
+  caption: [Ground Station Telemetry and Preferences settings],
+)
+
+#cats-figure(
+  doc-image("How To Use/Groundstation/GS_Settings_System.png", width: 46%, outline: true, alt: "Ground Station System settings page"),
+  caption: [Ground Station System settings],
 )
 
 === Telemetry Modes
@@ -167,16 +232,10 @@ The Ground Station is powered by a Li-ion 18650 battery. A fully charged battery
 
 === How to Get the Data on Your Computer
 
-Like the CATS Vega, the Ground Station is recognized as a mass-storage device when connected to a computer. Open the device folder and drag the recorded logs to your preferred location. Ground Station logs are stored as `.csv` files.
-
-#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_Logs.png", width: 95%), caption: [Ground station data when connecting the ground station to the user computer.])
-
-#pagebreak()
+When connected by USB and not actively recording, the Ground Station shares its data partition as the `CATS GS` USB drive. Open the drive and copy the required `.csv` logs to the computer. The firmware reclaims the filesystem automatically when recording starts and shares it again after the log is finalized. Close files before recording or updating firmware, and use *Settings* $arrow.r$ *System* $arrow.r$ *USB Drive* when the drive needs to be disconnected manually.
 
 === Software Updates
 
-#metadata(none) <sec-gs_updates> To update the Ground Station software, enter #gls("DFU", cap: false) mode. First, connect the Ground Station to your computer. In the Settings panel, select Bootloader. A large USB symbol appears on the screen, and a mass-storage device named SAOLA1RBOOT appears on the computer. Drag the firmware file into this folder to overwrite the old file. #linebreak() You can also enter the bootloader using the hardware controls. Remove the Ground Station casing and connect the Ground Station to your computer. Quickly press the reset button, followed by the boot button. The SAOLA1RBOOT mass-storage device will appear on your computer. Drag the firmware file onto the device. #linebreak() Firmware filenames end in `.UF2`. The latest Ground Station firmware can be downloaded from our repository.
-
-#cats-figure(doc-image("How To Use/Groundstation/Ground_Station_DFU.png", width: 95%), caption: [SAOLA1RBOOT mass storage device when successfully changing to the #gls("DFU", cap: false) Mode])
+#metadata(none) <sec-gs_updates> Use the Configurator's Firmware Updates page for normal Ground Station and radio-receiver updates. See Section #xref("sec:FirmwareUpdates") for the complete preparation, installation, verification, and recovery procedures.
 
 #pagebreak()

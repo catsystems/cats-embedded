@@ -28,6 +28,7 @@
         #include "Chapters/2_Introduction.typ"
         #include "Chapters/3_Vega.typ"
         #include "Chapters/4_GroundStation.typ"
+        #include "Chapters/FirmwareUpdates.typ"
         #include "Chapters/5_Example.typ"
         #include "Chapters/6_Testing.typ"
         #include "Chapters/7_AdvancedInformation.typ"

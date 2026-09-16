@@ -1,31 +1,52 @@
 // Shared layout and semantic helpers for the CATS User Manual.
-#let manual-last-updated = "14 September 2026"
+#let manual-last-updated = "16 September 2026"
 #let cats-orange = rgb("#f0870f")
 #let light-blue = rgb("#ddebf7")
 #let dark-blue = rgb("#1f4e78")
 #let light-red = rgb("#ffabab")
 #let dark-red = rgb("#800000")
-#let web-image-root = "https://raw.githubusercontent.com/catsystems/cats-embedded/main/docs/images/"
+#let web-image-root = "https://raw.githubusercontent.com/catsystems/cats-embedded/docs/web-manual/docs/images/"
 
-#let doc-image(path, width: auto, alt: "") = context {
+#let doc-image(path, width: auto, alt: "", outline: false) = context {
   if target() == "html" {
-    html.img(
+    let rendered = html.img(
       src: web-image-root + path.replace(" ", "%20"),
       alt: alt,
       loading: "lazy",
       decoding: "async",
     )
+    if outline {
+      html.elem(
+        "span",
+        attrs: (
+          class: "manual-screen-outline",
+          style: "display:inline-block;line-height:0;border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:2px;overflow:hidden",
+        ),
+        rendered,
+      )
+    } else {
+      rendered
+    }
   } else {
-    image("images/" + path, width: width)
+    if outline {
+      block(
+        width: width,
+        inset: 0pt,
+        radius: 1pt,
+        stroke: 0.5pt + luma(65%),
+        clip: true,
+      )[
+        #image("images/" + path, width: 100%)
+      ]
+    } else {
+      image("images/" + path, width: width)
+    }
   }
 }
 
 #let source-note(url, label-name: none) = context {
   if target() == "html" {
-    let result = html.elem("sup", attrs: (class: "web-footnote"))[
-      #html.elem("a", attrs: (href: url, aria-label: "Source"))[source]
-    ]
-    if label-name == none { result } else { [#result #label(label-name)] }
+    if label-name == none { metadata(none) } else { [#metadata(none) #label(label-name)] }
   } else {
     footnote[
       #if label-name != none { [#metadata(none) #label(label-name)] }
@@ -35,17 +56,17 @@
 }
 
 #let reference-numbers = (
-  "fn:note1": "1",
-  "sec:VegaHW": "5.1",
-  "sec:FSM": "5.2.1",
-  "sec:DescriptionOfConfigurator": "5.3.2",
-  "sec:GeneratePlots": "5.3.7",
-  "sec:softwareupdates": "5.3.8",
-  "sec:BeepingPatterns": "5.4",
-  "sec:explanMenus": "6.2.1",
-  "sec:telemetrymode": "6.2.2",
-  "sec:data_streaming": "6.2.3",
-  "sec:gs_updates": "6.2.6",
+  "sec:VegaHW": "4.1",
+  "sec:FSM": "4.2.1",
+  "sec:DescriptionOfConfigurator": "4.3.2",
+  "sec:GeneratePlots": "4.3.7",
+  "sec:softwareupdates": "4.3.8",
+  "sec:BeepingPatterns": "4.4",
+  "sec:explanMenus": "5.2.1",
+  "sec:telemetrymode": "5.2.2",
+  "sec:data_streaming": "5.2.3",
+  "sec:gs_updates": "5.2.6",
+  "sec:FirmwareUpdates": "6",
   "sec:Examples": "7",
   "sec:Testing": "8",
   "sec:AdvancedInfo": "9",
@@ -53,49 +74,26 @@
   "sec:GeneratePlotsPython": "9.4",
   "sec:CLI": "9.5",
   "sec:FAQ": "10",
-  "tab:RevHist": "1",
-  "tab:Specs": "2",
-  "tab:FSMTransitions": "3",
-  "tab:ActionTable": "4",
-  "tab:HomeTabOverview": "5",
-  "tab:ConfigurationTabOverview": "6",
-  "tab:HowToAct": "7",
-  "tab:BeepingPatternsStates": "8",
-  "tab:BeepingPatternsErrors": "9",
-  "tab:GSSpecs": "10",
-  "tab:CLICommands": "11",
-  "tab:CLICommandsSetGet": "12",
+  "tab:Specs": "1",
+  "tab:FSMTransitions": "2",
+  "tab:ActionTable": "3",
+  "tab:ConfiguratorNavigation": "4",
+  "tab:HowToAct": "5",
+  "tab:BeepingPatternsStates": "6",
+  "tab:BeepingPatternsErrors": "7",
+  "tab:GSSpecs": "8",
+  "tab:GSSettings": "9",
+  "tab:ExampleSimple": "10",
+  "tab:ExampleAdvanced": "11",
+  "tab:CLICommands": "12",
+  "tab:CLICommandsSetGet": "13",
   "fig:VegaHWSpecs": "2",
   "fig:FSM": "3",
-  "fig:GUIHome": "4",
-  "fig:GUIConfig": "5",
-  "fig:GUIEvents": "6",
-  "fig:GUIEventSel": "7",
-  "fig:GUITimers": "8",
-  "fig:GUICLI": "9",
-  "fig:SWUpdateInit": "12a",
-  "fig:SWUpdateUSB": "12b",
-  "fig:SWUpdateConnected": "12c",
-  "fig:SWUpdateProgram": "12d",
-  "fig:SWUpdateProgramFinished": "12e",
-  "fig:SWUpdate": "12",
-  "fig:HWsimpleExample": "18",
-  "fig:ExampleSimpleConfig": "19a",
-  "fig:ExampleSimpleEvents": "19b",
-  "fig:ExampleSimpleTimers": "19c",
-  "fig:ExampleSimple": "19",
-  "fig:HWadvancedExample": "20",
-  "fig:ExampleAdvancedConfig": "21a",
-  "fig:ExampleAdvancedEvents": "21b",
-  "fig:ExampleAdvancedTimers": "21c",
-  "fig:ExampleAdvanced": "21",
-  "fig:GSTestingMainMenu": "22",
-  "fig:GSTestingArming": "23",
-  "fig:GSTestingWaitingArming": "24",
-  "fig:GSTestingEventMenu": "25",
-  "fig:GSTestingEventTriggering": "26",
-  "fig:SoftwareOverview": "27",
-  "fig:fhss": "28",
+  "fig:RadioUpdateSequence": "19",
+  "fig:HWsimpleExample": "20",
+  "fig:HWadvancedExample": "21",
+  "fig:SoftwareOverview": "24",
+  "fig:fhss": "25",
 )
 
 #let glossary-names = (
@@ -253,7 +251,7 @@
 #let figure-counter = counter("cats-figure")
 #let table-counter = counter("cats-table")
 
-#let cats-figure(body, caption: none, continued: false) = {
+#let cats-figure(body, caption: none, continued: false, breakable: false) = {
   if not continued { figure-counter.step() }
   context {
     if target() == "html" {
@@ -264,7 +262,7 @@
         }
       ]
     } else {
-      block(width: 100%, breakable: false, above: 8pt, below: 8pt)[
+      block(width: 100%, breakable: breakable, above: 8pt, below: 8pt)[
         #align(center, body)
         #if caption != none {
           v(5pt)
@@ -330,14 +328,21 @@
   }
 }
 
-#let figure-stack(..children) = context {
+#let figure-stack(spacing: 8pt, breakable: false, ..children) = context {
   let items = children.pos()
   if target() == "html" {
     html.elem("div", attrs: (class: "figure-stack"))[
       #for item in items { html.elem("div", item) }
     ]
+  } else if breakable {
+    block(width: 100%, breakable: true)[
+      #for (index, item) in items.enumerate() {
+        if index > 0 { v(spacing) }
+        block(width: 100%, breakable: false, item)
+      }
+    ]
   } else {
-    stack(dir: ttb, spacing: 8pt, ..items)
+    stack(dir: ttb, spacing: spacing, ..items)
   }
 }
 

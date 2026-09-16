@@ -14,7 +14,7 @@ function requireCondition(condition, message) {
 }
 
 requireCondition(html.includes('<link rel="canonical" href="https://catsystems.io/manual">'), "Missing manual canonical URL");
-requireCondition(html.includes("Last updated: 14 September 2026"), "Missing last-updated date");
+requireCondition(html.includes("Last updated: 16 September 2026"), "Missing last-updated date");
 requireCondition(!html.includes("Version 2.1.2"), "Obsolete manual version remains");
 requireCondition(!html.includes("Revision History"), "Obsolete revision history remains");
 requireCondition(html.includes('<article class="manual-article">'), "Missing semantic manual article");
@@ -28,6 +28,28 @@ requireCondition(!/(?:src|href)="(?:\.\.?\/|images\/)/i.test(html), "Generated m
 requireCondition(!html.includes("CATS Vega flight computer and Ground Station"), "Obsolete manual subtitle remains");
 requireCondition(!html.includes('class="site-header"'), "Generated manual contains a duplicate site header");
 requireCondition(!html.includes('class="mobile-contents"'), "Generated manual contains duplicate responsive navigation");
+requireCondition(!html.includes('class="web-footnote"'), "Generated manual contains redundant source footnotes");
+requireCondition(!html.includes(".cfg"), "Obsolete .cfg flight-log format remains");
+requireCondition(!/\b(?:Home|Event|Timer) (?:tab|screen)\b/i.test(html), "Obsolete Configurator navigation remains");
+requireCondition(!html.includes("bring a shovel"), "Obsolete testing-mode joke remains");
+requireCondition(!html.includes("only enables triggering events and not actions"), "Incorrect testing-mode behavior remains");
+requireCondition(html.includes("Events &amp; Timers"), "Current Events & Timers workflow is missing");
+requireCondition(html.includes("Preflight"), "Preflight workflow is missing");
+requireCondition(html.includes("Profiles"), "Profiles workflow is missing");
+requireCondition(html.includes(".cfl"), "Current .cfl flight-log format is missing");
+requireCondition(html.includes("1 MB FAT data partition"), "Ground Station data-partition capacity is missing");
+requireCondition(html.includes("Every action assigned to that event is executed"), "Testing-mode action warning is missing");
+requireCondition(
+  html.includes('<a href="https://github.com/catsystems/cats-configurator/releases/">Configurator releases page</a>'),
+  "Configurator releases link is not attached to its main text",
+);
+requireCondition(
+  !html.includes('>https://github.com/catsystems/cats-configurator/releases<'),
+  "Configurator releases URL leaked into web body text",
+);
+requireCondition(html.includes('href="#sec-FirmwareUpdates">6</a>'), "Firmware Updates cross-reference number is stale");
+requireCondition(html.includes('href="#sec-Testing">8</a>'), "Testing cross-reference number is stale");
+requireCondition(html.includes('href="#sec-AdvancedInfo">9</a>'), "Advanced Information cross-reference number is stale");
 
 const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]));
 const anchors = [...html.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]);
@@ -39,12 +61,12 @@ requireCondition(!/href="#gls-/i.test(articleHtml), "Glossary terms must render 
 const generatedHeadingCount = (articleHtml.match(/<h[1-6]\b/g) ?? []).length - 1;
 requireCondition(generatedHeadingCount === sourceHeadingCount, `Heading mismatch: ${generatedHeadingCount}/${sourceHeadingCount}`);
 
-const sourceLinks = [...chapterFiles.matchAll(/(?:link|source-note)\("(https?:\/\/[^"\s]+)"/g)].map((match) => match[1]);
+const sourceLinks = [...chapterFiles.matchAll(/link\("(https?:\/\/[^"\s]+)"/g)].map((match) => match[1]);
 for (const link of new Set(sourceLinks)) {
   requireCondition(html.includes(`href="${link.replaceAll("&", "&amp;")}"`), `Missing external link: ${link}`);
 }
 
-const imagePrefix = "https://raw.githubusercontent.com/catsystems/cats-embedded/main/docs/images/";
+const imagePrefix = "https://raw.githubusercontent.com/catsystems/cats-embedded/docs/web-manual/docs/images/";
 const generatedImages = [...html.matchAll(/<img\s+[^>]*src="([^"]+)"[^>]*>/g)].map((match) => {
   requireCondition(match[0].includes('loading="lazy"'), `Image is not lazy-loaded: ${match[1]}`);
   requireCondition(match[0].includes('decoding="async"'), `Image does not decode asynchronously: ${match[1]}`);
