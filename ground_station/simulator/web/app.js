@@ -384,7 +384,10 @@ document.querySelector('#pause').addEventListener('click', event => {
   canvas.focus({ preventScroll: true });
 });
 async function resetDemo(play = false) {
+  demoPlayback = null;
   if (wasm) controllerCall('gs_restart');
+  // Finish startup before log loading yields to the browser's render loop.
+  if (wasm && lightMode && play) controllerCall('gs_advance', [fixtureById(fixtureManifest, 'light-demo').lightAdvanceMs]);
   fixtureStatus = null;
   try {
     await loadDefaultDemo(play);

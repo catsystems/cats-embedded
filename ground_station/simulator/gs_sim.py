@@ -243,7 +243,7 @@ def defaults() -> dict[str, Any]:
                         "elevationRad": 0.0, "ax": 0.0, "ay": 0.0, "az": 1.0, "gx": 0.0, "gy": 0.0,
                         "gz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0, "calibrationPercentage": 0.0,
                         "calibrationState": 0, "updated": False},
-        "deviceStatus": {"batteryVoltage": 0.0, "usb": False, "freeStoragePercent": 100, "gnss": False,
+        "deviceStatus": {"batteryVoltage": 4.2, "usb": False, "freeStoragePercent": 100, "gnss": False,
                           "clockValid": False, "hour": 0, "minute": 0, "logging": False,
                           "recorderWriteFailure": False, "deleteFailure": False, "finalizeFailure": False,
                           "usbStorageState": "firmware"},
