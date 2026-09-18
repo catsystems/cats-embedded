@@ -34,7 +34,7 @@ class FakePort final : public Port {
  public:
   bool write(const uint8_t* data, size_t size) override {
     if (!rom) {
-      if (size == 3 && data[0] == 0x80 && data[1] == 0 && data[2] == crc8(data, 2)) {
+      if (size == 3 && data[0] == 0x80 && data[1] == 0 && data[2] == crc8(data, 2) && bootEntrySupported) {
         const uint8_t frame[] = {0x80, 2, 1, 0x79, 0x42};
         queue(frame, sizeof(frame) - 1);
         const uint8_t content[] = {0x80, 2, 1, 0x79};
@@ -161,6 +161,7 @@ class FakePort final : public Port {
   bool rom{false};
   bool dropWriteAck{true};
   bool protectedFlash{false};
+  bool bootEntrySupported{true};
 };
 
 int main() {
@@ -195,6 +196,14 @@ int main() {
   RomBootloader protectedUpdater(protectedRom);
   assert(!protectedUpdater.run(image, info, result));
   assert(!result.destructive && protectedRom.writes.empty());
+
+  FakePort legacyApplication;
+  legacyApplication.bootEntrySupported = false;
+  RomBootloader legacyUpdater(legacyApplication);
+  assert(!legacyUpdater.run(image, info, result));
+  assert(std::string(legacyUpdater.error()) == "No entry ACK; if <1.2.0 use ST-Link");
+  assert(result.attempted && result.entryRequested && !result.destructive && !result.success);
+  assert(legacyApplication.writes.empty());
 
   image.bytes[0] = 1;
   assert(!inspect(image, info));

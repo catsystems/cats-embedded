@@ -178,7 +178,7 @@ bool RomBootloader::enter(LinkResult& result) {
   size_t length = 0;
   if (!port.write(request, sizeof(request)) || !frame(kBootCommand, response, 2, length, 1000) || length != 2 ||
       response[0] != 1 || response[1] != kAck) {
-    return fail("No entry ACK; ST-Link bootstrap/recovery");
+    return fail("No entry ACK; if <1.2.0 use ST-Link");
   }
   port.wait(50);
   port.configure(true);

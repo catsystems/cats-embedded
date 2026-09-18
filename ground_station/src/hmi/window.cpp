@@ -1330,9 +1330,9 @@ void Window::initRadioUpdateConfirm(const char *filename, uint32_t size, uint32_
   snprintf(identity, sizeof(identity), "%lu bytes  CRC32 %08lX", static_cast<unsigned long>(size),
            static_cast<unsigned long>(crc));
   drawCentreString(identity, 200, 91);
-  drawCentreString("Only use production telemetry firmware", 200, 117);
-  drawCentreString("intended for this Ground Station.", 200, 137);
-  drawCentreString("Wrong firmware may require ST-Link recovery.", 200, 157);
+  drawCentreString("Telemetry 1.2.0 or newer is required.", 200, 117);
+  drawCentreString("Older versions require ST-Link first.", 200, 137);
+  drawCentreString("Only use firmware for this Ground Station.", 200, 157);
   display.setFont(&FreeSansBold9pt7b);
   drawCentreString("Do not disconnect power during this update.", 200, 184);
   display.setFont(&FreeSans9pt7b);
