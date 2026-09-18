@@ -77,6 +77,7 @@ class Telemetry {
   bool testingActive{false};
   bool safeForUpdateLocked() const;
   bool lockNormalWriter();
+  bool startupGuardElapsed() const;
 
   void initLink();
 
@@ -90,6 +91,7 @@ class Telemetry {
 
   volatile bool initialized = false;
   volatile bool linkInitialized = false;
+  uint32_t startupStarted = 0;
 
   Parser parser;
   int rxPin;
