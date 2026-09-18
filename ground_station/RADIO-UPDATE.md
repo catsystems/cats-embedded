@@ -35,9 +35,14 @@ new ROM session, but an interruption during final vector activation can require 
 programming result is ambiguous is quarantined until Ground Station restart or repair. This is the unavoidable safety
 limitation of using the factory ROM instead of a resident custom bootloader.
 
-The bootloader-entry request is `CMD_BOOTLOADER`, a zero payload length, and the usual frame CRC8. The receiver rejects
-requests with a nonzero payload length and acknowledges entry before jumping to the ROM bootloader.
+The bootloader-entry request is `CMD_BOOTLOADER`, a zero payload length, and the usual frame CRC8. Production telemetry
+1.2.0 is the first version that supports this update entry protocol. The receiver rejects requests with a nonzero payload
+length and acknowledges entry before jumping to the ROM bootloader.
 
-Receiver applications predating the `CMD_BOOTLOADER` implementation need a one-time ST-Link installation of a
-ROM-capable production telemetry build. Units provisioned with the earlier protected custom-loader proof of concept need
-a separate provisioning procedure. Older Vega firmware remains compatible with the ROM-capable telemetry application.
+Telemetry 1.1.3 and earlier cannot enter the updater. An attempted update receives no entry acknowledgement and stops
+before ROM synchronization, erase, or write, so the installed application is not modified. Because a missing
+acknowledgement is indistinguishable from an acknowledgement lost after entering ROM, the Ground Station quarantines the
+attempted link until restart. These receivers need a one-time ST-Link installation of a ROM-capable production telemetry
+build before Ground Station updates can be used. Units provisioned with the earlier protected custom-loader proof of
+concept need a separate provisioning procedure. Older Vega firmware remains compatible with the ROM-capable telemetry
+application.
