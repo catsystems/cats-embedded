@@ -74,7 +74,7 @@ struct NavigationSnapshot {
 };
 
 struct DeviceStatusSnapshot {
-  float batteryVoltage = 0.0F;
+  float batteryVoltage = 4.2F;
   bool usb = false;
   uint32_t freeStoragePercent = 100;
   bool gnss = false;
