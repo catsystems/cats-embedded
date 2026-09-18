@@ -158,12 +158,32 @@ async function run() {
     tap(wasm, 'down');
     tap(wasm, 'right');
     tap(wasm, 'ok');
+    captureSelfTest('Sensors - next-page arrow and angular-rate units');
     tap(wasm, 'right');
     const state = snapshot(wasm);
     assert(state.activeScreen === 'sensors', `expected sensors, got ${state.activeScreen}`);
     assert(state.sensorView === 'orientation', `expected orientation, got ${state.sensorView}`);
     actualHashes.compassOrientation = await framebufferHash(wasm);
     captureSelfTest('Compass status bar');
+    for (const [degrees, ballY] of [[90, 80], [0, 132], [-90, 184], [120, 80], [-120, 184], [0, 132]]) {
+      wasm.ccall('gs_set_navigation_json', null, ['string'], [JSON.stringify({pitchRad: degrees * Math.PI / 180})]);
+      wasm.ccall('gs_advance', null, ['number'], [200]);
+      const bytes = framebuffer(wasm);
+      for (const y of [80, 132, 184]) {
+        const pixel = (y + 2) * 400 + 381;
+        const black = (bytes[pixel >> 3] & (0x80 >> (pixel & 7))) === 0;
+        assert(black === (y === ballY), `pitch ${degrees}: ball position or stale pixels at ${y}`);
+      }
+      if (Math.abs(degrees) <= 90) captureSelfTest(`Compass pitch ${degrees} degrees`);
+    }
+    wasm.ccall('gs_set_navigation_json', null, ['string'], [JSON.stringify({
+      northRad: Math.PI / 1800, pitchRad: -89.9 * Math.PI / 180, rollRad: -Math.PI
+    })]);
+    wasm.ccall('gs_advance', null, ['number'], [200]);
+    captureSelfTest('Compass - wide signed readings');
+    tap(wasm, 'left');
+    assert(snapshot(wasm).sensorView === 'readings', 'Left returns to raw sensors');
+    captureSelfTest('Sensors - returned from compass');
   });
 
   await test('phone compass headings through the browser controls', async () => {
