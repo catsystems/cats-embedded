@@ -19,14 +19,14 @@ This repository contains the embedded software for the CATS Vega flight computer
 * Accelerometric liftoff detection
 * Fully open source
 * Configuration is done over our application, no need to work with a CLI
-* Explore rocket flights recorded with CATS flight computers at [CATS Flights](https://flights.catsystems.io/).
+* Explore rocket flights recorded with CATS flight computers at [CATS Flights](https://catsystems.io/flights).
 
 ## Quick Links
 - [CATS User Manual](./Cats%20User%20Manual.pdf)
 - [CATS Configurator downloads](https://github.com/catsystems/cats-configurator/releases)
 - [Firmware releases](https://github.com/catsystems/cats-embedded/releases)
 - [CATS website](https://www.catsystems.io/)
-- [CATS Flights](https://flights.catsystems.io/)
+- [CATS Flights](https://catsystems.io/flights)
 - [Discord community](https://discord.gg/r7ErmSNvsy)
 
 
