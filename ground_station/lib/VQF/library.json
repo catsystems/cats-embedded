@@ -1,0 +1,9 @@
+{
+  "name": "VQF",
+  "version": "2.1.2",
+  "description": "Versatile Quaternion-based Filter for IMU orientation estimation",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/dlaidig/vqf.git" },
+  "frameworks": "*",
+  "platforms": "*"
+}
