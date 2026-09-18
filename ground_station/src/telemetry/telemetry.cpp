@@ -10,8 +10,12 @@
 #include <algorithm>
 
 constexpr uint8_t TASK_TELE_FREQ = 100;
+// Telemetry 1.1.3 does not start its host UART receiver until after the
+// 4.4-second GNSS startup sequence. Early traffic leaves USART2 overrun.
+constexpr uint32_t TELEMETRY_STARTUP_GUARD_MS = 5000;
 
 void Telemetry::begin() {
+  startupStarted = millis();
   uartMutex = xSemaphoreCreateMutex();
   if (uartMutex == nullptr) {
     return;
@@ -181,15 +185,18 @@ void Telemetry::update(void* pvParameter) {
       ref->newSetting = true;
     }
 
-    if (ref->newSetting) {
+    const bool startupGuardElapsed = ref->startupGuardElapsed();
+
+    if (ref->newSetting && startupGuardElapsed) {
       ref->newSetting = false;
       ref->initLink();
       ref->controlApplied = ref->selfTestControl.generation;
     }
 
-    // The telemetry MCU waits 4 seconds for GNSS at boot; allow 8 seconds for its reply.
+    // The telemetry MCU waits for GNSS at boot. Start requesting only after
+    // the legacy startup guard, while retaining the existing 8-second deadline.
     // Explicit requests remain available to self-test.
-    if (!ref->versionReadDone.load()) {
+    if (!ref->versionReadDone.load() && startupGuardElapsed) {
       const uint32_t now = millis();
       if (ref->diagnostics().versionReplies != 0 || now - versionReadStarted >= 8000U) {
         ref->versionReadDone = true;
@@ -199,7 +206,7 @@ void Telemetry::update(void* pvParameter) {
       }
     }
 
-    if (ref->versionRequested.exchange(false)) {
+    if (startupGuardElapsed && ref->versionRequested.exchange(false)) {
       const uint8_t header[] = {CMD_VERSION_INFO, 0};
       uint8_t request[] = {CMD_VERSION_INFO, 0, crc8(header, sizeof(header))};
       ref->serial.write(request, sizeof(request));
@@ -233,7 +240,7 @@ void Telemetry::update(void* pvParameter) {
 }
 
 bool Telemetry::lockNormalWriter() {
-  if (uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
+  if (!startupGuardElapsed() || uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
     return false;
   }
   if (updateRequested || quarantined) {
@@ -269,9 +276,11 @@ bool Telemetry::safeForUpdateLocked() const {
   const auto packet = data.snapshot();
   const bool recent = (xTaskGetTickCount() - data.getLastUpdateTime()) <= pdMS_TO_TICKS(2000);
   const bool airborne = packet.state > 2 && packet.state < 7;
-  return initialized && !quarantined && !testingActive && !requestExitTesting && !triggerAction &&
-         !(recent && (airborne || packet.testing_mode));
+  return initialized && startupGuardElapsed() && !quarantined && !testingActive && !requestExitTesting &&
+         !triggerAction && !(recent && (airborne || packet.testing_mode));
 }
+
+bool Telemetry::startupGuardElapsed() const { return millis() - startupStarted >= TELEMETRY_STARTUP_GUARD_MS; }
 
 bool Telemetry::safeForUpdate() {
   if (uartMutex == nullptr || xSemaphoreTake(uartMutex, pdMS_TO_TICKS(1500)) != pdTRUE) {
