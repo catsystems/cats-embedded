@@ -9,7 +9,7 @@
 #include "console.hpp"
 #include "utils.hpp"
 
-constexpr uint8_t NAVIGATION_TASK_FREQUENCY = 50;
+constexpr uint8_t NAVIGATION_TASK_FREQUENCY = AttitudeFilter::sampleRateHz;
 
 namespace {
 // The compass library intentionally remains unchanged. Factory diagnostics use
@@ -37,6 +37,13 @@ SelfTestSensorObservation Navigation::selfTestSensors() const {
   return copy;
 }
 
+Attitude Navigation::getAttitude() const {
+  portENTER_CRITICAL(&sensorMux);
+  const auto copy = attitude;
+  portEXIT_CRITICAL(&sensorMux);
+  return copy;
+}
+
 bool Navigation::saveGyroCalibration(const std::array<float, 3> &bias) {
   if (!std::all_of(bias.begin(), bias.end(), [](float value) {
         return std::isfinite(value) && std::fabs(value) <= SelfTestProfile::kMaximumGyroBias;
@@ -53,6 +60,7 @@ bool Navigation::saveGyroCalibration(const std::array<float, 3> &bias) {
   if (!saved) return false;
   portENTER_CRITICAL(&sensorMux);
   gyroBias = bias;
+  resetAttitude = true;
   portEXIT_CRITICAL(&sensorMux);
   return true;
 }
@@ -81,7 +89,7 @@ bool Navigation::begin() {
     preferences.end();
   }
 
-  filter.begin(NAVIGATION_TASK_FREQUENCY);
+  filter.reset();
 
   calibration = CALIB_CONCLUDED;
 
@@ -260,7 +268,10 @@ void Navigation::navigationTask(void *pvParameter) {
     const std::array<float, 3> rawGyro{ref->gx, ref->gy, ref->gz};
     portENTER_CRITICAL(&ref->sensorMux);
     const auto bias = ref->gyroBias;
+    const bool resetAttitude = ref->resetAttitude;
+    ref->resetAttitude = false;
     portEXIT_CRITICAL(&ref->sensorMux);
+    if (resetAttitude) ref->filter.reset();
     ref->gx -= bias[0];
     ref->gy -= bias[1];
     ref->gz -= bias[2];
@@ -278,11 +289,15 @@ void Navigation::navigationTask(void *pvParameter) {
       portEXIT_CRITICAL(&ref->sensorMux);
     }
 
-    // Align magnetic axes with the IMU before fusion. The quarter-turn belongs
-    // after calibration, which remains in the magnetometer's native axes.
-    ref->filter.update(ref->gy, ref->gx, -ref->gz, ref->ay, ref->ax, -ref->az, -ref->m[1], -ref->m[0], -ref->m[2]);
-
-    ref->filter.getQuaternion(&ref->q0, &ref->q1, &ref->q2, &ref->q3);
+    // Do not integrate stale samples after a failed IMU read. Publish only the
+    // angles; the filter's mutable state stays on this task.
+    if (accelerationRead && gyroRead) {
+      const auto attitude = ref->filter.update({ref->gx, ref->gy, ref->gz}, {ref->ax, ref->ay, ref->az},
+                                               {ref->m[0], ref->m[1], ref->m[2]});
+      portENTER_CRITICAL(&ref->sensorMux);
+      ref->attitude = attitude;
+      portEXIT_CRITICAL(&ref->sensorMux);
+    }
 
     if (ref->calibration == CALIB_ONGOING) {
       ref->calibrate(ref->raw_m);
@@ -293,6 +308,7 @@ void Navigation::navigationTask(void *pvParameter) {
         ref->setCalibrationState(CALIB_CONCLUDED);
         ref->mag_calib = ref->mag_calib_temp;
         ref->set_saved_calib(ref->mag_calib);
+        ref->filter.reset();
         ref->resetCalib();
       }
 
