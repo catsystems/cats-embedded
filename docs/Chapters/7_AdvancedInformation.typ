@@ -47,13 +47,17 @@ The following list briefly describes each task.
 
 == Telemetry
 
-The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency-Hopping Spread Spectrum). #gls("fhss", cap: false) makes transmissions more resistant to interference and more difficult to intercept. It also allows more devices to use the same frequency band with little or no effect on link quality. #linebreak()#linebreak()#v(1.8pt)
+The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency-Hopping Spread Spectrum). #gls("fhss", cap: false) makes transmissions more resistant to interference and more difficult to intercept. It also allows more devices to use the same frequency band with little or no effect on link quality.
 
-*Hopping Pattern*#linebreak()#v(-1.8pt) The link phrase defines the hopping pattern. It is hashed with a #gls("crc", cap: false)-32 algorithm, and the resulting value seeds a pseudo-random number generator. The generator runs 20 times to define the hopping pattern. As a result, a given link phrase always produces the same pattern. The transmitter and receiver must use the same link phrase to communicate.#linebreak()#linebreak()#v(1.8pt)
+#heading(level: 3, numbering: none, outlined: false)[Hopping Pattern]
+
+The link phrase defines the hopping pattern. It is hashed with a #gls("crc", cap: false)-32 algorithm, and the resulting value seeds a pseudo-random number generator. The generator runs 20 times to define the hopping pattern. As a result, a given link phrase always produces the same pattern. The transmitter and receiver must use the same link phrase to communicate.
 
 #cats-figure(doc-image("Working Principle/fhss.png", width: 100%), caption: [#gls("fhss", cap: false) transmission example]) <fig-fhss>
 
-*Synchronization*#linebreak()#v(-1.8pt) The receiver waits on the first frequency until it receives a synchronization packet. This packet contains the link #gls("crc", cap: false), which identifies the transmission source. If the remote #gls("crc", cap: false) matches the local value, the receiver hops to the next frequency and waits for data. Each data packet contains a checksum for validating its contents. The receiver measures the interval between packets and hops to the next frequency when a packet is not received within the estimated interval. It can perform 30 hops without receiving a packet before synchronization is lost. If the connection is lost, the receiver returns to the first frequency.
+#heading(level: 3, numbering: none, outlined: false)[Synchronization]
+
+The receiver waits on the first frequency until it receives a synchronization packet. This packet contains the link #gls("crc", cap: false), which identifies the transmission source. If the remote #gls("crc", cap: false) matches the local value, the receiver hops to the next frequency and waits for data. Each data packet contains a checksum for validating its contents. The receiver measures the interval between packets and hops to the next frequency when a packet is not received within the estimated interval. It can perform 30 hops without receiving a packet before synchronization is lost. If the connection is lost, the receiver returns to the first frequency.
 
 #pagebreak()
 
@@ -61,13 +65,19 @@ The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency
 
 #metadata(none) <sec-EstAlg> State estimation calculates the rocket's velocity and altitude from barometric pressure and linear acceleration in the $z$ direction.#linebreak()
 
-*Calibration of Sensors*#linebreak()#v(-1.8pt) Linear acceleration is calibrated when the system enters the #gls("Ready", cap: false) state. This allows the flight computer to be mounted in any orientation. The gravity vector is used to calculate the up direction, which is then used throughout the flight.
+#heading(level: 3, numbering: none, outlined: false)[Calibration of Sensors]
+
+Linear acceleration is calibrated when the system enters the #gls("Ready", cap: false) state. This allows the flight computer to be mounted in any orientation. The gravity vector is used to calculate the up direction, which is then used throughout the flight.
 
 #warning[
 *Warning:* Power up the flight computer only after the rocket is upright on the launch pad. To prevent repeated transitions into and out of the #gls("Ready", cap: false) state, calibration is performed only once, as soon as no motion is detected after startup.
 ]
 
-During #gls("Calibrating", cap: false) and #gls("Ready", cap: false), the current altitude above sea level is continuously estimated. Altitude above ground level, the value used during flight, is calculated from the altitude above sea level. This calculation assumes that barometric pressure changes very slowly. When #gls("liftoff", cap: false) is detected, the altitude above sea level is fixed, and only the altitude above ground level is updated. *Kalman Filter*#linebreak()#v(-1.8pt) A #gls("Kalman Filter", cap: false) estimates altitude and velocity from the calibrated values. Its derivation is described below. We define the state and noise as
+During #gls("Calibrating", cap: false) and #gls("Ready", cap: false), the current altitude above sea level is continuously estimated. Altitude above ground level, the value used during flight, is calculated from the altitude above sea level. This calculation assumes that barometric pressure changes very slowly. When #gls("liftoff", cap: false) is detected, the altitude above sea level is fixed, and only the altitude above ground level is updated.
+
+#heading(level: 3, numbering: none, outlined: false)[Kalman Filter]
+
+A #gls("Kalman Filter", cap: false) estimates altitude and velocity from the calibrated values. Its derivation is described below. We define the state and noise as
 
 $ x(t) = mat(h(t); v(t); a_(o)(t)) quad v = mat(v_1; v_2) $
 
@@ -101,7 +111,15 @@ The measurement-noise matrix becomes a scalar:
 
 $ R(k) = R_("height") $
 
-The standard Kalman-filter equations can then propagate the state. #linebreak()#v(-1.8pt) *Gain Scheduling* #linebreak()#v(-1.8pt) Gain scheduling reduces reliance on the barometer during high-velocity flight, because barometric measurements can behave unpredictably in the transonic regime. #linebreak() At #gls("liftoff", cap: false) and while the rocket is moving quickly, the accelerometer is weighted more heavily when estimating altitude and velocity. At lower velocities, barometric pressure is weighted more heavily because accelerometer drift affects the estimate. As the rocket arcs over, the quality of the accelerometer measurement also decreases.#linebreak() Two variables control the relative trust in the sensors: $Q_("acc")$ and $R_("height")$. In the algorithm, $Q_("acc")$ remains constant, while $R_("height")$ changes during flight.#linebreak() The conditions for changing $R_("height")$ are shown below.
+The standard Kalman-filter equations can then propagate the state.
+
+#heading(level: 3, numbering: none, outlined: false)[Gain Scheduling]
+
+Gain scheduling reduces reliance on the barometer during high-velocity flight, because barometric measurements can behave unpredictably in the transonic regime.
+
+At #gls("liftoff", cap: false) and while the rocket is moving quickly, the accelerometer is weighted more heavily when estimating altitude and velocity. At lower velocities, barometric pressure is weighted more heavily because accelerometer drift affects the estimate. As the rocket arcs over, the quality of the accelerometer measurement also decreases.
+
+Two variables control the relative trust in the sensors: $Q_("acc")$ and $R_("height")$. In the algorithm, $Q_("acc")$ remains constant, while $R_("height")$ changes during flight. The conditions for changing $R_("height")$ are shown below.
 
 $ R_("height") = cases(R_("initial"), & "for state = MOVING or IDLE", R_("max"), & "for state = LIFTOFF", R_("max") dot f(v), & "for state = COASTING", R_("initial"), & "otherwise") $
 

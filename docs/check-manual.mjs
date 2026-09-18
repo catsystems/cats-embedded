@@ -55,6 +55,9 @@ requireCondition(
 requireCondition(html.includes('href="#sec-FirmwareUpdates">6</a>'), "Firmware Updates cross-reference number is stale");
 requireCondition(html.includes('href="#sec-Testing">8</a>'), "Testing cross-reference number is stale");
 requireCondition(html.includes('href="#sec-AdvancedInfo">9</a>'), "Advanced Information cross-reference number is stale");
+for (const heading of ["Hopping Pattern", "Synchronization", "Calibration of Sensors", "Kalman Filter", "Gain Scheduling"]) {
+  requireCondition(html.includes(`<h4>${heading}</h4>`), `Missing semantic technical heading: ${heading}`);
+}
 
 const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]));
 const anchors = [...html.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]);
