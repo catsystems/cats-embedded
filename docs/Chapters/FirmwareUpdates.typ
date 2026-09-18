@@ -109,6 +109,10 @@ Power-cycle the Ground Station, reconnect its normal USB drive, and select *Chec
 *Note:* A completed file-copy progress bar means only that the radio image was prepared. It does not mean that either receiver was updated. Installation and verification take place on the Ground Station.
 ]
 
+#warning[
+*Compatibility:* Telemetry receiver firmware 1.2.0 is the first version that can enter this updater. Receivers running version 1.1.3 or earlier require a one-time ST-Link installation of version 1.2.0 or newer. If a receiver cannot enter the updater, the Ground Station stops before erasing or writing it. Restart the Ground Station before another update attempt.
+]
+
 The following Ground Station screens show the complete on-device sequence. Filenames, versions, sizes, and checksums are examples; use the file and version prepared by your Configurator.
 
 #cats-figure(

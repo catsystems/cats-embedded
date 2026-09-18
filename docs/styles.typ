@@ -1,5 +1,5 @@
 // Shared layout and semantic helpers for the CATS User Manual.
-#let manual-last-updated = "16 September 2026"
+#let manual-last-updated = "18 September 2026"
 #let cats-orange = rgb("#f0870f")
 #let light-blue = rgb("#ddebf7")
 #let dark-blue = rgb("#1f4e78")
@@ -273,11 +273,12 @@
   }
 }
 
-#let cats-table(body, caption: none, continued: false, breakable: false) = {
+#let cats-table(body, caption: none, continued: false, breakable: false, class-name: none) = {
   if not continued { table-counter.step() }
   context {
     if target() == "html" {
-      html.elem("figure", attrs: (class: "manual-table"))[
+      let classes = if class-name == none { "manual-table" } else { "manual-table " + class-name }
+      html.elem("figure", attrs: (class: classes))[
         #body
         #if caption != none {
           html.elem("figcaption")[Table #table-counter.display(): #caption]

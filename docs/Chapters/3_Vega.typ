@@ -146,6 +146,7 @@ Each event can trigger one or more actions, such as a #gls("pyro", cap: false) c
   caption: [FSM Transition Specifications],
   continued: false,
   breakable: false,
+  class-name: "fsm-transitions",
 ) <tab-FSMTransitions>
 
 With this setup for state changes, the flight has a strictly controlled order. The Main event can only be thrown after the #gls("apogee", cap: false) event. Events are also *unique*; during a flight only one event can be thrown.#linebreak()
@@ -358,7 +359,7 @@ After power-up, the system detects the up direction once it is stable. A beeping
 
 The CATS Vega has one battery port, one switch port, two #gls("pyro", cap: false) channels, two #gls("servo", cap: false) channels, and one low-level #gls("I/O", cap: false). The following sections briefly explain each port. Table #xref("tab:HowToAct") summarizes the most important parameters. For more information about the board hardware, refer to Section #xref("sec:VegaHW") and the labeled board diagram in Figure #xref("fig:VegaHWSpecs").#linebreak()#linebreak()#v(1.8pt)
 
-*Battery Port*#linebreak()#v(-1.8pt) The battery port supports voltages between 7 and 25 volts. For LiPo and Li-ion batteries, this corresponds to 2- to 6-cell battery packs. The battery port is protected against reverse polarity.#linebreak()#linebreak()#v(1.8pt)
+*Battery Port*#linebreak()#v(-1.8pt) The battery port supports 7 to 24 volts. Use a 2- to 5-cell LiPo or Li-ion battery and ensure that its actual voltage remains within this range. The battery port is protected against reverse polarity.#linebreak()#linebreak()#v(1.8pt)
 
 *Switch Port*#linebreak()#v(-1.8pt) The switch port allows the user to add a mechanical switch to the system. If this switch is turned off, the system is fully disconnected from power.#linebreak()
 
@@ -449,16 +450,16 @@ Connect the flight computer to your computer.
 Open the Configurator and connect to the board as described in Section #xref("sec:DescriptionOfConfigurator").
 ],
   [
-In the Configuration tab, set the #gls("liftoff", cap: false) threshold. We recommend using a #gls("liftoff", cap: false) acceleration threshold of $40 m/s^2$, but make sure that it is around $20 m/s^2$ lower than your maximum expected acceleration.
+On the *General* page, set the #gls("liftoff", cap: false) threshold. We recommend using a #gls("liftoff", cap: false) acceleration threshold of $40 m/s^2$, but make sure that it is around $20 m/s^2$ lower than your maximum expected acceleration.
 ],
   [
-In the Configuration tab, set the main altitude to your desired height. This is the height above ground level where the #gls("main chute", cap: false) will be deployed.
+On the *General* page, set the main altitude to your desired height. This is the height above ground level where the #gls("main chute", cap: false) will be deployed.
 ],
   [
 If you use a #gls("servo", cap: false) channel in either of your recovery mechanisms, it is now also the time to set the initial #gls("servo", cap: false) position.
 ],
   [
-In the Configurator's Configuration tab, set the link phrase for your CATS Vega.
+On the Configurator's *General* page, set the link phrase for your CATS Vega.
 ],
   [
 Make sure that the Testing Mode is disabled.
@@ -467,7 +468,7 @@ Make sure that the Testing Mode is disabled.
 Save the settings.
 ],
   [
-Go to the Events tab.
+Open the *Events & Timers* page.
 ],
   [
 For the apogee event, set your deployment mechanism as described in #xref("sec:DescriptionOfConfigurator").
@@ -479,7 +480,7 @@ For the main deployment event, set your deployment mechanism as described in #xr
 Save the settings.
 ],
   [
-(Optional) Go to the Timers tab.
+(Optional) On the same page, open the timers section.
 ],
   [
 (Optional) Set the Timer One start event to #gls("liftoff", cap: false) and the Timer One end event to apogee. Set the time until apogee with 1-2 seconds margin.
@@ -588,39 +589,6 @@ After the flight, connect the board to a computer with a USB-C cable. The flight
 #note[
 *Note:* The pitch axis shows only relative, unitless changes.
 ]
-
-#pagebreak()
-
-#cats-table(
-  table(
-  columns: (0.15fr, 0.6fr, 0.15fr,),
-  inset: (x: 4pt, y: 4.5pt),
-  align: (x, y) => left + top,
-  stroke: 0.35pt + luma(45%),
-  fill: (x, y) => if calc.even(y) { luma(90%) } else { white },
-  [*Error*],
-  [*Description*],
-  [*Pattern*],
-  [Filter Error],
-  [A #gls("barometer", cap: false) or accelerometer error is present. If this error persists, *do not fly; the flight computer's functionality is compromised.*],
-  [TBD],
-  [Pyro Error],
-  [A configured pyrotechnic charge is not detected. If this error persists, *do not fly; the configured recovery mechanism will not work.*],
-  [TBD],
-  [Log Full],
-  [The flash chip is full. If you fly, the flight will not be recorded.],
-  [TBD],
-  [Telemetry Hot],
-  [The telemetry chip has reached 60 $degree$C and may be damaged.],
-  [TBD],
-  [Calibration Error],
-  [The calibration is faulty. *Do not fly!* Return to the rocket and reboot the flight computer to restart calibration.],
-  [TBD]
-),
-  caption: [Overview of error beeping patterns.],
-  continued: false,
-  breakable: false,
-) <tab-BeepingPatternsErrors>
 
 #note[
 *Note:* Bad calibrations usually happen when the flight computer is turned on and then rotated. Only turn the flight computer on once the rocket is in launch configuration and upright on the launch pad.
