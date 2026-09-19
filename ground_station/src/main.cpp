@@ -10,6 +10,39 @@
 #include "utils.hpp"
 
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+namespace {
+constexpr UBaseType_t maxTaskCount = 32;
+constexpr uint32_t stackReportIntervalMs = 5000;
+
+void reportTaskStackUsage() {
+  static TaskStatus_t taskStatus[maxTaskCount]{};
+
+  const UBaseType_t currentTaskCount = uxTaskGetNumberOfTasks();
+  if (currentTaskCount > maxTaskCount) {
+    console.log.printf("[STACK] snapshot skipped: tasks=%lu capacity=%lu\n",
+                       static_cast<unsigned long>(currentTaskCount), static_cast<unsigned long>(maxTaskCount));
+    return;
+  }
+
+  const UBaseType_t capturedTaskCount = uxTaskGetSystemState(taskStatus, maxTaskCount, nullptr);
+  if (capturedTaskCount == 0) {
+    console.log.println("[STACK] snapshot failed");
+    return;
+  }
+
+  console.log.printf("[STACK] BEGIN time_ms=%lu tasks=%lu\n", static_cast<unsigned long>(millis()),
+                     static_cast<unsigned long>(capturedTaskCount));
+  for (UBaseType_t i = 0; i < capturedTaskCount; ++i) {
+    console.log.printf("[STACK] id=%lu task=%s min_free=%lu bytes\n",
+                       static_cast<unsigned long>(taskStatus[i].xTaskNumber), taskStatus[i].pcTaskName,
+                       static_cast<unsigned long>(taskStatus[i].usStackHighWaterMark));
+  }
+  console.log.println("[STACK] END");
+}
+}  // namespace
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-interfaces-global-init)
 Utils utils;
@@ -50,6 +83,7 @@ void loop() {
   static bool ini{false};
   static uint16_t link1LastTs{0};
   static uint16_t link2LastTs{0};
+  static uint32_t lastStackReport{0};
 
   if (millis() > 5000 && !ini) {
     ini = true;
@@ -132,6 +166,12 @@ void loop() {
   // Update last timestamp from the link
   link1LastTs = link1Data.timestamp;
   link2LastTs = link2Data.timestamp;
+
+  const uint32_t now = millis();
+  if (ini && now - lastStackReport >= stackReportIntervalMs) {
+    lastStackReport = now;
+    reportTaskStackUsage();
+  }
 
   delay(100);
 }
