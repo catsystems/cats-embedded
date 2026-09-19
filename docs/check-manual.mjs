@@ -74,7 +74,7 @@ for (const link of new Set(sourceLinks)) {
   requireCondition(html.includes(`href="${link.replaceAll("&", "&amp;")}"`), `Missing external link: ${link}`);
 }
 
-const imagePrefix = "https://raw.githubusercontent.com/catsystems/cats-embedded/docs/web-manual/docs/images/";
+const imagePrefix = "https://raw.githubusercontent.com/catsystems/cats-embedded/main/docs/images/";
 const generatedImages = [...html.matchAll(/<img\s+[^>]*src="([^"]+)"[^>]*>/g)].map((match) => {
   requireCondition(match[0].includes('loading="lazy"'), `Image is not lazy-loaded: ${match[1]}`);
   requireCondition(match[0].includes('decoding="async"'), `Image does not decode asynchronously: ${match[1]}`);

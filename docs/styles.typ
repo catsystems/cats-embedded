@@ -5,7 +5,7 @@
 #let dark-blue = rgb("#1f4e78")
 #let light-red = rgb("#ffabab")
 #let dark-red = rgb("#800000")
-#let web-image-root = "https://raw.githubusercontent.com/catsystems/cats-embedded/docs/web-manual/docs/images/"
+#let web-image-root = "https://raw.githubusercontent.com/catsystems/cats-embedded/main/docs/images/"
 
 #let doc-image(path, width: auto, alt: "", outline: false) = context {
   if target() == "html" {
