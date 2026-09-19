@@ -4,76 +4,77 @@
 
 = Testing
 
-#metadata(none) <sec-Testing> This section explains how to run tests with the CATS System.
+#metadata(none) <sec-Testing> Testing mode lets you trigger the Vega's configured events from a Ground Station while the system is secured on the bench.
 
-== Working Principle
+== What Testing Mode Does
 
-The testing mode of the Vega flight computer works only with a ground station. Once the flight computer is in this mode all processing of information is disabled. This means that if the flight computer is flown while in testing mode, make sure you bring a shovel with you since you will need it to recover your rocket.#linebreak() Once the flight computer is in testing mode, a beeping sound is emitted, signaling that the computer is indeed in testing. A command from the ground station needs then to be set to arm the flight computer. When the flight computer is armed, events can be executed from the ground station.#linebreak()
+Testing mode stops normal flight-state processing. After the Vega and Ground Station enter armed testing mode, the Ground Station can trigger any configured event. Every action assigned to that event is executed, including pyrotechnic, servo, low-level I/O, recorder, and delayed actions.
+
+#warning[
+*Warning:* Treat every configured output as live. Remove motors and energetic charges until you intentionally test that output, secure the hardware, and keep people clear of all deployment mechanisms. Never fly in testing mode.
+]
 
 #note[
-*Note:* Unlike during flight, events can be triggered several times without needing to reboot the system.
+*Note:* Unlike during flight, an event can be triggered repeatedly without rebooting. The Vega leaves armed testing mode if the telemetry link is lost.
 ]
 
-By design, the testing mode only enables triggering events and not actions so that the user can verify that they added the correct configuration to the flight computer.
+== Before You Start
 
-== Enabling the Testing Mode
+#list(tight: false,
+  [Secure the Vega, battery, Ground Station, and every connected mechanism on a suitable test bench.],
+  [Disconnect pyrotechnic charges, motors, and other energetic devices unless testing them is the specific purpose of the procedure.],
+  [In the Configurator, review *Events & Timers* and confirm every action that will run for each event.],
+  [Open *Preflight* and resolve every reported configuration or connection problem.],
+  [Confirm that the Vega and Ground Station use the same receiver mode, link phrase, and testing phrase.]
+)
 
-To enable the testing mode, follow these steps:
+== Enabling and Using Testing Mode
 
 #enum(tight: false,
-  [
-Connect your CATS Vega to your computer, start the Configurator, and connect to the flight computer.
-],
-  [
-On the Configurator's Home screen, enable Testing Mode.
-],
-  [
-Set a testing phrase.
-],
-  [
-Reboot the flight computer. If the flight computer is not restarted, the testing mode is not activated.
-],
-  [
-The flight computer should emit the "Testing" beeping pattern. See Section #xref("sec:BeepingPatterns") for more information.
-],
-  [
-Turn on your Ground Station.
-],
-  [
-Make sure that the link phrase and testing phrase match those configured on the flight computer.
-],
-  [
-Open the Testing menu on the Ground Station.
+  [Connect the Vega to the computer and open the Configurator. The Configurator connects automatically when exactly one compatible Vega is available; otherwise, select it manually.],
+  [Open *Configuration*, enable *Testing Mode*, and set a testing phrase. Save the configuration.],
+  [Reboot the Vega. Testing mode does not become active until after the reboot.],
+  [Confirm that the Vega emits the *Testing* beeping pattern described in Section #xref("sec:BeepingPatterns").],
+  [Turn on the Ground Station. In *Settings* → *Telemetry*, select the matching receiver mode and set *Link Phrase 1* and *Test Phrase* to the values configured on the Vega.],
+  [Open *Testing* on the Ground Station. Read the safety notice, press the A button to continue, and wait for the Ground Station to arm the Vega.],
+  [Confirm that the Vega emits the *Armed Testing* beeping pattern.],
+  [Select an event, review the confirmation screen, and confirm only when the test area is clear. Observe every configured output and delayed action.],
+  [Repeat only the checks required for the test. If the telemetry link is lost, return to the Testing menu and arm the system again.]
+)
 
-#cats-figure(image("../images/Testing/GroundStation_MainMenu.jpg", width: 70%), caption: [Ground Station Main Menu.]) <fig-GSTestingMainMenu>
-],
-  [
-Read the disclaimer carefully and arm testing mode. *Attention:* After this step, executing events will trigger the connected mechanisms. Follow all safety guidelines.
+#cats-figure(
+  figure-stack(
+    spacing: 14pt,
+    responsive-split(
+      [#subfigure(doc-image("Testing/GS_Testing_Safety.png", width: 100%, outline: true, alt: "Ground Station testing-mode safety notice"), [Read the complete safety notice.], "a")],
+      [#subfigure(doc-image("Testing/GS_Testing_ReadyToStart.png", width: 100%, outline: true, alt: "Ground Station testing-mode arm confirmation"), [Continue only when the connected Vega is in testing mode.], "b")],
+      columns: (45%, 1fr, 45%),
+    ),
+    responsive-split(
+      [#subfigure(doc-image("Testing/GS_Testing_Starting.png", width: 100%, outline: true, alt: "Ground Station waiting for testing mode to start"), [Wait while the Ground Station arms the Vega.], "c")],
+      [#subfigure(doc-image("Testing/GS_Testing_Events.png", width: 100%, outline: true, alt: "Ground Station testing event selection screen"), [Select the configured event to test.], "d")],
+      columns: (45%, 1fr, 45%),
+    ),
+  ),
+  caption: [Entering testing mode and selecting an event],
+)
 
-#cats-figure(image("../images/Testing/GroundStation_Arm_Testing_Mode.jpg", width: 70%), caption: [Arming the test mode.]) <fig-GSTestingArming>
-],
-  [
-A pop-up indicates that testing mode is being activated. Wait until it disappears.
+#cats-figure(
+  doc-image("Testing/GS_Testing_Confirm.png", width: 60%, outline: true, alt: "Ground Station confirmation before triggering a test event"),
+  caption: [Final confirmation before triggering the selected event],
+)
 
-#cats-figure(image("../images/Testing/GroundStation_Wait_Testing_Mode.jpg", width: 70%), caption: [Waiting for testing mode to activate.]) <fig-GSTestingWaitingArming>
-],
-  [
-The flight computer should emit the "Armed Testing" beeping pattern. See Section #xref("sec:BeepingPatterns") for more information.
-],
-  [
-Select the event that you want to trigger.
+== Returning to Flight Configuration
 
-#cats-figure(image("../images/Testing/GroundStation_Event_Menu.jpg", width: 70%), caption: [Selection of the Event to be triggered.]) <fig-GSTestingEventMenu>
-],
-  [
-Select the event and confirm.
-
-#cats-figure(image("../images/Testing/GroundStation_Trigger_Event.jpg", width: 70%), caption: [Confirming to trigger the desired Event.]) <fig-GSTestingEventTriggering>
-]
+#enum(tight: false,
+  [Exit *Testing* on the Ground Station.],
+  [Reconnect the Vega to the Configurator, disable *Testing Mode*, and save the configuration.],
+  [Reboot the Vega and confirm that the Testing beep pattern is no longer emitted.],
+  [Run *Preflight* again before installing energetic devices or preparing the rocket for flight.]
 )
 
 #warning[
-*Warning:* Testing mode enables manual triggering of events and corresponding actions associated with them. This feature should only be used for testing purposes and never during flight or other non-controlled activities. CATS GmbH is not responsible for any potential injuries or material damage caused by manual operation of the CATS System.
+*Warning:* Testing mode manually executes the actions assigned to the selected event. CATS GmbH is not responsible for injuries or material damage caused by unsafe manual operation of the CATS System.
 ]
 
 #pagebreak()

@@ -1,0 +1,32 @@
+name: Manual
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "CATS User Manual.pdf"
+      - ".github/workflows/manual.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "CATS User Manual.pdf"
+      - ".github/workflows/manual.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: 0.15.1
+      - name: Build PDF and HTML
+        run: node docs/build-manual.mjs
+      - name: Validate generated HTML
+        run: node docs/check-manual.mjs
+      - name: Check generated files are current
+        run: git diff --exit-code -- "CATS User Manual.pdf" docs/generated/manual.html

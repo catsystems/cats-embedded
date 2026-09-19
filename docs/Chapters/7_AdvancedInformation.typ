@@ -8,7 +8,7 @@
 
 This section provides a brief overview of the software architecture. It is intended for advanced users with some programming experience; understanding it is not required to use the flight computer.#linebreak() The software is implemented in C++ and uses #gls("FreeRTOS", cap: false) as its foundation. The hardware is initialized first, after which the tasks are started. Figure #xref("fig:SoftwareOverview") shows the running tasks.
 
-#cats-figure(image("../images/Working Principle/Software_Overview_Vega.png", width: 100%), caption: [Illustration of the different FreeRTOS tasks interacting with each other and the hardware. The black circle 'Settings' is just a memory region that is being accessed by different tasks.]) <fig-SoftwareOverview>
+#cats-figure(doc-image("Working Principle/Software_Overview_Vega.png", width: 100%), caption: [Illustration of the different FreeRTOS tasks interacting with each other and the hardware. The black circle 'Settings' is just a memory region that is being accessed by different tasks.]) <fig-SoftwareOverview>
 
 The following list briefly describes each task.
 
@@ -47,13 +47,17 @@ The following list briefly describes each task.
 
 == Telemetry
 
-The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency-Hopping Spread Spectrum). #gls("fhss", cap: false) makes transmissions more resistant to interference and more difficult to intercept. It also allows more devices to use the same frequency band with little or no effect on link quality. #linebreak()#linebreak()#v(1.8pt)
+The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency-Hopping Spread Spectrum). #gls("fhss", cap: false) makes transmissions more resistant to interference and more difficult to intercept. It also allows more devices to use the same frequency band with little or no effect on link quality.
 
-*Hopping Pattern*#linebreak()#v(-1.8pt) The link phrase defines the hopping pattern. It is hashed with a #gls("crc", cap: false)-32 algorithm, and the resulting value seeds a pseudo-random number generator. The generator runs 20 times to define the hopping pattern. As a result, a given link phrase always produces the same pattern. The transmitter and receiver must use the same link phrase to communicate.#linebreak()#linebreak()#v(1.8pt)
+#heading(level: 3, numbering: none, outlined: false)[Hopping Pattern]
 
-#cats-figure(image("../images/Working Principle/fhss.png", width: 100%), caption: [#gls("fhss", cap: false) transmission example]) <fig-fhss>
+The link phrase defines the hopping pattern. It is hashed with a #gls("crc", cap: false)-32 algorithm, and the resulting value seeds a pseudo-random number generator. The generator runs 20 times to define the hopping pattern. As a result, a given link phrase always produces the same pattern. The transmitter and receiver must use the same link phrase to communicate.
 
-*Synchronization*#linebreak()#v(-1.8pt) The receiver waits on the first frequency until it receives a synchronization packet. This packet contains the link #gls("crc", cap: false), which identifies the transmission source. If the remote #gls("crc", cap: false) matches the local value, the receiver hops to the next frequency and waits for data. Each data packet contains a checksum for validating its contents. The receiver measures the interval between packets and hops to the next frequency when a packet is not received within the estimated interval. It can perform 30 hops without receiving a packet before synchronization is lost. If the connection is lost, the receiver returns to the first frequency.
+#cats-figure(doc-image("Working Principle/fhss.png", width: 100%), caption: [#gls("fhss", cap: false) transmission example]) <fig-fhss>
+
+#heading(level: 3, numbering: none, outlined: false)[Synchronization]
+
+The receiver waits on the first frequency until it receives a synchronization packet. This packet contains the link #gls("crc", cap: false), which identifies the transmission source. If the remote #gls("crc", cap: false) matches the local value, the receiver hops to the next frequency and waits for data. Each data packet contains a checksum for validating its contents. The receiver measures the interval between packets and hops to the next frequency when a packet is not received within the estimated interval. It can perform 30 hops without receiving a packet before synchronization is lost. If the connection is lost, the receiver returns to the first frequency.
 
 #pagebreak()
 
@@ -61,13 +65,19 @@ The telemetry system uses 2.4 GHz LoRa and #gls("fhss", cap: false) (Frequency
 
 #metadata(none) <sec-EstAlg> State estimation calculates the rocket's velocity and altitude from barometric pressure and linear acceleration in the $z$ direction.#linebreak()
 
-*Calibration of Sensors*#linebreak()#v(-1.8pt) Linear acceleration is calibrated when the system enters the #gls("Ready", cap: false) state. This allows the flight computer to be mounted in any orientation. The gravity vector is used to calculate the up direction, which is then used throughout the flight.
+#heading(level: 3, numbering: none, outlined: false)[Calibration of Sensors]
+
+Linear acceleration is calibrated when the system enters the #gls("Ready", cap: false) state. This allows the flight computer to be mounted in any orientation. The gravity vector is used to calculate the up direction, which is then used throughout the flight.
 
 #warning[
 *Warning:* Power up the flight computer only after the rocket is upright on the launch pad. To prevent repeated transitions into and out of the #gls("Ready", cap: false) state, calibration is performed only once, as soon as no motion is detected after startup.
 ]
 
-During #gls("Calibrating", cap: false) and #gls("Ready", cap: false), the current altitude above sea level is continuously estimated. Altitude above ground level, the value used during flight, is calculated from the altitude above sea level. This calculation assumes that barometric pressure changes very slowly. When #gls("liftoff", cap: false) is detected, the altitude above sea level is fixed, and only the altitude above ground level is updated. *Kalman Filter*#linebreak()#v(-1.8pt) A #gls("Kalman Filter", cap: false) estimates altitude and velocity from the calibrated values. Its derivation is described below. We define the state and noise as
+During #gls("Calibrating", cap: false) and #gls("Ready", cap: false), the current altitude above sea level is continuously estimated. Altitude above ground level, the value used during flight, is calculated from the altitude above sea level. This calculation assumes that barometric pressure changes very slowly. When #gls("liftoff", cap: false) is detected, the altitude above sea level is fixed, and only the altitude above ground level is updated.
+
+#heading(level: 3, numbering: none, outlined: false)[Kalman Filter]
+
+A #gls("Kalman Filter", cap: false) estimates altitude and velocity from the calibrated values. Its derivation is described below. We define the state and noise as
 
 $ x(t) = mat(h(t); v(t); a_(o)(t)) quad v = mat(v_1; v_2) $
 
@@ -101,7 +111,15 @@ The measurement-noise matrix becomes a scalar:
 
 $ R(k) = R_("height") $
 
-The standard Kalman-filter equations can then propagate the state. #linebreak()#v(-1.8pt) *Gain Scheduling* #linebreak()#v(-1.8pt) Gain scheduling reduces reliance on the barometer during high-velocity flight, because barometric measurements can behave unpredictably in the transonic regime. #linebreak() At #gls("liftoff", cap: false) and while the rocket is moving quickly, the accelerometer is weighted more heavily when estimating altitude and velocity. At lower velocities, barometric pressure is weighted more heavily because accelerometer drift affects the estimate. As the rocket arcs over, the quality of the accelerometer measurement also decreases.#linebreak() Two variables control the relative trust in the sensors: $Q_("acc")$ and $R_("height")$. In the algorithm, $Q_("acc")$ remains constant, while $R_("height")$ changes during flight.#linebreak() The conditions for changing $R_("height")$ are shown below.
+The standard Kalman-filter equations can then propagate the state.
+
+#heading(level: 3, numbering: none, outlined: false)[Gain Scheduling]
+
+Gain scheduling reduces reliance on the barometer during high-velocity flight, because barometric measurements can behave unpredictably in the transonic regime.
+
+At #gls("liftoff", cap: false) and while the rocket is moving quickly, the accelerometer is weighted more heavily when estimating altitude and velocity. At lower velocities, barometric pressure is weighted more heavily because accelerometer drift affects the estimate. As the rocket arcs over, the quality of the accelerometer measurement also decreases.
+
+Two variables control the relative trust in the sensors: $Q_("acc")$ and $R_("height")$. In the algorithm, $Q_("acc")$ remains constant, while $R_("height")$ changes during flight. The conditions for changing $R_("height")$ are shown below.
 
 $ R_("height") = cases(R_("initial"), & "for state = MOVING or IDLE", R_("max"), & "for state = LIFTOFF", R_("max") dot f(v), & "for state = COASTING", R_("initial"), & "otherwise") $
 
@@ -132,9 +150,9 @@ For more information about the visualizer script, run:
 
 #pagebreak()
 
-== Description of the CLI
+== Common CLI Commands
 
-#metadata(none) <sec-CLI> This section describes all commands available in the CLI. To access the CLI, connect the board to your computer, connect through the Configurator, and open the CLI tab. #linebreak() In the list below, square brackets #text(font: "DejaVu Sans Mono", size: 0.9em)[\[ \]] indicate an optional argument, while angle brackets \< \> identify a parameter name.#linebreak() After changing the configuration through the CLI, verify it with the #text(font: "DejaVu Sans Mono", size: 0.9em)[config] command.
+#metadata(none) <sec-CLI> The CLI is intended for advanced inspection, recovery, and configuration. To access it, connect the Vega through the Configurator and open *CLI*. The commands and parameters below are the most useful ones; run #text(font: "DejaVu Sans Mono", size: 0.9em)[help] for the authoritative list provided by the connected firmware. Square brackets #text(font: "DejaVu Sans Mono", size: 0.9em)[\[ \]] indicate an optional argument, while angle brackets \< \> identify a parameter name.#linebreak() After changing configuration values, run #text(font: "DejaVu Sans Mono", size: 0.9em)[save] and verify the result with #text(font: "DejaVu Sans Mono", size: 0.9em)[config].
 
 #cats-table(
   table(
@@ -145,7 +163,7 @@ For more information about the visualizer script, run:
   fill: (x, y) => if calc.even(y) { luma(90%) } else { white },
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[bl]],
   [Put the board into DFU mode],
-  [Needed for software updates (refer to Section #xref("sec:softwareupdates"))],
+  [For advanced recovery. Normal firmware updates use the Configurator workflow in Chapter #xref("sec:FirmwareUpdates").],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[cd]],
   [Change the current working directory],
   [],
@@ -170,16 +188,16 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[flash\_stop\_write]],
   [Stop writing to flash],
   [For testing purposes only; do not use],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_dump \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_dump \<flight\_number\>]],
   [Print a specific flight in binary format],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_parse \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[flight\_parse \<flight\_number\>]],
   [Print a specific flight in a human-readable format],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[get \[\< variable\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[get \[command\_name\]]],
   [Get a variable value, described in Table #xref("tab:CLICommandsSetGet")],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[help \[\< command name\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[help \[search string\]]],
   [Display all commands with a description],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[lfs\_format]],
@@ -188,7 +206,7 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[log\_enable]],
   [Enable log output on the terminal],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ls \[\< path\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ls]],
   [List all files in the current working directory],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[reboot]],
@@ -197,16 +215,16 @@ For more information about the visualizer script, run:
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_info]],
   [Get information about flash usage],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[rm \[\< path\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[rm \<file\_name\>]],
   [Remove a file],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[save]],
   [Save flight configuration],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[set \[\< variable\> =\< value\>\]]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[set \[\<command\_name\>=\<value\>\]]],
   [Set a variable, described in Table #xref("tab:CLICommandsSetGet")],
   [],
-  [#text(font: "DejaVu Sans Mono", size: 0.9em)[stats \< flight\_id\>]],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[stats \<flight\_number\>]],
   [Print flight statistics],
   [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[status]],
@@ -216,14 +234,12 @@ For more information about the visualizer script, run:
   [Show the firmware version],
   []
 ),
-  caption: [Exhaustive List of #gls("CLI", cap: false) Commands],
+  caption: [Common #gls("CLI", cap: false) commands],
   continued: false,
   breakable: true,
 ) <tab-CLICommands>
 
-#pagebreak()
-
-#heading(level: 3, outlined: false)[Get and Set Commands]
+#heading(level: 3, outlined: false)[Common Configuration Parameters]
 
 The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] command or changed with the #text(font: "DejaVu Sans Mono", size: 0.9em)[set] command. Changes are saved to the flight computer's configuration only after the #text(font: "DejaVu Sans Mono", size: 0.9em)[save] command is run.
 
@@ -282,6 +298,9 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_ready]],
   [Set the actions associated with the ready event],
   [Do not use!],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_liftoff]],
+  [Set the actions associated with the liftoff event],
+  [Prefer the Configurator's Events & Timers page.],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[ev\_burnout]],
   [Set the actions associated with the burnout event],
   [Do not use!],
@@ -315,6 +334,9 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_power\_level]],
   [Set the telemetry power level],
   [],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_enable]],
+  [Enable or disable telemetry],
+  [],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[tele\_adaptive\_power]],
   [Enable or disable adaptive power for the telemetry power level],
   [Adaptive power mode boosts output power to maximum when the flight computer is in _THRUSTING_ mode and returns it to the user-set value when _TOUCHDOWN_ is registered.],
@@ -329,9 +351,12 @@ The variables below can be read with the #text(font: "DejaVu Sans Mono", size: 0
   [A bit mask corresponding to the #link("https://github.com/catsystems/cats-embedded/blob/674192f757e7b1cd11fc023cafc6ea9dcf132f5f/flight_computer/src/flash/recorder.hpp#L35")[#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_entry\_type\_e]] enum],
   [#text(font: "DejaVu Sans Mono", size: 0.9em)[rec\_speed]],
   [Set the desired sampling period for recording],
-  []
+  [],
+  [#text(font: "DejaVu Sans Mono", size: 0.9em)[test\_mode]],
+  [Enable or disable testing mode],
+  [A reboot is required after saving the change.]
 ),
-  caption: [Exhaustive List of parameters used in the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] and #text(font: "DejaVu Sans Mono", size: 0.9em)[set] Commands],
+  caption: [Common parameters used with the #text(font: "DejaVu Sans Mono", size: 0.9em)[get] and #text(font: "DejaVu Sans Mono", size: 0.9em)[set] commands],
   continued: false,
   breakable: true,
 ) <tab-CLICommandsSetGet>

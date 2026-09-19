@@ -2,15 +2,15 @@
 
 = Introduction
 
-Welcome to the CATS flight computer! The following pages explain the CATS System, which consists of the CATS Vega flight computer and the CATS Ground Station, so that you can use it in your rocket. Each component has a How to Use section that provides the information needed to launch your rocket. Other sections provide advanced information that is not required for basic use of the CATS System.#linebreak() If you have any feedback, suggestions, or need further help with the CATS System, do not hesitate to contact us on our #link("https://discord.gg/r7ErmSNvsy")[Discord server]#footnote[#metadata(none) <fn-note1>#link("https://discord.gg/r7ErmSNvsy")[https://discord.gg/r7ErmSNvsy]]. This is the first release of the manual and will be improved based on your feedback!#linebreak() The entire CATS ecosystem is open source. You can find all code and hardware designs on our #link("https://github.com/catsystems")[GitHub page]#footnote[#link("https://github.com/catsystems")[https://github.com/catsystems]].
+Welcome to the CATS User Manual. The following pages explain the CATS System so that you can install, configure, test, fly, and recover a rocket using the CATS Vega flight computer and CATS Ground Station. Each component has a practical operating section, while later chapters provide additional technical detail.#linebreak() If you have feedback, suggestions, or need further help, contact us on our #link("https://discord.gg/r7ErmSNvsy")[Discord server]. The CATS ecosystem is open source; source code and hardware designs are available on our #link("https://github.com/catsystems")[GitHub page].
 
 == Coverage of This Manual
 
-This manual covers the use of the CATS Vega flight computer and its Ground Station. It explains how the flight computer works, how to connect it to a #gls("Power Supply", cap: false) and deployment actuators, and how to configure it for your flight trajectory.#linebreak() This manual does not cover everything that can be done with the CATS System. In particular, it does not explain how to modify the software or hardware, or how the software works in detail. For further information about those topics, contact us on our #link("https://discord.gg/r7ErmSNvsy")[Discord server]#xref("fn:note1").
+This manual covers the use of the CATS Vega flight computer and its Ground Station. It explains how the flight computer works, how to connect it to a #gls("Power Supply", cap: false) and deployment actuators, and how to configure it for your flight trajectory.#linebreak() This manual does not cover everything that can be done with the CATS System. In particular, it does not explain how to modify the software or hardware, or how the software works in detail. For further information about those topics, contact us on our #link("https://discord.gg/r7ErmSNvsy")[Discord server].
 
 == Module Overview
 
-The CATS System has three main components. #linebreak()#v(-1.8pt) *CATS Vega:* The flight computer installed inside your rocket.#linebreak() *Ground Station:* The receiver that displays flight data in real time and helps you track your rocket after it has landed.#linebreak() *Configurator:* The computer application used to configure the CATS Vega and visualize completed flights.#linebreak()
+The CATS System has three main components. #linebreak()#v(-1.8pt) *CATS Vega:* The flight computer installed inside your rocket.#linebreak() *Ground Station:* The receiver that displays and records telemetry, supports recovery, and controls bench testing.#linebreak() *Configurator:* The desktop application used to configure and update the CATS Vega, review a configuration before flight, manage profiles, and analyze completed flights.#linebreak()
 
 == Basic Functionality
 
