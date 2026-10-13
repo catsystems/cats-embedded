@@ -172,12 +172,12 @@ void Hmi::live() {
     return;
   }
   if (rightButton.wasPressed()) {
-    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowDownRange);
+    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowGnss);
     lastLiveRefresh = millis();
     return;
   }
   if (leftButton.wasPressed()) {
-    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowGnss);
+    window.UpdateLiveState(&link1.data, &link2.data, &navigation, Window::LiveState::kShowDownRange);
     lastLiveRefresh = millis();
     return;
   }

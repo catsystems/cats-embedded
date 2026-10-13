@@ -40,6 +40,9 @@ The full engineering toolbar, fixture selection, timing controls, USB controls,
 keyboard help, raw state snapshot, and expandable test coverage matrix remain
 available in the default mode.
 
+Live defaults to the two-receiver downrange/bearing view. Right shows GNSS and
+Left returns to downrange. Each panel uses its own receiver position.
+
 The browser plays the four-second startup intro on initial load and whenever
 Reset is selected. Pause time and use the millisecond step control to inspect
 individual deterministic animation phases.

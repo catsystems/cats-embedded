@@ -160,7 +160,7 @@ class Window {
   bool barNeedsRedraw = false;
   TelemetryData teleData[2]{};
   TelemetryInfo infoData[2]{};
-  LiveState livestate{LiveState::kShowGnss};
+  LiveState livestate{LiveState::kShowDownRange};
   char liveNavigationText[2][2][24]{};
 
   int16_t oldSettingsIndex{0};
