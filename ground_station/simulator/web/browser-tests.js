@@ -99,6 +99,7 @@ async function run() {
     injectReplayRow(wasm, replayRows[0]);
     const state = snapshot(wasm);
     assert(state.activeScreen === 'live', `expected live, got ${state.activeScreen}`);
+    assert(state.liveView === 'downrange', 'Live defaults to downrange and bearing');
     assert(state.logCount >= 1, `expected the demo log to remain available, got ${state.logCount}`);
     assertClose(state.navigation.homeLatitude, 39.3899, 0.00001, 'home latitude');
     assertClose(state.navigation.homeLongitude, -8.2895, 0.00001, 'home longitude');
@@ -650,8 +651,9 @@ async function run() {
     setNavigation({homeLatitude: 47, homeLongitude: 8, northRad: 0});
     setLink(1, {latitude: 0, longitude: 0, connected: true, updated: false});
     setLink(2, {latitude: 0, longitude: 0, connected: true, updated: false});
-    tap(wasm, 'ok'); tap(wasm, 'right');
+    tap(wasm, 'ok');
     assert(snapshot(wasm).activeScreen === 'live', 'live screen opens');
+    assert(snapshot(wasm).liveView === 'downrange', 'double view defaults to downrange and bearing');
     const noFix = [pixels(0, 0), pixels(0, 1)];
     assert(noFix.every(row => row.some(value => value === 0)), 'unavailable distance and bearing have visible placeholders');
     assert(unavailable(1), 'both receivers without GNSS show unavailable distance and bearing');
@@ -740,7 +742,8 @@ async function run() {
       }
       return pixels;
     };
-    setLink({latitude:0,longitude:0}); tap(wasm,'ok');
+    setLink({latitude:0,longitude:0}); tap(wasm,'ok'); tap(wasm,'right');
+    assert(snapshot(wasm).liveView === 'gnss', 'Right opens the GNSS view');
     const missing = coordinates();
     setLink({latitude:0,longitude:8});
     assert(coordinates().some((pixel,index)=>pixel!==missing[index]),'latitude zero remains valid on the equator');
@@ -748,11 +751,15 @@ async function run() {
     assert(coordinates().some((pixel,index)=>pixel!==missing[index]),'longitude zero remains valid on the prime meridian');
     setLink({latitude:0,longitude:0});
     assert(coordinates().every((pixel,index)=>pixel===missing[index]),'loss of GPS replaces both coordinates with placeholders');
-    tap(wasm,'right'); tap(wasm,'left');
+    tap(wasm,'left');
+    assert(snapshot(wasm).liveView === 'downrange', 'Left returns to downrange and bearing');
+    tap(wasm,'right');
     assert(coordinates().every((pixel,index)=>pixel===missing[index]),'switching views preserves no-fix placeholders');
     captureSelfTest('Live GNSS - no fix placeholders');
     setLink({latitude:91,longitude:8});
     assert(coordinates().every((pixel,index)=>pixel===missing[index]),'out-of-range coordinates are unavailable');
+    tap(wasm,'back'); tap(wasm,'ok');
+    assert(snapshot(wasm).liveView === 'downrange', 're-entering Live restores the default downrange view');
   });
 
   const failed = results.filter(result => !result.passed);

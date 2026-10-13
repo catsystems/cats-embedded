@@ -46,7 +46,7 @@ void HmiController::start() {
   logScrollOffset_ = 0;
   recoveryLocations_ = {};
   clearQr();
-  liveDownrange_ = false;
+  liveDownrange_ = true;
   sensorOrientation_ = false;
   keyboardActive_ = false;
   keyboardSelection_ = 0;
@@ -231,6 +231,7 @@ void HmiController::enter(Screen screen) {
                                    screen_ == Screen::RadioUpdate;
   screen_ = screen;
   clearQr();
+  if (screen_ == Screen::Live) liveDownrange_ = true;
   if (screen_ == Screen::Testing) {
     testingState_ = TestingState::Disclaimer;
     testingSelection_ = 0;
@@ -291,11 +292,11 @@ void HmiController::menuStep(uint64_t nowMs) {
 }
 
 void HmiController::liveStep(uint64_t nowMs) {
-  if (pressed(HmiButton::Left)) {
+  if (pressed(HmiButton::Right)) {
     liveDownrange_ = false;
     emit("live_view", 0, 0, "gnss");
   }
-  if (pressed(HmiButton::Right)) {
+  if (pressed(HmiButton::Left)) {
     liveDownrange_ = true;
     emit("live_view", 0, 0, "downrange");
   }

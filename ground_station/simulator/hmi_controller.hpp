@@ -226,7 +226,7 @@ struct HmiSnapshot {
   std::string settingsState = "list";
   std::array<std::string, 2> settingsVersions{};
   std::string inputState = "idle";
-  std::string liveView = "gnss";
+  std::string liveView = "downrange";
   std::string sensorView = "readings";
   int16_t menuSelection = 0;
   int16_t testingSelection = 0;
@@ -374,7 +374,7 @@ class HmiController {
   std::string qrUrl_;
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
   int8_t selectedRecoveryLink_ = 0;
-  bool liveDownrange_ = false;
+  bool liveDownrange_ = true;
   bool sensorOrientation_ = false;
   bool keyboardActive_ = false;
   uint64_t versionLastRequest_ = 0;

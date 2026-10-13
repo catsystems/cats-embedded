@@ -100,9 +100,9 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
     window_.initMenu(state.menuSelection);
   } else if (state.screen == "live") {
     window_.initLive();
-    if (state.liveView == "downrange") {
-      window_.UpdateLiveState(&telemetry_[0], &telemetry_[1], &navigation_, Window::LiveState::kShowDownRange);
-    }
+    window_.UpdateLiveState(&telemetry_[0], &telemetry_[1], &navigation_,
+                            state.liveView == "downrange" ? Window::LiveState::kShowDownRange
+                                                         : Window::LiveState::kShowGnss);
     for (size_t index = 0; index < state.links.size(); ++index) {
       if (state.links[index].connected) {
         window_.updateLive(&telemetry_[index], &navigation_, &linkInfo_[index], static_cast<int16_t>(index));

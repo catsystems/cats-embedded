@@ -55,7 +55,7 @@ void Window::begin() {
   barBlinkStatus = false;
   oldMenuHighlight = 0;
   oldTestingIndex = 0;
-  livestate = LiveState::kShowGnss;
+  livestate = LiveState::kShowDownRange;
   std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
   connected[0] = connected[1] = false;
   lastTeleData[0] = lastTeleData[1] = 0;
@@ -447,7 +447,7 @@ void Window::drawMenuHighlight(int16_t index, bool highlight) {
 
 void Window::initLive() {
   clearMainScreen();
-  livestate = LiveState::kShowGnss;
+  livestate = LiveState::kShowDownRange;
   std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
 
   display.drawLine(199, 18, 199, 240, BLACK);
@@ -457,9 +457,9 @@ void Window::initLive() {
 
   display.drawBitmap(3, 50, live_altitude, 24, 24, BLACK);
   display.drawBitmap(3, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(3, 100, live_lat, 24, 24,
+  display.drawBitmap(3, 100, down_range, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(3, 125, live_lon, 24, 24,
+  display.drawBitmap(3, 125, compass, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(158, 100, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
@@ -475,9 +475,9 @@ void Window::initLive() {
 
   display.drawBitmap(203, 50, live_altitude, 24, 24, BLACK);
   display.drawBitmap(203, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(203, 100, live_lat, 24, 24,
+  display.drawBitmap(203, 100, down_range, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(203, 125, live_lon, 24, 24,
+  display.drawBitmap(203, 125, compass, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(358, 100, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
@@ -515,8 +515,8 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     display.fillRect(x + 158, 100, 24, 49, WHITE);
     display.drawBitmap(x + 3, 100, showGnss ? live_lat : down_range, 24, 24, BLACK);
     display.drawBitmap(x + 3, 125, showGnss ? live_lon : compass, 24, 24, BLACK);
-    display.drawBitmap(x + 158, 100, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
-    display.drawBitmap(x + 158, 125, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
+    display.drawBitmap(x + 158, 100, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+    display.drawBitmap(x + 158, 125, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
     if (showGnss && !data[index].testingMode()) {
       const float latitude = data[index].lat(), longitude = data[index].lon();
       const bool valid = LocationQr::IsValid(latitude, longitude);
