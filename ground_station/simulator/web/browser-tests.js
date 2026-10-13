@@ -644,15 +644,21 @@ async function run() {
       return output;
     };
     const equal = (a, b) => a.every((value, index) => value === b[index]);
-    const blank = link => [0, 1].every(row => pixels(link, row).every(value => value === 1));
+    const unavailable = link => [0, 1].every(row => equal(pixels(link, row), noFix[row]));
     wasm.ccall('gs_reset', null, [], []);
     wasm.ccall('gs_set_configuration_json', null, ['string'], ['{"dualReceiver":true}']);
     setNavigation({homeLatitude: 47, homeLongitude: 8, northRad: 0});
-    // Keep both packet streams idle. Only sensor/GPS changes drive subsequent frames.
-    setLink(1, {latitude: 47.001, longitude: 8, connected: true, updated: false});
-    setLink(2, {latitude: 47, longitude: 8.002, connected: true, updated: false});
+    setLink(1, {latitude: 0, longitude: 0, connected: true, updated: false});
+    setLink(2, {latitude: 0, longitude: 0, connected: true, updated: false});
     tap(wasm, 'ok'); tap(wasm, 'right');
     assert(snapshot(wasm).activeScreen === 'live', 'live screen opens');
+    const noFix = [pixels(0, 0), pixels(0, 1)];
+    assert(noFix.every(row => row.some(value => value === 0)), 'unavailable distance and bearing have visible placeholders');
+    assert(unavailable(1), 'both receivers without GNSS show unavailable distance and bearing');
+    captureSelfTest('Live - both GPS fixes missing');
+    // Keep both packet streams idle. Only sensor/GPS changes drive subsequent frames.
+    setLink(1, {latitude: 47.001, longitude: 8, updated: false});
+    setLink(2, {latitude: 47, longitude: 8.002, updated: false});
     const initialDistance = [pixels(0, 0), pixels(1, 0)];
     assert(!equal(initialDistance[0], initialDistance[1]), 'each link gets its own GPS distance');
     const north = pixels(0, 1), east = pixels(1, 1);
@@ -678,36 +684,47 @@ async function run() {
     setLink(1, {latitude: 47.1, longitude: 7.99999, updated: false});
     assert(equal(pixels(0, 1), north), 'rounding near north wraps 360.0 back to 000.0');
     setLink(1, {latitude: 47, longitude: 8, updated: false});
-    assert(pixels(0, 1).every(value => value === 1), 'a coincident target has distance but no bearing');
+    assert(equal(pixels(0, 1), noFix[1]), 'a coincident target has distance but an unavailable bearing');
     setLink(2, {latitude: 47, longitude: 8.002, updated: false});
     const otherBearing = pixels(1, 1), otherDistance = pixels(1, 0);
     setLink(1, {latitude: 0, longitude: 0, updated: false});
-    assert(blank(0), 'missing rocket coordinates clear both fields');
+    assert(unavailable(0), 'missing rocket coordinates show both fields as unavailable');
     assert(equal(otherBearing, pixels(1, 1)) && equal(otherDistance, pixels(1, 0)), 'missing Link 1 GPS does not affect Link 2');
     captureSelfTest('Live - Link 1 GPS missing');
     setNavigation({homeLatitude: 0, homeLongitude: 0});
-    assert(blank(0) && blank(1), 'missing GS coordinates clear both panels');
+    assert(unavailable(0) && unavailable(1), 'missing GS coordinates show both panels as unavailable');
     captureSelfTest('Live - GS GPS missing');
     setNavigation({homeLatitude: 47.002, homeLongitude: 8, northRad: 0});
     advanceSelfTest(220);
     assert(!equal(otherDistance, pixels(1, 0)), 'moving the GS updates distance without rocket packets');
     setLink(2, {latitude: 91, longitude: 8, updated: false});
-    assert(blank(1), 'out-of-range coordinates do not produce a bearing');
+    assert(unavailable(1), 'out-of-range coordinates do not produce a bearing');
 
-    // Single mode preserves receiver redundancy, selecting the newest available GPS.
+    // Panel positions remain independent in Single mode, too.
     wasm.ccall('gs_set_configuration_json', null, ['string'], ['{"dualReceiver":false}']);
     setNavigation({homeLatitude: 47, homeLongitude: 8, northRad: 0});
     setLink(1, {latitude: 47.001, longitude: 8});
     advanceSelfTest(20);
     setLink(2, {latitude: 47, longitude: 8.002});
-    assert(equal(pixels(0, 1), east) && equal(pixels(1, 1), east), 'single mode shares the newest receiver position');
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), east), 'Single mode keeps different receiver positions separate');
+    assert(initialDistance.every((value, link) => equal(value, pixels(link, 0))), 'Single mode keeps each receiver distance');
     advanceSelfTest(20);
     setLink(1, {latitude: 47.001, longitude: 8});
-    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), north), 'single mode follows the other receiver when it becomes newer');
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), east), 'a newer Link 1 packet does not replace Link 2 bearing');
+    captureSelfTest('Live - Single mode, independent north and east targets');
     setLink(1, {latitude: 0, longitude: 0});
-    assert(equal(pixels(0, 1), east) && equal(pixels(1, 1), east), 'single mode falls back to the receiver that has GPS');
+    assert(unavailable(0) && equal(pixels(1, 1), east), 'missing Link 1 GNSS does not borrow Link 2 position');
+    assert(equal(pixels(1, 0), initialDistance[1]), 'missing Link 1 GNSS leaves Link 2 distance unchanged');
+    setLink(1, {latitude: 47.001, longitude: 8});
+    setLink(2, {latitude: 0, longitude: 0, connected: false});
+    assert(equal(pixels(0, 1), north) && unavailable(1), 'disconnected Link 2 without GNSS does not borrow Link 1 position');
+    captureSelfTest('Live - Single mode, Link 2 disconnected with no fix');
+    setLink(1, {latitude: 0, longitude: 0});
     setLink(2, {latitude: 0, longitude: 0});
-    assert(blank(0) && blank(1), 'single mode has no stale target when neither receiver has GPS');
+    assert(unavailable(0) && unavailable(1), 'Single mode shows neither target when both GNSS fixes are missing');
+    setLink(1, {testingMode: true});
+    assert([0, 1].every(row => pixels(0, row).every(value => value === 1)), 'testing mode keeps navigation hidden');
+    assert(unavailable(1), 'Link 1 testing mode does not change Link 2 placeholders');
     for (const name of ['liveNorthEast', 'liveSouthWest']) {
       assert(actualHashes[name] === goldens[name], `${name}: expected ${goldens[name]}, got ${actualHashes[name]}`);
     }
