@@ -629,7 +629,7 @@ async function run() {
     assert(requests(1) === 6 && requests(2) === 6, 'startup stops retrying after delayed replies');
   });
 
-  await test('live guidance: signed angles, dual targets and missing coordinates', async () => {
+  await test('live guidance: true-north bearings, dual targets and missing coordinates', async () => {
     const setNavigation = values => wasm.ccall('gs_set_navigation_json', null, ['string'], [JSON.stringify(values)]);
     const setLink = (link, values) => wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(link), JSON.stringify(values)]);
     const pixels = (link, row) => {
@@ -655,23 +655,31 @@ async function run() {
     assert(snapshot(wasm).activeScreen === 'live', 'live screen opens');
     const initialDistance = [pixels(0, 0), pixels(1, 0)];
     assert(!equal(initialDistance[0], initialDistance[1]), 'each link gets its own GPS distance');
-    const ahead = pixels(0, 1), right = pixels(1, 1);
-    assert(!equal(ahead, right), 'north and east targets have different turn angles');
-    captureSelfTest('Live - ahead 0 and right 90');
-    actualHashes.liveAheadRight = await framebufferHash(wasm);
+    const north = pixels(0, 1), east = pixels(1, 1);
+    assert(!equal(north, east), 'north and east targets have different bearings');
+    captureSelfTest('Live - north 000.0 and east 090.0');
+    actualHashes.liveNorthEast = await framebufferHash(wasm);
     setNavigation({northRad: -Math.PI / 2});
     advanceSelfTest(220);
-    assert(equal(pixels(1, 1), ahead), 'turning east puts the eastern rocket straight ahead');
-    assert(!equal(pixels(0, 1), right), 'the northern rocket is now left, with a negative angle');
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), east), 'turning east leaves both absolute bearings unchanged');
     assert(initialDistance.every((value, link) => equal(value, pixels(link, 0))), 'rotation leaves GPS distances unchanged');
-    captureSelfTest('Live - left -90 and ahead 0');
-    actualHashes.liveLeftAhead = await framebufferHash(wasm);
     setNavigation({northRad: -Math.PI});
     advanceSelfTest(220);
-    captureSelfTest('Live - behind 180 and left -90');
-    actualHashes.liveBehindLeft = await framebufferHash(wasm);
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), east), 'turning south leaves both absolute bearings unchanged');
     setNavigation({northRad: Math.PI});
-    assert(await framebufferHash(wasm) === actualHashes.liveBehindLeft, 'both representations of behind render positive 180');
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), east), 'orientation wraparound leaves absolute bearings unchanged');
+    setLink(1, {latitude: 46.999, longitude: 8, updated: false});
+    setLink(2, {latitude: 47, longitude: 7.998, updated: false});
+    const south = pixels(0, 1), west = pixels(1, 1);
+    assert([north, east].every(value => !equal(value, south) && !equal(value, west)), 'south and west are distinct from north and east');
+    assert(!equal(south, west), 'south and west have different absolute bearings');
+    captureSelfTest('Live - south 180.0 and west 270.0');
+    actualHashes.liveSouthWest = await framebufferHash(wasm);
+    setLink(1, {latitude: 47.1, longitude: 7.99999, updated: false});
+    assert(equal(pixels(0, 1), north), 'rounding near north wraps 360.0 back to 000.0');
+    setLink(1, {latitude: 47, longitude: 8, updated: false});
+    assert(pixels(0, 1).every(value => value === 1), 'a coincident target has distance but no bearing');
+    setLink(2, {latitude: 47, longitude: 8.002, updated: false});
     const otherBearing = pixels(1, 1), otherDistance = pixels(1, 0);
     setLink(1, {latitude: 0, longitude: 0, updated: false});
     assert(blank(0), 'missing rocket coordinates clear both fields');
@@ -692,15 +700,15 @@ async function run() {
     setLink(1, {latitude: 47.001, longitude: 8});
     advanceSelfTest(20);
     setLink(2, {latitude: 47, longitude: 8.002});
-    assert(equal(pixels(0, 1), right) && equal(pixels(1, 1), right), 'single mode shares the newest receiver position');
+    assert(equal(pixels(0, 1), east) && equal(pixels(1, 1), east), 'single mode shares the newest receiver position');
     advanceSelfTest(20);
     setLink(1, {latitude: 47.001, longitude: 8});
-    assert(equal(pixels(0, 1), ahead) && equal(pixels(1, 1), ahead), 'single mode follows the other receiver when it becomes newer');
+    assert(equal(pixels(0, 1), north) && equal(pixels(1, 1), north), 'single mode follows the other receiver when it becomes newer');
     setLink(1, {latitude: 0, longitude: 0});
-    assert(equal(pixels(0, 1), right) && equal(pixels(1, 1), right), 'single mode falls back to the receiver that has GPS');
+    assert(equal(pixels(0, 1), east) && equal(pixels(1, 1), east), 'single mode falls back to the receiver that has GPS');
     setLink(2, {latitude: 0, longitude: 0});
     assert(blank(0) && blank(1), 'single mode has no stale target when neither receiver has GPS');
-    for (const name of ['liveAheadRight', 'liveLeftAhead', 'liveBehindLeft']) {
+    for (const name of ['liveNorthEast', 'liveSouthWest']) {
       assert(actualHashes[name] === goldens[name], `${name}: expected ${goldens[name]}, got ${actualHashes[name]}`);
     }
   });

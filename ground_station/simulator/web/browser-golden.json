@@ -14,7 +14,6 @@
   "phoneHeading315": "818b61f055e87eb5ebbd68a0bd01c8c96c953417af739a0d028f2ed8f58c2f18",
   "usbStorage": "cd4a76e556b38614ce3194c15fb40de92c012ab78f128d9624d4c3043047c089",
   "recorderFault": "29c8f06ba5aa1cdb16e2e27044f6ccda914f19481d7dd05a3f4a7c847af052b3",
-  "liveAheadRight": "ac5416478ebcc9101cdf7397bf80455c82df6375f0490c3eb25ff666b0e79ed7",
-  "liveLeftAhead": "2648f881d0de5263cfc6b3733dd20a50aabc3706e20b589afe2517873b9c830c",
-  "liveBehindLeft": "926a95c0bb564756aa4c665d9e67ba4963d9c6f311780cb4ad0d929fbdfae3d6"
+  "liveNorthEast": "a3704bfe6cefbb7b139d2ebb8d16099d4a492cb627fad613ca9b3bdd2ccf5024",
+  "liveSouthWest": "8246e2b02775a7b7c83836b726f7e6d15fd356c84ef9f4ebe47817876b1be5b3"
 }

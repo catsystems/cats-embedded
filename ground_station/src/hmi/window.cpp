@@ -540,7 +540,6 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
                               LocationQr::IsValid(targets[1].lat, targets[1].lon)};
   const auto home = navigation->getPointA();
   const bool validHome = LocationQr::IsValid(home.lat, home.lon);
-  const float north = navigation->getNorth();
   // Single mode tracks one rocket through the most recent receiver with GPS.
   size_t singleTarget = data1.getLastUpdateTime() > data2.getLastUpdateTime() ? 0 : 1;
   if (!validTarget[singleTarget]) singleTarget = 1 - singleTarget;
@@ -559,12 +558,11 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
       const bool metric = config.config.unitSystem == UnitSystem::kMetric;
       std::snprintf(values[0], sizeof(values[0]), "%ld %s",
                     static_cast<long>(metric ? distance : Utils::MetersToFeet(distance)), metric ? "m" : "ft");
-      // Screen drawing uses a -90 degree offset; a turn angle starts straight ahead at zero.
-      if ((dx != 0 || dy != 0) && std::isfinite(north)) {
-        float bearing = std::round(std::remainder((std::atan2(dx, dy) + north) / radians, 360.0F) * 10.0F) / 10.0F;
-        if (bearing <= -180.0F) bearing = 180.0F;
-        if (bearing == 0) bearing = 0.0F;  // Avoid displaying negative zero after rounding.
-        std::snprintf(values[1], sizeof(values[1]), "%.1f", static_cast<double>(bearing));
+      // True-north bearing: 0 north, 90 east, 180 south, 270 west.
+      if (dx != 0 || dy != 0) {
+        float bearing = std::fmod(std::atan2(dx, dy) / radians + 360.0F, 360.0F);
+        bearing = std::fmod(std::round(bearing * 10.0F) / 10.0F, 360.0F);
+        std::snprintf(values[1], sizeof(values[1]), "%05.1f", static_cast<double>(bearing));
       }
     }
     for (size_t row = 0; row < 2; ++row) {
