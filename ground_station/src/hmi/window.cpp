@@ -26,12 +26,20 @@ uint16_t GetNegativeColor(uint16_t color) {
 }
 
 void Window::drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
-                            uint16_t color) {
+                            uint16_t color, bool valid) {
+  display.setFont(&FreeSans12pt7b);
+  display.setTextSize(1);
+  display.setTextWrap(false);
   display.setTextColor(color);
   display.setCursor(x, baseline);
-  display.print(std::fabs(value), 4);
-  display.print(' ');
-  display.print(value < 0.0F ? negativeHemisphere : positiveHemisphere);
+  if (valid) {
+    display.print(std::fabs(value), 4);
+    display.print(' ');
+    display.print(value < 0.0F ? negativeHemisphere : positiveHemisphere);
+  } else {
+    display.print("--");
+  }
+  display.setTextWrap(true);
 }
 
 void Window::begin() {
@@ -510,9 +518,10 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
     display.drawBitmap(x + 158, 100, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
     display.drawBitmap(x + 158, 125, showGnss ? right_arrow : left_arrow, 24, 24, BLACK);
     if (showGnss && !data[index].testingMode()) {
-      display.setFont(&FreeSans12pt7b);
-      drawCoordinate(data[index].lat(), 'N', 'S', x + 28, 120, BLACK);
-      drawCoordinate(data[index].lon(), 'E', 'W', x + 28, 145, BLACK);
+      const float latitude = data[index].lat(), longitude = data[index].lon();
+      const bool valid = LocationQr::IsValid(latitude, longitude);
+      drawCoordinate(latitude, 'N', 'S', x + 28, 120, BLACK, valid);
+      drawCoordinate(longitude, 'E', 'W', x + 28, 145, BLACK, valid);
     }
   }
   livestate = state;
@@ -688,8 +697,10 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   }
 
   if (livestate == LiveState::kShowGnss) {
-    drawCoordinate(data->lat(), 'N', 'S', static_cast<int16_t>(xOffset + first_row_offset), 120, color);
-    drawCoordinate(data->lon(), 'E', 'W', static_cast<int16_t>(xOffset + first_row_offset), 145, color);
+    const float latitude = data->lat(), longitude = data->lon();
+    const bool valid = LocationQr::IsValid(latitude, longitude);
+    drawCoordinate(latitude, 'N', 'S', static_cast<int16_t>(xOffset + first_row_offset), 120, color, valid);
+    drawCoordinate(longitude, 'E', 'W', static_cast<int16_t>(xOffset + first_row_offset), 145, color, valid);
   }
 
   display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 170);
