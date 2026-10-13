@@ -121,7 +121,7 @@ class Window {
   void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
   void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
   void drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
-                      uint16_t color);
+                      uint16_t color, bool valid);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
   void drawCentreString(String &buf, int16_t x, int16_t y);
   void drawPageHeader(const char *title, bool hasPreviousPage, bool hasNextPage);

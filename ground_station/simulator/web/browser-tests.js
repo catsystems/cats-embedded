@@ -705,6 +705,31 @@ async function run() {
     }
   });
 
+  await test('live GNSS: no-fix placeholders and valid zero coordinates', async () => {
+    wasm.ccall('gs_reset', null, [], []);
+    const setLink = values => wasm.ccall('gs_set_link_json',null,['string','string'],['1',JSON.stringify({connected:true,...values})]);
+    const coordinates = () => {
+      const bytes = framebuffer(wasm), pixels = [];
+      for(let y=99;y<149;y++)for(let x=28;x<158;x++) {
+        const bit=y*400+x; pixels.push((bytes[bit>>3]>>(7-(bit&7)))&1);
+      }
+      return pixels;
+    };
+    setLink({latitude:0,longitude:0}); tap(wasm,'ok');
+    const missing = coordinates();
+    setLink({latitude:0,longitude:8});
+    assert(coordinates().some((pixel,index)=>pixel!==missing[index]),'latitude zero remains valid on the equator');
+    setLink({latitude:47,longitude:0});
+    assert(coordinates().some((pixel,index)=>pixel!==missing[index]),'longitude zero remains valid on the prime meridian');
+    setLink({latitude:0,longitude:0});
+    assert(coordinates().every((pixel,index)=>pixel===missing[index]),'loss of GPS replaces both coordinates with placeholders');
+    tap(wasm,'right'); tap(wasm,'left');
+    assert(coordinates().every((pixel,index)=>pixel===missing[index]),'switching views preserves no-fix placeholders');
+    captureSelfTest('Live GNSS - no fix placeholders');
+    setLink({latitude:91,longitude:8});
+    assert(coordinates().every((pixel,index)=>pixel===missing[index]),'out-of-range coordinates are unavailable');
+  });
+
   const failed = results.filter(result => !result.passed);
   const report = { passed: failed.length === 0, results, framebufferSha256: actualHashes };
   globalThis.browserTestReport = report;
