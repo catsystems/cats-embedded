@@ -540,15 +540,14 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
                               LocationQr::IsValid(targets[1].lat, targets[1].lon)};
   const auto home = navigation->getPointA();
   const bool validHome = LocationQr::IsValid(home.lat, home.lon);
-  // Single mode tracks one rocket through the most recent receiver with GPS.
-  size_t singleTarget = data1.getLastUpdateTime() > data2.getLastUpdateTime() ? 0 : 1;
-  if (!validTarget[singleTarget]) singleTarget = 1 - singleTarget;
   bool changed = false;
   for (size_t index = 0; index < 2; ++index) {
-    const size_t targetIndex = config.config.receiverMode == DUAL ? index : singleTarget;
-    char values[2][24]{};
-    if (validHome && validTarget[targetIndex] && !data[index].testingMode()) {
-      const auto target = targets[targetIndex];
+    // Each panel belongs to its receiver, regardless of the receiver mode.
+    char values[2][24]{"--", "--"};
+    if (data[index].testingMode()) {
+      values[0][0] = values[1][0] = '\0';
+    } else if (validHome && validTarget[index]) {
+      const auto target = targets[index];
       constexpr float radians = PI_F / 180.0F;
       constexpr float earthRadiusM = 6378100.0F;
       const float dy = (target.lat - home.lat) * radians * earthRadiusM;
@@ -575,7 +574,7 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
       display.setTextColor(BLACK);
       display.setCursor(x, y + 21);
       display.print(values[row]);
-      if (row == 1 && values[row][0] != '\0') {
+      if (row == 1 && values[row][0] != '\0' && values[row][0] != '-') {
         // Keep the larger degree symbol inside the cleared row.
         display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), y + 6, 3, BLACK);
       }
