@@ -118,7 +118,8 @@ class Navigation {
     return elevation;
   }
 
-  inline float computeBearing() { return (azimuth + getAttitude().north - PI_F / 2) / (2 * PI_F / 360); }
+  // Clockwise from true north, independent of the station's orientation.
+  inline float computeBearing() { return std::fmod(azimuth * (180.0F / PI_F) + 360.0F, 360.0F); }
 
   struct mag_calibration_t {
     float offset[3];

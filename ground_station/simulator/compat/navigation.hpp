@@ -2,6 +2,8 @@
 
 #include "utils.hpp"
 
+#include <cmath>
+
 struct EarthPoint3D {
   float lat = 0.0F;
   float lon = 0.0F;
@@ -35,7 +37,7 @@ class Navigation {
   float getAzimuth() { return azimuth_; }
   float getElevation() { return elevation_; }
   float getDistance() { return distance_; }
-  float computeBearing() { return (azimuth_ + north_ - PI_F / 2.0F) / (2.0F * PI_F / 360.0F); }
+  float computeBearing() { return std::fmod(azimuth_ * (180.0F / PI_F) + 360.0F, 360.0F); }
   [[nodiscard]] float getAX() const { return ax_; }
   [[nodiscard]] float getAY() const { return ay_; }
   [[nodiscard]] float getAZ() const { return az_; }
