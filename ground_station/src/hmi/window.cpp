@@ -501,7 +501,7 @@ void Window::initLive() {
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
-  display.fillRect(0, 219, 399, 21, BLACK);
+  display.fillRect(0, 219, 400, 21, BLACK);
   display.setTextColor(WHITE);
 
   display.setCursor(245, 235);
@@ -974,7 +974,7 @@ bool Window::updateLiveInfo(TelemetryInfo *info, int16_t index) {
     std::strcpy(text, "Disconnected");
   }
   if (std::strcmp(text, liveInfoText[index]) == 0) return false;
-  display.fillRect(xOffset, 219, 199, 21, BLACK);
+  display.fillRect(xOffset, 219, 200, 21, BLACK);
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
   display.setTextColor(WHITE);
