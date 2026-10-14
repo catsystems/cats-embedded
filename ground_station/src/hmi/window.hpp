@@ -38,7 +38,7 @@ class Window {
 
   enum class LiveState { kShowGnss, kShowDownRange };
 
-  void begin();
+  void begin(bool resetLiveHistory = true);
   void logo();
   void drawStartupIntroFrame(uint32_t elapsedMs);
   void Bootloader();
@@ -118,8 +118,31 @@ class Window {
   static constexpr uint8_t kUnderscoreIdx = 37;
 
  private:
+  enum class DescentPhase : uint8_t { None, Main, Drogue, Ballistic };
+  struct PhaseStabilizer {
+    DescentPhase phase = DescentPhase::None;
+    DescentPhase candidate = DescentPhase::None;
+    uint16_t lastTimestamp = 0;
+    uint16_t candidateSinceTimestamp = 0;
+    uint32_t lastSampleMs = 0;
+    uint32_t candidateSinceMs = 0;
+    bool hasSample = false;
+  };
+  struct TrendSample {
+    uint32_t timeMs;
+    float value;
+  };
+  struct TrendHistory {
+    TrendSample samples[12]{};
+    uint8_t count = 0;
+    uint8_t next = 0;
+  };
   void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
-  void updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color);
+  bool updateLiveInfo(TelemetryInfo *info, int16_t index);
+  bool updateLiveDescent(TelemetryData &data, size_t index, bool hasRange, float distanceM);
+  float updateTrendHistory(TrendHistory &history, float value, uint32_t now);
+  void drawLiveTrendIcon(int16_t x, int16_t y, int8_t trend);
+  void drawLivePhaseIcon(int16_t x, int16_t y, DescentPhase phase);
   void drawCoordinate(float value, char positiveHemisphere, char negativeHemisphere, int16_t x, int16_t baseline,
                       uint16_t color, bool valid);
   void drawCentreString(const char *buf, int16_t x, int16_t y);
@@ -146,7 +169,6 @@ class Window {
   Config &config;
   IClock &clock;
 
-  bool connected[2]{};
   uint32_t lastTeleData[2]{};
   uint32_t dataAge[2]{};
   topBarData barData{};
@@ -162,6 +184,13 @@ class Window {
   TelemetryInfo infoData[2]{};
   LiveState livestate{LiveState::kShowDownRange};
   char liveNavigationText[2][2][24]{};
+  bool hasLiveData[2]{};
+  char liveInfoText[2][32]{};
+  char liveDescentText[2][40]{};
+  TrendHistory rangeHistory[2]{};
+  PhaseStabilizer phaseStabilizer[2]{};
+  int8_t liveRangeTrend[2]{3, 3};
+  DescentPhase livePhaseIcon[2]{};
 
   int16_t oldSettingsIndex{0};
   int16_t subMenuSettingIndex{0};

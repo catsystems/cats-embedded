@@ -31,6 +31,7 @@ class TelemetryData {
   void commit(uint8_t *data, uint32_t length) {
     memcpy(&rxData, data, length);
     lastCommitTime = xTaskGetTickCount();
+    lastCommitTimeMs = millis();
     updated = true;
   }
 
@@ -98,6 +99,7 @@ class TelemetryData {
   }
 
   [[nodiscard]] uint32_t getLastUpdateTime() const { return lastCommitTime; }
+  [[nodiscard]] uint32_t getLastUpdateTimeMs() const { return lastCommitTimeMs; }
 
   /// Returns the latest packet without consuming the HMI's updated flag.
   /// Background consumers such as navigation and console streaming must use
@@ -110,6 +112,7 @@ class TelemetryData {
   packedRXMessage rxData{};
   bool updated{false};
   uint32_t lastCommitTime{0};
+  uint32_t lastCommitTimeMs{0};
 };
 
 struct [[gnu::packed]] TelemetryInfoData {

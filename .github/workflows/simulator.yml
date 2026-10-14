@@ -39,9 +39,9 @@ jobs:
         shell: pwsh
         run: .\ground_station\gs-sim.ps1 fatfs-test
 
-      - name: Build WebAssembly browser bundle
+      - name: Build and test WebAssembly browser bundle
         shell: pwsh
-        run: .\ground_station\gs-sim.ps1 build
+        run: .\ground_station\gs-sim.ps1 browser-test
 
       - name: Verify browser bundle
         shell: pwsh

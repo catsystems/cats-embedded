@@ -42,7 +42,7 @@ void Window::drawCoordinate(float value, char positiveHemisphere, char negativeH
   display.setTextWrap(true);
 }
 
-void Window::begin() {
+void Window::begin(bool resetLiveHistory) {
   surface.begin();
   surface.clear();
   display.setRotation(0);
@@ -57,9 +57,19 @@ void Window::begin() {
   oldTestingIndex = 0;
   livestate = LiveState::kShowDownRange;
   std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
-  connected[0] = connected[1] = false;
   lastTeleData[0] = lastTeleData[1] = 0;
   dataAge[0] = dataAge[1] = 0;
+  hasLiveData[0] = hasLiveData[1] = false;
+  std::memset(liveInfoText, 0, sizeof(liveInfoText));
+  std::memset(liveDescentText, 0, sizeof(liveDescentText));
+  liveRangeTrend[0] = liveRangeTrend[1] = 3;
+  livePhaseIcon[0] = livePhaseIcon[1] = DescentPhase::None;
+  if (resetLiveHistory) {
+    rangeHistory[0] = {};
+    rangeHistory[1] = {};
+    phaseStabilizer[0] = {};
+    phaseStabilizer[1] = {};
+  }
 }
 
 void Window::logo() {
@@ -447,6 +457,10 @@ void Window::drawMenuHighlight(int16_t index, bool highlight) {
 
 void Window::initLive() {
   clearMainScreen();
+  // A freshly drawn layout has no previous telemetry text to erase.
+  teleData[0] = {};
+  teleData[1] = {};
+  hasLiveData[0] = hasLiveData[1] = false;
   livestate = LiveState::kShowDownRange;
   std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
 
@@ -461,9 +475,9 @@ void Window::initLive() {
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(3, 125, compass, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(158, 100, right_arrow, 24, 24,
+  display.drawBitmap(174, 100, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(158, 125, right_arrow, 24, 24,
+  display.drawBitmap(174, 125, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(1, 150, live_battery, 24, 24, BLACK);
 
@@ -479,28 +493,29 @@ void Window::initLive() {
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(203, 125, compass, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(358, 100, right_arrow, 24, 24,
+  display.drawBitmap(374, 100, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(358, 125, right_arrow, 24, 24,
+  display.drawBitmap(374, 125, right_arrow, 24, 24,
                      BLACK); /* If this is changed, also need to change in function UpdateLiveState */
   display.drawBitmap(201, 150, live_battery, 24, 24, BLACK);
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
-  display.fillRect(0, 202, 399, 240, BLACK);
+  display.fillRect(0, 219, 399, 21, BLACK);
   display.setTextColor(WHITE);
 
-  connected[0] = false;
-  connected[1] = false;
-
-  display.setCursor(245, 227);
+  display.setCursor(245, 235);
   display.print("Disconnected");
 
-  display.setCursor(45, 227);
+  display.setCursor(45, 235);
   display.print("Disconnected");
 
   display.setTextColor(BLACK);
   display.setFont(nullptr);
+  std::memset(liveInfoText, 0, sizeof(liveInfoText));
+  std::memset(liveDescentText, 0, sizeof(liveDescentText));
+  liveRangeTrend[0] = liveRangeTrend[1] = 3;
+  livePhaseIcon[0] = livePhaseIcon[1] = DescentPhase::None;
   surface.present();
 }
 
@@ -510,13 +525,14 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
   TelemetryData data[] = {*data1, *data2};  // Presentation getters only consume these copies.
   for (int16_t index = 0; index < 2; ++index) {
     const int16_t x = index * 200;
-    display.fillRect(x + 28, 99, 130, 50, WHITE);
+    display.fillRect(x + 28, 99, 146, 50, WHITE);
     display.fillRect(x + 3, 100, 24, 49, WHITE);
-    display.fillRect(x + 158, 100, 24, 49, WHITE);
+    display.fillRect(x + 174, 100, 24, 49, WHITE);
+    liveRangeTrend[index] = 3;
     display.drawBitmap(x + 3, 100, showGnss ? live_lat : down_range, 24, 24, BLACK);
     display.drawBitmap(x + 3, 125, showGnss ? live_lon : compass, 24, 24, BLACK);
-    display.drawBitmap(x + 158, 100, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
-    display.drawBitmap(x + 158, 125, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+    display.drawBitmap(x + 174, 100, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+    display.drawBitmap(x + 174, 125, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
     if (showGnss && !data[index].testingMode()) {
       const float latitude = data[index].lat(), longitude = data[index].lon();
       const bool valid = LocationQr::IsValid(latitude, longitude);
@@ -531,7 +547,6 @@ void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigat
 }
 
 bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryData &data2, Navigation *navigation) {
-  if (livestate != LiveState::kShowDownRange) return false;
   // Copy before using presentation getters, preserving incoming packet flags.
   TelemetryData data[] = {data1, data2};
   const EarthPoint3D targets[] = {EarthPoint3D(data[0].lat(), data[0].lon()),
@@ -544,6 +559,8 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
   for (size_t index = 0; index < 2; ++index) {
     // Each panel belongs to its receiver, regardless of the receiver mode.
     char values[2][24]{"--", "--"};
+    float distanceM = 0.0F;
+    bool hasRange = false;
     if (data[index].testingMode()) {
       values[0][0] = values[1][0] = '\0';
     } else if (validHome && validTarget[index]) {
@@ -554,33 +571,244 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
       const float dx =
           std::remainder(target.lon - home.lon, 360.0F) * radians * std::cos(home.lat * radians) * earthRadiusM;
       const auto distance = static_cast<int32_t>(std::round(std::hypot(dx, dy)));
+      distanceM = static_cast<float>(distance);
+      hasRange = true;
       const bool metric = config.config.unitSystem == UnitSystem::kMetric;
       std::snprintf(values[0], sizeof(values[0]), "%ld %s",
                     static_cast<long>(metric ? distance : Utils::MetersToFeet(distance)), metric ? "m" : "ft");
       // True-north bearing: 0 north, 90 east, 180 south, 270 west.
       if (dx != 0 || dy != 0) {
         float bearing = std::fmod(std::atan2(dx, dy) / radians + 360.0F, 360.0F);
+        constexpr const char *directions[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+        const auto sector = static_cast<unsigned>((bearing + 22.5F) / 45.0F) % 8;
         bearing = std::fmod(std::round(bearing * 10.0F) / 10.0F, 360.0F);
-        std::snprintf(values[1], sizeof(values[1]), "%05.1f", static_cast<double>(bearing));
+        std::snprintf(values[1], sizeof(values[1]), "%05.1f %s", static_cast<double>(bearing), directions[sector]);
       }
     }
+    changed |= updateLiveDescent(data[index], index, hasRange, distanceM);
+    dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - data[index].getLastUpdateTimeMs();
+    changed |= updateLiveInfo(&infoData[index], static_cast<int16_t>(index));
+    if (livestate != LiveState::kShowDownRange) continue;
     for (size_t row = 0; row < 2; ++row) {
       if (std::strcmp(values[row], liveNavigationText[index][row]) == 0) continue;
       const auto x = static_cast<int16_t>(index * 200 + 28);
       const auto y = static_cast<int16_t>(99 + row * 25);
-      display.fillRect(x, y, 130, 25, WHITE);
+      display.fillRect(x, y, row == 1 ? 146 : 116, 25, WHITE);
       display.setFont(&FreeSans12pt7b);
       display.setTextSize(1);
       display.setTextColor(BLACK);
       display.setCursor(x, y + 21);
-      display.print(values[row]);
       if (row == 1 && values[row][0] != '\0' && values[row][0] != '-') {
-        // Keep the larger degree symbol inside the cleared row.
+        // The zero-padded bearing has five characters; insert the degree symbol before the direction.
+        for (size_t digit = 0; digit < 5; ++digit) display.print(values[row][digit]);
         display.drawCircle(static_cast<int16_t>(display.getCursorX() + 4), y + 6, 3, BLACK);
+        // Center the direction below the descent and downrange indicators.
+        display.setFont(&FreeSans9pt7b);
+        const char *direction = values[row] + 6;
+        int16_t textX, textY;
+        uint16_t textWidth, textHeight;
+        display.getTextBounds(direction, 0, 0, &textX, &textY, &textWidth, &textHeight);
+        display.setCursor(static_cast<int16_t>(index * 200 + 156 - textWidth / 2 - textX), y + 19);
+        display.print(direction);
+      } else {
+        display.print(values[row]);
       }
       std::strcpy(liveNavigationText[index][row], values[row]);
       changed = true;
     }
+  }
+  return changed;
+}
+
+float Window::updateTrendHistory(TrendHistory &history, float value, uint32_t now) {
+  constexpr uint8_t capacity = 12;
+  const uint8_t latest = static_cast<uint8_t>((history.next + capacity - 1) % capacity);
+  if (history.count != 0 && now - history.samples[latest].timeMs >= 5000) history = {};
+  if (history.count == 0 || now - history.samples[latest].timeMs >= 1000) {
+    history.samples[history.next] = {now, value};
+    history.next = static_cast<uint8_t>((history.next + 1) % capacity);
+    if (history.count < capacity) ++history.count;
+  } else if (history.samples[latest].timeMs == now) {
+    history.samples[latest].value = value;
+  }
+  uint8_t older = static_cast<uint8_t>((history.next + capacity - history.count) % capacity);
+  if (now - history.samples[older].timeMs < 10000) return NAN;
+  // Interpolate at exactly ten seconds ago when packet times fall between samples.
+  for (uint8_t i = 1; i < history.count; ++i) {
+    const uint8_t next = static_cast<uint8_t>((older + 1) % capacity);
+    if (now - history.samples[next].timeMs < 10000) break;
+    older = next;
+  }
+  const auto &before = history.samples[older];
+  const auto &after = history.samples[(older + 1) % capacity];
+  float previous = before.value;
+  const uint32_t offset = now - before.timeMs - 10000;
+  if (offset != 0) {
+    previous +=
+        (after.value - before.value) * static_cast<float>(offset) / static_cast<float>(after.timeMs - before.timeMs);
+  }
+  return value - previous;
+}
+
+void Window::drawLiveTrendIcon(int16_t x, int16_t y, int8_t trend) {
+  display.fillRect(x, y, 24, 24, WHITE);
+  const int16_t center = x + 12;
+  if (trend >= -1 && trend <= 1) {
+    if (trend == 0) {
+      display.fillRect(center - 7, y + 8, 15, 2, BLACK);
+      display.fillRect(center - 7, y + 15, 15, 2, BLACK);
+    } else {
+      display.fillRect(center - 7, y + 11, 15, 2, BLACK);
+      if (trend == 1) display.fillRect(center - 1, y + 5, 2, 15, BLACK);
+    }
+  } else if (trend == 2) {  // Waiting for ten seconds of history.
+    display.drawLine(center - 4, y + 12, center - 2, y + 12, BLACK);
+    display.drawLine(center + 1, y + 12, center + 3, y + 12, BLACK);
+  }
+}
+
+void Window::drawLivePhaseIcon(int16_t x, int16_t y, DescentPhase phase) {
+  display.fillRect(x, y, 24, 24, WHITE);
+  if (phase == DescentPhase::Main || phase == DescentPhase::Drogue) {
+    const int16_t radius = phase == DescentPhase::Main ? 9 : 5;
+    const int16_t base = phase == DescentPhase::Main ? y + 11 : y + 8;
+    display.drawCircle(x + 12, base, radius, BLACK);
+    display.fillRect(x + 2, base, 21, static_cast<int16_t>(y + 24 - base), WHITE);
+    display.drawLine(x + 12 - radius, base, x + 12 + radius, base, BLACK);
+    display.drawLine(x + 12 - radius, base, x + 11, y + 20, BLACK);
+    display.drawLine(x + 12, base, x + 12, y + 20, BLACK);
+    display.drawLine(x + 12 + radius, base, x + 13, y + 20, BLACK);
+    display.fillRect(x + 10, y + 20, 5, 3, BLACK);
+  } else if (phase == DescentPhase::Ballistic) {
+    // Thin outlined rocket pointing down, with staggered air streaks (B2).
+    display.drawRect(x + 10, y + 4, 5, 15, BLACK);
+    display.fillTriangle(x + 10, y + 18, x + 14, y + 18, x + 12, y + 23, BLACK);
+    display.fillTriangle(x + 7, y + 2, x + 10, y + 6, x + 10, y + 10, BLACK);
+    display.fillTriangle(x + 17, y + 2, x + 14, y + 6, x + 14, y + 10, BLACK);
+    display.drawPixel(x + 12, y + 11, BLACK);
+    display.drawLine(x + 2, y + 1, x + 2, y + 4, BLACK);
+    display.drawLine(x + 4, y + 8, x + 4, y + 10, BLACK);
+    display.drawLine(x + 20, y + 2, x + 20, y + 4, BLACK);
+    display.drawLine(x + 22, y + 7, x + 22, y + 10, BLACK);
+  }
+}
+
+bool Window::updateLiveDescent(TelemetryData &data, size_t index, bool hasRange, float distanceM) {
+  if (!hasLiveData[index]) return false;
+  const auto now = static_cast<uint32_t>(clock.nowMs());
+  const uint16_t state = data.state();
+  const bool testing = data.testingMode();
+  const bool inDescent = !testing && state >= 5 && state < 7;
+  const uint32_t sampleMs = data.getLastUpdateTimeMs();
+  const bool descending = inDescent && now - sampleMs < 5000;
+  const int16_t velocity = data.velocity();
+  const int32_t speed = -static_cast<int32_t>(velocity);  // Positive downward, independent of display units.
+  auto &stabilizer = phaseStabilizer[index];
+  if (!inDescent) {
+    stabilizer = {};  // Pre-apogee, touchdown and testing start the next flight cleanly.
+  } else if (!descending || speed < 0) {
+    stabilizer.candidate = DescentPhase::None;
+  } else {
+    const uint16_t timestamp = data.ts();
+    const uint16_t advance = static_cast<uint16_t>((timestamp - stabilizer.lastTimestamp) & 0x7fff);
+    if (stabilizer.hasSample && sampleMs - stabilizer.lastSampleMs >= 5000 && advance >= 0x4000) {
+      // A restarted Vega may reach descent while Live is closed. Accept its new
+      // timeline after an outage instead of waiting for the old timestamp to catch up.
+      stabilizer = {};
+      rangeHistory[index] = {};
+    }
+    // The on-air decisecond timestamp wraps at 15 bits. Repeated/older packets cannot confirm a change.
+    if (!stabilizer.hasSample || (advance != 0 && advance < 0x4000)) {
+      if (stabilizer.hasSample && sampleMs - stabilizer.lastSampleMs >= 5000) {
+        stabilizer.candidate = DescentPhase::None;
+      }
+      stabilizer.hasSample = true;
+      stabilizer.lastTimestamp = timestamp;
+      stabilizer.lastSampleMs = sampleMs;
+      if (stabilizer.phase == DescentPhase::None) {
+        stabilizer.phase = speed < 13    ? DescentPhase::Main
+                           : speed <= 60 ? DescentPhase::Drogue
+                                         : DescentPhase::Ballistic;
+      }
+      auto candidate = stabilizer.phase;
+      switch (stabilizer.phase) {
+        case DescentPhase::Main:
+          if (speed >= 63)
+            candidate = DescentPhase::Ballistic;
+          else if (speed >= 14)
+            candidate = DescentPhase::Drogue;
+          break;
+        case DescentPhase::Drogue:
+          if (speed <= 12)
+            candidate = DescentPhase::Main;
+          else if (speed >= 63)
+            candidate = DescentPhase::Ballistic;
+          break;
+        case DescentPhase::Ballistic:
+          if (speed <= 12)
+            candidate = DescentPhase::Main;
+          else if (speed <= 57)
+            candidate = DescentPhase::Drogue;
+          break;
+        case DescentPhase::None:
+          break;
+      }
+      if (candidate == stabilizer.phase) {
+        stabilizer.candidate = DescentPhase::None;
+      } else if (candidate != stabilizer.candidate) {
+        stabilizer.candidate = candidate;
+        stabilizer.candidateSinceMs = sampleMs;
+        stabilizer.candidateSinceTimestamp = timestamp;
+      } else if (sampleMs - stabilizer.candidateSinceMs >= 2000 &&
+                 ((timestamp - stabilizer.candidateSinceTimestamp) & 0x7fff) >= 20) {
+        stabilizer.phase = candidate;
+        stabilizer.candidate = DescentPhase::None;
+      }
+    }
+  }
+
+  DescentPhase visiblePhase = DescentPhase::None;
+  int8_t rangeTrend = descending && livestate == LiveState::kShowDownRange ? 2 : 3;
+  if (descending && speed >= 0) {
+    visiblePhase = stabilizer.phase;
+  }
+  if (descending && hasRange) {
+    const float change = updateTrendHistory(rangeHistory[index], distanceM, now);
+    if (std::isfinite(change) && livestate == LiveState::kShowDownRange) {
+      const float metres = std::round(change);
+      rangeTrend = metres >= 50 ? 1 : metres <= -50 ? -1 : 0;
+    }
+  } else {
+    rangeHistory[index] = {};
+  }
+
+  const auto x = static_cast<int16_t>(index * 200);
+  bool changed = false;
+  if (visiblePhase != livePhaseIcon[index]) {
+    drawLivePhaseIcon(x + 144, 75, visiblePhase);
+    livePhaseIcon[index] = visiblePhase;
+    changed = true;
+  }
+  if (rangeTrend != liveRangeTrend[index]) {
+    drawLiveTrendIcon(x + 144, 100, rangeTrend);
+    liveRangeTrend[index] = rangeTrend;
+    changed = true;
+  }
+  char text[40]{};
+  if (visiblePhase != DescentPhase::None) {
+    const char *phase = visiblePhase == DescentPhase::Main     ? "main"
+                        : visiblePhase == DescentPhase::Drogue ? "drogue"
+                                                               : "ballistic";
+    std::snprintf(text, sizeof(text), "Descent rate: %s", phase);
+  }
+  if (std::strcmp(text, liveDescentText[index]) != 0) {
+    display.fillRect(x + 1, 173, 197, 27, WHITE);
+    display.setFont(&FreeSans9pt7b);
+    display.setTextSize(1);
+    display.setTextColor(BLACK);
+    drawCentreString(text, x + 100, 195);
+    std::strcpy(liveDescentText[index], text);
+    changed = true;
   }
   return changed;
 }
@@ -593,11 +821,9 @@ void Window::updateLive(TelemetryInfo *info, int16_t index) {
   // clear update flag
   info->clear();
 
-  updateLiveInfo(&infoData[index], index, BLACK);
-
   memcpy(&infoData[index], info, sizeof(infoData[0]));
   dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - lastTeleData[index];
-  updateLiveInfo(&infoData[index], index, WHITE);
+  updateLiveInfo(&infoData[index], index);
 }
 
 void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index) {
@@ -605,25 +831,24 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryIn
     return;
   }
 
-  lastTeleData[index] = static_cast<uint32_t>(clock.nowMs());
+  lastTeleData[index] = data->getLastUpdateTimeMs();
+  hasLiveData[index] = true;
 
   // Clear update flag
   data->clear();
   info->clear();
 
   updateLiveData(&teleData[index], index, WHITE);
-  updateLiveInfo(&infoData[index], index, BLACK);
 
   // display.fillRect(10,19,190,200, WHITE);
 
   memcpy(&teleData[index], data, sizeof(teleData[0]));
   memcpy(&infoData[index], info, sizeof(infoData[0]));
 
-  dataAge[index] = 0;
+  dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - lastTeleData[index];
 
   updateLiveData(&teleData[index], index, BLACK);
   updateLiveNavigation(teleData[0], teleData[1], navigation);
-  updateLiveInfo(&infoData[index], index, WHITE);
 }
 
 void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t index) {
@@ -631,7 +856,8 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t ind
     return;
   }
 
-  lastTeleData[index] = static_cast<uint32_t>(clock.nowMs());
+  lastTeleData[index] = data->getLastUpdateTimeMs();
+  hasLiveData[index] = true;
 
   // Clear update flag
   data->clear();
@@ -642,7 +868,7 @@ void Window::updateLive(TelemetryData *data, Navigation *navigation, int16_t ind
 
   memcpy(&teleData[index], data, sizeof(teleData[0]));
 
-  dataAge[index] = 0;
+  dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - lastTeleData[index];
 
   updateLiveData(&teleData[index], index, BLACK);
   updateLiveNavigation(teleData[0], teleData[1], navigation);
@@ -717,7 +943,7 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   }
 
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 192);
+  display.setCursor(static_cast<int16_t>(xOffset + first_row_offset), 214);
 
   if (static_cast<bool>(data->errors() & 0x04U)) {
     display.print(errorName[2]);
@@ -738,45 +964,25 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   display.setTextColor(GetNegativeColor(color));
 }
 
-void Window::updateLiveInfo(TelemetryInfo *info, int16_t index, uint16_t color) {
+bool Window::updateLiveInfo(TelemetryInfo *info, int16_t index) {
   const auto xOffset = static_cast<int16_t>(index * 200);
-
+  char text[32];
+  if (hasLiveData[index] && dataAge[index] <= 4900) {
+    std::snprintf(text, sizeof(text), "AGE %.1fs    LQ %u%%", static_cast<double>(dataAge[index]) / 1000.0,
+                  static_cast<unsigned>(info->lq()));
+  } else {
+    std::strcpy(text, "Disconnected");
+  }
+  if (std::strcmp(text, liveInfoText[index]) == 0) return false;
+  display.fillRect(xOffset, 219, 199, 21, BLACK);
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
-  display.setTextColor(color);
-
-  if (dataAge[index] > 4900) {
-    if (color == WHITE) {
-      connected[index] = false;
-      display.fillRect(xOffset, 202, 199, 240, BLACK);
-      display.setCursor(static_cast<int16_t>(xOffset + 45), 227);
-      display.print("Disconnected");
-      info->lq();
-    }
-  } else {
-    if (!connected[index]) {
-      if (color == WHITE) {
-        display.fillRect(xOffset, 202, 199, 240, BLACK);
-        connected[index] = true;
-        display.setCursor(static_cast<int16_t>(xOffset + 5), 217);
-        display.print("AGE");
-        display.setCursor(static_cast<int16_t>(xOffset + 100), 217);
-        display.print("SNR");
-        display.setCursor(static_cast<int16_t>(xOffset + 5), 237);
-        display.print("LQ");
-        display.setCursor(static_cast<int16_t>(xOffset + 100), 237);
-        display.print("RSSI");
-      }
-    }
-    display.setCursor(static_cast<int16_t>(xOffset + 50), 217);
-    display.print(static_cast<float>(dataAge[index]) / 1000.0F, 1);
-    display.setCursor(static_cast<int16_t>(xOffset + 145), 217);
-    display.print(info->snr());
-    display.setCursor(static_cast<int16_t>(xOffset + 50), 237);
-    display.print(info->lq());
-    display.setCursor(static_cast<int16_t>(xOffset + 145), 237);
-    display.print(info->rssi());
-  }
+  display.setTextColor(WHITE);
+  display.setTextWrap(false);
+  drawCentreString(text, xOffset + 100, 235);
+  display.setTextWrap(true);
+  std::strcpy(liveInfoText[index], text);
+  return true;
 }
 
 void Window::initRecovery(bool hasLastLocation) {

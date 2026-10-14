@@ -46,7 +46,8 @@ void WindowHmiRenderer::syncLink(const LinkSnapshot& source, size_t index) {
   telemetry_[index].set(std::min<uint8_t>(7, source.telemetry.state), source.telemetry.errors,
                         source.telemetry.altitudeM, source.telemetry.velocityMps, source.telemetry.latitude,
                         source.telemetry.longitude, source.telemetry.voltage, source.telemetry.pyroContinuity,
-                        source.telemetry.testingMode, static_cast<uint32_t>(source.telemetry.lastUpdateMs));
+                        source.telemetry.testingMode, static_cast<uint32_t>(source.telemetry.lastUpdateMs),
+                        source.telemetry.timestampDs);
   linkInfo_[index].set(source.info.linkQuality, source.info.rssi, source.info.snr);
 }
 
@@ -75,7 +76,8 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
   // would hide stale-header bugs in the production transition.
   const bool leavingSelfTest = selfTestWasRendered_ && state.screen != "self_test";
   selfTestWasRendered_ = state.screen == "self_test";
-  if (!leavingSelfTest) window_.begin();
+  // Redrawing the framebuffer must retain the production per-link trend history.
+  if (!leavingSelfTest) window_.begin(false);
 
   if (state.screen == "logo") {
     if (state.configuration.startupAnimation) {
