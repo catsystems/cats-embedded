@@ -762,9 +762,9 @@ class Simulator:
             self.render_screen()
 
     def live_step(self, pressed: set[str]) -> None:
-        if "left" in pressed:
-            self.emit("live_view", text="gnss")
         if "right" in pressed:
+            self.emit("live_view", text="gnss")
+        if "left" in pressed:
             self.emit("live_view", text="downrange")
         if "back" in pressed:
             self.to_menu()

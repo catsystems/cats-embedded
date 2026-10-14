@@ -41,7 +41,31 @@ keyboard help, raw state snapshot, and expandable test coverage matrix remain
 available in the default mode.
 
 Live defaults to the two-receiver downrange/bearing view. Right shows GNSS and
-Left returns to downrange. Each panel uses its own receiver position.
+Left returns to downrange. Each panel uses its own receiver position. The
+bottom row contains AGE and LQ. After apogee, the speed row shows
+a phase icon: a small drogue chute, a larger main chute, or a rocket
+pointing downward for ballistic descent. The row below the battery reads
+Descent rate: drogue/main/ballistic. The 9 pt text is centered across the panel. On activation,
+positive downward speed below 13 m/s initializes Main, 13–60 m/s initializes
+Drogue, and above 60 m/s initializes Ballistic. Established Main switches
+toward Drogue at 14 m/s, Drogue toward Main at 12 m/s, Drogue toward Ballistic
+at 63 m/s, and Ballistic toward Drogue at 57 m/s. Direct Main-to-Ballistic at
+63 m/s and Ballistic-to-Main at 12 m/s are supported. A switch requires two
+seconds of fresh telemetry satisfying the condition; repeated packet
+timestamps and screen redraws cannot advance confirmation. Pending changes
+cancel on stale telemetry, while the established label is retained for recovery.
+Pre-apogee, testing and touchdown reset classification for a new flight.
+A restarted source timestamp after a telemetry outage also starts a new classification,
+including when the restart happened outside Live. These labels are speed-based estimates
+and do not confirm parachute deployment.
+
+The downrange sign directly below the phase icon compares the latest ten seconds:
++ for an increase of at least 50 m, - for a decrease of at least 50 m,
+and = for changes between those thresholds. Navigation triangles sit to its right.
+The downrange sign is hidden in the GNSS view. Errors retain their own row above
+AGE and LQ. The trend shows -- until ten seconds of valid history are available.
+All descent callouts clear on stale telemetry or touchdown. The **Descent callouts** fixture demonstrates the
+layout through the existing fixture selector and normal device buttons.
 
 The browser plays the four-second startup intro on initial load and whenever
 Reset is selected. Pause time and use the millisecond step control to inspect

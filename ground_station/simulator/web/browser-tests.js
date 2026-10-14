@@ -50,11 +50,11 @@ async function test(name, body) {
 
 async function run() {
   const [moduleImport, manifest, goldens] = await Promise.all([
-    import('./gs-sim.js?v=browser-tests-1'),
+    import('./gs-sim.js?v=browser-tests-10'),
     loadFixtureManifest(),
     fetch('./browser-golden.json', {cache: 'no-store'}).then(response => response.json())
   ]);
-  const wasm = await moduleImport.default({ locateFile: path => `${path}?v=browser-tests-1` });
+  const wasm = await moduleImport.default({ locateFile: path => `${path}?v=browser-tests-10` });
 
   await test('module bootstrap', async () => {
     wasm.ccall('gs_reset', null, [], []);
@@ -732,6 +732,62 @@ async function run() {
     }
   });
 
+  await test('live compass: eight directions, sector boundaries and label clearance', async () => {
+    const set = (name, value) => wasm.ccall(name, null, ['string'], [JSON.stringify(value)]);
+    const equal = (a, b) => a.every((pixel, index) => pixel === b[index]);
+    const pixels = (link, left, right) => {
+      const bytes = framebuffer(wasm), output = [];
+      for (let y = 124; y < 149; ++y) for (let x = left; x < right; ++x) {
+        const bit = y * 400 + link * 200 + x;
+        output.push((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
+      }
+      return output;
+    };
+    const pointAt = (link, angle) => {
+      const radians = angle * Math.PI / 180;
+      wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(link + 1), JSON.stringify({
+        latitude: 0.25 * Math.cos(radians), longitude: 1 + 0.25 * Math.sin(radians), connected: true, updated: false
+      })]);
+    };
+    wasm.ccall('gs_reset', null, [], []);
+    set('gs_set_configuration_json', {dualReceiver: true});
+    set('gs_set_navigation_json', {homeLatitude: 0, homeLongitude: 1});
+    tap(wasm, 'ok');
+    const triangles = [pixels(0, 180, 198), pixels(1, 180, 198)];
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const suffixes = directions.map((direction, index) => {
+      pointAt(0, index * 45);
+      return pixels(0, 130, 180);
+    });
+    assert(new Set(suffixes.map(value => value.join(''))).size === 8, 'all eight compass suffixes are distinct');
+    const check = (angle, sector) => {
+      for (let link = 0; link < 2; ++link) {
+        pointAt(link, angle);
+        assert(equal(pixels(link, 130, 180), suffixes[sector]), `${angle} degrees selects ${directions[sector]} on Link ${link + 1}`);
+        assert(pixels(link, 171, 184).every(pixel => pixel === 1), 'the widest suffix leaves 13 clear pixels before the navigation triangle');
+        assert(equal(pixels(link, 180, 198), triangles[link]), 'bearing redraw preserves the navigation triangle');
+      }
+    };
+    for (let sector = 0; sector < 8; ++sector) {
+      check(sector * 45, sector);
+      const boundary = 22.5 + sector * 45;
+      check(boundary - 0.01, sector);
+      check(boundary, (sector + 1) % 8);
+      check(boundary + 0.01, (sector + 1) % 8);
+    }
+    for (const angle of [359.9, 359.99, 0, 0.01]) check(angle, 0);
+    pointAt(0, 225); pointAt(1, 315);
+    captureSelfTest('Live - compass SW and widest NW suffix');
+    for (const button of ['right', 'left']) tap(wasm, button);
+    assert(equal(pixels(0, 130, 180), suffixes[5]) && equal(pixels(1, 130, 180), suffixes[7]),
+      'returning from GNSS restores both compass labels');
+    for (let link = 0; link < 2; ++link) {
+      wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(link + 1), '{"latitude":0,"longitude":0}']);
+      assert(pixels(link, 130, 180).every(pixel => pixel === 1), 'losing a fix clears the full compass label');
+      assert(equal(pixels(link, 180, 198), triangles[link]), 'clearing a compass label preserves navigation');
+    }
+  });
+
   await test('live GNSS: no-fix placeholders and valid zero coordinates', async () => {
     wasm.ccall('gs_reset', null, [], []);
     const setLink = values => wasm.ccall('gs_set_link_json',null,['string','string'],['1',JSON.stringify({connected:true,...values})]);
@@ -760,6 +816,250 @@ async function run() {
     assert(coordinates().every((pixel,index)=>pixel===missing[index]),'out-of-range coordinates are unavailable');
     tap(wasm,'back'); tap(wasm,'ok');
     assert(snapshot(wasm).liveView === 'downrange', 're-entering Live restores the default downrange view');
+  });
+
+  await test('double-view descent callouts and ten-second range trends', async () => {
+    const set = (name, value) => wasm.ccall(name, null, ['string'], [JSON.stringify(value)]);
+    const timestamps = [0, 1000, 1000], sentAt = [0, 0, 0];
+    const link = (index, value) => {
+      const now = snapshot(wasm).virtualTimeMs;
+      timestamps[index] = (timestamps[index] + Math.max(1, Math.floor((now - sentAt[index]) / 100))) & 0x7fff;
+      sentAt[index] = now;
+      wasm.ccall('gs_set_link_json', null, ['string', 'string'],
+        [String(index), JSON.stringify({connected: true, timestampDs: timestamps[index], ...value})]);
+    };
+    const latitude = metres => metres / (6378100 * Math.PI / 180);
+    const region = (index, x, y, width, height) => {
+      const bytes = framebuffer(wasm), pixels = [];
+      for (let row = y; row < y + height; row++) for (let col = x; col < x + width; col++) {
+        const bit = row * 400 + index * 200 + col;
+        pixels.push((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
+      }
+      return pixels;
+    };
+    const trend = index => region(index, 144, 100, 24, 24);
+    const phase = index => region(index, 144, 75, 24, 24);
+    const equal = (a, b) => a.every((pixel, i) => pixel === b[i]);
+    const empty = pixels => pixels.every(pixel => pixel === 1);
+    wasm.ccall('gs_reset', null, [], []);
+    set('gs_set_configuration_json', {dualReceiver: true});
+    set('gs_set_navigation_json', {homeLatitude: 0, homeLongitude: 8});
+    link(1, {state: 4, velocityMps: -38, altitudeM: 1234, latitude: latitude(100), longitude: 8,
+      voltage: 4.1, pyroContinuity: 3, linkQuality: 98});
+    link(2, {state: 4, velocityMps: -9, altitudeM: 700, latitude: latitude(200), longitude: 8,
+      voltage: 4.0, pyroContinuity: 3, linkQuality: 95});
+    tap(wasm, 'ok');
+    assert([0, 1].every(i => empty(trend(i)) && empty(phase(i))), 'negative speed before apogee shows no descent callouts');
+    link(1, {state: 6}); link(2, {state: 5});
+    const drogue = phase(0), main = phase(1), pending = trend(0);
+    assert(!empty(drogue) && !equal(drogue, main), 'speed estimates differ despite opposite internal states');
+    link(1, {velocityMps: -63});
+    assert(equal(phase(0), drogue), 'an isolated fast sample leaves the established Drogue estimate');
+    wasm.ccall('gs_advance', null, ['number'], [2000]);
+    link(1, {velocityMps: -9999});
+    const ballistic = phase(0);
+    assert(!equal(ballistic, main) && !equal(ballistic, drogue), 'sustained fast descent confirms Ballistic');
+    // Start an independent ten-second range window after the confirmation checks.
+    link(1, {latitude: 0, longitude: 0}); link(2, {latitude: 0, longitude: 0});
+    link(1, {latitude: latitude(100), longitude: 8}); link(2, {latitude: latitude(200), longitude: 8});
+    const speed = region(0, 28, 75, 105, 24);
+    for (let second = 1; second <= 10; second++) {
+      wasm.ccall('gs_advance', null, ['number'], [1000]);
+      link(1, {latitude: latitude(100 + 5 * second)});
+      link(2, {latitude: latitude(200 - 5 * second)});
+      if (second === 5) tap(wasm, 'right');
+      if (second === 10) tap(wasm, 'left');
+      if (second < 10 && snapshot(wasm).liveView === 'downrange') {
+        assert(equal(trend(0), pending) && equal(trend(1), pending), 'trend waits for a full ten seconds');
+      }
+    }
+    const increasing = trend(0), decreasing = trend(1);
+    assert(!equal(increasing, pending) && !equal(decreasing, pending) && !equal(increasing, decreasing),
+      '+50 and -50 metres produce distinct inclusive trends');
+    assert(equal(region(0, 28, 75, 105, 24), speed), 'four-digit speed is unchanged by its adjacent phase icon');
+    assert(empty(region(0, 133, 75, 11, 24)), 'four-digit speed and units have a clear gap before the phase icon');
+    captureSelfTest('Double view - four-digit speed and independent trends');
+    actualHashes.descentFourDigits = await framebufferHash(wasm);
+    set('gs_set_configuration_json', {imperialUnits: true});
+    link(1, {velocityMps: -1234});
+    assert(equal(trend(0), increasing) && equal(trend(1), decreasing), 'range trends keep metre thresholds in imperial mode');
+    assert(equal(phase(0), ballistic), 'phase thresholds stay in metres per second in imperial mode');
+    assert(empty(region(0, 133, 75, 11, 24)), 'four-digit imperial speed and units leave room for the phase icon');
+    captureSelfTest('Double view - four-digit imperial speed');
+    set('gs_set_configuration_json', {imperialUnits: false});
+    link(1, {velocityMps: -38});
+    wasm.ccall('gs_advance', null, ['number'], [2000]);
+    link(1, {velocityMps: -38});
+    assert(equal(phase(0), drogue), 'slower sustained descent returns from Ballistic to Drogue');
+    link(1, {latitude: 0, longitude: 0}); link(2, {latitude: 0, longitude: 0});
+    link(1, {latitude: latitude(100), longitude: 8}); link(2, {latitude: latitude(200), longitude: 8});
+    for (let second = 1; second <= 10; second++) {
+      wasm.ccall('gs_advance', null, ['number'], [1000]);
+      link(1, {latitude: latitude(100 + 5 * second)}); link(2, {latitude: latitude(200 - 5 * second)});
+    }
+    link(1, {velocityMps: -38, latitude: latitude(149)}); link(2, {latitude: latitude(151)});
+    const steady = trend(0);
+    assert(equal(trend(1), steady) && !equal(steady, increasing) && !equal(steady, decreasing), '+49 and -49 metres are Steady');
+    link(1, {latitude: latitude(150)}); link(2, {latitude: latitude(150)});
+    assert(equal(trend(0), increasing) && equal(trend(1), decreasing), '+50 and -50 boundaries are inclusive');
+    wasm.ccall('gs_advance', null, ['number'], [1000]);
+    link(1, {latitude: latitude(154)}); link(2, {latitude: latitude(146)});
+    assert(equal(trend(0), steady) && equal(trend(1), steady), 'rolling history uses the latest ten seconds');
+    wasm.ccall('gs_advance', null, ['number'], [500]);
+    link(1, {latitude: latitude(156)}); link(2, {latitude: latitude(144)});
+    assert(equal(trend(0), steady) && equal(trend(1), steady), 'history interpolates at ten seconds ago between samples');
+    const footer = region(0, 0, 219, 199, 21);
+    link(1, {snr: -50, rssi: -110});
+    assert(equal(region(0, 0, 219, 199, 21), footer), 'SNR and RSSI do not appear in the footer');
+    link(1, {linkQuality: 100, errors: 0});
+    assert(!equal(region(0, 0, 219, 199, 21), footer), 'LQ remains visible at the bottom');
+    const errorRow = index => region(index, 1, 200, 197, 19);
+    const footerWithFullLq = region(0, 0, 219, 199, 21);
+    const errorFrames = [];
+    for (const [mask, label] of [[1, 'No Config'], [2, 'Log Full'], [4, 'Filter Error'],
+      [8, 'Overheating'], [16, 'Continuity Error'], [32, 'Calibration Error']]) {
+      link(1, {errors: mask});
+      assert(!empty(errorRow(0)) && empty(errorRow(1)), `${label} appears only in the affected receiver`);
+      assert(equal(phase(0), drogue) && equal(trend(0), steady), `${label} leaves both descent callouts intact`);
+      assert(equal(region(0, 0, 219, 199, 21), footerWithFullLq), `${label} does not overlap AGE and LQ`);
+      errorFrames.push(errorRow(0));
+      captureSelfTest(`Double view - ${label}`);
+      link(1, {errors: 0});
+      assert(empty(errorRow(0)), `clearing ${label} leaves no stale error text`);
+    }
+    link(1, {errors: 63});
+    assert(equal(errorRow(0), errorFrames[2]), 'multiple errors retain the existing Filter Error priority');
+    link(1, {errors: 32}); link(2, {errors: 16});
+    assert(!empty(errorRow(0)) && !empty(errorRow(1)), 'both receivers can display their own error with the descent labels');
+    captureSelfTest('Double view - descent labels with errors');
+    link(1, {errors: 0}); link(2, {errors: 0});
+    assert(empty(errorRow(0)) && empty(errorRow(1)), 'both error rows clear independently');
+    link(1, {errors: 0, latitude: 0, longitude: 0});
+    assert(equal(trend(0), pending) && equal(trend(1), steady), 'missing Link 1 GNSS clears only its trend');
+    assert(equal(phase(0), drogue), 'speed-based phase remains available without GNSS');
+    link(1, {latitude: latitude(156), longitude: 8});
+    assert(equal(trend(0), pending), 'GNSS recovery starts a new range history');
+    tap(wasm, 'right');
+    assert(snapshot(wasm).liveView === 'gnss' && equal(phase(0), drogue), 'the GNSS double view also shows the estimate');
+    tap(wasm, 'left');
+    wasm.ccall('gs_advance', null, ['number'], [5000]);
+    assert([0, 1].every(i => empty(trend(i)) && empty(phase(i))), 'stale telemetry clears inferred callouts');
+    link(1, {state: 7, velocityMps: 0});
+    assert(empty(trend(0)) && empty(phase(0)), 'touchdown ends descent estimates');
+    link(1, {state: 2}); link(1, {state: 5, velocityMps: -9});
+    assert(equal(trend(0), pending) && equal(phase(0), main), 'a new descent starts without the previous flight history');
+    assert(actualHashes.descentFourDigits === goldens.descentFourDigits,
+      `descentFourDigits: expected ${goldens.descentFourDigits}, got ${actualHashes.descentFourDigits}`);
+  });
+
+  await test('descent phase hysteresis: fresh samples, confirmation, loss and independent Vegas', async () => {
+    const ids = [0, 1000, 2000], sentAt = [0, 0, 0];
+    const advance = ms => wasm.ccall('gs_advance', null, ['number'], [ms]);
+    const sample = (index, speed, fields = {}) => {
+      const now = snapshot(wasm).virtualTimeMs;
+      ids[index] = fields.timestampDs ?? ((ids[index] + Math.max(1, Math.floor((now - sentAt[index]) / 100))) & 0x7fff);
+      sentAt[index] = now;
+      wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(index),
+        JSON.stringify({connected: true, state: 5, velocityMps: -speed, timestampDs: ids[index], ...fields})]);
+    };
+    const pixels = (index, x, y, width, height) => {
+      const bytes = framebuffer(wasm), output = [];
+      for (let row = y; row < y + height; row++) for (let col = x; col < x + width; col++) {
+        const bit = row * 400 + index * 200 + col;
+        output.push((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
+      }
+      return output;
+    };
+    const phase = index => pixels(index, 144, 75, 24, 24);
+    const equal = (a, b) => a.every((value, i) => value === b[i]);
+    const check = (index, expected, label) => assert(equal(phase(index), expected), label);
+    const reset = (speed, other = 38) => {
+      wasm.ccall('gs_reset', null, [], []);
+      ids[1] = 1000; ids[2] = 2000; sentAt[1] = sentAt[2] = 0;
+      sample(1, speed); sample(2, other); tap(wasm, 'ok');
+    };
+    reset(10); const main = phase(0);
+    reset(38); const drogue = phase(0);
+    reset(80); const fast = phase(0);
+    for (const [speed, expected] of [[0, main], [12, main], [13, drogue], [60, drogue], [61, fast]]) {
+      reset(speed); check(0, expected, `${speed} m/s initializes at the specified boundary`);
+    }
+    const jitter = (initial, speeds, expected) => {
+      reset(initial);
+      for (const speed of speeds) { advance(500); sample(1, speed); check(0, expected, `${initial}: boundary jitter at ${speed}`); }
+    };
+    jitter(12, [13, 14, 13, 14, 13, 14, 13], main);
+    jitter(13, [12, 13, 12, 13, 12, 13], drogue);
+    jitter(60, [62, 63, 62, 63, 62, 63, 62], drogue);
+    jitter(61, [60, 58, 57, 58, 57, 58], fast);
+    reset(10); sample(1, 70); advance(1000); sample(1, 10); advance(2500); sample(1, 10);
+    check(0, main, 'an isolated spike cannot change Main');
+
+    const confirm = (speed, expected, label, index = 1) => {
+      const old = phase(index - 1);
+      sample(index, speed); advance(1900); sample(index, speed);
+      check(index - 1, old, `${label} waits until two seconds`);
+      advance(100); sample(index, speed); check(index - 1, expected, `${label} confirms at two seconds`);
+    };
+    reset(10); confirm(14, drogue, 'Main to Drogue at 14');
+    confirm(12, main, 'Drogue to Main at 12');
+    confirm(14, drogue, 'Main is not permanently latched');
+    confirm(63, fast, 'Drogue to Fast at 63');
+    confirm(57, drogue, 'Fast to Drogue at 57');
+    reset(10); confirm(63, fast, 'direct Main to Fast at 63');
+    confirm(12, main, 'direct Fast to Main at 12');
+
+    reset(10); sample(1, 14); advance(1000); sample(1, 63); advance(1000); sample(1, 63);
+    check(0, main, 'changing candidate resets confirmation');
+    advance(1000); sample(1, 63); check(0, fast, 'the replacement candidate gets its own two seconds');
+
+    reset(10); const numeric = pixels(0, 28, 75, 105, 24);
+    sample(1, 14); const repeatedId = ids[1];
+    assert(!equal(numeric, pixels(0, 28, 75, 105, 24)), 'numeric speed updates while phase remains Main');
+    check(0, main, 'numeric changes do not immediately change phase');
+    captureSelfTest('Double view - phase confirmation pending');
+    advance(2500); check(0, main, 'screen refreshes alone do not confirm a phase');
+    sample(1, 14, {timestampDs: repeatedId});
+    tap(wasm, 'right'); tap(wasm, 'left');
+    check(0, main, 'duplicate packets and changing views do not advance confirmation');
+    sample(1, 14, {timestampDs: repeatedId + 1});
+    check(0, main, 'only 0.1 seconds of new source telemetry cannot confirm despite elapsed wall time');
+    advance(1900); sample(1, 14); check(0, drogue, 'two seconds of new source telemetry confirms');
+
+    reset(38); sample(1, 12); advance(5000);
+    assert(phase(0).every(pixel => pixel === 1), 'stale telemetry hides the phase');
+    sample(1, 12); check(0, drogue, 'telemetry recovery retains the established phase and restarts confirmation');
+    advance(1900); sample(1, 12); check(0, drogue, 'stale time cannot count toward confirmation');
+    advance(100); sample(1, 12); check(0, main, 'fresh recovery samples can confirm Main');
+    reset(38); sample(1, 12); tap(wasm, 'back'); advance(6000); sample(1, 12); tap(wasm, 'ok');
+    check(0, drogue, 'a telemetry gap cancels pending confirmation even while outside Live');
+
+    reset(10, 80); sample(1, 14); advance(1000); sample(2, 57); advance(1000); sample(1, 14);
+    check(0, drogue, 'Link 1 confirms independently'); check(1, fast, 'Link 2 still waits on its own timer');
+    advance(1000); sample(2, 57); check(1, drogue, 'Link 2 confirms on its own timeline');
+    sample(1, 63); tap(wasm, 'right'); advance(2000); sample(1, 63);
+    check(0, fast, 'confirmation continues in the GNSS view');
+    tap(wasm, 'left'); check(0, fast, 'returning to downrange preserves the established phase');
+
+    sample(1, 0, {state: 7});
+    assert(phase(0).every(pixel => pixel === 1), 'touchdown clears the descent label');
+    assert(pixels(0, 144, 100, 24, 24).every(pixel => pixel === 1), 'touchdown clears the range trend');
+    assert(pixels(0, 1, 173, 197, 27).every(pixel => pixel === 1), 'touchdown clears the combined descent text');
+    check(1, drogue, 'one Vega reaching touchdown leaves the other phase intact');
+    captureSelfTest('Double view - Link 1 touchdown clears descent callouts');
+    sample(1, 10, {state: 2}); sample(1, 10);
+    check(0, main, 'a new flight initializes a new label');
+    reset(10); sample(1, 10, {state: 2, timestampDs: 32759}); sample(1, 10, {timestampDs: 32759});
+    sample(1, 14, {timestampDs: 32760}); advance(2000); sample(1, 14, {timestampDs: 12});
+    check(0, drogue, 'confirmation handles the 15-bit timestamp wrap');
+
+    reset(10); tap(wasm, 'back'); advance(60000);
+    sample(1, 38, {timestampDs: 500}); tap(wasm, 'ok');
+    check(0, drogue, 'a restarted source timestamp after an outage initializes the new flight');
+    confirm(63, fast, 'confirmation continues on the restarted source timeline');
+
+    reset(10); sample(1, 38, {timestampDs: 500});
+    check(0, main, 'an older packet without an outage cannot reset the established phase');
   });
 
   const failed = results.filter(result => !result.passed);

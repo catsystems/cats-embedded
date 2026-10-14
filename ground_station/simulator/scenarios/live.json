@@ -8,6 +8,10 @@
   "steps": [
     {"press": "ok"}, {"release": "ok"},
     {"assert": {"activeScreen": "live", "links.0.connected": true, "links.0.telemetry.state": 3}},
-    {"snapshot": "live-telemetry"}
+    {"snapshot": "live-telemetry"},
+    {"press": "right"}, {"release": "right"},
+    {"assert": {"actions.2.type": "live_view", "actions.2.text": "gnss"}},
+    {"press": "left"}, {"release": "left"},
+    {"assert": {"actions.3.type": "live_view", "actions.3.text": "downrange"}}
   ]
 }
