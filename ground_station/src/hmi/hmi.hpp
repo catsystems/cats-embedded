@@ -85,6 +85,8 @@ class Hmi {
   SensorView sensorView = SensorView::Readings;
   uint32_t lastSensorRefresh = 0;
   uint32_t lastLiveRefresh = 0;
+  enum class LiveExitState : uint8_t { None, Confirm, StartFailed, StopFailed };
+  LiveExitState liveExitState{LiveExitState::None};
 
   Recorder recorder;
   RadioUpdate::RadioFirmwareUpdater* radioUpdater{nullptr};

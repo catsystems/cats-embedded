@@ -37,8 +37,8 @@ class Recorder : public ITelemetryPacketSink {
   explicit Recorder(const char* directory) : directory(directory) {}
   bool begin();
 
-  void enable() { enabled = true; }
-  void disable() { enabled = false; }
+  bool startLiveRecording();
+  bool stopLiveRecording(bool onlyIfIdle = false, bool* needsConfirmation = nullptr);
   void configure(ReceiverTelemetryMode_e mode, bool neverStop) {
     receiverMode = mode;
     neverStopLogging = neverStop;
@@ -59,6 +59,9 @@ class Recorder : public ITelemetryPacketSink {
  private:
   enum class CommandType : uint8_t {
     Sample,
+    StartLive,
+    StopLive,
+    StopLiveIfIdle,
     Finalize,
     Sync,
     CatalogRefresh,
@@ -77,6 +80,7 @@ class Recorder : public ITelemetryPacketSink {
   struct Response {
     uint32_t requestId{0};
     bool result{false};
+    bool needsConfirmation{false};
   };
 
   bool initialized{false};
@@ -111,7 +115,7 @@ class Recorder : public ITelemetryPacketSink {
   bool deleteFile(const char* name);
   bool scanCatalog(std::vector<LogEntry>& entries);
   void setFault(const char* message);
-  bool submitAndWait(Command& command);
+  bool submitAndWait(Command& command, bool* needsConfirmation = nullptr);
   static bool isCsvLog(const char* name);
   static int32_t logNumber(const char* name);
   static void recordTask(void* pvParameter);

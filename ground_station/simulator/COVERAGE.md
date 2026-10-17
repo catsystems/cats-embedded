@@ -33,7 +33,7 @@ browser and compares its framebuffer.
 | Equator or prime-meridian fix | `qr-zero-coordinate.json`, `zero-coordinate` fixture | `zero-coordinate-qr` | Golden | Fixture smoke |
 | More than 11 logs | `log-management.json`, `many` fixture | `log-management` | Deterministic | Fixture smoke |
 | Legacy CSV names | `legacy-log-names.json` | `legacy-log-names` | Deterministic | — |
-| Recording independent of screen | `recording-independent.json` | `screen-independent-recording` | Deterministic | — |
+| Recording only in Live; confirmed exit and re-entry | `recording-live-only.json` | `live-only-recording` | Deterministic | — |
 | Automatic and Never-mode finalization | `recording-modes.json`, `never` fixture | `recording-modes` | Deterministic | Fixture smoke |
 | Malformed or partial log | `demo` fixture | — | Deterministic fixture load | Fixture smoke |
 | Deletion failure | `delete-failure` fixture | — | Deterministic fixture load | Fixture smoke |
@@ -44,3 +44,6 @@ browser and compares its framebuffer.
 
 The explicit gaps are intentional: they stay visible here until a scenario and
 framebuffer assertion are added, instead of being implied by unrelated tests.
+
+The UI simulator models recording. Production recorder, filesystem, flash-cache,
+and exit/scan regression checks are separate: see [recorder host tests](../tests/recorder_host/README.md).

@@ -1156,6 +1156,20 @@ void Window::drawRecoveryHint(bool showHint) {
   display.print("last locations");
 }
 
+void Window::initLiveConfirmExit() {
+  display.fillRect(40, 50, 320, 150, WHITE);
+  display.drawRect(40, 50, 320, 150, BLACK);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  display.setFont(&FreeSans12pt7b);
+  drawCentreString("Recording in progress", 200, 82);
+  display.setFont(&FreeSans9pt7b);
+  drawCentreString("Main menu will stop recording.", 200, 111);
+  drawCentreString("B: Back to Live", 200, 151);
+  drawCentreString("A: Main menu", 200, 180);
+  surface.present();
+}
+
 void Window::initBox(const char *text) {
   display.fillRect(60, 60, 280, 120, WHITE);
   display.drawRect(60, 60, 280, 120, BLACK);

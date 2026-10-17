@@ -26,14 +26,14 @@
     {"advance":0},
     {"set":{"link1.telemetry.state":3,"link1.telemetry.timestampDs":12}},
     {"advance":0},
-    {"assert":{"recorderState":"recording","recordedRowCount":1,"usbStorageState":"firmware"}},
-    {"press":"ok"},
-    {"assert":{"activeScreen":"usb_storage","usbStorageState":"firmware","usbStorageMessage":"Finalize the active log first."}},
-    {"press":"back"},
-    {"assert":{"activeScreen":"settings","settingsPage":2,"settingsSelection":1}},
-    {"set":{"link1.telemetry.state":7,"link1.telemetry.timestampDs":20}},
-    {"advance":0},
+    {"assert":{"recorderState":"idle","recordedRowCount":0,"usbStorageState":"firmware"}},
+    {"press":"back"},{"press":"back"},{"press":"left"},{"press":"left"},{"press":"up"},{"press":"ok"},
+    {"set":{"link1.telemetry.timestampDs":13}},{"advance":0},
+    {"assert":{"activeScreen":"live","recorderState":"recording","recordedRowCount":1,"usbStorageState":"firmware"}},
+    {"set":{"link1.telemetry.state":7,"link1.telemetry.timestampDs":20}},{"advance":0},
     {"assert":{"recorderState":"idle","recordedRowCount":2,"usbStorageState":"host"}},
+    {"press":"back"},
+    {"assert":{"activeScreen":"menu","usbStorageState":"host"}},
     {"snapshot":"usb-storage-handoff"}
   ]
 }

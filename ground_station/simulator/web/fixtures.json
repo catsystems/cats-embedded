@@ -76,6 +76,7 @@
         {"logs": []},
         {"configuration": {"dualReceiver": true, "neverStopLogging": false}},
         {"navigation": {"homeLatitude": 33.6838649, "homeLongitude": 132.6331541, "northRad": 0.35}},
+        {"tap": "ok"},
         {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 120, "velocityMps": 42, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 110, "velocityMps": 39, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 5, "timestampDs": 20, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
@@ -83,7 +84,8 @@
         {"link": {"index": 1, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
-        {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}}
+        {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"tap": "back"}
       ]
     },
     {
@@ -102,6 +104,7 @@
         {"logs": []},
         {"configuration": {"dualReceiver": true, "neverStopLogging": false}},
         {"navigation": {"homeLatitude": 33.6838649, "homeLongitude": 132.6331541, "northRad": 0.35}},
+        {"tap": "ok"},
         {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 120, "velocityMps": 42, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 2, "timestampDs": 10, "latitude": 0, "longitude": 0, "altitudeM": 110, "velocityMps": 39, "voltage": 4.1, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 5, "timestampDs": 20, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 1000, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
@@ -109,7 +112,8 @@
         {"link": {"index": 1, "value": {"state": 6, "timestampDs": 30, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 2, "timestampDs": 30, "latitude": 0, "longitude": 0, "altitudeM": 400, "velocityMps": -25, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
-        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 50, "latitude": 0, "longitude": 0, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}}
+        {"link": {"index": 2, "value": {"state": 2, "timestampDs": 50, "latitude": 0, "longitude": 0, "altitudeM": 5, "velocityMps": 0, "voltage": 4.0, "pyroContinuity": 3, "connected": true}}},
+        {"tap": "back"}
       ]
     },
     {
@@ -124,10 +128,13 @@
     {
       "id": "never",
       "label": "Active Never recording",
-      "description": "Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until Finalize Log is confirmed.",
+      "description": "Creates an active dual-link log with Stop Logging set to Never. Recording remains active after touchdown until leaving Live is confirmed.",
       "operations": [
         {"logs": []},
         {"configuration": {"dualReceiver": true, "neverStopLogging": true}},
+        {"tap": "ok"},
+        {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 3, "timestampDs": 10, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "connected": true}}}
       ]
@@ -167,6 +174,9 @@
       "operations": [
         {"logs": []},
         {"configuration": {"dualReceiver": true, "neverStopLogging": true}},
+        {"tap": "ok"},
+        {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "connected": true}}},
+        {"link": {"index": 2, "value": {"state": 3, "timestampDs": 10, "connected": true}}},
         {"link": {"index": 1, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}},
         {"link": {"index": 2, "value": {"state": 7, "timestampDs": 50, "latitude": 33.7369, "longitude": 132.4874, "connected": true}}},
         {"deviceStatus": {"finalizeFailure": true}}
@@ -178,6 +188,7 @@
       "description": "Injects a storage write failure as recording starts. Use it to check the recorder fault state and crossed logging indicator.",
       "operations": [
         {"logs": []},
+        {"tap": "ok"},
         {"deviceStatus": {"recorderWriteFailure": true}},
         {"link": {"index": 1, "value": {"state": 3, "timestampDs": 10, "latitude": 33.7365, "longitude": 132.4881, "connected": true}}}
       ]

@@ -1,6 +1,7 @@
 {
   "initial":{"ready":true,"configuration":{"dualReceiver":false,"neverStopLogging":false}},
   "steps":[
+    {"press":"ok"},
     {"set":{"link1.telemetry.state":3,"link1.telemetry.timestampDs":1}},
     {"advance":0},
     {"set":{"link1.telemetry.state":7,"link1.telemetry.timestampDs":2}},
@@ -20,10 +21,10 @@
     {"set":{"link1.telemetry.state":7,"link1.telemetry.timestampDs":2}},
     {"advance":0},
     {"assert":{"recorderState":"recording","recordedRowCount":2,"logCount":3}},
-    {"press":"down"},{"press":"ok"},{"press":"ok"},{"press":"down"},{"press":"ok"},
-    {"assert":{"currentDataSubview":"confirm_finalize","recorderState":"recording"}},
+    {"press":"back"},
+    {"assert":{"activeScreen":"live","liveExitState":"confirm","recorderState":"recording"}},
     {"press":"ok"},
-    {"assert":{"currentDataSubview":"list","recorderState":"idle","logCount":3}},
+    {"assert":{"activeScreen":"menu","recorderState":"idle","logCount":3}},
     {"snapshot":"recording-modes"}
   ]
 }

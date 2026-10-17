@@ -182,7 +182,7 @@ bool Recorder::finalizeFile(FinalizeReason reason [[maybe_unused]]) {
     return false;
   }
   const auto synced = file.sync();
-  file.close();
+  if (synced) file.close();
   xSemaphoreGive(fsMutex);
   if (!synced) {
     setFault("Could not finalize log");
@@ -215,7 +215,8 @@ bool Recorder::deleteFile(const char* name) {
   return result;
 }
 
-bool Recorder::submitAndWait(Command& command) {
+bool Recorder::submitAndWait(Command& command, bool* needsConfirmation) {
+  if (needsConfirmation != nullptr) *needsConfirmation = false;
   if (!initialized) {
     return false;
   }
@@ -231,10 +232,25 @@ bool Recorder::submitAndWait(Command& command) {
       return false;
     }
     if (response.requestId == command.requestId) {
+      if (needsConfirmation != nullptr) *needsConfirmation = response.needsConfirmation;
       return response.result;
     }
   }
   return false;
+}
+
+bool Recorder::startLiveRecording() {
+  Command command{};
+  command.type = CommandType::StartLive;
+  return submitAndWait(command);
+}
+
+bool Recorder::stopLiveRecording(bool onlyIfIdle, bool* needsConfirmation) {
+  if (needsConfirmation != nullptr) *needsConfirmation = false;
+  if (!initialized) return true;
+  Command command{};
+  command.type = onlyIfIdle ? CommandType::StopLiveIfIdle : CommandType::StopLive;
+  return submitAndWait(command, needsConfirmation);
 }
 
 bool Recorder::finalize(FinalizeReason reason) {
@@ -293,6 +309,7 @@ void Recorder::recordTask(void* pvParameter) {
       continue;
     }
     bool result = true;
+    bool needsConfirmation = false;
     if (command.type == CommandType::Sample) {
       if (!ref->enabled || ref->radioUpdatePaused) {
         continue;
@@ -313,7 +330,7 @@ void Recorder::recordTask(void* pvParameter) {
             portEXIT_CRITICAL(&ref->statusMux);
           }
         }
-      } else if (command.data.state > kReadyState) {
+      } else if (command.data.state > kReadyState && (ref->fileCreated || command.data.state < kTouchdownState)) {
         if (!Utils::isFilesystemAvailable() && !Utils::claimFirmwareStorage()) {
           ref->setFault("Storage unavailable for logging");
           result = false;
@@ -339,6 +356,29 @@ void Recorder::recordTask(void* pvParameter) {
       portEXIT_CRITICAL(&ref->statusMux);
     } else if (ref->radioUpdatePaused) {
       result = false;
+    } else if (command.type == CommandType::StartLive) {
+      result = !ref->fileCreated;
+      if (result) {
+        ref->armed = true;
+        ref->touchdownMask = ref->rearmMask = ref->completedParticipantMask = 0;
+        portENTER_CRITICAL(&ref->statusMux);
+        ref->status = RecorderStatus{};
+        portEXIT_CRITICAL(&ref->statusMux);
+        ref->enabled = true;
+      }
+    } else if (command.type == CommandType::StopLive || command.type == CommandType::StopLiveIfIdle) {
+      // Process earlier samples before closing; later samples are ignored once
+      // this succeeds. A failed close leaves recording enabled in Live.
+      // Check idle here, after queued samples, so a new flight still gets a prompt.
+      needsConfirmation = command.type == CommandType::StopLiveIfIdle && ref->fileCreated;
+      result = !ref->fileCreated ||
+               (command.type == CommandType::StopLive && ref->finalizeFile(FinalizeReason::UserRequested));
+      if (result) {
+        ref->enabled = false;
+        portENTER_CRITICAL(&ref->statusMux);
+        ref->status.state = RecorderState::Idle;
+        portEXIT_CRITICAL(&ref->statusMux);
+      }
     } else if (command.type == CommandType::Finalize) {
       result = ref->finalizeFile(command.reason);
     } else if (command.type == CommandType::Sync) {
@@ -369,7 +409,7 @@ void Recorder::recordTask(void* pvParameter) {
       }
     }
     if (command.requestId != 0U) {
-      const Response response{command.requestId, result};
+      const Response response{command.requestId, result, needsConfirmation};
       (void)xQueueSend(ref->responseQueue, &response, 0);
     }
   }

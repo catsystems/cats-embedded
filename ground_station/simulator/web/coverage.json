@@ -28,7 +28,7 @@
         {"path": "Equator or prime-meridian fix", "scenario": "qr-zero-coordinate.json; zero-coordinate fixture", "snapshot": "zero-coordinate-qr", "framebuffer": "Golden", "browser": "Fixture smoke"},
         {"path": "More than 11 logs", "scenario": "log-management.json; many fixture", "snapshot": "log-management", "framebuffer": "Deterministic", "browser": "Fixture smoke"},
         {"path": "Legacy CSV names", "scenario": "legacy-log-names.json", "snapshot": "legacy-log-names", "framebuffer": "Deterministic", "browser": "—"},
-        {"path": "Recording independent of screen", "scenario": "recording-independent.json", "snapshot": "screen-independent-recording", "framebuffer": "Deterministic", "browser": "—"},
+        {"path": "Recording only in Live; confirmed exit and re-entry", "scenario": "recording-live-only.json", "snapshot": "live-only-recording", "framebuffer": "Deterministic", "browser": "—"},
         {"path": "Automatic and Never-mode finalization", "scenario": "recording-modes.json; never fixture", "snapshot": "recording-modes", "framebuffer": "Deterministic", "browser": "Fixture smoke"},
         {"path": "Malformed or partial log", "scenario": "demo fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},
         {"path": "Deletion failure", "scenario": "delete-failure fixture", "snapshot": "—", "framebuffer": "Deterministic fixture load", "browser": "Fixture smoke"},

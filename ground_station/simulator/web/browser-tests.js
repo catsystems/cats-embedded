@@ -260,6 +260,16 @@ async function run() {
       assert(typeof state.activeScreen === 'string', `${fixture.id}: missing activeScreen`);
       assert(state.framebufferRevision > 0, `${fixture.id}: framebuffer was not rendered`);
       assert(bytes.length === 12000 && bytes.some(byte => byte !== 0), `${fixture.id}: invalid framebuffer`);
+      if (fixture.id === 'never' || fixture.id === 'finalize-failure') {
+        assert(state.activeScreen === 'live' && state.recorderState === 'recording' && state.activeFilename && state.recordedRowCount === 4,
+          `${fixture.id}: expected an active log including both touchdown samples`);
+        if (fixture.id === 'finalize-failure') {
+          tap(wasm, 'back'); tap(wasm, 'ok');
+          const failed = snapshot(wasm);
+          assert(failed.activeScreen === 'live' && failed.liveExitState === 'stop_failed' && failed.activeFilename === state.activeFilename,
+            'finalize-failure: failed close must retain the active log in Live');
+        }
+      }
     }
   });
 
@@ -277,6 +287,90 @@ async function run() {
     assert(state.recorderState === 'fault', `expected recorder fault, got ${state.recorderState}`);
     actualHashes.recorderFault = await framebufferHash(wasm);
     captureSelfTest('Recorder fault status bar');
+  });
+
+  await test('Live-only recording: confirmed exit, failure, and mid-flight re-entry', async () => {
+    const setLink = (index, value) => wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(index), JSON.stringify(value)]);
+    const setDevice = value => wasm.ccall('gs_set_device_status_json', null, ['string'], [JSON.stringify(value)]);
+    wasm.ccall('gs_reset', null, [], []);
+    wasm.ccall('gs_set_logs_json', null, ['string'], ['[]']);
+    wasm.ccall('gs_set_configuration_json', null, ['string'], ['{"dualReceiver":true,"neverStopLogging":true}']);
+    setDevice({usb: true});
+    setLink(1, {state: 3, timestampDs: 10});
+    assert(snapshot(wasm).recorderState === 'idle' && snapshot(wasm).logCount === 0, 'Menu does not record');
+    assert(snapshot(wasm).usbStorageState === 'host', 'telemetry outside Live does not reclaim USB');
+    tap(wasm, 'right'); tap(wasm, 'ok');
+    setLink(2, {state: 3, timestampDs: 10});
+    assert(snapshot(wasm).activeScreen === 'recovery' && snapshot(wasm).logCount === 0, 'Recovery does not record');
+    tap(wasm, 'back'); tap(wasm, 'left'); tap(wasm, 'ok');
+    setLink(1, {state: 3, timestampDs: 11, altitudeM: 100, velocityMps: 40, connected: true});
+    setLink(2, {state: 3, timestampDs: 11, altitudeM: 110, velocityMps: 42, connected: true});
+    let state = snapshot(wasm);
+    assert(state.recorderState === 'recording' && state.recordedRowCount === 2 && state.logCount === 1, 'Live records both links');
+    assert(state.usbStorageState === 'firmware', 'recording reclaims USB');
+    tap(wasm, 'back');
+    state = snapshot(wasm);
+    assert(state.activeScreen === 'live' && state.liveExitState === 'confirm', 'Back asks only while recording');
+    captureSelfTest('Leave Live - direct A and B actions');
+    setLink(1, {state: 4, timestampDs: 12});
+    assert(snapshot(wasm).recordedRowCount === 3, 'recording continues while confirmation is open');
+    tap(wasm, 'left'); tap(wasm, 'right');
+    assert(snapshot(wasm).liveExitState === 'confirm' && snapshot(wasm).recorderState === 'recording', 'direction buttons do not stop recording');
+    tap(wasm, 'back');
+    assert(snapshot(wasm).liveExitState === 'none' && snapshot(wasm).recorderState === 'recording', 'B returns to Live and keeps recording');
+    captureSelfTest('Live after cancelling exit');
+    assert(snapshot(wasm).logCount === 1, 'B does not restart the log');
+    tap(wasm, 'back');
+    setDevice({finalizeFailure: true}); tap(wasm, 'ok');
+    assert(snapshot(wasm).activeScreen === 'live' && snapshot(wasm).liveExitState === 'stop_failed', 'failed stop stays in Live');
+    captureSelfTest('Leave Live - stop failed');
+    tap(wasm, 'back'); setDevice({finalizeFailure: false});
+    tap(wasm, 'back'); tap(wasm, 'ok');
+    assert(snapshot(wasm).activeScreen === 'menu' && snapshot(wasm).recorderState === 'idle', 'successful close leaves Live');
+    tap(wasm, 'down'); tap(wasm, 'ok'); tap(wasm, 'ok');
+    setLink(1, {state: 4, timestampDs: 13});
+    assert(snapshot(wasm).currentDataSubview === 'details' && snapshot(wasm).recordedRowCount === 3, 'Data opens directly and does not record');
+    tap(wasm, 'back'); tap(wasm, 'back'); tap(wasm, 'up'); tap(wasm, 'ok');
+    setLink(1, {state: 4, timestampDs: 14});
+    state = snapshot(wasm);
+    assert(state.recorderState === 'recording' && state.activeFilename === 'log_001.csv' && state.logCount === 2 && state.recordedRowCount === 1,
+      'mid-flight re-entry creates a new segment without READY');
+    tap(wasm, 'back'); tap(wasm, 'ok');
+    tap(wasm, 'right'); tap(wasm, 'right'); tap(wasm, 'down'); tap(wasm, 'ok');
+    setLink(1, {state: 4, timestampDs: 15});
+    assert(snapshot(wasm).activeScreen === 'settings' && snapshot(wasm).logCount === 2 && snapshot(wasm).recorderState === 'idle', 'Settings does not record');
+
+    wasm.ccall('gs_reset', null, [], []);
+    wasm.ccall('gs_set_logs_json', null, ['string'], ['[]']);
+    tap(wasm, 'ok'); tap(wasm, 'back');
+    assert(snapshot(wasm).activeScreen === 'menu' && snapshot(wasm).recorderState === 'idle' && snapshot(wasm).logCount === 0,
+      'Back leaves immediately before recording starts');
+    tap(wasm, 'ok');
+    setLink(1, {state: 3, timestampDs: 20});
+    setLink(1, {state: 7, timestampDs: 21});
+    assert(snapshot(wasm).recorderState === 'idle', 'touchdown closes the log');
+    tap(wasm, 'back');
+    assert(snapshot(wasm).activeScreen === 'menu' && snapshot(wasm).logCount === 1, 'Back leaves immediately after recording finishes');
+
+    tap(wasm, 'ok');
+    setLink(1, {state: 3, timestampDs: 22}); tap(wasm, 'back');
+    setLink(1, {state: 7, timestampDs: 23}); tap(wasm, 'ok');
+    assert(snapshot(wasm).activeScreen === 'menu' && snapshot(wasm).logCount === 2, 'A leaves if touchdown finishes recording while the prompt is open');
+    for (const dualReceiver of [false, true]) {
+      for (const neverStopLogging of [false, true]) {
+        wasm.ccall('gs_reset', null, [], []);
+        wasm.ccall('gs_set_logs_json', null, ['string'], ['[]']);
+        wasm.ccall('gs_set_configuration_json', null, ['string'], [JSON.stringify({dualReceiver, neverStopLogging})]);
+        setDevice({usb: true});
+        tap(wasm, 'ok');
+        setLink(1, {state: 7, timestampDs: 30});
+        setLink(2, {state: 7, timestampDs: 30});
+        assert(snapshot(wasm).recorderState === 'idle' && snapshot(wasm).logCount === 0, 'DOWN re-entry never starts a log');
+        assert(snapshot(wasm).usbStorageState === 'host', 'DOWN alone does not reclaim USB storage');
+        tap(wasm, 'back');
+        assert(snapshot(wasm).activeScreen === 'menu' && snapshot(wasm).liveExitState === 'none', 'B leaves DOWN without a prompt');
+      }
+    }
   });
 
   await test('framebuffer goldens', async () => {
@@ -1031,7 +1125,7 @@ async function run() {
     sample(1, 12); check(0, drogue, 'telemetry recovery retains the established phase and restarts confirmation');
     advance(1900); sample(1, 12); check(0, drogue, 'stale time cannot count toward confirmation');
     advance(100); sample(1, 12); check(0, main, 'fresh recovery samples can confirm Main');
-    reset(38); sample(1, 12); tap(wasm, 'back'); advance(6000); sample(1, 12); tap(wasm, 'ok');
+    reset(38); sample(1, 12); tap(wasm, 'back'); tap(wasm, 'ok'); advance(6000); sample(1, 12); tap(wasm, 'ok');
     check(0, drogue, 'a telemetry gap cancels pending confirmation even while outside Live');
 
     reset(10, 80); sample(1, 14); advance(1000); sample(2, 57); advance(1000); sample(1, 14);
@@ -1053,7 +1147,7 @@ async function run() {
     sample(1, 14, {timestampDs: 32760}); advance(2000); sample(1, 14, {timestampDs: 12});
     check(0, drogue, 'confirmation handles the 15-bit timestamp wrap');
 
-    reset(10); tap(wasm, 'back'); advance(60000);
+    reset(10); tap(wasm, 'back'); tap(wasm, 'ok'); advance(60000);
     sample(1, 38, {timestampDs: 500}); tap(wasm, 'ok');
     check(0, drogue, 'a restarted source timestamp after an outage initializes the new flight');
     confirm(63, fast, 'confirmation continues on the restarted source timeline');

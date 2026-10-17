@@ -47,6 +47,7 @@ void HmiController::start() {
   recoveryLocations_ = {};
   clearQr();
   liveDownrange_ = true;
+  liveExitState_ = "none";
   sensorOrientation_ = false;
   keyboardActive_ = false;
   keyboardSelection_ = 0;
@@ -231,7 +232,10 @@ void HmiController::enter(Screen screen) {
                                    screen_ == Screen::RadioUpdate;
   screen_ = screen;
   clearQr();
-  if (screen_ == Screen::Live) liveDownrange_ = true;
+  if (screen_ == Screen::Live) {
+    liveDownrange_ = true;
+    liveExitState_ = logs_.startLiveRecording() ? "none" : "start_failed";
+  }
   if (screen_ == Screen::Testing) {
     testingState_ = TestingState::Disclaimer;
     testingSelection_ = 0;
@@ -292,6 +296,43 @@ void HmiController::menuStep(uint64_t nowMs) {
 }
 
 void HmiController::liveStep(uint64_t nowMs) {
+  if (liveExitState_ == "start_failed" || liveExitState_ == "stop_failed") {
+    if (pressed(HmiButton::Back)) {
+      if (liveExitState_ == "start_failed") {
+        if (logs_.stopLiveRecording()) enter(Screen::Menu);
+      } else {
+        liveExitState_ = "none";
+        liveDownrange_ = true;
+      }
+    }
+    return;
+  }
+  if (liveExitState_ == "confirm") {
+    if (pressed(HmiButton::Back)) {
+      liveExitState_ = "none";
+      liveDownrange_ = true;
+    } else if (pressed(HmiButton::Ok)) {
+      if (!logs_.stopLiveRecording()) {
+        liveExitState_ = "stop_failed";
+      } else {
+        automaticUsbSharePending_ = device_.snapshot().usb;
+        enter(Screen::Menu);
+      }
+    }
+    return;
+  }
+  if (pressed(HmiButton::Back)) {
+    bool needsConfirmation = false;
+    if (logs_.stopLiveRecording(true, &needsConfirmation)) {
+      automaticUsbSharePending_ = device_.snapshot().usb;
+      enter(Screen::Menu);
+    } else if (needsConfirmation) {
+      liveExitState_ = "confirm";
+    } else {
+      liveExitState_ = "stop_failed";
+    }
+    return;
+  }
   if (pressed(HmiButton::Right)) {
     liveDownrange_ = false;
     emit("live_view", 0, 0, "gnss");
@@ -299,9 +340,6 @@ void HmiController::liveStep(uint64_t nowMs) {
   if (pressed(HmiButton::Left)) {
     liveDownrange_ = true;
     emit("live_view", 0, 0, "downrange");
-  }
-  if (pressed(HmiButton::Back)) {
-    enter(Screen::Menu);
   }
   (void)nowMs;
 }
@@ -311,17 +349,21 @@ void HmiController::ingestTelemetry() {
   const auto first = link1_.snapshot();
   const auto second = link2_.snapshot();
   if (first.telemetry.updated) {
-    if (first.telemetry.state > 2 && device_.snapshot().usbStorageState != "firmware") {
+    if (screen_ == Screen::Live && first.telemetry.state > 2 &&
+        (first.telemetry.state < 7 || !logs_.recorderStatus().activeFilename.empty()) &&
+        device_.snapshot().usbStorageState != "firmware") {
       device_.requestFirmwareStorage();
     }
-    logs_.record(first.telemetry, 1);
+    if (screen_ == Screen::Live) logs_.record(first.telemetry, 1);
     link1_.clearUpdates();
   }
   if (second.telemetry.updated) {
-    if (second.telemetry.state > 2 && device_.snapshot().usbStorageState != "firmware") {
+    if (screen_ == Screen::Live && second.telemetry.state > 2 &&
+        (second.telemetry.state < 7 || !logs_.recorderStatus().activeFilename.empty()) &&
+        device_.snapshot().usbStorageState != "firmware") {
       device_.requestFirmwareStorage();
     }
-    logs_.record(second.telemetry, 2);
+    if (screen_ == Screen::Live) logs_.record(second.telemetry, 2);
     link2_.clearUpdates();
   }
 }
@@ -889,6 +931,7 @@ HmiSnapshot HmiController::snapshot() const {
   result.settingsVersions = settingsVersions_;
   result.inputState = "idle";
   result.liveView = liveDownrange_ ? "downrange" : "gnss";
+  result.liveExitState = liveExitState_;
   result.sensorView = sensorOrientation_ ? "orientation" : "readings";
   for (const bool held : input_.held) {
     if (held) {

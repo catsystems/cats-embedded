@@ -111,6 +111,13 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
       }
     }
     window_.updateLiveNavigation(telemetry_[0], telemetry_[1], &navigation_);
+    if (state.liveExitState == "confirm") {
+      window_.initLiveConfirmExit();
+    } else if (state.liveExitState == "stop_failed") {
+      window_.initDataMessage("Stop Failed", "Unable to close recording");
+    } else if (state.liveExitState == "start_failed") {
+      window_.initDataMessage("Log Error", "Unable to enable recording");
+    }
   } else if (state.screen == "recovery") {
     if (state.qrView == "recovery_link_1") {
       window_.showLocationQr(

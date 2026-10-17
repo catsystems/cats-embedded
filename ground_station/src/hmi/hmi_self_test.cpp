@@ -45,9 +45,7 @@ void Hmi::startSelfTest() {
     return;
   }
   // The queue barrier drains any in-flight packet before touching storage.
-  recorder.disable();
   if (!recorder.sync() || recorder.getStatus().state != RecorderState::Idle) {
-    recorder.enable();
     window.initDataMessage("Self-test unavailable", "Recorder is busy. Try again.");
     return;
   }
@@ -112,7 +110,6 @@ bool Hmi::testStorage() {
 
 void Hmi::leaveSelfTest() {
   navigation.enableSelfTestSampling(false);
-  recorder.enable();
   automaticUsbSharePending = Utils::isConnected();
   state = SETTINGS;
   window.initBar();
