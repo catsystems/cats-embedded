@@ -36,7 +36,6 @@ void Hmi::begin() {
 
   recorder.begin();
   recorder.configure(systemConfig.config.receiverMode, systemConfig.config.neverStopLogging);
-  recorder.enable();
   link1.setPacketSink(&recorder, 1);
   link2.setPacketSink(&recorder, 2);
   static RadioUpdate::RadioFirmwareUpdater updater(recorder, link1, link2);
@@ -136,7 +135,12 @@ void Hmi::menu() {
   if (okButton.wasPressed() || centerButton.wasPressed()) {
     state = static_cast<State>(menuIndex + 1);
     if (state == LIVE) {
-      initLive();
+      if (recorder.startLiveRecording()) {
+        initLive();
+      } else {
+        liveExitState = LiveExitState::StartFailed;
+        window.initDataMessage("Log Error", "Unable to enable recording");
+      }
     } else if (state == RECOVERY) {
       initRecovery();
     } else if (state == TESTING) {
@@ -154,7 +158,11 @@ void Hmi::menu() {
 /* LIVE */
 
 void Hmi::initLive() {
+  liveExitState = LiveExitState::None;
   window.initLive();
+  window.updateLive(&link1.data, &navigation, &link1.info, 0);
+  window.updateLive(&link2.data, &navigation, &link2.info, 1);
+  window.refresh();
   lastLiveRefresh = millis();
 }
 
@@ -165,10 +173,48 @@ bool Hmi::liveButtonPending() const {
 }
 
 void Hmi::live() {
+  if (liveExitState == LiveExitState::StartFailed || liveExitState == LiveExitState::StopFailed) {
+    if (backButton.wasPressed()) {
+      if (liveExitState == LiveExitState::StartFailed) {
+        // Also cancel a start command whose acknowledgement may have timed out.
+        if (!recorder.stopLiveRecording()) return;
+        state = MENU;
+        window.initMenu(menuIndex);
+      } else {
+        initLive();
+      }
+    }
+    return;
+  }
+  if (liveExitState == LiveExitState::Confirm) {
+    if (backButton.wasPressed()) {
+      initLive();
+    } else if (okButton.wasPressed()) {
+      if (!recorder.stopLiveRecording()) {
+        liveExitState = LiveExitState::StopFailed;
+        window.initDataMessage("Stop Failed", "Unable to close recording");
+        return;
+      }
+      state = MENU;
+      automaticUsbSharePending = Utils::isConnected();
+      window.initMenu(menuIndex);
+    }
+    return;
+  }
   // Honour navigation before a full LCD transfer can delay button polling.
   if (backButton.wasPressed()) {
-    state = MENU;
-    window.initMenu(menuIndex);
+    bool needsConfirmation = false;
+    if (recorder.stopLiveRecording(true, &needsConfirmation)) {
+      state = MENU;
+      automaticUsbSharePending = Utils::isConnected();
+      window.initMenu(menuIndex);
+    } else if (needsConfirmation) {
+      liveExitState = LiveExitState::Confirm;
+      window.initLiveConfirmExit();
+    } else {
+      liveExitState = LiveExitState::StopFailed;
+      window.initDataMessage("Stop Failed", "Unable to close recording");
+    }
     return;
   }
   if (rightButton.wasPressed()) {
@@ -1298,7 +1344,8 @@ void Hmi::update(void *pvParameter) {
     if (ref->state != SELF_TEST && millis() - barUpdate >= 1000 && (ref->state != LIVE || !ref->liveButtonPending())) {
       barUpdate = millis();
       const float voltage = static_cast<float>(analogRead(18)) * 0.00062F;  // 0.00059154929F;
-      if (!ref->isLogging && Utils::isFilesystemAvailable()) {
+      // Live can start/finalize recording after the status snapshot. Do not scan its shared FAT cache here.
+      if (ref->state != LIVE && !ref->isLogging && Utils::isFilesystemAvailable()) {
         ref->flashFreeMemory = Utils::getFlashMemoryUsage();
       }
       if (link2.time.isUpdated()) {

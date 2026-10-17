@@ -199,6 +199,8 @@ class ILogStore {
   virtual void configure(bool dual, bool neverStop) = 0;
   virtual void record(const TelemetrySample& sample, uint8_t link) = 0;
   virtual bool finalize() = 0;
+  virtual bool startLiveRecording() = 0;
+  virtual bool stopLiveRecording(bool onlyIfIdle = false, bool* needsConfirmation = nullptr) = 0;
   virtual bool remove(const std::string& name) = 0;
 };
 
@@ -227,6 +229,7 @@ struct HmiSnapshot {
   std::array<std::string, 2> settingsVersions{};
   std::string inputState = "idle";
   std::string liveView = "downrange";
+  std::string liveExitState = "none";
   std::string sensorView = "readings";
   int16_t menuSelection = 0;
   int16_t testingSelection = 0;
@@ -375,6 +378,7 @@ class HmiController {
   std::array<FlightStatisticsSnapshot, 2> recoveryLocations_{};
   int8_t selectedRecoveryLink_ = 0;
   bool liveDownrange_ = true;
+  std::string liveExitState_ = "none";
   bool sensorOrientation_ = false;
   bool keyboardActive_ = false;
   uint64_t versionLastRequest_ = 0;

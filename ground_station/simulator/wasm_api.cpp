@@ -87,7 +87,7 @@ class Logs final : public ILogStore {
       }
       return;
     }
-    if (sample.state <= 2) return;
+    if (sample.state <= 2 || (activeIndex < 0 && sample.state >= 7)) return;
     if (failWrite) {
       status.state = "fault";
       status.lastError = "Injected write failure";
@@ -129,6 +129,20 @@ class Logs final : public ILogStore {
     touchdownMask = 0;
     status.state = "idle";
     status.activeFilename.clear();
+    return true;
+  }
+
+  bool startLiveRecording() override {
+    if (activeIndex >= 0) return false;
+    armed = true;
+    touchdownMask = rearmMask = completedParticipants = 0;
+    status = RecorderSnapshot{};
+    return true;
+  }
+  bool stopLiveRecording(bool onlyIfIdle = false, bool* needsConfirmation = nullptr) override {
+    if (needsConfirmation != nullptr) *needsConfirmation = onlyIfIdle && activeIndex >= 0;
+    if (activeIndex >= 0) return !onlyIfIdle && finalize();
+    status.state = "idle";
     return true;
   }
 
@@ -506,6 +520,7 @@ void rebuildSnapshot() {
                return output;
              }() + "]" +
              ",\"liveView\":" + quote(state.liveView) +
+             ",\"liveExitState\":" + quote(state.liveExitState) +
              ",\"sensorView\":" + quote(state.sensorView) +
              ",\"testingState\":" + quote(state.testingState) +
              ",\"testingSelection\":" + std::to_string(state.testingSelection) +

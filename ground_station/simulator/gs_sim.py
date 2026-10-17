@@ -323,6 +323,7 @@ class Simulator:
         self.participant_mask = 0
         self.touchdown_mask = 0
         self.recorder_armed = True
+        self.live_exit_state = "none"
         self.completed_participants = 0
         self.rearm_mask = 0
         self.keyboard_index = 0
@@ -625,11 +626,10 @@ class Simulator:
             if not telemetry.get("updated", False):
                 continue
             telemetry["updated"] = False
+            if self.screen != "live":
+                continue
             source_bit = 1 << index
             state = int(telemetry.get("state", 0))
-            if state > 2 and self.state["deviceStatus"].get("usbStorageState", "firmware") != "firmware":
-                self.state["deviceStatus"]["usbStorageState"] = "firmware"
-                self.emit("usb_storage_reclaimed_for_logging")
             if not self.recorder_armed:
                 if state <= 2:
                     self.rearm_mask |= source_bit
@@ -641,8 +641,11 @@ class Simulator:
                         self.completed_participants = 0
                         self.recorded_rows = 0
                 continue
-            if state <= 2:
+            if state <= 2 or (not self.active_filename and state >= 7):
                 continue
+            if self.state["deviceStatus"].get("usbStorageState", "firmware") != "firmware":
+                self.state["deviceStatus"]["usbStorageState"] = "firmware"
+                self.emit("usb_storage_reclaimed_for_logging")
             if self.state["deviceStatus"].get("recorderWriteFailure", False):
                 self.recorder_state = "fault"
                 continue
@@ -747,6 +750,12 @@ class Simulator:
             self.emit("menu_selection", value=self.menu_selection)
         if "ok" in pressed or "center" in pressed:
             self.screen = MENU_SCREENS[self.menu_selection]
+            if self.screen == "live":
+                self.live_exit_state = "none"
+                self.recorder_armed = True
+                self.touchdown_mask = self.rearm_mask = self.completed_participants = 0
+                self.participant_mask = self.recorded_rows = self.dropped_rows = 0
+                self.recorder_state = "idle"
             if self.screen == "sensors":
                 self.sensor_view = "readings"
             if self.screen == "data":
@@ -762,12 +771,33 @@ class Simulator:
             self.render_screen()
 
     def live_step(self, pressed: set[str]) -> None:
+        if self.live_exit_state == "stop_failed":
+            if "back" in pressed:
+                self.live_exit_state = "none"
+            return
+        if self.live_exit_state == "confirm":
+            if "back" in pressed:
+                self.live_exit_state = "none"
+            elif "ok" in pressed:
+                if self.active_filename and not self.finalize_recording():
+                    self.live_exit_state = "stop_failed"
+                else:
+                    self.recorder_state = "idle"
+                    self.automatic_usb_share_pending = bool(self.state["deviceStatus"].get("usb", False))
+                    self.to_menu()
+            return
+        if "back" in pressed:
+            if self.active_filename:
+                self.live_exit_state = "confirm"
+            else:
+                self.recorder_state = "idle"
+                self.automatic_usb_share_pending = bool(self.state["deviceStatus"].get("usb", False))
+                self.to_menu()
+            return
         if "right" in pressed:
             self.emit("live_view", text="gnss")
         if "left" in pressed:
             self.emit("live_view", text="downrange")
-        if "back" in pressed:
-            self.to_menu()
 
     def recovery_step(self, pressed: set[str]) -> None:
         if self.config().get("dualReceiver", False):
@@ -1289,6 +1319,7 @@ class Simulator:
             "settingsSelection": self.settings_selection,
             "dataSelection": self.data_selection,
             "dataStatistics": self.data_statistics,
+            "liveExitState": self.live_exit_state,
             "currentDataSubview": self.data_subview,
             "logCount": len(logs),
             "logScrollOffset": self.log_scroll_offset,
@@ -1539,7 +1570,7 @@ def deterministic_test(root: Path) -> int:
     for scenario_name in ("startup-intro.json", "startup-static.json", "menu.json", "live.json", "testing-timeout.json",
                           "sensors.json", "sensors-orientation.json", "settings.json", "settings-versions.json", "bootloader.json", "replay.json",
                           "qr-recovery.json", "qr-data.json", "qr-no-fix.json", "qr-zero-coordinate.json",
-                          "recording-independent.json", "recording-modes.json", "log-management.json",
+                          "recording-live-only.json", "recording-modes.json", "log-management.json",
                           "legacy-log-names.json", "usb-storage.json", "radio-update.json"):
         scenario_path = scenario_dir / scenario_name
         if scenario_path.exists():

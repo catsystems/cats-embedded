@@ -102,6 +102,7 @@ class Window {
   void drawSettingsTriangles(int16_t submenuIdx, int16_t color);
 
   void initBox(const char *text);
+  void initLiveConfirmExit();
 
   void initKeyboard(char *text, uint32_t maxLength = 0);
   void drawKeyboard(char *text, int32_t keyHighlight, bool uppercase, uint32_t maxLength = 0);
