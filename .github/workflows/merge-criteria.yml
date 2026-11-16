@@ -74,6 +74,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.commit_sha || github.sha }}
 
     - name: Run clang-format
       uses: jidicula/clang-format-action@v4.18.0
@@ -97,6 +99,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
 
       - name: Check cache
         uses: actions/cache@v6
@@ -179,6 +183,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
 
       - name: Check cache
         uses: actions/cache@v6
@@ -190,7 +196,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.project == 'flight_computer' && '3.15.2' || '3.11' }}
           cache: 'pip'
 
       - name: Install dependencies
