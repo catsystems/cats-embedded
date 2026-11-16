@@ -9,12 +9,22 @@ Import("env")
 # below the PlatformIO package root. A shared PlatformIO home can retain the
 # package metadata while losing the installer-added PATH adjustment, leaving
 # an otherwise valid compiler undiscoverable on Windows.
-toolchain_root = env.PioPlatform().get_package_dir("toolchain-xtensa-esp-elf")
+platform = env.PioPlatform()
+toolchain_root = platform.get_package_dir("toolchain-xtensa-esp-elf")
 if toolchain_root:
     nested_toolchain_bin = os.path.join(toolchain_root, "xtensa-esp-elf", "bin")
     compiler_name = "xtensa-esp32s2-elf-g++.exe" if os.name == "nt" else "xtensa-esp32s2-elf-g++"
     if os.path.isfile(os.path.join(nested_toolchain_bin, compiler_name)):
         env.PrependENVPath("PATH", nested_toolchain_bin)
+
+# Keep source paths in diagnostics and debug information independent of the build machine.
+project_root = env.subst("$PROJECT_DIR").replace(os.sep, "/")
+core_root = platform.config.get("platformio", "core_dir").replace(os.sep, "/")
+prefix_map_flags = [
+    f"-ffile-prefix-map={project_root}=.",
+    f"-ffile-prefix-map={core_root}=platformio",
+]
+env.Append(CCFLAGS=prefix_map_flags, LINKFLAGS=prefix_map_flags)
 
 env.Append(
     # Unfortunately we can't use the standard standard,
