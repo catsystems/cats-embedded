@@ -196,7 +196,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.project == 'flight_computer' && '3.15.2' || '3.11' }}
+          python-version: ${{ matrix.project == 'ground_station' && '3.14.10' || '3.15.2' }}
           cache: 'pip'
 
       - name: Install dependencies

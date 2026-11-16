@@ -70,13 +70,22 @@ platformio run -d flight_computer --environment debug
 
 Pull requests are automatically checked for formatting, build errors, and static-analysis warnings.
 
-### Reproducing the Vega release build
+### Reproducing Windows release builds
 
-Use 64-bit Windows and a Python 3.15.2 virtual environment. Install `requirements.txt` as shown above and build from the commit used by the GitHub Actions upload job. Use a dedicated PlatformIO Core directory for Vega so other installed SCons versions cannot affect the build.
+On 64-bit Windows, create a virtual environment with the Python version used by the GitHub Actions upload job. Install `requirements.txt` as shown above and build the same commit as that job.
+
+| Project | Python |
+| --- | --- |
+| `flight_computer` | 3.15.2 |
+| `telemetry` | 3.15.2 |
+| `ground_station` | 3.14.10 |
+
+Use a dedicated PlatformIO Core directory for each project to isolate the installed SCons version. Set `$project` to the directory you want to build.
 
 ```powershell
-$env:PLATFORMIO_CORE_DIR = "$env:LOCALAPPDATA\CATS\vega-platformio"
-python -m platformio run -d flight_computer -e release
+$project = 'flight_computer'
+$env:PLATFORMIO_CORE_DIR = "$env:LOCALAPPDATA\CATS\${project}-platformio"
+python -m platformio run -d $project
 ```
 
 ## Contributing
