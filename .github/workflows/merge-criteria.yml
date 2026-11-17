@@ -33,6 +33,9 @@ jobs:
 
       - name: Filter changed directories
         id: changed-files-filtered
+        env:
+          REQUESTED_COMMIT_SHA: ${{ inputs.commit_sha }}
+          CHANGED_DIRECTORIES: ${{ steps.changed-files.outputs.all_changed_files }}
         # The build pipeline is triggered only for the project in which the changes happened.
         # For example if a change was made in flight_computer/src/main.cpp, a pipeline will
         # run only for the 'flight_computer' project.
@@ -42,14 +45,13 @@ jobs:
         # Additionally, the pipeline will also run for all three projects if it is triggered
         # when pushing to main.
         run: |
-          contains_dot=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".")) | length')
-          contains_dotgithub=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq 'map(select(. == ".github")) | length')
-          is_manual_trigger=$(echo '${{ github.event.inputs.commit_sha }}')
+          contains_dot=$(jq 'map(select(. == ".")) | length' <<< "$CHANGED_DIRECTORIES")
+          contains_dotgithub=$(jq 'map(select(. == ".github")) | length' <<< "$CHANGED_DIRECTORIES")
 
-          if [[ -n "$is_manual_trigger" || "${GITHUB_REF}" == "refs/heads/main" || $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
+          if [[ -n "$REQUESTED_COMMIT_SHA" || "$GITHUB_REF" == "refs/heads/main" || $contains_dot -gt 0 || $contains_dotgithub -gt 0 ]]; then
             filtered_array='["flight_computer","ground_station","telemetry"]'
           else
-            filtered_array=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq -c '[.[] | select(. == "flight_computer" or . == "ground_station" or . == "telemetry")]')
+            filtered_array=$(jq -c '[.[] | select(. == "flight_computer" or . == "ground_station" or . == "telemetry")]' <<< "$CHANGED_DIRECTORIES")
           fi
 
           echo "$filtered_array"
