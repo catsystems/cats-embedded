@@ -70,6 +70,24 @@ platformio run -d flight_computer --environment debug
 
 Pull requests are automatically checked for formatting, build errors, and static-analysis warnings.
 
+### Reproducing Windows release builds
+
+On 64-bit Windows, create a virtual environment with the Python version used by the GitHub Actions upload job. Install `requirements.txt` as shown above and build the same commit as that job.
+
+| Project | Python |
+| --- | --- |
+| `flight_computer` | 3.15.2 |
+| `telemetry` | 3.15.2 |
+| `ground_station` | 3.14.10 |
+
+Use a dedicated PlatformIO Core directory for each project to isolate the installed SCons version. Set `$project` to the directory you want to build.
+
+```powershell
+$project = 'flight_computer'
+$env:PLATFORMIO_CORE_DIR = "$env:LOCALAPPDATA\CATS\${project}-platformio"
+python -m platformio run -d $project
+```
+
 ## Contributing
 
 Contributions are welcome. Examples include:

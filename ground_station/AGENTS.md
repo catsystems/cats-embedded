@@ -81,8 +81,9 @@ QR navigation, and live compass checks on hardware.
   Preserve those deltas when rebasing a vendored library and record the exact upstream tag or commit.
 - Do not blanket-format vendored libraries. Preserve upstream source unless a documented CATS compatibility patch is
   necessary.
-- Use PlatformIO 6.1.19 with Python 3.11 from the root `requirements.txt`. Upload-only packages are pinned in
-  `ground_station/requirements-upload.txt`; never install the unrelated Python package named `serial`.
+- Install PlatformIO 6.1.19 from the root `requirements.txt`. Use Python 3.14.10 for Windows release builds and
+  Python 3.11 for WSL pre-commit checks. Upload-only packages are pinned in `ground_station/requirements-upload.txt`;
+  never install the unrelated Python package named `serial`.
 - On Windows, if `platformio` is not on `PATH`, use
   `& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe"` and verify that it reports version 6.1.19. Do not
   create a separate legacy environment just to make the command available.
