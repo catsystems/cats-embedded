@@ -75,7 +75,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
       with:
-        ref: ${{ inputs.commit_sha || github.sha }}
+        ref: ${{ inputs.commit_sha }}
 
     - name: Run clang-format
       uses: jidicula/clang-format-action@v4.18.0
@@ -100,7 +100,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.commit_sha || github.sha }}
+          ref: ${{ inputs.commit_sha }}
 
       - name: Check cache
         uses: actions/cache@v6
@@ -184,7 +184,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.commit_sha || github.sha }}
+          ref: ${{ inputs.commit_sha }}
 
       - name: Check cache
         uses: actions/cache@v6
