@@ -141,10 +141,9 @@ class Window {
     uint8_t next = 0;
   };
   void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
-  void drawLivePanelIcons(int16_t x);
-  void drawLiveNavigationIcons(int16_t x, LiveState state);
-  bool updateLiveTestingContinuity(size_t index);
+  void drawLivePanelIcons(int16_t x, LiveState state);
   void drawPyroContinuity(int16_t x, int16_t baseline, int8_t continuity, uint8_t channel);
+  void drawTestingSelection(int16_t index);
   bool updateLiveInfo(TelemetryInfo *info, int16_t index);
   bool updateLiveDescent(TelemetryData &data, size_t index, bool hasRange, float distanceM);
   float updateTrendHistory(TrendHistory &history, float value, uint32_t now);

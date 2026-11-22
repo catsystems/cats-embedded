@@ -490,8 +490,7 @@ void Utils::streamUsb(Telemetry *link, uint8_t link_idx) {
                 "Link %d: Ts: %ld.%ld, State: %d, Lat: %ld.%05ld, Lon: %ld.%05ld, Alt: %ld, Vel: %d, V: %ld.%ld, "
                 "Pyro1: %u, Pyro2: %u",
                 link_idx, time_int, time_prec, data.state, lat_int, lat_prec, lon_int, lon_prec, altitude, velocity,
-                voltage_int, voltage_prec, static_cast<unsigned>((data.pyro_continuity & 0x01U) != 0U),
-                static_cast<unsigned>((data.pyro_continuity & 0x02U) != 0U));
+                voltage_int, voltage_prec, data.pyro_continuity & 1U, (data.pyro_continuity >> 1) & 1U);
   console.log.println(print_char);
 }
 

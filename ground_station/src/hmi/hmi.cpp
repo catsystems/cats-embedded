@@ -394,6 +394,17 @@ void Hmi::recovery() {
 
 void Hmi::initTesting() { window.initTesting(); }
 
+void Hmi::refreshTesting(uint8_t continuity, bool redrawGrid) {
+  if (!redrawGrid && (millis() - lastTestingRefresh < kTestingRefreshIntervalMs || liveButtonPending() ||
+                      (digitalRead(kUpButtonPin) == LOW) != upButton.isPressed() ||
+                      (digitalRead(kDownButtonPin) == LOW) != downButton.isPressed() ||
+                      (digitalRead(kOkButtonPin) == LOW) != okButton.isPressed())) {
+    return;
+  }
+  window.updateTesting(testingIndex, continuity);
+  lastTestingRefresh = millis();
+}
+
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Hmi::testing() {
   const auto receivedAt = link1.data.getLastUpdateTimeMs();
@@ -409,7 +420,22 @@ void Hmi::testing() {
     return;
   }
 
-  if (!boxWindow && backButton.wasPressed()) {
+  if (boxWindow) {
+    bool exit = false;
+    if (okButton.wasPressed()) {
+      link1.triggerEvent(testingIndex + 1);
+      exit = true;
+    }
+
+    if (backButton.wasPressed() || exit) {
+      window.initTestingReady();
+      boxWindow = false;
+    }
+    refreshTesting(packet.pyro_continuity, !boxWindow);
+    return;
+  }
+
+  if (backButton.wasPressed()) {
     state = MENU;
     if (testingState >= WAIT_FOR_START) {
       link1.exitTesting();
@@ -451,8 +477,7 @@ void Hmi::testing() {
           if (packet.state == 1 && counter > 5) {
             testingIndex = 0;
             window.initTestingReady();
-            window.updateTesting(testingIndex, packet.pyro_continuity);
-            lastTestingRefresh = millis();
+            refreshTesting(packet.pyro_continuity, true);
             testingState = STARTED;
             counter = 0;
             return;
@@ -476,21 +501,12 @@ void Hmi::testing() {
 
     case STARTED: {
       const uint32_t oldIndex = testingIndex;
-      if (boxWindow) {
-        const bool confirmed = okButton.wasPressed();
-        if (confirmed || backButton.wasPressed()) {
-          if (confirmed) link1.triggerEvent(testingIndex + 1);
-          window.initTestingReady();
-          window.updateTesting(testingIndex, packet.pyro_continuity);
-          lastTestingRefresh = millis();
-          boxWindow = false;
-          return;
-        }
-      } else if (okButton.wasPressed()) {
+      if (okButton.wasPressed()) {
         window.initTestingBox(testingIndex);
         boxWindow = true;
         return;
-      } else if (upButton.wasPressed() && (testingIndex % 4) > 0) {
+      }
+      if (upButton.wasPressed() && (testingIndex % 4) > 0) {
         testingIndex--;
       } else if (downButton.wasPressed() && (testingIndex % 4) < 3) {
         testingIndex++;
@@ -500,16 +516,7 @@ void Hmi::testing() {
         testingIndex -= 4;
       }
 
-      const bool buttonPending = (digitalRead(kUpButtonPin) == LOW) != upButton.isPressed() ||
-                                 (digitalRead(kDownButtonPin) == LOW) != downButton.isPressed() ||
-                                 (digitalRead(kLeftButtonPin) == LOW) != leftButton.isPressed() ||
-                                 (digitalRead(kRightButtonPin) == LOW) != rightButton.isPressed() ||
-                                 (digitalRead(kOkButtonPin) == LOW) != okButton.isPressed() ||
-                                 (digitalRead(kBackButtonPin) == LOW) != backButton.isPressed();
-      if (oldIndex != testingIndex || (!buttonPending && millis() - lastTestingRefresh >= kTestingRefreshIntervalMs)) {
-        window.updateTesting(testingIndex, packet.pyro_continuity);
-        lastTestingRefresh = millis();
-      }
+      refreshTesting(packet.pyro_continuity, oldIndex != testingIndex);
     } break;
 
     default:

@@ -114,6 +114,7 @@ class Hmi {
   bool showRecoveryLocation(int8_t linkIndex);
   void initTesting();
   void testing();
+  void refreshTesting(uint8_t continuity, bool redrawGrid);
   void initData();
   void drawDataList();
   void openSelectedLog();
