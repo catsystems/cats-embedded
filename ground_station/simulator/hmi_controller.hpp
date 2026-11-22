@@ -44,6 +44,7 @@ struct LinkSnapshot {
   LinkInfoSnapshot info;
   bool enabled = true;
   bool connected = false;
+  bool awaitingTelemetryAfterDisconnect = false;
   std::string firmwareVersion;
   uint32_t versionReplies = 0;
 };
@@ -224,6 +225,7 @@ class IDeviceStatus {
 struct HmiSnapshot {
   std::string screen = "logo";
   std::string testingState = "disclaimer";
+  bool testingConnectionLost = false;
   std::string calibrationState = "idle";
   std::string settingsState = "list";
   std::array<std::string, 2> settingsVersions{};
@@ -307,7 +309,9 @@ class HmiController {
     FirmwareUpdate,
     RadioUpdate
   };
-  enum class TestingState : uint8_t { Disclaimer, CanStart, CannotStart, Waiting, Failed, Started, ConfirmEvent };
+  enum class TestingState : uint8_t {
+    Disclaimer, CanStart, CannotStart, ModeDisabled, Waiting, TimedOut, ConnectionLost, Started, ConfirmEvent
+  };
   enum class CalibrationState : uint8_t { Idle, Prepare, Calibrating, Concluded };
   enum class DataSubview : uint8_t { List, Details, Options, ConfirmFinalize, ConfirmDelete, Message };
 

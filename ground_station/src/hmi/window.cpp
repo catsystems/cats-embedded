@@ -461,6 +461,7 @@ void Window::initLive() {
   teleData[0] = {};
   teleData[1] = {};
   hasLiveData[0] = hasLiveData[1] = false;
+  liveTestingContinuity[0] = liveTestingContinuity[1] = kPyroNotDrawn;
   livestate = LiveState::kShowDownRange;
   std::memset(liveNavigationText, 0, sizeof(liveNavigationText));
 
@@ -469,35 +470,8 @@ void Window::initLive() {
 
   display.drawLine(0, 49, 400, 49, BLACK);
 
-  display.drawBitmap(3, 50, live_altitude, 24, 24, BLACK);
-  display.drawBitmap(3, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(3, 100, down_range, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(3, 125, compass, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(174, 100, right_arrow, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(174, 125, right_arrow, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(1, 150, live_battery, 24, 24, BLACK);
-
-  display.drawBitmap(120, 148, live_one, 24, 24, BLACK);
-  display.drawBitmap(158, 148, live_two, 24, 24, BLACK);
-
-  display.drawBitmap(320, 148, live_one, 24, 24, BLACK);
-  display.drawBitmap(358, 148, live_two, 24, 24, BLACK);
-
-  display.drawBitmap(203, 50, live_altitude, 24, 24, BLACK);
-  display.drawBitmap(203, 75, data_speed, 24, 24, BLACK);
-  display.drawBitmap(203, 100, down_range, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(203, 125, compass, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(374, 100, right_arrow, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(374, 125, right_arrow, 24, 24,
-                     BLACK); /* If this is changed, also need to change in function UpdateLiveState */
-  display.drawBitmap(201, 150, live_battery, 24, 24, BLACK);
+  drawLivePanelIcons(0);
+  drawLivePanelIcons(200);
 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
@@ -519,20 +493,35 @@ void Window::initLive() {
   surface.present();
 }
 
+void Window::drawLivePanelIcons(int16_t x) {
+  display.drawBitmap(x + 3, 50, live_altitude, 24, 24, BLACK);
+  display.drawBitmap(x + 3, 75, data_speed, 24, 24, BLACK);
+  display.drawBitmap(x + 1, 150, live_battery, 24, 24, BLACK);
+  display.drawBitmap(x + 120, 148, live_one, 24, 24, BLACK);
+  display.drawBitmap(x + 158, 148, live_two, 24, 24, BLACK);
+  drawLiveNavigationIcons(x, livestate);
+}
+
+void Window::drawLiveNavigationIcons(int16_t x, LiveState state) {
+  const bool showGnss = state == LiveState::kShowGnss;
+  display.drawBitmap(x + 3, 100, showGnss ? live_lat : down_range, 24, 24, BLACK);
+  display.drawBitmap(x + 3, 125, showGnss ? live_lon : compass, 24, 24, BLACK);
+  display.drawBitmap(x + 174, 100, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+  display.drawBitmap(x + 174, 125, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+}
+
 void Window::UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state) {
   if (livestate == state) return;
   const bool showGnss = state == LiveState::kShowGnss;
   TelemetryData data[] = {*data1, *data2};  // Presentation getters only consume these copies.
   for (int16_t index = 0; index < 2; ++index) {
+    if (teleData[index].testingMode()) continue;
     const int16_t x = index * 200;
     display.fillRect(x + 28, 99, 146, 50, WHITE);
     display.fillRect(x + 3, 100, 24, 49, WHITE);
     display.fillRect(x + 174, 100, 24, 49, WHITE);
     liveRangeTrend[index] = 3;
-    display.drawBitmap(x + 3, 100, showGnss ? live_lat : down_range, 24, 24, BLACK);
-    display.drawBitmap(x + 3, 125, showGnss ? live_lon : compass, 24, 24, BLACK);
-    display.drawBitmap(x + 174, 100, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
-    display.drawBitmap(x + 174, 125, showGnss ? left_arrow : right_arrow, 24, 24, BLACK);
+    drawLiveNavigationIcons(x, state);
     if (showGnss && !data[index].testingMode()) {
       const float latitude = data[index].lat(), longitude = data[index].lon();
       const bool valid = LocationQr::IsValid(latitude, longitude);
@@ -561,9 +550,8 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
     char values[2][24]{"--", "--"};
     float distanceM = 0.0F;
     bool hasRange = false;
-    if (data[index].testingMode()) {
-      values[0][0] = values[1][0] = '\0';
-    } else if (validHome && validTarget[index]) {
+    const bool testing = teleData[index].testingMode();
+    if (!testing && validHome && validTarget[index]) {
       const auto target = targets[index];
       constexpr float radians = PI_F / 180.0F;
       constexpr float earthRadiusM = 6378100.0F;
@@ -588,6 +576,10 @@ bool Window::updateLiveNavigation(const TelemetryData &data1, const TelemetryDat
     changed |= updateLiveDescent(data[index], index, hasRange, distanceM);
     dataAge[index] = static_cast<uint32_t>(clock.nowMs()) - data[index].getLastUpdateTimeMs();
     changed |= updateLiveInfo(&infoData[index], static_cast<int16_t>(index));
+    if (testing) {
+      changed |= updateLiveTestingContinuity(index);
+      continue;
+    }
     if (livestate != LiveState::kShowDownRange) continue;
     for (size_t row = 0; row < 2; ++row) {
       if (std::strcmp(values[row], liveNavigationText[index][row]) == 0) continue;
@@ -826,13 +818,14 @@ void Window::updateLive(TelemetryInfo *info, int16_t index) {
   updateLiveInfo(&infoData[index], index);
 }
 
-void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index) {
+void Window::updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index,
+                        bool hasCurrentPacket) {
   if (index > 1) {
     return;
   }
 
   lastTeleData[index] = data->getLastUpdateTimeMs();
-  hasLiveData[index] = true;
+  hasLiveData[index] = hasCurrentPacket;
 
   // Clear update flag
   data->clear();
@@ -888,9 +881,12 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
 
   if (data->testingMode()) {
     drawCentreString("TESTING", static_cast<int16_t>(xOffset + 100), 42);
-    display.fillRect(static_cast<int16_t>(xOffset + 1), 50, 198, 151, WHITE);
-    display.setCursor(static_cast<int16_t>(xOffset + 20), 80);
-    display.print("DO NOT FLY!");
+    // The erase pass also restores the icons for a following normal-flight packet.
+    display.fillRect(xOffset + 1, 50, 198, 169, WHITE);
+    if (color == BLACK) drawCentreString("DO NOT FLY!", xOffset + 100, 80);
+    liveTestingContinuity[index] = kPyroNotDrawn;
+    std::memset(liveNavigationText[index], 0, sizeof(liveNavigationText[index]));
+    if (color == WHITE) drawLivePanelIcons(xOffset);
     return;
   }
 
@@ -962,6 +958,34 @@ void Window::updateLiveData(TelemetryData *data, int16_t index, uint16_t color) 
   display.setFont(&FreeSans9pt7b);
   display.setTextSize(1);
   display.setTextColor(GetNegativeColor(color));
+}
+
+bool Window::updateLiveTestingContinuity(size_t index) {
+  const auto age = static_cast<uint32_t>(clock.nowMs()) - teleData[index].getLastUpdateTimeMs();
+  const auto continuity = hasLiveData[index] && age < kTestingTelemetryTimeoutMs
+                              ? static_cast<int8_t>(teleData[index].pyroContinuity())
+                              : kPyroUnavailable;
+  if (continuity == liveTestingContinuity[index]) return false;
+  liveTestingContinuity[index] = continuity;
+  const auto x = static_cast<int16_t>(index * 200);
+  display.fillRect(x + 1, 150, 198, 42, WHITE);
+  drawPyroContinuity(x + 100, 165, continuity, 1);
+  drawPyroContinuity(x + 100, 187, continuity, 2);
+  return true;
+}
+
+void Window::drawPyroContinuity(int16_t x, int16_t baseline, int8_t continuity, uint8_t channel) {
+  char text[24];
+  const bool available = continuity != kPyroUnavailable;
+  std::snprintf(text, sizeof(text), "Pyro %u%s", static_cast<unsigned>(channel), available ? "" : ": Unavailable");
+  display.setFont(&FreeSans9pt7b);
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  drawCentreString(text, available ? x - 10 : x, baseline);
+  if (available) {
+    const bool closed = (continuity & (1 << (channel - 1))) != 0;
+    display.drawBitmap(x + 20, baseline - 13, closed ? live_checkmark : live_cross, 16, 16, BLACK);
+  }
 }
 
 bool Window::updateLiveInfo(TelemetryInfo *info, int16_t index) {
@@ -1324,7 +1348,8 @@ void Window::initTestingLost() {
   display.print("very quickly. Make sure you have a good");
   display.setCursor(6, 170);
   display.print("connection before continuing.");
-  display.setFont(&FreeSans9pt7b);
+  drawPyroContinuity(100, 203, kPyroUnavailable, 1);
+  drawPyroContinuity(300, 203, kPyroUnavailable, 2);
   display.setCursor(6, 225);
   display.print("Cancel (B)");
 
@@ -1349,6 +1374,7 @@ void Window::initTestingWait() {
 
 void Window::initTestingReady() {
   clearMainScreen();
+  testingContinuity = kPyroNotDrawn;
 
   display.drawLine(199, 18, 199, 220, BLACK);
   display.drawLine(200, 18, 200, 220, BLACK);
@@ -1369,6 +1395,7 @@ void Window::initTestingReady() {
 
   display.setTextSize(1);
   display.setFont(&FreeSans12pt7b);
+  display.setTextColor(BLACK);
 
   drawCentreString(eventName[0], 100, 51);
   drawCentreString(eventName[1], 100, 101);
@@ -1381,32 +1408,30 @@ void Window::initTestingReady() {
   drawCentreString(eventName[7], 300, 201);
 }
 
-void Window::updateTesting(int16_t index) {
-  auto xOffset = static_cast<int16_t>(201 * (oldTestingIndex / 4));
-  auto yOffset = static_cast<int16_t>(50 * (oldTestingIndex % 4) + 20);
+void Window::updateTesting(int16_t index, uint8_t continuity) {
+  if (index == oldTestingIndex && continuity == testingContinuity) return;
+  if (index != oldTestingIndex || testingContinuity == kPyroNotDrawn) {
+    display.setTextSize(1);
+    display.setFont(&FreeSans12pt7b);
+    const int16_t cells[] = {oldTestingIndex, index};
+    uint16_t background = WHITE;
+    for (const int16_t cell : cells) {
+      const auto x = static_cast<int16_t>(201 * (cell / 4));
+      const auto y = static_cast<int16_t>(50 * (cell % 4) + 20);
+      display.fillRect(x, y, 199, 48, background);
+      display.setTextColor(GetNegativeColor(background));
+      drawCentreString(eventName[cell], static_cast<int16_t>(200 * (cell / 4) + 100), y + 31);
+      background = BLACK;
+    }
+    oldTestingIndex = index;
+  }
 
-  display.fillRect(xOffset, yOffset, 199, 48, WHITE);
-
-  display.setTextSize(1);
-  display.setFont(&FreeSans12pt7b);
-  display.setTextColor(BLACK);
-
-  xOffset = static_cast<int16_t>(200 * (oldTestingIndex / 4) + 100);
-  yOffset = static_cast<int16_t>(50 * (oldTestingIndex % 4) + 51);
-
-  drawCentreString(eventName[oldTestingIndex], xOffset, yOffset);
-
-  xOffset = static_cast<int16_t>(201 * (index / 4));
-  yOffset = static_cast<int16_t>(50 * (index % 4) + 20);
-
-  display.fillRect(xOffset, yOffset, 199, 48, BLACK);
-
-  display.setTextColor(WHITE);
-  xOffset = static_cast<int16_t>(200 * (index / 4) + 100);
-  yOffset = static_cast<int16_t>(50 * (index % 4) + 51);
-  drawCentreString(eventName[index], xOffset, yOffset);
-
-  oldTestingIndex = index;
+  if (continuity != testingContinuity) {
+    display.fillRect(0, 220, 400, 20, WHITE);
+    testingContinuity = static_cast<int8_t>(continuity);
+    drawPyroContinuity(100, 235, testingContinuity, 1);
+    drawPyroContinuity(300, 235, testingContinuity, 2);
+  }
   surface.present();
 }
 

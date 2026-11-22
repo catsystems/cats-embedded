@@ -826,6 +826,181 @@ async function run() {
     }
   });
 
+  await test('Testing accepts A only while the ARM prompt is valid', async () => {
+    const update = value => wasm.ccall('gs_set_link_json', null, ['string', 'string'], ['1', JSON.stringify(value)]);
+    const openPrompt = testingMode => {
+      wasm.ccall('gs_reset', null, [], []);
+      update({connected: true, testingMode});
+      tap(wasm, 'right'); tap(wasm, 'right'); tap(wasm, 'ok'); tap(wasm, 'ok');
+    };
+    const assertBlocked = expected => {
+      tap(wasm, 'ok');
+      const state = snapshot(wasm);
+      assert(state.testingState === expected, 'A leaves the blocked prompt in place');
+      assert(!state.actions.some(action => ['testing_enter', 'link_disabled'].includes(action.type)),
+        'the blocked prompt leaves both receivers alone');
+      tap(wasm, 'back');
+      assert(snapshot(wasm).activeScreen === 'menu', 'B cancels the prompt');
+    };
+    openPrompt(false);
+    captureSelfTest('Testing - mode disabled');
+    assertBlocked('mode_disabled');
+    openPrompt(true);
+    assert(snapshot(wasm).testingState === 'can_start', 'a fresh Testing Mode packet shows the ARM prompt');
+    update({testingMode: false});
+    assertBlocked('mode_disabled');
+    openPrompt(true);
+    wasm.ccall('gs_advance', null, ['number'], [1000]);
+    captureSelfTest('Testing - no connection');
+    assertBlocked('cannot_start');
+  });
+
+  await test('Testing grid: Left and Right stay on the same row', async () => {
+    wasm.ccall('gs_reset', null, [], []);
+    wasm.ccall('gs_set_link_json', null, ['string', 'string'],
+      ['1', JSON.stringify({connected: true, testingMode: true, state: 1})]);
+    for (const button of ['right', 'right', 'ok', 'ok', 'ok']) tap(wasm, button);
+    assert(snapshot(wasm).testingState === 'started', 'the Testing grid is open');
+
+    for (let row = 0; row < 4; row++) {
+      if (row > 0) tap(wasm, 'down');
+      tap(wasm, 'left');
+      assert(snapshot(wasm).testingSelection === row, `Left at the left edge stays on row ${row + 1}`);
+      tap(wasm, 'right');
+      assert(snapshot(wasm).testingSelection === row + 4, `Right crosses row ${row + 1}`);
+      tap(wasm, 'right');
+      assert(snapshot(wasm).testingSelection === row + 4, `Right at the right edge stays on row ${row + 1}`);
+      tap(wasm, 'left');
+      assert(snapshot(wasm).testingSelection === row, `Left crosses back on row ${row + 1}`);
+    }
+  });
+
+  await test('pyro continuity: independent channels, Live views, and link loss', async () => {
+    const advance = ms => wasm.ccall('gs_advance', null, ['number'], [ms]);
+    const update = (link, value) => wasm.ccall('gs_set_link_json', null, ['string', 'string'], [String(link), JSON.stringify(value)]);
+    const sample = (link, pyroContinuity, extra = {}) =>
+      update(link, {connected: true, state: 1, testingMode: true, pyroContinuity, ...extra});
+    const region = (x, y, width, height) => {
+      const bytes = framebuffer(wasm);
+      const rows = [];
+      for (let row = y; row < y + height; ++row) {
+        const start = row * 50 + x / 8;
+        rows.push(...bytes.subarray(start, start + width / 8));
+      }
+      return rows.join(',');
+    };
+    const testing = channel => region(channel * 200 + 8, 220, 184, 20);
+    const live = (link, channel) => region(link * 200 + 8, 150 + 22 * channel, 184, 20);
+
+    wasm.ccall('gs_reset', null, [], []);
+    sample(1, 1, {state: 0});
+    tap(wasm, 'right'); tap(wasm, 'right'); tap(wasm, 'ok'); tap(wasm, 'ok'); tap(wasm, 'ok');
+    sample(1, 1);
+    assert(snapshot(wasm).testingState === 'started', 'the grid opens after arming');
+    const testingClosed = testing(0), testingOpen = testing(1);
+    captureSelfTest('Testing - Pyro 1 closed and Pyro 2 open');
+    sample(1, 3);
+    assert(testing(0) === testingClosed && testing(1) !== testingOpen, 'Pyro 2 closes independently in Testing');
+    const testingClosed2 = testing(1);
+    sample(1, 2);
+    assert(testing(0) !== testingClosed && testing(1) === testingClosed2, 'Pyro 1 opens independently in Testing');
+    tap(wasm, 'ok');
+    assert(snapshot(wasm).testingState === 'confirm_event', 'the confirmation is open');
+    sample(1, 1);
+    assert(testing(0) === testingClosed && testing(1) === testingOpen, 'the continuity strip stays live during confirmation');
+    advance(1000);
+    assert(snapshot(wasm).testingState === 'failed', 'stale telemetry clears the armed grid and its confirmation');
+    tap(wasm, 'ok');
+    assert(!snapshot(wasm).actions.some(action => action.type === 'event_triggered'),
+      'the stale confirmation cannot trigger an event');
+    captureSelfTest('Testing - Connection Lost and both readings unavailable');
+    for (const button of ['back', 'left', 'left', 'ok']) tap(wasm, button);
+    assert(snapshot(wasm).activeScreen === 'live', 'Live opens after backing out of the failed test');
+    const warningAfterExit = region(8, 20, 184, 65);
+    const readingsAfterExit = [live(0, 0), live(0, 1)];
+    captureSelfTest('Live - returning from a lost Testing connection');
+
+    wasm.ccall('gs_reset', null, [], []);
+    sample(1, 1);
+    sample(2, 2);
+    tap(wasm, 'ok');
+    const warning = region(8, 20, 184, 65);
+    const link1Closed = live(0, 0), link1Open = live(0, 1);
+    const link2Open = live(1, 0), link2Closed = live(1, 1);
+    assert(link1Closed !== link2Open && link1Open !== link2Closed, 'both channels have distinct open and closed states');
+    captureSelfTest('Live - opposing continuity states on the two receivers');
+    sample(1, 3);
+    assert(live(0, 0) === link1Closed && live(0, 1) !== link1Open, 'Pyro 2 closes independently in Live');
+    const link1Closed2 = live(0, 1);
+    sample(1, 2);
+    assert(live(0, 0) !== link1Closed && live(0, 1) === link1Closed2, 'Pyro 1 opens independently in Live');
+    tap(wasm, 'right'); tap(wasm, 'left');
+    assert(live(0, 0) === link2Open && live(0, 1) === link2Closed && region(8, 20, 184, 65) === warning,
+      'changing views preserves the warning and readings');
+    advance(900);
+    sample(2, 2);
+    advance(100);
+    assert(live(0, 0) !== link2Open && live(0, 1) !== link2Closed, 'both stale readings become unavailable');
+    assert(live(1, 0) === link2Open && live(1, 1) === link2Closed, 'a fresh second link keeps its readings');
+    assert(region(8, 20, 184, 65) === warning, 'the testing warning stays visible during link loss');
+    captureSelfTest('Live - Link 1 unavailable and Link 2 still receiving');
+    const unavailable = [live(0, 0), live(0, 1)];
+    assert(warningAfterExit === warning, 'leaving a failed test preserves the last reported Testing Mode warning');
+    assert(readingsAfterExit[0] === unavailable[0] && readingsAfterExit[1] === unavailable[1],
+      'leaving a failed test keeps both Live readings unavailable until another packet arrives');
+    const staysUnavailable = () => live(0, 0) === unavailable[0] && live(0, 1) === unavailable[1]
+      && region(8, 20, 184, 65) === warning;
+    update(1, {linkQuality: 97, rssi: -50});
+    assert(staysUnavailable(), 'receiver statistics do not refresh stale continuity');
+    update(1, {connected: false});
+    assert(staysUnavailable(), 'a disconnect preserves the warning and both unavailable readings');
+    update(1, {connected: true});
+    assert(staysUnavailable(), 'reconnection alone does not restore cached readings');
+    sample(1, 1);
+    assert(live(0, 0) === link1Closed && live(0, 1) === link1Open, 'new telemetry restores both readings');
+    update(1, {connected: false});
+    assert(staysUnavailable(), 'an explicit disconnect immediately invalidates a fresh sample');
+    update(1, {connected: true});
+    assert(staysUnavailable(), 'a quick reconnect still requires another packet');
+    assert(live(1, 0) === link2Open && live(1, 1) === link2Closed, 'Link 2 is unaffected by Link 1 reconnecting');
+    sample(1, 0, {testingMode: false, state: 2});
+    assert(region(8, 20, 184, 65) !== warning, 'normal telemetry restores the flight panel');
+  });
+
+  await test('Testing shows the current failure after a previous connection loss', async () => {
+    const packet = state => wasm.ccall('gs_set_link_json', null, ['string', 'string'],
+      ['1', JSON.stringify({connected: true, testingMode: true, state})]);
+    const advance = ms => wasm.ccall('gs_advance', null, ['number'], [ms]);
+    const failureTitle = () => framebuffer(wasm).slice(85 * 50, 110 * 50).join(',');
+    const openTesting = () => {
+      wasm.ccall('gs_reset', null, [], []);
+      for (const button of ['right', 'right', 'ok']) tap(wasm, button);
+    };
+    const waitForTimeout = () => {
+      packet(0);
+      tap(wasm, 'ok');
+      wasm.ccall('gs_press', null, ['string'], ['ok']);
+      packet(0); // The simulated receiver stays idle throughout this attempt.
+      wasm.ccall('gs_release', null, ['string'], ['ok']);
+      assert(snapshot(wasm).testingState === 'waiting', 'the simulator is waiting for a reply');
+      advance(10100);
+      assert(snapshot(wasm).actions.at(-1)?.type === 'testing_timeout', 'this attempt timed out');
+      return failureTitle();
+    };
+
+    openTesting();
+    const timeoutTitle = waitForTimeout();
+    openTesting();
+    packet(1);
+    tap(wasm, 'ok'); tap(wasm, 'ok');
+    advance(1000);
+    assert(snapshot(wasm).actions.at(-1)?.type === 'testing_connection_lost', 'this attempt lost its connection');
+    assert(failureTitle() !== timeoutTitle, 'connection loss and timeout have different titles');
+    tap(wasm, 'back'); tap(wasm, 'ok');
+    assert(waitForTimeout() === timeoutTitle, 'a later timeout displays the original timeout title');
+    captureSelfTest('Testing - timeout after an earlier connection loss');
+  });
+
   await test('live compass: eight directions, sector boundaries and label clearance', async () => {
     const set = (name, value) => wasm.ccall(name, null, ['string'], [JSON.stringify(value)]);
     const equal = (a, b) => a.every((pixel, index) => pixel === b[index]);

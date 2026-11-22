@@ -219,8 +219,13 @@ The serial stream emits one line per newly received telemetry packet. All units 
 ],
   [
 *V*: Flight-computer battery voltage in volts, with 0.1 V resolution
+],
+  [
+*Pyro1* / *Pyro2*: Continuity from the same telemetry packet for channels 1 and 2. `1` means continuity detected and `0` means open circuit.
 ]
 )
+
+The continuity fields follow `V` and are also reported in Testing Mode. If telemetry stops, the Ground Station sends no new lines for that link. Use the time of the last received line to expire its readings. Older Ground Station firmware omits both fields.
 
 #cats-figure(doc-image("How To Use/Groundstation/Ground_Station_USB_Streaming.png", width: 95%), caption: [Ground Station telemetry data from both radio links streamed over the USB serial port.])
 

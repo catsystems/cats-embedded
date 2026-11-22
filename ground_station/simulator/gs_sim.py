@@ -32,6 +32,7 @@ LOGO_DESCENT_START_MS = 1400
 LOGO_DESCENT_END_MS = 2850
 LOGO_SETTLE_END_MS = 3150
 BOOT_MS = 3500
+TESTING_TELEMETRY_TIMEOUT_MS = 1000
 STATIC_LOGO_MS = 2000
 MAXIMUM_BOOT_MS = 5000
 LONG_PRESS_MS = 500
@@ -351,6 +352,16 @@ class Simulator:
     def link(self, index: int) -> dict[str, Any]:
         return self.state["links"][index]
 
+    def mark_link_updates(self, index: int, patch: dict[str, Any]) -> None:
+        link = self.link(index)
+        for group in ("telemetry", "info"):
+            fields = patch.get(group, {})
+            if fields.keys() - {"updated", "lastUpdateMs"} and fields.get("updated", True):
+                link[group]["updated"] = True
+                link[group]["lastUpdateMs"] = fields.get("lastUpdateMs", self.now_ms)
+        if not link["connected"]:
+            link["telemetry"]["lastUpdateMs"] = None
+
     def emit(self, action: str, link: int = 0, value: int | float | None = None, text: str | None = None) -> None:
         item: dict[str, Any] = {"type": action}
         if link:
@@ -467,7 +478,9 @@ class Simulator:
                 link = self.link(index)
                 y = 110 + index * 48
                 self.frame.text(16, y, f"L{index + 1} {link['telemetry'].get('state', 0)}")
-                self.frame.text(130, y, f"AGE {max(0, self.now_ms - link['telemetry'].get('lastUpdateMs', 0))}ms")
+                received_at = link["telemetry"].get("lastUpdateMs")
+                age = f"{max(0, self.now_ms - received_at)}ms" if received_at is not None else "--"
+                self.frame.text(130, y, f"AGE {age}")
         elif self.screen == "recovery":
             if self.qr_view.startswith("recovery_link_"):
                 self.render(f"[Link {self.qr_view[-1]}] Last Location", self.qr_url)
@@ -844,6 +857,15 @@ class Simulator:
 
     def testing_step(self, pressed: set[str]) -> None:
         link1 = self.link(0)
+        telemetry = link1["telemetry"]
+        received_at = telemetry["lastUpdateMs"]
+        connected = (link1["connected"] and received_at is not None
+                     and 0 <= self.now_ms - received_at < TESTING_TELEMETRY_TIMEOUT_MS)
+        testing_enabled = connected and telemetry["testingMode"]
+        if self.testing_state in ("started", "confirm_event") and (not testing_enabled or telemetry["state"] != 1):
+            self.testing_state = "failed"
+            self.emit("testing_connection_lost", 1)
+            return
         if self.testing_state == "confirm_event":
             if "ok" in pressed:
                 event = self.keyboard_index + 1
@@ -853,17 +875,18 @@ class Simulator:
                 self.testing_state = "started"
             return
         if "back" in pressed:
-            if self.testing_state in ("waiting", "started", "confirm_event"):
+            if self.testing_state in ("waiting", "started", "failed"):
+                self.link(1)["enabled"] = True
                 self.emit("testing_exit", 1)
             self.to_menu()
             return
-        if self.testing_state == "disclaimer" and "ok" in pressed:
-            if link1.get("connected", False):
-                self.testing_state = "can_start"
-                self.emit("testing_connection", 1, 1)
+        if ((self.testing_state == "disclaimer" and "ok" in pressed)
+                or (self.testing_state == "can_start" and not testing_enabled)):
+            if connected:
+                self.testing_state = "can_start" if testing_enabled else "mode_disabled"
             else:
                 self.testing_state = "cannot_start"
-                self.emit("testing_connection", 1, 0)
+            self.emit("testing_connection", 1, int(connected))
         elif self.testing_state == "can_start" and "ok" in pressed:
             self.link(1)["enabled"] = False
             self.link(0)["enabled"] = True
@@ -872,8 +895,7 @@ class Simulator:
             self.emit("link_disabled", 2)
             self.emit("testing_enter", 1)
         elif self.testing_state == "waiting":
-            tel = link1["telemetry"]
-            if tel.get("testingMode") and tel.get("state") == 1:
+            if testing_enabled and telemetry["state"] == 1:
                 self.testing_state = "started"
                 self.emit("testing_started", 1)
             elif self.now_ms - self.testing_start > 10000:
@@ -891,9 +913,6 @@ class Simulator:
                 self.keyboard_index += 4
             if "ok" in pressed:
                 self.testing_state = "confirm_event"
-            if not link1.get("connected", False) or link1["telemetry"].get("state") != 1:
-                self.testing_state = "failed"
-                self.emit("testing_connection_lost", 1)
 
     def data_step(self, pressed: set[str]) -> None:
         logs = self.state.get("logs", [])
@@ -1177,34 +1196,33 @@ class Simulator:
             fail(f"set path '{path}' has no field '{key}'")
         if path in ("deviceStatus.usb", "device.usb") and not bool(value):
             self.state["deviceStatus"]["usbStorageState"] = "firmware"
-        if path.startswith("links") or path.startswith("link"):
-            # Injected peripheral values are observable updates, like a radio commit.
-            link_index = None
-            if path.startswith("link") and path[4:5].isdigit():
-                link_index = int(path[4]) - 1
-            elif path.startswith("links.") and path[6:7].isdigit():
-                link_index = int(path[6])
-            if link_index in (0, 1):
-                self.link(link_index)["telemetry"]["updated"] = True
-                self.link(link_index)["info"]["updated"] = True
 
     def set_initial(self, values: dict[str, Any]) -> None:
         if not isinstance(values, dict):
             fail("set step must be an object")
-        if any(isinstance(key, str) and "." in key for key in values):
+        link_updates = {}
+        if any("." in key for key in values):
             for key, value in values.items():
-                if "." in key:
-                    self.set_value(key, value)
-                else:
-                    self.set_value(key, value)
+                self.set_value(key, value)
+                match = re.fullmatch(r"(?:link([12])|links\.([01]))\.(\w+)(?:\.(\w+))?", key)
+                if match:
+                    index = int(match[1]) - 1 if match[1] else int(match[2])
+                    patch = link_updates.setdefault(index, {})
+                    if match[4]:
+                        patch.setdefault(match[3], {})[match[4]] = value
+                    else:
+                        patch[match[3]] = value
         else:
             merge(self.state, values)
+            link_updates = dict(enumerate(values.get("links", [])))
         default_links = defaults()["links"]
         supplied_links = self.state.get("links", [])
         self.state["links"] = [
             merge(copy.deepcopy(default_links[index]), supplied_links[index] if index < len(supplied_links) else {})
             for index in range(2)
         ]
+        for index, patch in link_updates.items():
+            self.mark_link_updates(index, patch)
         self.render_screen()
 
     def replay(self, spec: Any) -> None:
@@ -1386,6 +1404,9 @@ class Simulator:
             try:
                 if operation == "set":
                     self.set_initial(value)
+                elif operation == "tap":
+                    self.press(value)
+                    self.release(value)
                 elif operation == "press":
                     self.press(value)
                 elif operation == "release":
@@ -1493,20 +1514,13 @@ def apply_fixture_to_simulator(sim: Simulator, fixture: dict[str, Any], base_dir
         elif operation == "link":
             if not isinstance(value, dict) or value.get("index") not in (1, 2) or not isinstance(value.get("value"), dict):
                 fail(f"fixture {fixture.get('id', '<unknown>')} step {index}: link must have index and value")
-            link = sim.link(int(value["index"]) - 1)
             payload = value["value"]
-            for field in ("connected", "enabled"):
-                if field in payload:
-                    link[field] = payload[field]
-            for field in ("state", "errors", "altitudeM", "velocityMps", "latitude", "longitude", "voltage",
-                          "pyroContinuity", "testingMode", "timestampDs", "lastUpdateMs", "updated"):
-                if field in payload:
-                    link["telemetry"][field] = payload[field]
-            for field in ("linkQuality", "rssi", "snr"):
-                if field in payload:
-                    link["info"][field] = payload[field]
-            link["telemetry"]["updated"] = True
-            link["info"]["updated"] = True
+            index = int(value["index"]) - 1
+            patch = {key: payload[key] for key in ("connected", "enabled") if key in payload}
+            for group in ("telemetry", "info"):
+                patch[group] = {key: payload[key] for key in sim.link(index)[group] if key in payload}
+            merge(sim.link(index), patch)
+            sim.mark_link_updates(index, patch)
             sim.advance(0)
         elif operation == "tap":
             sim.press(str(value))
