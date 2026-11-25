@@ -22,7 +22,7 @@ class Hmi {
         leftButton(kLeftButtonPin, kButtonDebounceMs),
         rightButton(kRightButtonPin, kButtonDebounceMs),
         centerButton(1, kButtonDebounceMs),
-        okButton(7, kButtonDebounceMs),
+        okButton(kOkButtonPin, kButtonDebounceMs),
         backButton(kBackButtonPin, kButtonDebounceMs),
         window(display, systemConfig, clock) {}
 
@@ -39,9 +39,11 @@ class Hmi {
   static constexpr uint8_t kLeftButtonPin = 2;
   static constexpr uint8_t kRightButtonPin = 5;
   static constexpr uint8_t kBackButtonPin = 6;
+  static constexpr uint8_t kOkButtonPin = 7;
   static constexpr uint32_t kButtonDebounceMs = 15;
   static constexpr uint32_t kSensorRefreshIntervalMs = 200;
   static constexpr uint32_t kLiveRefreshIntervalMs = 200;
+  static constexpr uint32_t kTestingRefreshIntervalMs = 200;
 
   enum State {
     MENU = 0,
@@ -79,6 +81,7 @@ class Hmi {
 
   TestingState testingState = DISCLAIMER;
   uint32_t startTestingTime = 0;
+  uint32_t lastTestingRefresh = 0;
   int16_t testingIndex = 0;
 
   CalibrationState calibrationState = IDLE;
@@ -111,6 +114,7 @@ class Hmi {
   bool showRecoveryLocation(int8_t linkIndex);
   void initTesting();
   void testing();
+  void refreshTesting(uint8_t continuity, bool redrawGrid);
   void initData();
   void drawDataList();
   void openSelectedLog();

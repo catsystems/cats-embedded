@@ -394,8 +394,32 @@ void Hmi::recovery() {
 
 void Hmi::initTesting() { window.initTesting(); }
 
+void Hmi::refreshTesting(uint8_t continuity, bool redrawGrid) {
+  if (!redrawGrid && (millis() - lastTestingRefresh < kTestingRefreshIntervalMs || liveButtonPending() ||
+                      (digitalRead(kUpButtonPin) == LOW) != upButton.isPressed() ||
+                      (digitalRead(kDownButtonPin) == LOW) != downButton.isPressed() ||
+                      (digitalRead(kOkButtonPin) == LOW) != okButton.isPressed())) {
+    return;
+  }
+  window.updateTesting(testingIndex, continuity);
+  lastTestingRefresh = millis();
+}
+
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void Hmi::testing() {
+  const auto receivedAt = link1.data.getLastUpdateTimeMs();
+  const auto packet = link1.data.snapshot();
+  const auto packetAge = millis() - receivedAt;
+  const bool connected = packetAge < Window::kTestingTelemetryTimeoutMs;
+  const bool testingEnabled = connected && packet.testing_mode;
+  if (testingState == STARTED && (!testingEnabled || packet.state != 1)) {
+    testingState = FAILED;
+    boxWindow = false;
+    link1.exitTesting();
+    window.initTestingLost();
+    return;
+  }
+
   if (boxWindow) {
     bool exit = false;
     if (okButton.wasPressed()) {
@@ -405,9 +429,9 @@ void Hmi::testing() {
 
     if (backButton.wasPressed() || exit) {
       window.initTestingReady();
-      window.updateTesting(testingIndex);
       boxWindow = false;
     }
+    refreshTesting(packet.pyro_continuity, !boxWindow);
     return;
   }
 
@@ -420,25 +444,16 @@ void Hmi::testing() {
     testingState = DISCLAIMER;
 
     window.initMenu(menuIndex);
+    return;
+  }
+
+  if ((testingState == DISCLAIMER && okButton.wasPressed()) || (testingState == CAN_START && !testingEnabled)) {
+    testingState = testingEnabled ? CAN_START : CAN_NOT_START;
+    window.initTestingConfirmed(connected, testingEnabled);
+    return;
   }
 
   switch (testingState) {
-    case DISCLAIMER: {
-      if (okButton.wasPressed()) {
-        bool connected = false;
-        if ((link1.data.getLastUpdateTime() + 1000) > xTaskGetTickCount()) {
-          connected = true;
-        }
-
-        window.initTestingConfirmed(connected, link1.data.testingMode());
-        if (connected) {
-          testingState = CAN_START;
-        } else {
-          testingState = CAN_NOT_START;
-        }
-      }
-    } break;
-
     case CAN_START: {
       if (okButton.wasPressed()) {
         // Disable Link2
@@ -455,15 +470,17 @@ void Hmi::testing() {
     case WAIT_FOR_START: {
       static uint32_t counter = 0;
       if (link1.data.isUpdated()) {
-        // In testing mode state indicates if we sucessfully started the mode
-        if ((link1.data.getLastUpdateTime() + 200) > xTaskGetTickCount()) {
+        link1.data.clear();
+        if (packet.testing_mode && packetAge < 200) {
           counter++;
-          if (link1.data.state() == 1 && counter > 5) {
-            window.initTestingReady();
-            window.updateTesting(0);
+          // Vega uses state 1 to acknowledge arming in Testing Mode.
+          if (packet.state == 1 && counter > 5) {
             testingIndex = 0;
+            window.initTestingReady();
+            refreshTesting(packet.pyro_continuity, true);
             testingState = STARTED;
             counter = 0;
+            return;
           }
         } else {
           counter = 0;
@@ -477,12 +494,18 @@ void Hmi::testing() {
       }
     } break;
 
+    case DISCLAIMER:
     case CAN_NOT_START:
     case FAILED:
       break;
 
     case STARTED: {
       const uint32_t oldIndex = testingIndex;
+      if (okButton.wasPressed()) {
+        window.initTestingBox(testingIndex);
+        boxWindow = true;
+        return;
+      }
       if (upButton.wasPressed() && (testingIndex % 4) > 0) {
         testingIndex--;
       } else if (downButton.wasPressed() && (testingIndex % 4) < 3) {
@@ -493,28 +516,7 @@ void Hmi::testing() {
         testingIndex -= 4;
       }
 
-      if (link1.data.isUpdated()) {
-        if (link1.data.state() != 1) {
-          testingState = FAILED;
-          link1.exitTesting();
-          window.initTestingLost();
-        }
-      }
-
-      if ((link1.data.getLastUpdateTime() + 1000) < xTaskGetTickCount()) {
-        testingState = FAILED;
-        link1.exitTesting();
-        window.initTestingLost();
-      }
-
-      if (oldIndex != testingIndex) {
-        window.updateTesting(testingIndex);
-      }
-
-      if (okButton.wasPressed()) {
-        window.initTestingBox(testingIndex);
-        boxWindow = true;
-      }
+      refreshTesting(packet.pyro_continuity, oldIndex != testingIndex);
     } break;
 
     default:

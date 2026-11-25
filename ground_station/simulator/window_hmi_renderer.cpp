@@ -106,8 +106,10 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
                             state.liveView == "downrange" ? Window::LiveState::kShowDownRange
                                                          : Window::LiveState::kShowGnss);
     for (size_t index = 0; index < state.links.size(); ++index) {
-      if (state.links[index].connected) {
-        window_.updateLive(&telemetry_[index], &navigation_, &linkInfo_[index], static_cast<int16_t>(index));
+      const auto& link = state.links[index];
+      if (link.connected || link.telemetry.testingMode) {
+        window_.updateLive(&telemetry_[index], &navigation_, &linkInfo_[index], static_cast<int16_t>(index),
+                           link.connected && !link.awaitingTelemetryAfterDisconnect);
       }
     }
     window_.updateLiveNavigation(telemetry_[0], telemetry_[1], &navigation_);
@@ -145,23 +147,20 @@ void WindowHmiRenderer::render(const HmiSnapshot& state) {
   } else if (state.screen == "testing") {
     if (state.testingState == "disclaimer") {
       window_.initTesting();
-    } else if (state.testingState == "can_start") {
-      window_.initTestingConfirmed(true, state.links[0].telemetry.testingMode);
+    } else if (state.testingState == "can_start" || state.testingState == "mode_disabled") {
+      window_.initTestingConfirmed(true, state.testingState == "can_start");
     } else if (state.testingState == "cannot_start") {
       window_.initTestingConfirmed(false, false);
     } else if (state.testingState == "waiting") {
       window_.initTestingWait();
     } else if (state.testingState == "failed") {
-      const bool connectionLost =
-          std::any_of(state.actions.begin(), state.actions.end(),
-                      [](const PlatformAction& action) { return action.type == "testing_connection_lost"; });
-      if (connectionLost)
+      if (state.testingConnectionLost)
         window_.initTestingLost();
       else
         window_.initTestingFailed();
     } else {
       window_.initTestingReady();
-      window_.updateTesting(state.testingSelection);
+      window_.updateTesting(state.testingSelection, state.links[0].telemetry.pyroContinuity);
       if (state.testingState == "confirm_event") window_.initTestingBox(state.testingSelection);
     }
   } else if (state.screen == "data") {

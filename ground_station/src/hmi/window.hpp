@@ -37,6 +37,7 @@ class Window {
       : surface(surface), display(surface.gfx()), config(config), clock(clock) {}
 
   enum class LiveState { kShowGnss, kShowDownRange };
+  static constexpr uint32_t kTestingTelemetryTimeoutMs = 1000;
 
   void begin(bool resetLiveHistory = true);
   void logo();
@@ -54,7 +55,8 @@ class Window {
 
   void initLive();
   void updateLive(TelemetryInfo *info, int16_t index);
-  void updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index);
+  void updateLive(TelemetryData *data, Navigation *navigation, TelemetryInfo *info, int16_t index,
+                  bool hasCurrentPacket = true);
   void updateLive(TelemetryData *data, Navigation *navigation, int16_t index);
   void UpdateLiveState(TelemetryData *data1, TelemetryData *data2, Navigation *navigation, LiveState state);
   bool updateLiveNavigation(const TelemetryData &data1, const TelemetryData &data2, Navigation *navigation);
@@ -71,7 +73,7 @@ class Window {
   void initTestingWait();
   void initTestingReady();
   void initTestingLost();
-  void updateTesting(int16_t index);
+  void updateTesting(int16_t index, uint8_t continuity);
   void initTestingBox(int16_t index);
 
   void initData(bool fileAvailable);
@@ -139,6 +141,9 @@ class Window {
     uint8_t next = 0;
   };
   void updateLiveData(TelemetryData *data, int16_t index, uint16_t color);
+  void drawLivePanelIcons(int16_t x, LiveState state);
+  void drawPyroContinuity(int16_t x, int16_t baseline, int8_t continuity, uint8_t channel);
+  void drawTestingSelection(int16_t index);
   bool updateLiveInfo(TelemetryInfo *info, int16_t index);
   bool updateLiveDescent(TelemetryData &data, size_t index, bool hasRange, float distanceM);
   float updateTrendHistory(TrendHistory &history, float value, uint32_t now);
@@ -186,6 +191,9 @@ class Window {
   LiveState livestate{LiveState::kShowDownRange};
   char liveNavigationText[2][2][24]{};
   bool hasLiveData[2]{};
+  static constexpr int8_t kPyroUnavailable = -1;
+  static constexpr int8_t kPyroNotDrawn = -2;
+  int8_t liveTestingContinuity[2]{kPyroNotDrawn, kPyroNotDrawn};
   char liveInfoText[2][32]{};
   char liveDescentText[2][40]{};
   TrendHistory rangeHistory[2]{};
@@ -197,6 +205,7 @@ class Window {
   int16_t subMenuSettingIndex{0};
   int16_t oldMenuHighlight{0};
   int16_t oldTestingIndex{0};
+  int8_t testingContinuity{kPyroNotDrawn};
 
   bool upperCase{false};
   int32_t oldKey{0};

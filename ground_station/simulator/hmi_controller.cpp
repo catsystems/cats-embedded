@@ -6,6 +6,7 @@
 
 #include "hmi/location_qr.hpp"
 #include "hmi/settings.hpp"
+#include "hmi/window.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -397,6 +398,17 @@ void HmiController::updateAutomaticUsbStorage() {
 }
 
 void HmiController::testingStep(uint64_t nowMs) {
+  const auto link = link1_.snapshot();
+  const bool connected = link.connected && !link.awaitingTelemetryAfterDisconnect &&
+                         nowMs - link.telemetry.lastUpdateMs < Window::kTestingTelemetryTimeoutMs;
+  const bool testingEnabled = connected && link.telemetry.testingMode;
+  if ((testingState_ == TestingState::Started || testingState_ == TestingState::ConfirmEvent) &&
+      (!testingEnabled || link.telemetry.state != 1)) {
+    testingState_ = TestingState::ConnectionLost;
+    link1_.exitTesting();
+    emit("testing_connection_lost", 1);
+    return;
+  }
   if (testingState_ == TestingState::ConfirmEvent) {
     if (pressed(HmiButton::Ok)) {
       link1_.triggerEvent(static_cast<uint8_t>(testingSelection_ + 1));
@@ -410,7 +422,7 @@ void HmiController::testingStep(uint64_t nowMs) {
   }
   if (pressed(HmiButton::Back)) {
     if (testingState_ == TestingState::Waiting || testingState_ == TestingState::Started ||
-        testingState_ == TestingState::ConfirmEvent) {
+        testingState_ == TestingState::TimedOut || testingState_ == TestingState::ConnectionLost) {
       link1_.exitTesting();
       link2_.enable();
       emit("testing_exit", 1);
@@ -418,18 +430,16 @@ void HmiController::testingStep(uint64_t nowMs) {
     enter(Screen::Menu);
     return;
   }
+  if ((testingState_ == TestingState::Disclaimer && pressed(HmiButton::Ok)) ||
+      (testingState_ == TestingState::CanStart && !testingEnabled)) {
+    if (!connected)
+      testingState_ = TestingState::CannotStart;
+    else
+      testingState_ = testingEnabled ? TestingState::CanStart : TestingState::ModeDisabled;
+    emit("testing_connection", 1, connected);
+    return;
+  }
   switch (testingState_) {
-    case TestingState::Disclaimer:
-      if (pressed(HmiButton::Ok)) {
-        if (link1_.snapshot().connected) {
-          testingState_ = TestingState::CanStart;
-          emit("testing_connection", 1, 1);
-        } else {
-          testingState_ = TestingState::CannotStart;
-          emit("testing_connection", 1, 0);
-        }
-      }
-      break;
     case TestingState::CanStart:
       if (pressed(HmiButton::Ok)) {
         link2_.disable();
@@ -441,12 +451,12 @@ void HmiController::testingStep(uint64_t nowMs) {
       }
       break;
     case TestingState::Waiting:
-      if (link1_.snapshot().telemetry.testingMode && link1_.snapshot().telemetry.state == 1) {
+      if (testingEnabled && link.telemetry.state == 1) {
         testingState_ = TestingState::Started;
         emit("testing_started", 1);
       } else if (nowMs - testingStartedMs_ > kTestingTimeoutMs) {
         link1_.disable();
-        testingState_ = TestingState::Failed;
+        testingState_ = TestingState::TimedOut;
         emit("testing_timeout", 1);
       }
       break;
@@ -458,22 +468,20 @@ void HmiController::testingStep(uint64_t nowMs) {
         ++testingSelection_;
       }
       if (pressed(HmiButton::Left) && testingSelection_ > 3) {
-        --testingSelection_;
+        testingSelection_ -= 4;
       }
       if (pressed(HmiButton::Right) && testingSelection_ < 4) {
-        ++testingSelection_;
+        testingSelection_ += 4;
       }
       if (pressed(HmiButton::Ok)) {
         testingState_ = TestingState::ConfirmEvent;
       }
-      if (!link1_.snapshot().connected || link1_.snapshot().telemetry.state != 1) {
-        testingState_ = TestingState::Failed;
-        link1_.exitTesting();
-        emit("testing_connection_lost", 1);
-      }
       break;
+    case TestingState::Disclaimer:
     case TestingState::CannotStart:
-    case TestingState::Failed:
+    case TestingState::ModeDisabled:
+    case TestingState::TimedOut:
+    case TestingState::ConnectionLost:
       break;
     case TestingState::ConfirmEvent:
       break;
@@ -904,8 +912,8 @@ std::string HmiController::screenName() const {
 }
 
 std::string HmiController::testingName() const {
-  static constexpr const char* names[] = {"disclaimer", "can_start", "cannot_start", "waiting",
-                                          "failed",     "started",   "confirm_event"};
+  static constexpr const char* names[] = {"disclaimer", "can_start", "cannot_start", "mode_disabled",
+                                          "waiting", "failed", "failed", "started", "confirm_event"};
   return names[static_cast<size_t>(testingState_)];
 }
 
@@ -926,6 +934,7 @@ HmiSnapshot HmiController::snapshot() const {
   result.selfTest = selfTest_;
   result.selfTestResultIndex = selfTestResultIndex_;
   result.testingState = testingName();
+  result.testingConnectionLost = testingState_ == TestingState::ConnectionLost;
   result.calibrationState = calibrationName();
   result.settingsState = keyboardActive_ ? "keyboard" : "list";
   result.settingsVersions = settingsVersions_;

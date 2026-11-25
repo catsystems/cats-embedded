@@ -29,8 +29,10 @@ class Link final : public ITelemetryLink {
  public:
   LinkSnapshot snapshot() const override { return value; }
   void clearUpdates() override { value.telemetry.updated = false; value.info.updated = false; }
-  void enterTesting() override { value.telemetry.testingMode = true; value.telemetry.state = 1; }
-  void exitTesting() override { value.telemetry.testingMode = false; }
+  void enterTesting() override { value.telemetry.state = 1; }
+  void exitTesting() override {
+    // Only a new telemetry packet can change the reported Testing Mode.
+  }
   void triggerEvent(uint8_t event) override { lastEvent = event; }
   void enable() override { value.enabled = true; }
   void disable() override { value.enabled = false; }
@@ -380,7 +382,8 @@ HmiController controller(renderer, link1, link2, navigation, logs, configStore, 
 HmiInput input;
 std::string snapshot;
 
-bool numberField(const char* json, const char* key, int32_t& output) {
+template <typename Integer>
+bool numberField(const char* json, const char* key, Integer& output) {
   if (json == nullptr || key == nullptr) return false;
   const std::string needle = std::string("\"") + key + "\"";
   const char* found = std::strstr(json, needle.c_str());
@@ -390,7 +393,7 @@ bool numberField(const char* json, const char* key, int32_t& output) {
   char* end = nullptr;
   const long parsed = std::strtol(found + 1, &end, 10);
   if (end == found + 1) return false;
-  output = static_cast<int32_t>(parsed);
+  output = static_cast<Integer>(parsed);
   return true;
 }
 
@@ -460,34 +463,38 @@ bool stringField(const char* json, const char* key, std::string& output) {
 }
 
 void updateLink(Link& link, const char* json) {
-  int32_t integer = 0;
-  bool boolean = false;
   if (stringField(json, "firmwareVersion", link.versionReply)) {
     link.versionReply.resize(std::min<size_t>(16, link.versionReply.size()));
   }
-  if (numberField(json, "state", integer)) link.value.telemetry.state = static_cast<uint8_t>(integer);
-  if (numberField(json, "errors", integer)) link.value.telemetry.errors = static_cast<uint8_t>(integer);
-  if (numberField(json, "altitudeM", integer)) link.value.telemetry.altitudeM = integer;
-  if (numberField(json, "velocityMps", integer)) link.value.telemetry.velocityMps = static_cast<int16_t>(integer);
-  if (numberField(json, "timestampDs", integer)) link.value.telemetry.timestampDs = static_cast<uint16_t>(integer);
-  if (numberField(json, "pyroContinuity", integer)) link.value.telemetry.pyroContinuity = static_cast<uint8_t>(integer);
-  if (numberField(json, "linkQuality", integer)) link.value.info.linkQuality = static_cast<uint8_t>(integer);
-  if (numberField(json, "rssi", integer)) link.value.info.rssi = static_cast<int8_t>(integer);
-  if (numberField(json, "snr", integer)) link.value.info.snr = static_cast<int8_t>(integer);
-  if (decimalField(json, "latitude", link.value.telemetry.latitude)) {}
-  if (decimalField(json, "longitude", link.value.telemetry.longitude)) {}
-  if (decimalField(json, "voltage", link.value.telemetry.voltage)) {}
-  if (booleanField(json, "testingMode", boolean)) link.value.telemetry.testingMode = boolean;
-  if (booleanField(json, "connected", boolean)) link.value.connected = boolean;
-  if (booleanField(json, "updated", boolean)) {
-    link.value.telemetry.updated = boolean;
-    link.value.info.updated = boolean;
-  } else {
-    link.value.telemetry.updated = true;
-    link.value.info.updated = true;
+  if (booleanField(json, "connected", link.value.connected) && !link.value.connected) {
+    link.value.awaitingTelemetryAfterDisconnect = true;
   }
-  if (link.value.telemetry.updated) link.value.telemetry.lastUpdateMs = virtualClock.now;
-  if (link.value.info.updated) link.value.info.lastUpdateMs = virtualClock.now;
+  bool updated = true;
+  (void)booleanField(json, "updated", updated);
+
+  auto& telemetry = link.value.telemetry;
+  bool hasTelemetry = numberField(json, "state", telemetry.state);
+  hasTelemetry |= numberField(json, "errors", telemetry.errors);
+  hasTelemetry |= numberField(json, "altitudeM", telemetry.altitudeM);
+  hasTelemetry |= numberField(json, "velocityMps", telemetry.velocityMps);
+  hasTelemetry |= numberField(json, "timestampDs", telemetry.timestampDs);
+  hasTelemetry |= numberField(json, "pyroContinuity", telemetry.pyroContinuity);
+  hasTelemetry |= decimalField(json, "latitude", telemetry.latitude);
+  hasTelemetry |= decimalField(json, "longitude", telemetry.longitude);
+  hasTelemetry |= decimalField(json, "voltage", telemetry.voltage);
+  hasTelemetry |= booleanField(json, "testingMode", telemetry.testingMode);
+  telemetry.updated = updated && hasTelemetry;
+  if (telemetry.updated) {
+    telemetry.lastUpdateMs = virtualClock.now;
+    link.value.awaitingTelemetryAfterDisconnect = !link.value.connected;
+  }
+
+  auto& info = link.value.info;
+  bool hasInfo = numberField(json, "linkQuality", info.linkQuality);
+  hasInfo |= numberField(json, "rssi", info.rssi);
+  hasInfo |= numberField(json, "snr", info.snr);
+  info.updated = updated && hasInfo;
+  if (info.updated) info.lastUpdateMs = virtualClock.now;
 }
 
 std::string quote(const std::string& value) {
